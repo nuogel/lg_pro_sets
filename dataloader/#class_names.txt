@@ -1,0 +1,21 @@
+Car,Car
+Van,Car
+Truck,Car
+Pedestrian,Pedestrian
+Person_sitting,Pedestrian
+Cyclist,Cyclist
+Tram,Car
+Misc,Car
+DontCare,Others
+
+Car, Van, Truck, Pedestrian,Person_sitting, Cyclist, Tram, Misc, DontCare
+
+Car,Car
+Van,Van
+Truck,Truck
+Pedestrian,Pedestrian
+Person_sitting,Person_sitting
+Cyclist,Cyclist
+Tram,Tram
+Misc,Misc
+DontCare,DontCare

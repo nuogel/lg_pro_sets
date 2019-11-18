@@ -1,0 +1,84 @@
+PATH:
+  DATA_PATH: 'E:/datasets/Noise_Images/NOISE_kitti/level_5/'
+  IMG_PATH: 'E:/datasets/Noise_Images/NOISE_kitti/level_5//images//'
+  LAB_PATH: 'E:/datasets/Noise_Images/NOISE_kitti/level_5//labels//'
+  CLASSES_PATH: 'E://LG//programs//lg_pro_sets//datasets/class_names.txt'
+  TMP_PATH: 'E://LG//programs//lg_pro_sets//tmp//'
+  PARAMETER_PATH: 'E://LG//programs//lg_pro_sets//tmp//checkpoint//checkpoint_.parameter'
+  TEST_WEIGHT_PATH: ''
+  GENERATE_LABEL_SAVE_PATH: 'tmp/predicted_labels/'
+
+
+TRAIN:
+  BELONGS: img
+  MODEL: yolov3
+  EPOCH_SIZE: 400
+  BATCH_SIZE: 1
+  BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
+
+  # loss parameters
+  CLASSES: ['Car', 'Cyclist', 'Pedestrian', 'Others']
+  STRIDES: [8, 16, 32, 64, 128]
+  MILABSIZE: [0, 64, 128, 256, 512, 10000000] # this can be replaced by max(size)/16*2^n-->n [0, 1, 2, 3, 4, INF]
+
+  # data aug:
+  DO_AUG: FALSE
+  RESIZE: TRUE
+  RELATIVE_LABELS: TRUE  # generate a relative labels to 0-1
+  AREAR_RATIO: 0.3
+  MIN_AREAR: 10 #400
+  SHOW_AUG: FALSE
+
+  # optimizer:
+  OPTIMIZER: 'adam'
+  LR_START: 0.001
+  LR_EXPONENTIAL_DECAY_RATE: 0.98
+  BETAS_ADAM: 0.9
+  LOSSTYPE: 'focalloss' #'mse' #
+  LR_CONTINUE: None # CONTINUE: change the parameters and continue this training
+  EPOCH_CONTINUE: None
+  IMG_SIZE: [384, 960] # the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[672, 376]) better to be 2^n---[last_feature_size*2^5
+  MULTI_SIZE_RATIO: [1]
+
+  # CUDA:
+  GPU_NUM: 0
+
+  # debug:
+  LOG_FORMAT: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'  # logging format
+
+  ANCHORS: [[ 0.0772422 , 0.0632077 ],  # not correct
+            [ 0.0332185 , 0.0699152 ],
+            [ 0.3039470 , 0.7423017 ],
+            [ 0.0491545 , 0.1041431 ],
+            [ 0.2348479 , 0.0989017 ],
+            [ 0.0193353 , 0.1177316 ],
+            [ 0.0864546 , 0.1502465 ],
+            [ 0.0378630 , 0.0336919 ],
+            [ 0.0057380 , 0.0268776 ],
+            [ 0.0211715 , 0.0501949 ],
+            [ 0.0141959 , 0.0302731 ],
+            [ 0.0120658 , 0.0846409 ],
+            [ 0.0639976 , 0.3795098 ],
+            [ 0.0079226 , 0.0525171 ],
+            [ 0.1565745 , 0.2865745 ],
+            [ 0.0307940 , 0.1949102 ],] #apollo_anchors 16  ## yolov3 writer's anchors: [10,13,  16,30,  33,23,  30,61,  62,45,  59,119,  116,90,  156,198,  373,326]
+  ANCHOR_FMAP_NUM: 3
+
+
+TEST:
+  TEST_SET_RATIO: 0.1
+
+  # NMS:
+  NMS_TYPE: 'SOFT_NMS'# 'NMS'#
+  SOFNMS_THETA: 0.5
+  SCORE_THRESH: 0.5
+  IOU_THRESH: 0.5
+
+  DO_AUG: FALSE
+  RESIZE: TRUE
+  SAVE_LABELS: TRUE
+  SHOW_IMAGES: TRUE #FALSE
+  SHOW_TIMES: 20000
+  #  ONEIMGTEST: FALSE
+  ONE_TEST: TRUE
+  ONE_NAME: ['KITTI_005066_1']# ['20190412_0132']#

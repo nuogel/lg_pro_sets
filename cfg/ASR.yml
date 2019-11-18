@@ -1,0 +1,50 @@
+PATH:
+  DATA_PATH: 'E://datasets//NLP//THCHS//data_thchs30//data//'
+  LAB_PATH: 'E://datasets//NLP//THCHS//data_thchs30//data//'
+  CLASSES_PATH: 'E://LG//programs//lg_pro_sets//datasets//asr_dict.txt'
+  TMP_PATH: 'tmp//'
+  PARAMETER_PATH: 'E://LG//programs//lg_pro_sets//tmp//checkpoint//checkpoint.parameter'
+  TEST_WEIGHT_PATH: 'tmp//checkpoint//yolo_tiny_squeezenet_kitti25.pkl'
+  GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
+
+TRAIN:
+  BELONGS: ASR
+  MODEL: seq2seq #ctc  #
+  EPOCH_SIZE: 400
+  BATCH_SIZE: 4
+  BATCH_BACKWARD_SIZE: 2   # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
+#  INPUT_SIZE: 1300
+  CLASS_LENGTH: 1211  # this will change by the acturel length in 'loader_asr.py' self.cfg.TRAIN.CLASS_LENGTH
+
+  #WAV_LENGTH:  1600  # 分窗的最大长度，最大窗数，窗长为200. 改为变长序列
+  AUDIO_FEATURE_LENGTH: 200
+  #LAB_LENGTH: 64  # 一段语音的最长字数 改为变长序列
+  WORD_VICTOR: 10
+  CHUNK_DURATION_S: 0.025  # 窗时长 单位S
+  STRIDE_S: 0.010  # 窗步长 单位S
+
+  # optimizer:
+  OPTIMIZER: 'adam'
+  LR_START: 0.001
+  LR_EXPONENTIAL_DECAY_RATE: 0.98
+  BETAS_ADAM: 0.9
+  LOSSTYPE: 'ctc' #''mse' #mse' #
+  LR_CONTINUE: None # CONTINUE: change the parameters and continue this training
+  EPOCH_CONTINUE: None
+
+  # CUDA:
+  GPU_NUM: 0
+  # debug:
+  LOG_FORMAT: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'  # logging format
+
+
+TEST:
+  TEST_SET_RATIO: 0.1
+  # NMS:
+  SCORE_THRESH: 0.5
+  SAVE_LABELS: TRUE
+
+  ONE_TEST: FALSE
+#  ONE_TEST: TRUE
+  ONE_NAME: ['A2_0', 'A2_1', 'A2_2', 'A2_3']  #]#['A2_236', 'B33_440', 'B7_347', 'D4_957', 'B15_446', 'C6_531', 'A8_45', 'D12_984', 'C17_549', 'C14_546']#['A2_0', 'A2_1', 'A2_2', 'A2_3']  #['20190412_0132']#['000000']['A2_0']#
+
