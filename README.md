@@ -1,6 +1,6 @@
 ### LuoGeng's programs set (forbid coping；禁止转传使用)
 This is a PyTorch implementation of ASR and OBD
-#### ASR:
+#### ASR: master
     CTC, Seq2Seq, RNN, LSTM
 #### OBD:
     YOLOv2, 
