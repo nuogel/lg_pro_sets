@@ -28,7 +28,7 @@ class Dataaug:
         self.area_ratio = cfg.TRAIN.AREAR_RATIO
         self.min_area = cfg.TRAIN.MIN_AREAR
         self.class_name = _get_class_names(cfg.PATH.CLASSES_PATH)
-        self.print_path = False
+        self.print_path = True
 
     def _read_line(self, path, pass_obj=['DontCare', ]):
         """
@@ -78,7 +78,7 @@ class Dataaug:
             idx_remove = idx.copy()
             for img_idx in idx:
                 # labels come first.
-                if os.path.isfile(self.img_path + img_idx + '.txt'):
+                if os.path.isfile(self.lab_path + img_idx + '.txt'):
                     lab_name = img_idx + '.txt'
                 else:
                     lab_name = img_idx + '.xml'
@@ -95,7 +95,7 @@ class Dataaug:
                         idx_remove.remove(img_idx)
                     if not idx_remove: break
                     img_idx = random.choice(idx_remove)
-                    label = self._read_line(self.lab_path + img_idx + '.txt')
+                    label = self._read_line(self.lab_path + lab_name)
                 labels.append(label)
                 # then add the images.
                 img = cv2.imread(self.img_path + img_name)

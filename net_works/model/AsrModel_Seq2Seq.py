@@ -6,6 +6,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+'''
+不加attention 为84%， 加attention 为82%，why? 尝试修改attention.
+'''
+
 
 class Seq2Seq(nn.Module):
     def __init__(self, cfg):
@@ -137,6 +141,8 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__(**kwargs)
         self.embedding = nn.Embedding(vocab_size, hidden_size)
         self.attention = NNAttention(hidden_size, log_t=True)
+        self.lg_attention = LGAttention(hidden_size, log_t=True)
+
         self.rnn = nn.GRUCell(hidden_size, hidden_size)
         self.fc = nn.Linear(hidden_size, vocab_size)  # no 'sos'
         self.vocab_size = vocab_size
@@ -170,15 +176,21 @@ class Decoder(nn.Module):
 
     def _step(self, target_i, c_hid, enc_y, ax, sx, add_attention=True):
         embeded = self.embedding(target_i)
-        if sx is not None:
-            # last context vector
-            embeded = embeded + sx
-        gru_cell_y = self.rnn(embeded, c_hid)
-        if add_attention:
-            sx, ax = self.attention(enc_y, gru_cell_y, ax)
-            output = self.fc(gru_cell_y + sx)
-        else:
+        lg_attend = True
+        if lg_attend:
+            at = self.lg_attention(enc_y, c_hid,embeded)
+            gru_cell_y = self.rnn(c_hid, at)
             output = self.fc(gru_cell_y)
+        else:
+            if sx is not None:
+                # last context vector
+                embeded = embeded + sx
+            gru_cell_y = self.rnn(embeded, c_hid)
+            if add_attention:
+                sx, ax = self.attention(enc_y, gru_cell_y, ax)
+                output = self.fc(gru_cell_y + sx)
+            else:
+                output = self.fc(gru_cell_y)
         return output, gru_cell_y, ax, sx
 
 
@@ -215,6 +227,27 @@ class NNAttention(nn.Module):
         sx = torch.sum(enc_y * sx, dim=1)  # BH
         return sx, ax
 
+
+class LGAttention(nn.Module):
+    def __init__(self, n_channels, kernel_size=15, log_t=False):
+        super(LGAttention, self).__init__()
+        assert kernel_size % 2 == 1, \
+            "Kernel size should be odd for 'same' conv."
+        self.nn = nn.Sequential(
+            nn.Linear(n_channels*2, n_channels),
+            nn.ReLU())
+        self.log_t = log_t
+
+    def forward(self, enc_y, c_hid, embeded):
+        """ `enc_y` (BTH), `gru_cell_y` (BH) """
+        _c_hid = c_hid.unsqueeze(dim=1)
+        at = enc_y * _c_hid
+        a_hat = at.softmax(1)
+        ct = a_hat * enc_y
+        ct = torch.sum(ct, dim=1)
+        ct = torch.cat((embeded, ct), dim=1)
+        ct = self.nn(ct)
+        return ct
 # class Seq2Seq_old(nn.Module):
 #     def __init__(self, cfg):
 #         super(Seq2Seq_old, self).__init__()

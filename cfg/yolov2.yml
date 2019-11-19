@@ -1,10 +1,10 @@
 PATH:
-  DATA_PATH: 'E:/datasets/Noise_Images/NOISE_kitti/level_5/'
-  IMG_PATH: 'E:/datasets/Noise_Images/NOISE_kitti/level_5//images//'
-  LAB_PATH: 'E:/datasets/Noise_Images/NOISE_kitti/level_5//labels//'
-  CLASSES_PATH: 'E://LG//programs//lg_pro_sets//datasets/class_names.txt'
-  TMP_PATH: 'E://LG//programs//lg_pro_sets//tmp//'
-  PARAMETER_PATH: 'E://LG//programs//lg_pro_sets//tmp//checkpoint//checkpoint_.parameter'
+  DATA_PATH: 'E://datasets//kitti//training/'
+  IMG_PATH: 'E://datasets//kitti//training//image_2//'
+  LAB_PATH: 'E://datasets//kitti//training/label_2//'
+  CLASSES_PATH: 'E://LG//GitHub//lg_pro_sets//dataloader//class_names.txt'
+  TMP_PATH: 'E://LG//GitHub//lg_pro_sets//tmp//'
+  PARAMETER_PATH: 'E://LG//GitHub//lg_pro_sets//tmp//checkpoint//checkpoint_.parameter'
   TEST_WEIGHT_PATH: ''
   GENERATE_LABEL_SAVE_PATH: 'tmp/predicted_labels/'
 
@@ -27,7 +27,7 @@ TRAIN:
   RELATIVE_LABELS: TRUE  # generate a relative labels to 0-1
   AREAR_RATIO: 0.3
   MIN_AREAR: 10 #400
-  SHOW_AUG: FALSE
+  SHOW_AUG: TRUE
 
   # optimizer:
   OPTIMIZER: 'adam'
@@ -83,9 +83,9 @@ TEST:
   SAVE_LABELS: TRUE
   SHOW_IMAGES: TRUE #FALSE
   SHOW_TIMES: 20000
-  #  ONEIMGTEST: FALSE
+#  ONE_TEST: FALSE
   ONE_TEST: TRUE
-  ONE_NAME: ['KITTI_005066_1']# ['20190412_0132']#
+  ONE_NAME: ['001290']# ['20190412_0132']#
 
 
 
