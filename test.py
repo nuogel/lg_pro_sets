@@ -4,7 +4,7 @@
 import sys
 from argparse import ArgumentParser
 from cfg.yml_parse import parse_yaml
-from net_works.test import Test
+from net_works.test_solver import Test
 from evasys.score import Score
 
 
