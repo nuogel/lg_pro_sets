@@ -1,10 +1,8 @@
 PATH:
   DATA_PATH: 'E://datasets//NLP//THCHS//data_thchs30//data//'
   LAB_PATH: 'E://datasets//NLP//THCHS//data_thchs30//data//'
-  CLASSES_PATH: 'E://LG//programs//lg_pro_sets//datasets//asr_dict.txt'
   TMP_PATH: 'tmp//'
-  PARAMETER_PATH: 'E://LG//programs//lg_pro_sets//tmp//checkpoint//checkpoint.parameter'
-  TEST_WEIGHT_PATH: 'tmp//checkpoint//yolo_tiny_squeezenet_kitti25.pkl'
+  PARAMETER_PATH: 'tmp//checkpoint//checkpoint.parameter'
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
 
 TRAIN:
