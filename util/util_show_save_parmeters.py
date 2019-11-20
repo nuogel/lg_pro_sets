@@ -120,4 +120,4 @@ if __name__ == "__main__":
     """Test show_parameters."""
     cfg = parse_yaml('../cfg/ASR.yml')
     para = TrainParame(cfg)
-    para.show_parameters()
+    para.show_parameters(1,)

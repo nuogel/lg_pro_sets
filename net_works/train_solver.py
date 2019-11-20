@@ -138,7 +138,7 @@ class Solver:
         torch.save(self.Model.state_dict(), checkpoint_path)
         LOGGER.info('Epoch: %s, checkpoint is saved to %s', epoch, checkpoint_path)
 
-    def _train_an_epoch(self, epoch, train_set, optimizer, scheduler, ):
+    def _train_an_epoch(self, epoch, train_set, optimizer, scheduler):
         # pylint: disable=too-many-arguments
         self.Model.train()
         scheduler.step()
