@@ -8,6 +8,7 @@ import numpy as np
 
 '''
 不加attention 为84%， 加attention 为82%，why? 尝试修改lg_attention.
+中途遇到list[]长度导致内存泄露；
 '''
 
 
@@ -54,13 +55,13 @@ class Seq2Seq(nn.Module):
             output, c_hid, ax, sx = self.decoder._step(inputs, c_hid, enc_y, ax, sx, add_attention)
             output = torch.softmax(output, dim=-1)
             score, inputs = output.max(dim=-1)  # 将上一次预测的结果作为下一次的输入
-            labels = [int(_inputs.data) for _inputs in inputs]
+            labels = [int(_inputs.item()) for _inputs in inputs]
             y_seqs.append(labels)
-            if sum(labels) == 0 or (len(y_seqs[0]) > 70):
+            if sum(labels) == 0 or (len(y_seqs) > 70):
                 STOP = True
         y_seqs = np.array(y_seqs)
         y_seqs = np.transpose(y_seqs, (1, 0))
-        return y_seqs, -score
+        return y_seqs, 0
 
     def beam_search(self, xs, beam_size=10, max_len=200):
         def decode_step(self, x, y, state=None, softmax=False):
@@ -250,7 +251,6 @@ class LGAttention(nn.Module):
         ct = torch.cat((embeded, ct), dim=1)
         ct = self.nn(ct)
         return ct
-
 
 # class Seq2Seq_old(nn.Module):
 #     def __init__(self, cfg):

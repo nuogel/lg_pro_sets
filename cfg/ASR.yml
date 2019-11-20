@@ -9,7 +9,7 @@ TRAIN:
   BELONGS: ASR
   MODEL: seq2seq #ctc  #
   EPOCH_SIZE: 400
-  BATCH_SIZE: 1
+  BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 2   # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   CLASS_LENGTH: 1211  # this will change by the acturel length in 'loader_asr.py' self.cfg.TRAIN.CLASS_LENGTH
 
