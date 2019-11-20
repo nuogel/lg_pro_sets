@@ -119,5 +119,6 @@ class TrainParame:
 if __name__ == "__main__":
     """Test show_parameters."""
     cfg = parse_yaml('../cfg/ASR.yml')
+    cfg.PATH.PARAMETER_PATH = os.path.join('..', cfg.PATH.PARAMETER_PATH)
     para = TrainParame(cfg)
     para.show_parameters(1,)
