@@ -1,8 +1,9 @@
 torch>=1.0
 torchvision
+tensorflow
 matplotlib
 numpy
 scipy
-pillow
-urllib3
 scikit-image
+kears
+

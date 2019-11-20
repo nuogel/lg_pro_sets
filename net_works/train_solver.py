@@ -154,7 +154,7 @@ class Solver:
         # count the step time, total time...
         t1_timer = Time()
         optimizer.zero_grad()
-        for step in range(batch_num):
+        for step in range(1):
             t1_timer.time_start()
             train_data = self.DataLoader.get_data_by_idx(train_set, step * batch_size, (step + 1) * batch_size)
             if train_data[1] is None:
