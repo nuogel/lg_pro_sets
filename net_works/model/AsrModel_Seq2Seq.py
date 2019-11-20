@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import numpy as np
 
 '''
-不加attention 为84%， 加attention 为82%，why? 尝试修改attention.
+不加attention 为84%， 加attention 为82%，why? 尝试修改lg_attention.
 '''
 
 
@@ -178,7 +178,7 @@ class Decoder(nn.Module):
         embeded = self.embedding(target_i)
         lg_attend = True
         if lg_attend:
-            at = self.lg_attention(enc_y, c_hid,embeded)
+            at = self.lg_attention(enc_y, c_hid, embeded)
             gru_cell_y = self.rnn(c_hid, at)
             output = self.fc(gru_cell_y)
         else:
@@ -234,12 +234,14 @@ class LGAttention(nn.Module):
         assert kernel_size % 2 == 1, \
             "Kernel size should be odd for 'same' conv."
         self.nn = nn.Sequential(
-            nn.Linear(n_channels*2, n_channels),
+            nn.Linear(n_channels * 2, n_channels),
             nn.ReLU())
         self.log_t = log_t
 
     def forward(self, enc_y, c_hid, embeded):
-        """ `enc_y` (BTH), `gru_cell_y` (BH) """
+        """ `enc_y` (BTH), `c_hid` (BH)
+         reference: https://guillaumegenthial.github.io/sequence-to-sequence.html
+         """
         _c_hid = c_hid.unsqueeze(dim=1)
         at = enc_y * _c_hid
         a_hat = at.softmax(1)
@@ -248,6 +250,8 @@ class LGAttention(nn.Module):
         ct = torch.cat((embeded, ct), dim=1)
         ct = self.nn(ct)
         return ct
+
+
 # class Seq2Seq_old(nn.Module):
 #     def __init__(self, cfg):
 #         super(Seq2Seq_old, self).__init__()
@@ -319,28 +323,3 @@ class LGAttention(nn.Module):
 #         out = torch.cat(out, dim=1)
 #         aligns = torch.stack(aligns, dim=1)
 #         return out, aligns
-
-
-# class LinearND(nn.Module):
-#
-#     def __init__(self, *args):
-#         """
-#         A torch.nn.Linear layer modified to accept ND arrays.
-#         The function treats the last dimension of the input
-#         as the hidden dimension.
-#         """
-#         super(LinearND, self).__init__()
-#         self.fc = nn.Linear(*args)
-#
-#     def forward(self, x):
-#         size = x.size()
-#         n = int(np.prod(size[:-1]))
-#         out = x.contiguous().view(n, size[-1])
-#         out = self.fc(out)
-#         size = list(size)
-#         size[-1] = out.size()[-1]
-#         out = out.view(size)
-#         return out
-
-
-#####################################################
