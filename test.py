@@ -5,7 +5,7 @@ import sys
 from argparse import ArgumentParser
 from cfg.yml_parse import parse_yaml
 from net_works.test_solver import Test
-from evasys.score import Score
+from evasys.Score_Dict import Score
 
 
 def _parse_arguments():

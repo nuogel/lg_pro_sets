@@ -13,7 +13,7 @@ import logging
 import numpy as np
 import torch
 from torch.optim import lr_scheduler
-from evasys.score import Score
+from evasys.Score_Dict import Score
 from util.util_show_save_parmeters import TrainParame
 from net_works.model.Model_Loss_Dict import ModelDict, LossDict
 from util.util_time_stamp import Time
@@ -39,7 +39,7 @@ class Solver:
         self.Model = ModelDict[cfg.TRAIN.MODEL](cfg)
         self.LossFun = LossDict[cfg.TRAIN.MODEL](cfg)
         self.score = Score[cfg.BELONGS](cfg)
-        self.train_batch_num = 50
+        self.train_batch_num = 200
         self.test_batch_num = 1
 
     def train(self):
@@ -124,7 +124,7 @@ class Solver:
             for loss_name, head_loss in zip(loss_names[:len(loss_tmp)], losses):
                 loss_head_info += ' {}: {:6.4f}'.format(loss_name, head_loss.item())
             LOGGER.debug('Loss per head: %s', loss_head_info)
-        if self.cfg.BELONGS == 'ASR':
+        else:
             total_loss = losses[0]
             LOGGER.debug('Train Acc is: %s', losses[1])
         if torch.isnan(total_loss) or total_loss.item() == float("inf") or total_loss.item() == -float("inf"):
@@ -214,7 +214,7 @@ class Solver:
                         epoch, step, batch_num, total_loss, losses / (step + 1))
             calculate the score
             '''
-            if self.cfg.BELONGS == 'img':
+            if self.cfg.BELONGS in['img', 'SR']:
                 test_data = test_data[1]
             self.score.cal_score(predict, test_data)
         score_out, precision, recall = self.score.score_out()

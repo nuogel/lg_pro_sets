@@ -22,8 +22,9 @@ def _get_data_idx_stores(lab_dir, idx_stores_dir, test_train_ratio, cfg):
                         break
         else:
             label_files_list = label_files
-    elif cfg.BELONGS == 'ASR':
+    else:
         label_files_list = label_files
+
     data_idx = list(set([str(os.path.basename(x).split('.')[0]) for x in label_files_list]))
     assert len(data_idx) >= 1, 'No data found!'
 
