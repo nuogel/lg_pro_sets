@@ -1,12 +1,13 @@
+BELONGS: ASR
+
 PATH:
   DATA_PATH: 'E://datasets//NLP//THCHS//data_thchs30//data//'
   LAB_PATH: 'E://datasets//NLP//THCHS//data_thchs30//data//'
   TMP_PATH: 'tmp//'
-  PARAMETER_PATH: 'tmp//checkpoint//checkpoint.parameter'
+  PARAMETER_PATH: 'tmp//checkpoint//s2s_without_attention_60.parameter'
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
 
 TRAIN:
-  BELONGS: ASR
   MODEL: seq2seq #ctc  #
   EPOCH_SIZE: 400
   BATCH_SIZE: 4
@@ -41,7 +42,7 @@ TEST:
   SCORE_THRESH: 0.5
   SAVE_LABELS: TRUE
 
-  ONE_TEST: FALSE
-#  ONE_TEST: TRUE
+#  ONE_TEST: FALSE
+  ONE_TEST: TRUE
   ONE_NAME: ['A2_0', 'A2_1', 'A2_2', 'A2_3']  #]#['A2_236', 'B33_440', 'B7_347', 'D4_957', 'B15_446', 'C6_531', 'A8_45', 'D12_984', 'C17_549', 'C14_546']#['A2_0', 'A2_1', 'A2_2', 'A2_3']  #['20190412_0132']#['000000']['A2_0']#
 

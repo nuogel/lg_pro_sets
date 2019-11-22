@@ -1,3 +1,5 @@
+BELONGS: img
+
 PATH:
   DATA_PATH: 'E://datasets//kitti//training/'
   IMG_PATH: 'E://datasets//kitti//training//image_2//'
@@ -10,7 +12,6 @@ PATH:
 
 
 TRAIN:
-  BELONGS: img
   MODEL: yolov2
   EPOCH_SIZE: 400
   BATCH_SIZE: 1
@@ -28,6 +29,7 @@ TRAIN:
   AREAR_RATIO: 0.3
   MIN_AREAR: 10 #400
   SHOW_AUG: TRUE
+  IMG_SIZE: [384, 960] # the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[672, 376]) better to be 2^n---[last_feature_size*2^5
 
   # optimizer:
   OPTIMIZER: 'adam'
@@ -37,7 +39,6 @@ TRAIN:
   LOSSTYPE: 'focalloss' #'mse' #
   LR_CONTINUE: None # CONTINUE: change the parameters and continue this training
   EPOCH_CONTINUE: None
-  IMG_SIZE: [384, 960] # the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[672, 376]) better to be 2^n---[last_feature_size*2^5
   MULTI_SIZE_RATIO: [1]
 
   # NMS:

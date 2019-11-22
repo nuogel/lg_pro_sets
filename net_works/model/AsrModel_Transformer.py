@@ -1,20 +1,13 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.nn.init as I
-from torch.autograd import Variable
 
 import numpy as np
 import math
 
 from utils import constant
-from net_works.model.common_layers import MultiHeadAttention, PositionalEncoding, PositionwiseFeedForward, PositionwiseFeedForwardWithConv, get_subsequent_mask, get_non_pad_mask, \
+from util.common_layers import MultiHeadAttention, PositionalEncoding, PositionwiseFeedForwardWithConv, get_subsequent_mask, get_non_pad_mask, \
     get_attn_key_pad_mask, get_attn_pad_mask, pad_list
-
-from utils.metrics import calculate_metrics
-
-import kenlm
-import os
 
 from utils.lstm_utils import calculate_lm_score
 

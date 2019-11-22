@@ -9,7 +9,7 @@ def _get_data_idx_stores(lab_dir, idx_stores_dir, test_train_ratio, cfg):
     label_files = glob.glob('{}/*'.format(lab_dir))
     label_files_list = []
     is_name_in_dict = False  # if the image has this class in it ?
-    if cfg.TRAIN.BELONGS == 'img':
+    if cfg.BELONGS == 'OBD':
         if is_name_in_dict:
             class_map = _get_class_names(cfg.PATH.CLASSES_PATH)
             for label_file in label_files:
@@ -22,7 +22,7 @@ def _get_data_idx_stores(lab_dir, idx_stores_dir, test_train_ratio, cfg):
                         break
         else:
             label_files_list = label_files
-    elif cfg.TRAIN.BELONGS == 'ASR':
+    elif cfg.BELONGS == 'ASR':
         label_files_list = label_files
     data_idx = list(set([str(os.path.basename(x).split('.')[0]) for x in label_files_list]))
     assert len(data_idx) >= 1, 'No data found!'

@@ -34,11 +34,11 @@ class Solver:
         self.one_name = cfg.TEST.ONE_NAME
         if self.one_test:
             self.cfg.TRAIN.BATCH_SIZE = len(self.one_name)
-        self.DataLoader = DataLoaderDict[cfg.TRAIN.BELONGS](cfg)
+        self.DataLoader = DataLoaderDict[cfg.BELONGS](cfg)
         self.save_parameter = TrainParame(cfg)
         self.Model = ModelDict[cfg.TRAIN.MODEL](cfg)
         self.LossFun = LossDict[cfg.TRAIN.MODEL](cfg)
-        self.score = Score[cfg.TRAIN.BELONGS](cfg)
+        self.score = Score[cfg.BELONGS](cfg)
         self.train_batch_num = 50
         self.test_batch_num = 1
 
@@ -115,7 +115,7 @@ class Solver:
     def _calculate_loss(self, predict, dataset, losstype=None):
         total_loss = 0.
         losses = self.LossFun.Loss_Call(predict, dataset, losstype=losstype)
-        if self.cfg.TRAIN.BELONGS == 'img':
+        if self.cfg.BELONGS == 'img':
             loss_names = ['[obj_loss]', '[noobj_loss]', '[cls_loss]', '[loc_loss]']  #obj_loss, noobj_loss, cls_loss, loc_loss
             loss_tmp = range(len(losses))
             for i in loss_tmp:
@@ -124,7 +124,7 @@ class Solver:
             for loss_name, head_loss in zip(loss_names[:len(loss_tmp)], losses):
                 loss_head_info += ' {}: {:6.4f}'.format(loss_name, head_loss.item())
             LOGGER.debug('Loss per head: %s', loss_head_info)
-        if self.cfg.TRAIN.BELONGS == 'ASR':
+        if self.cfg.BELONGS == 'ASR':
             total_loss = losses[0]
             LOGGER.debug('Train Acc is: %s', losses[1])
         if torch.isnan(total_loss) or total_loss.item() == float("inf") or total_loss.item() == -float("inf"):
@@ -214,7 +214,7 @@ class Solver:
                         epoch, step, batch_num, total_loss, losses / (step + 1))
             calculate the score
             '''
-            if self.cfg.TRAIN.BELONGS == 'img':
+            if self.cfg.BELONGS == 'img':
                 test_data = test_data[1]
             self.score.cal_score(predict, test_data)
         score_out, precision, recall = self.score.score_out()

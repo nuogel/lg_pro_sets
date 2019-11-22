@@ -1,3 +1,5 @@
+BELONGS: img
+
 PATH:
   DATA_PATH: 'E:/datasets/Noise_Images/NOISE_kitti/level_5/'
   IMG_PATH: 'E:/datasets/Noise_Images/NOISE_kitti/level_5//images//'
@@ -10,7 +12,6 @@ PATH:
 
 
 TRAIN:
-  BELONGS: img
   MODEL: yolov3
   EPOCH_SIZE: 400
   BATCH_SIZE: 1

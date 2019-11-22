@@ -1,3 +1,5 @@
+BELONGS: img
+
 PATH:
   TMP_PATH: 'tmp/'
   DATA_PATH: 'datasets/kitti/'
