@@ -116,7 +116,7 @@ class Solver:
         total_loss = 0.
         losses = self.LossFun.Loss_Call(predict, dataset, losstype=losstype)
         if self.cfg.BELONGS == 'img':
-            loss_names = ['[obj_loss]', '[noobj_loss]', '[cls_loss]', '[loc_loss]']  #obj_loss, noobj_loss, cls_loss, loc_loss
+            loss_names = ['[obj_loss]', '[noobj_loss]', '[cls_loss]', '[loc_loss]']  # obj_loss, noobj_loss, cls_loss, loc_loss
             loss_tmp = range(len(losses))
             for i in loss_tmp:
                 total_loss += losses[i]
@@ -145,11 +145,7 @@ class Solver:
         LOGGER.info('[TRAIN] Epoch: %s, learing_rate: %s', epoch, optimizer.param_groups[0]['lr'])
         np.random.shuffle(train_set)
         batch_size = self.cfg.TRAIN.BATCH_SIZE
-        if self.one_test:
-            batch_num = self.train_batch_num
-            batch_size = 1
-        else:
-            batch_num = len(train_set) // batch_size
+        batch_num = self.train_batch_num if self.one_test else len(train_set) // batch_size
         losses = 0
         # count the step time, total time...
         t1_timer = Time()
@@ -190,35 +186,16 @@ class Solver:
         self.Model.eval()
         LOGGER.info('[EVALUATE] Evaluating from test data set ...')
         batch_size = self.cfg.TRAIN.BATCH_SIZE
-        if self.one_test:
-            batch_num = self.test_batch_num
-            batch_size = 1
-        else:
-            batch_num = len(test_set[:800]) // batch_size
-        losses = 0.
+        batch_num = self.test_batch_num if self.one_test else len(test_set) // batch_size
         # print(score.true_positive, score.false_positive, score.obj_num)
         self.score.init_parameters()
         for step in range(batch_num):
             test_data = self.DataLoader.get_data_by_idx(test_set, step * batch_size, (step + 1) * batch_size)
-            if test_data[0] is None:
-                continue
-            # forward process
+            if test_data[0] is None: continue
             predict = self.Model.forward(test_data, eval=True)
-            '''
-                        calculate the total loss
-            total_loss = self._calculate_loss(predict, test_data, losstype=self.cfg.TRAIN.LOSSTYPE)
-            losses += total_loss.item()
-            losses += total_loss.item()
-            LOGGER.info('[EVALUATE] Epoch: %3d, step: %4d/%4d, step_test_loss:  %10.2f, '
-                        'test_average_loss:  %10.2f',
-                        epoch, step, batch_num, total_loss, losses / (step + 1))
-            calculate the score
-            '''
-            if self.cfg.BELONGS in['img', 'SR']:
-                test_data = test_data[1]
+            if self.cfg.BELONGS in ['img', 'SR']: test_data = test_data[1]
             self.score.cal_score(predict, test_data)
         score_out, precision, recall = self.score.score_out()
         self.save_parameter.save_parameters(epoch=epoch, f1_score=score_out, precision=precision, recall=recall)
-        LOGGER.info('[EVALUATE] Summary: Epoch: %s, average test loss: %s', epoch, losses / batch_num)
         LOGGER.info('[EVALUATE] Summary: Epoch: %s, Score: %s, Precision: %s, Recall: %s',
                     epoch, score_out, precision, recall)
