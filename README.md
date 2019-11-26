@@ -1,5 +1,5 @@
 ### LuoGeng's programs set (forbid coping；禁止转传使用)
-This is a PyTorch implementation of ASR and OBD
+This is a PyTorch implementation of ASR / OBD / SR
 #### ASR: luogeng
     CTC, Seq2Seq, RNN, LSTM
 #### OBD:
@@ -11,7 +11,8 @@ This is a PyTorch implementation of ASR and OBD
     YoloV3_Tiny_ShuffleNet,
     YoloV3_MobileNet,
     FCOS.
----
+#### SR:
+    EDSR
 
 #### Runtime environment
 ```
