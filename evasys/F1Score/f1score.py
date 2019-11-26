@@ -4,6 +4,7 @@ import torch
 import numpy as np
 
 from util.util_iou import iou_mat
+from util.util_get_cls_names import _get_class_names
 
 
 class F1Score:
@@ -12,7 +13,7 @@ class F1Score:
     def __init__(self, cfg):
         """Init the parameters."""
         self.cfg = cfg
-        self.cls_name = self._get_class_names()
+        self.cls_name = _get_class_names(cfg.PATH.CLASSES_PATH)
         self.cls_num = len(self.cfg.TRAIN.CLASSES)
         self.true_positive = np.zeros(self.cls_num)
         self.false_positive = np.zeros(self.cls_num)
@@ -29,20 +30,6 @@ class F1Score:
         self.true_positive = np.zeros(self.cls_num)
         self.false_positive = np.zeros(self.cls_num)
         self.obj_num = np.zeros(self.cls_num)
-
-    def _get_class_names(self):
-        classes = dict()
-        path = self.cfg.PATH.CLASSES_PATH
-        class_f = open(path, 'r')
-        for line in class_f.readlines():
-            tmp = line.strip().split(',')
-            try:
-                tmp[1]
-            except:
-                classes[tmp[0]] = 'DontCare'
-            else:
-                classes[tmp[0]] = tmp[1]
-        return classes
 
     def get_labels_txt(self, pre_path, gt_path):
         def read_line(path, gt=False):
