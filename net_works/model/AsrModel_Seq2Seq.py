@@ -7,7 +7,9 @@ import torch.nn.functional as F
 import numpy as np
 
 '''
-不加attention 为84%， 加attention 为82%，why? 尝试修改lg_attention.
+->不加attention 为84%， 加attention 为82%，why? 尝试修改lg_attention.
+->中途遇到list[]长度导致内存泄露；
+->改为Lg_attention 后，训练速度慢，并且效果不好。查看是什么原因。
 '''
 
 
@@ -54,66 +56,66 @@ class Seq2Seq(nn.Module):
             output, c_hid, ax, sx = self.decoder._step(inputs, c_hid, enc_y, ax, sx, add_attention)
             output = torch.softmax(output, dim=-1)
             score, inputs = output.max(dim=-1)  # 将上一次预测的结果作为下一次的输入
-            labels = [int(_inputs.data) for _inputs in inputs]
+            labels = [int(_inputs.item()) for _inputs in inputs]
             y_seqs.append(labels)
-            if sum(labels) == 0 or (len(y_seqs[0]) > 70):
+            if sum(labels) == 0 or (len(y_seqs) > 70):
                 STOP = True
         y_seqs = np.array(y_seqs)
         y_seqs = np.transpose(y_seqs, (1, 0))
-        return y_seqs, -score
+        return y_seqs, 0
 
-    def beam_search(self, xs, beam_size=10, max_len=200):
-        def decode_step(self, x, y, state=None, softmax=False):
-            """ `x` (TH), `y` (1) """
-            if state is None:
-                hx, ax, sx = None, None, None
-            else:
-                hx, ax, sx = state
-            out, hx, ax, sx = self.decoder._step(y, hx, x, ax, sx)
-            if softmax:
-                out = nn.functional.log_softmax(out, dim=1)
-            return out, (hx, ax, sx)
-
-        start_tok = self.vocab_size - 1;
-        end_tok = 0
-        x, h = self.encode(xs)
-        y = torch.autograd.Variable(torch.LongTensor([start_tok]), volatile=True)
-        beam = [((start_tok,), 0, (h, None, None))]
-        complete = []
-        for _ in range(max_len):
-            new_beam = []
-            for hyp, score, state in beam:
-                y[0] = hyp[-1]
-                out, state = decode_step(x, y, state=state, softmax=True)
-                out = out.cpu().data.numpy().squeeze(axis=0).tolist()
-                for i, p in enumerate(out):
-                    new_score = score + p
-                    new_hyp = hyp + (i,)
-                    new_beam.append((new_hyp, new_score, state))
-            new_beam = sorted(new_beam, key=lambda x: x[1], reverse=True)
-
-            # Remove complete hypotheses
-            for cand in new_beam[:beam_size]:
-                if cand[0][-1] == end_tok:
-                    complete.append(cand)
-
-            beam = filter(lambda x: x[0][-1] != end_tok, new_beam)
-            beam = beam[:beam_size]
-
-            if len(beam) == 0:
-                break
-
-            # Stopping criteria:
-            # complete contains beam_size more probable
-            # candidates than anything left in the beam
-            if sum(c[1] > beam[0][1] for c in complete) >= beam_size:
-                break
-
-        complete = sorted(complete, key=lambda x: x[1], reverse=True)
-        if len(complete) == 0:
-            complete = beam
-        hyp, score, _ = complete[0]
-        return hyp, score
+    # def beam_search(self, xs, beam_size=10, max_len=200):
+    #     def decode_step(self, x, y, state=None, softmax=False):
+    #         """ `x` (TH), `y` (1) """
+    #         if state is None:
+    #             hx, ax, sx = None, None, None
+    #         else:
+    #             hx, ax, sx = state
+    #         out, hx, ax, sx = self.decoder._step(y, hx, x, ax, sx)
+    #         if softmax:
+    #             out = nn.functional.log_softmax(out, dim=1)
+    #         return out, (hx, ax, sx)
+    #
+    #     start_tok = self.vocab_size - 1;
+    #     end_tok = 0
+    #     x, h = self.encode(xs)
+    #     y = torch.autograd.Variable(torch.LongTensor([start_tok]), volatile=True)
+    #     beam = [((start_tok,), 0, (h, None, None))]
+    #     complete = []
+    #     for _ in range(max_len):
+    #         new_beam = []
+    #         for hyp, score, state in beam:
+    #             y[0] = hyp[-1]
+    #             out, state = decode_step(x, y, state=state, softmax=True)
+    #             out = out.cpu().data.numpy().squeeze(axis=0).tolist()
+    #             for i, p in enumerate(out):
+    #                 new_score = score + p
+    #                 new_hyp = hyp + (i,)
+    #                 new_beam.append((new_hyp, new_score, state))
+    #         new_beam = sorted(new_beam, key=lambda x: x[1], reverse=True)
+    #
+    #         # Remove complete hypotheses
+    #         for cand in new_beam[:beam_size]:
+    #             if cand[0][-1] == end_tok:
+    #                 complete.append(cand)
+    #
+    #         beam = filter(lambda x: x[0][-1] != end_tok, new_beam)
+    #         beam = beam[:beam_size]
+    #
+    #         if len(beam) == 0:
+    #             break
+    #
+    #         # Stopping criteria:
+    #         # complete contains beam_size more probable
+    #         # candidates than anything left in the beam
+    #         if sum(c[1] > beam[0][1] for c in complete) >= beam_size:
+    #             break
+    #
+    #     complete = sorted(complete, key=lambda x: x[1], reverse=True)
+    #     if len(complete) == 0:
+    #         complete = beam
+    #     hyp, score, _ = complete[0]
+    #     return hyp, score
 
 
 class Encoder(nn.Module):
@@ -250,7 +252,6 @@ class LGAttention(nn.Module):
         ct = torch.cat((embeded, ct), dim=1)
         ct = self.nn(ct)
         return ct
-
 
 # class Seq2Seq_old(nn.Module):
 #     def __init__(self, cfg):

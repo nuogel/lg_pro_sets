@@ -1,4 +1,7 @@
-from dataloader import loader_asr, loader_img
+from dataloader import loader_asr, loader_img, loader_sr
 
-DataLoaderDict = {"img": loader_img.DataLoader,
-                  "ASR": loader_asr.DataLoader}
+DataLoaderDict = {"OBD": loader_img.DataLoader,
+                  "ASR": loader_asr.DataLoader,
+                  "SR": loader_sr.DataLoader,
+
+                  }

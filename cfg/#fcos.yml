@@ -1,3 +1,5 @@
+BELONGS: OBD
+
 PATH:
   TMP_PATH: 'tmp/'
   DATA_PATH: 'datasets/kitti/'

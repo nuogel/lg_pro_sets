@@ -45,4 +45,4 @@ def parse_yaml(ymlfilename):
 
 #
 # global cfg
-# cfg = parse_yaml('../../cfg/yolov2.yml')
+# cfg = parse_yaml('../../cfg/OBD.yml')

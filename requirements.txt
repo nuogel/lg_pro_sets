@@ -1,0 +1,9 @@
+torch>=1.0
+torchvision
+tensorflow
+matplotlib
+numpy
+scipy
+scikit-image
+kears
+

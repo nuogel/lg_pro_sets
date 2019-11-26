@@ -1,0 +1,45 @@
+BELONGS: SR
+
+PATH:
+  IMG_PATH: 'E:/datasets/kitti/training/image_2/'
+  LAB_PATH: 'E:/datasets/kitti/training/image_2/'
+  TMP_PATH: 'tmp//'
+  PARAMETER_PATH: 'tmp//checkpoint//checkpoint.parameter'
+  GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
+
+TRAIN:
+  MODEL: edsr #
+  EPOCH_SIZE: 4000
+  BATCH_SIZE: 4
+  BATCH_BACKWARD_SIZE: 2   # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
+  CLASS_LENGTH: 1211  # this will change by the acturel length in 'loader_asr.py' self.cfg.TRAIN.CLASS_LENGTH
+
+  # aug
+  UPSCALE_FACTOR: 4
+  IMG_SIZE: [960, 384]  #[W,H]
+  PIXCELS_NORM: [177.0, 1.0]  # [mean, std]
+  # optimizer:
+  OPTIMIZER: 'adam'
+  LR_START: 0.001
+  STEP_LR: 20
+  LR_EXPONENTIAL_DECAY_RATE: 0.98
+  BETAS_ADAM: 0.9
+  LOSSTYPE: 'ctc' #''mse' #mse' #
+  #LR_CONTINUE: None # CONTINUE: change the parameters and continue this training
+  EPOCH_CONTINUE: None
+
+  # CUDA:
+  GPU_NUM: 0
+  # debug:
+  LOG_FORMAT: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'  # logging format
+
+
+TEST:
+  TEST_SET_RATIO: 0.1
+  # NMS:
+  SCORE_THRESH: 0.5
+  SAVE_LABELS: TRUE
+
+  #  ONE_TEST: FALSE
+  ONE_TEST: TRUE
+  ONE_NAME: ['000000']#,'000001']
