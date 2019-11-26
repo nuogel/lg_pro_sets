@@ -35,7 +35,7 @@ def main():
     is_score = False
     if is_score:
         score = Score[cfg.TRAIN.BELONGS](cfg)
-        if cfg.TRAIN.BELONGS == 'img' and cfg.TEST.SAVE_LABELS is True:
+        if cfg.TRAIN.BELONGS == obd and cfg.TEST.SAVE_LABELS is True:
             pre_labels, gt_labels = score.get_labels_txt(cfg.PATH.GENERATE_LABEL_SAVE_PATH, cfg.PATH.LAB_PATH)
             score.cal_score(pre_labels, gt_labels, from_net=False)
             score.score_out()

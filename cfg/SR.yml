@@ -16,7 +16,7 @@ TRAIN:
 
   # aug
   UPSCALE_FACTOR: 4
-  IMG_SIZE: [960, 384]
+  IMG_SIZE: [960, 384]  #[W,H]
 
   # optimizer:
   OPTIMIZER: 'adam'
@@ -39,6 +39,6 @@ TEST:
   SCORE_THRESH: 0.5
   SAVE_LABELS: TRUE
 
-  #  ONE_TEST: FALSE
-  ONE_TEST: TRUE
+  ONE_TEST: FALSE
+#  ONE_TEST: TRUE
   ONE_NAME: ['000000']#,'000001']

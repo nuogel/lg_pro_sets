@@ -16,14 +16,13 @@ class SR_SCORE:
         self.rate_batch = 0.
         self.batches = 1
 
-    def cal_score(self, pre, target):
+    def cal_score(self, pre, dataset):
+        input, target = dataset
         self.rate_batch = 0.
         print('batch NO:', self.batches)
         self.batches += 1
-        # for i in range(self.cfg.TRAIN.BATCH_SIZE):
         save_name = 'pre'
-        img_cat = torch.cat((pre, target), 1)
-        self._show_tensor_images(img_cat, time=1, save_name=save_name)
+        self._show_tensor_images(pre, time=0, save_name=save_name)
         print('saved img')
 
     def score_out(self):
@@ -32,11 +31,12 @@ class SR_SCORE:
     def _show_tensor_images(self, tensor_imgs, time=1000, save_name=None):
         for i in range(tensor_imgs.shape[0]):
             img = tensor_imgs[i]
-            img = img.mul_(255).add_(0.5).clamp_(0, 255).to('cpu', torch.uint8).numpy()
-            cv2.imshow('img', img)
-            cv2.waitKey(time)
+            img = img.mul(1.0).clamp(0, 255).round().to('cpu', torch.uint8).numpy()
+            if time:
+                cv2.imshow('img', img)
+                cv2.waitKey(time)
             if save_name:
-                cv2.imwrite(save_name + '_{}.jpg'.format(self.batches), img)
+                cv2.imwrite(save_name + '_{}.jpg'.format(self.rate_all), img)
 
     def denormalize(self, tensors):
         mean = np.array([0.485, 0.456, 0.406])

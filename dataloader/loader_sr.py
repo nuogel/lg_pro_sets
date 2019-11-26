@@ -38,7 +38,7 @@ class DataLoader:
         target_imgs = []
         for id in idx:
             img_path = os.path.join(self.cfg.PATH.IMG_PATH, id + '.png')
-            raw_img = cv2.imread(img_path, ) / 255.0
+            raw_img = cv2.imread(img_path, ) / 1.0
             target = cv2.resize(raw_img, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
             input = cv2.resize(target, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,
                                         self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR))

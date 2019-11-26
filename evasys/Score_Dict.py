@@ -3,7 +3,7 @@ from evasys.ASR_WER.wer import ASR_SCORE
 from evasys.Score_SR import SR_SCORE
 
 
-Score = {'img': F1Score,
+Score = {obd: F1Score,
          'ASR': ASR_SCORE,
          'SR': SR_SCORE
 

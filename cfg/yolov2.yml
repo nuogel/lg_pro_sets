@@ -1,4 +1,4 @@
-BELONGS: img
+BELONGS: obd
 
 PATH:
   DATA_PATH: 'E://datasets//kitti//training/'

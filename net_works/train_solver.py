@@ -39,7 +39,7 @@ class Solver:
         self.Model = ModelDict[cfg.TRAIN.MODEL](cfg)
         self.LossFun = LossDict[cfg.TRAIN.MODEL](cfg)
         self.score = Score[cfg.BELONGS](cfg)
-        self.train_batch_num = 200
+        self.train_batch_num = 300
         self.test_batch_num = 1
 
     def train(self):
@@ -62,7 +62,7 @@ class Solver:
             # saving the weights to checkpoint
             self._save_checkpoint(epoch)
             # evaluating from test data set
-            self._test_an_epoch(epoch, test_set)
+            # self._test_an_epoch(epoch, test_set)
 
     def _prepare_parameters(self):
         """
@@ -115,7 +115,7 @@ class Solver:
     def _calculate_loss(self, predict, dataset, losstype=None):
         total_loss = 0.
         losses = self.LossFun.Loss_Call(predict, dataset, losstype=losstype)
-        if self.cfg.BELONGS == 'img':
+        if self.cfg.BELONGS == 'obd':
             loss_names = ['[obj_loss]', '[noobj_loss]', '[cls_loss]', '[loc_loss]']  # obj_loss, noobj_loss, cls_loss, loc_loss
             loss_tmp = range(len(losses))
             for i in loss_tmp:
@@ -169,6 +169,7 @@ class Solver:
             # backward process
             LOGGER.info('backwarding...')
             total_loss.backward()
+            # torch.nn.utils.clip_grad_value_(self.Model.parameters(), self.cfg.TRAIN.CLIP_VALUE)
             if step % self.cfg.TRAIN.BATCH_BACKWARD_SIZE == 0:
                 optimizer.step()
                 optimizer.zero_grad()
@@ -193,7 +194,7 @@ class Solver:
             test_data = self.DataLoader.get_data_by_idx(test_set, step * batch_size, (step + 1) * batch_size)
             if test_data[0] is None: continue
             predict = self.Model.forward(test_data, eval=True)
-            if self.cfg.BELONGS in ['img', 'SR']: test_data = test_data[1]
+            if self.cfg.BELONGS in ['obd']: test_data = test_data[1]
             self.score.cal_score(predict, test_data)
         score_out, precision, recall = self.score.score_out()
         self.save_parameter.save_parameters(epoch=epoch, f1_score=score_out, precision=precision, recall=recall)
