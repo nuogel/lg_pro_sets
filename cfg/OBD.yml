@@ -1,20 +1,20 @@
-BELONGS: obd
+BELONGS: OBD
 
 PATH:
   DATA_PATH: 'E://datasets//kitti//training/'
   IMG_PATH: 'E://datasets//kitti//training//image_2//'
   LAB_PATH: 'E://datasets//kitti//training/label_2//'
-  CLASSES_PATH: 'E://LG//GitHub//lg_pro_sets//dataloader//class_names.txt'
-  TMP_PATH: 'E://LG//GitHub//lg_pro_sets//tmp//'
-  PARAMETER_PATH: 'E://LG//GitHub//lg_pro_sets//tmp//checkpoint//checkpoint_.parameter'
+  CLASSES_PATH: 'dataloader//class_names.txt'
+  TMP_PATH: 'tmp/'
+  PARAMETER_PATH: 'checkpoint//checkpoint.parameter'
   TEST_WEIGHT_PATH: ''
   GENERATE_LABEL_SAVE_PATH: 'tmp/predicted_labels/'
 
 
 TRAIN:
-  MODEL: yolov2
+  MODEL: yolov3_tiny # yolov3 # yolov3_tiny # fcos
   EPOCH_SIZE: 400
-  BATCH_SIZE: 1
+  BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
 
   # loss parameters
@@ -24,16 +24,17 @@ TRAIN:
 
   # data aug:
   DO_AUG: FALSE
+  SHOW_AUG: FALSE
   RESIZE: TRUE
   RELATIVE_LABELS: TRUE  # generate a relative labels to 0-1
   AREAR_RATIO: 0.3
   MIN_AREAR: 10 #400
-  SHOW_AUG: TRUE
   IMG_SIZE: [384, 960] # the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[672, 376]) better to be 2^n---[last_feature_size*2^5
 
   # optimizer:
   OPTIMIZER: 'adam'
   LR_START: 0.001
+  STEP_LR: 20
   LR_EXPONENTIAL_DECAY_RATE: 0.98
   BETAS_ADAM: 0.9
   LOSSTYPE: 'focalloss' #'mse' #
@@ -67,7 +68,7 @@ TRAIN:
             [ 0.0079226 , 0.0525171 ],
             [ 0.1565745 , 0.2865745 ],
             [ 0.0307940 , 0.1949102 ],] #apollo_anchors 16
-  ANCHOR_FMAP_NUM: 16
+  ANCHOR_FMAP_NUM: 3
 
 
 TEST:
@@ -84,9 +85,9 @@ TEST:
   SAVE_LABELS: TRUE
   SHOW_IMAGES: TRUE #FALSE
   SHOW_TIMES: 20000
-#  ONE_TEST: FALSE
-  ONE_TEST: TRUE
-  ONE_NAME: ['001290']# ['20190412_0132']#
+  ONE_TEST: FALSE
+  #  ONE_TEST: TRUE
+  ONE_NAME: ['000000']# ['20190412_0132']#
 
 
 

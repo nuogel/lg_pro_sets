@@ -24,6 +24,7 @@ TRAIN:
   # optimizer:
   OPTIMIZER: 'adam'
   LR_START: 0.001
+  STEP_LR: 20
   LR_EXPONENTIAL_DECAY_RATE: 0.98
   BETAS_ADAM: 0.9
   LOSSTYPE: 'ctc' #''mse' #mse' #

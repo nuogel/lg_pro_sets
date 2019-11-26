@@ -3,16 +3,14 @@ import torch
 import torch.nn as nn
 
 
-class EDSR_old(nn.Module):
+class EDSR(nn.Module):
     '''
     EDSR: xxxxx
     '''
 
     def __init__(self, cfg):
         num_channels, base_channel, upscale_factor, num_residuals = 3, 64, cfg.TRAIN.UPSCALE_FACTOR, 4
-        super(EDSR_old, self).__init__()
-        self.sub_mean = MeanShift()
-        self.add_mean = MeanShift(sign=1)
+        super(EDSR, self).__init__()
         self.input_conv = nn.Conv2d(num_channels, base_channel, kernel_size=3, stride=1, padding=1)
 
         resnet_blocks = []
@@ -30,7 +28,10 @@ class EDSR_old(nn.Module):
         self.output_conv = nn.Conv2d(base_channel, num_channels, kernel_size=3, stride=1, padding=1)
 
     def forward(self, datasets, **args):
-        x, y = datasets
+        if isinstance(datasets, tuple):
+            x, y = datasets
+        else:
+            x = datasets
         x = x.permute(0, 3, 1, 2)
         x = self.input_conv(x)
         residual = x
@@ -41,7 +42,6 @@ class EDSR_old(nn.Module):
         x = self.output_conv(x)
         x = x.permute(0, 2, 3, 1)
         return x
-
 
 
 class ResnetBlock(nn.Module):
@@ -72,21 +72,9 @@ class PixelShuffleBlock(nn.Module):
         return x
 
 
-
-
-
-import torch.nn as nn
-import torch
-import math
-
-url = {
-    'r16f64x2': 'https://cv.snu.ac.kr/research/EDSR/models/edsr_baseline_x2-1bc95232.pt',
-    'r16f64x3': 'https://cv.snu.ac.kr/research/EDSR/models/edsr_baseline_x3-abf2a44e.pt',
-    'r16f64x4': 'https://cv.snu.ac.kr/research/EDSR/models/edsr_baseline_x4-6b446fab.pt',
-    'r32f256x2': 'https://cv.snu.ac.kr/research/EDSR/models/edsr_x2-0edfb8a3.pt',
-    'r32f256x3': 'https://cv.snu.ac.kr/research/EDSR/models/edsr_x3-ea3ef2c6.pt',
-    'r32f256x4': 'https://cv.snu.ac.kr/research/EDSR/models/edsr_x4-4f62e9ef.pt'
-}
+'''
+another way to implement the EDSR.
+'''
 
 
 def default_conv(in_channels, out_channels, kernel_size, bias=True):
@@ -175,10 +163,9 @@ class Upsampler(nn.Sequential):
         super(Upsampler, self).__init__(*m)
 
 
-
-class EDSR(nn.Module):
+class EDSR_old(nn.Module):
     def __init__(self, args):
-        super(EDSR, self).__init__()
+        super(EDSR_old, self).__init__()
 
         n_resblocks = 16
         n_feats = 64
@@ -188,11 +175,7 @@ class EDSR(nn.Module):
         args.res_scale = 1
         args.rgb_range = 255
         act = nn.ReLU(True)
-        url_name = 'r{}f{}x{}'.format(n_resblocks, n_feats, scale)
-        if url_name in url:
-            self.url = url[url_name]
-        else:
-            self.url = None
+
         self.sub_mean = MeanShift(args.rgb_range)
         self.add_mean = MeanShift(args.rgb_range, sign=1)
 
@@ -218,7 +201,10 @@ class EDSR(nn.Module):
         self.tail = nn.Sequential(*m_tail)
 
     def forward(self, datasets, **args):
-        x, y = datasets
+        if isinstance(datasets, tuple):
+            x, lab = datasets
+        else:
+            x = datasets
         x = x.permute(0, 3, 1, 2)
         # x = self.sub_mean(x)
         x = self.head(x)
@@ -231,22 +217,3 @@ class EDSR(nn.Module):
         x = x.permute(0, 2, 3, 1)
 
         return x
-
-    # def load_state_dict(self, state_dict, strict=True):
-    #     own_state = self.state_dict()
-    #     for name, param in state_dict.items():
-    #         if name in own_state:
-    #             if isinstance(param, nn.Parameter):
-    #                 param = param.data
-    #             try:
-    #                 own_state[name].copy_(param)
-    #             except Exception:
-    #                 if name.find('tail') == -1:
-    #                     raise RuntimeError('While copying the parameter named {}, '
-    #                                        'whose dimensions in the model are {} and '
-    #                                        'whose dimensions in the checkpoint are {}.'
-    #                                        .format(name, own_state[name].size(), param.size()))
-    #         elif strict:
-    #             if name.find('tail') == -1:
-    #                 raise KeyError('unexpected key "{}" in state_dict'
-    #                                .format(name))

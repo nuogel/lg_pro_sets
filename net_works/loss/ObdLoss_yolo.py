@@ -1,4 +1,4 @@
-"""Loss calculation based on yolo2."""
+"""Loss calculation based on yolo."""
 import torch
 import numpy as np
 from util.util_iou import iou_xywh

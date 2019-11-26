@@ -14,7 +14,10 @@ import glob
 from util.util_parse_prediction import ParsePredict
 from util.util_data_aug import Dataaug
 from util.util_show_img import _show_img
+from util.util_is_use_cuda import _is_use_cuda
 from evasys.F1Score.f1score import F1Score
+from util.util_parse_SR_img import parse_Tensor_img
+from evasys.Score_Dict import Score
 
 
 class Test_Base(object):
@@ -22,8 +25,14 @@ class Test_Base(object):
         self.cfg = cfg
         self.args = args
         self.Model = ModelDict[cfg.TRAIN.MODEL](cfg)
-        self.dataaug = Dataaug(cfg)
-        self.parsepredict = ParsePredict(cfg)
+        if self.args.checkpoint:
+            self.model_path = self.args.checkpoint
+        else:
+            self.model_path = self.cfg.PATH.TEST_WEIGHT_PATH
+        self.Model.load_state_dict(torch.load(self.model_path))
+        if _is_use_cuda():
+            self.Model = self.Model.cuda()
+        self.Model.eval()
 
     def test_backbone(self, test_path):
         ...
@@ -50,32 +59,36 @@ class Test_Base(object):
 
             elif isinstance(list, file_s):
                 FILES = file_s
+            else:
+                FILES = None
 
         _len = len(FILES)
-        for i, wav_path in enumerate(FILES):
-            print('testing [{}/{}] {}'.format(i + 1, _len, wav_path))
-            self.test_backbone(wav_path)
+        for i, file_path in enumerate(FILES):
+            print('testing [{}/{}] {}'.format(i + 1, _len, file_path))
+            self.test_backbone(file_path)
+
+        is_score = False
+        if is_score:
+            score = Score[self.cfg.TRAIN.BELONGS](self.cfg)
+            if self.cfg.TRAIN.BELONGS == 'OBD' and self.cfg.TEST.SAVE_LABELS is True:
+                pre_labels, gt_labels = score.get_labels_txt(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, self.cfg.PATH.LAB_PATH)
+                score.cal_score(pre_labels, gt_labels, from_net=False)
+                return score.score_out()
+            elif self.cfg.TRAIN.BELONGS is 'ASR':
+                ...
 
 
-class Test_img(Test_Base):
+class Test_OBD(Test_Base):
     def __init__(self, cfg, args):
-        super(Test_img, self).__init__()
-        self.cfg = cfg
-        self.args = args
+        super(Test_OBD, self).__init__(cfg, args)
+        self.dataaug = Dataaug(cfg)
+        self.parsepredict = ParsePredict(cfg)
         self.DataLoader = DataLoaderDict[cfg.TRAIN.BELONGS](cfg)
-        self.Model = ModelDict[cfg.TRAIN.MODEL](cfg)
 
     def test_backbone(self, test_picture_path):
         """Test."""
         # prepare paramertas
-        if self.args.checkpoint:
-            model_path = self.args.checkpoint
-        else:
-            model_path = self.cfg.PATH.TEST_WEIGHT_PATH
 
-        self.Model.load_state_dict(torch.load(model_path))
-        self.Model = self.Model.cuda()
-        self.Model.eval()
         img_raw = cv2.imread(test_picture_path)
         if img_raw is None:
             print('ERROR：no such a image')
@@ -121,25 +134,14 @@ class Test_img(Test_Base):
         print('f1_sore: {}\nprec: {}\nrec: {}'.format(f1_sore, prec, rec))
 
 
-class Test_asr(Test_Base):
+class Test_ASR(Test_Base):
     def __init__(self, cfg, args):
-        super(Test_asr, self).__init__()
-        self.cfg = cfg
-        self.args = args
+        super(Test_ASR, self).__init__(cfg, args)
         self.DataLoader = DataLoaderDict[cfg.TRAIN.BELONGS](cfg)
-        self.Model = ModelDict[cfg.TRAIN.MODEL](cfg)
 
     def test_backbone(self, wav_path):
         """Test."""
         # prepare paramertas
-        if self.args.checkpoint:
-            model_path = self.args.checkpoint
-        else:
-            model_path = self.cfg.PATH.TEST_WEIGHT_PATH
-
-        self.Model.load_state_dict(torch.load(model_path))
-        self.Model = self.Model.cuda()
-        self.Model.eval()
         self.cfg.TRAIN.BATCH_SIZE = 1
         test_data = self.DataLoader.get_one_data_for_test(wav_path)
         predict = self.Model.forward(test_data, eval=True)
@@ -147,5 +149,29 @@ class Test_asr(Test_Base):
             print('pre:', k, self.DataLoader._number2pinying(v[:-1]))
 
 
-Test = {obd: Test_img,
-        'ASR': Test_asr}
+class Test_SR(Test_Base):
+    def __init__(self, cfg, args):
+        super(Test_SR, self).__init__(cfg, args)
+
+    def test_backbone(self, img_path):
+        """Test."""
+        # prepare paramertas
+        test_img = (cv2.imread(img_path) - 177.0) / 1.0
+        test_img = torch.from_numpy(np.asarray(test_img)).unsqueeze(0).type(torch.FloatTensor)
+        if _is_use_cuda():
+            test_img = test_img.cuda()
+        self.cfg.TRAIN.BATCH_SIZE = 1
+        predict = self.Model.forward(test_img, eval=True)
+        if self.cfg.TEST.SAVE_LABELS == True:
+            if not os.path.isdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH):
+                os.mkdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH)
+            save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, os.path.basename(img_path))
+        else:
+            save_path = None
+        parse_Tensor_img(predict, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=save_path, show_time=10000)
+
+
+Test = {'OBD': Test_OBD,
+        'ASR': Test_ASR,
+        'SR': Test_SR,
+        }

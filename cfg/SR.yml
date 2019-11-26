@@ -17,14 +17,15 @@ TRAIN:
   # aug
   UPSCALE_FACTOR: 4
   IMG_SIZE: [960, 384]  #[W,H]
-
+  PIXCELS_NORM: [177.0, 1.0]  # [mean, std]
   # optimizer:
   OPTIMIZER: 'adam'
   LR_START: 0.001
+  STEP_LR: 20
   LR_EXPONENTIAL_DECAY_RATE: 0.98
   BETAS_ADAM: 0.9
   LOSSTYPE: 'ctc' #''mse' #mse' #
-  LR_CONTINUE: None # CONTINUE: change the parameters and continue this training
+  #LR_CONTINUE: None # CONTINUE: change the parameters and continue this training
   EPOCH_CONTINUE: None
 
   # CUDA:
@@ -39,6 +40,6 @@ TEST:
   SCORE_THRESH: 0.5
   SAVE_LABELS: TRUE
 
-  ONE_TEST: FALSE
-#  ONE_TEST: TRUE
+  #  ONE_TEST: FALSE
+  ONE_TEST: TRUE
   ONE_NAME: ['000000']#,'000001']

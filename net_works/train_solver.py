@@ -39,7 +39,7 @@ class Solver:
         self.Model = ModelDict[cfg.TRAIN.MODEL](cfg)
         self.LossFun = LossDict[cfg.TRAIN.MODEL](cfg)
         self.score = Score[cfg.BELONGS](cfg)
-        self.train_batch_num = 300
+        self.train_batch_num = 200
         self.test_batch_num = 1
 
     def train(self):
@@ -62,7 +62,7 @@ class Solver:
             # saving the weights to checkpoint
             self._save_checkpoint(epoch)
             # evaluating from test data set
-            # self._test_an_epoch(epoch, test_set)
+            self._test_an_epoch(epoch, test_set)
 
     def _prepare_parameters(self):
         """
@@ -91,7 +91,7 @@ class Solver:
             # start a new train, delete the exist parameters
             self.save_parameter.clear_parameters()
             epoch_last = 0
-            learning_rate = self.args.lr if self.args.lr else self.cfg.TRAIN.LR_START
+            learning_rate = self.args.lr  # if self.args.lr else self.cfg.TRAIN.LR_CONTINUE
             # generate a new data set
             train_set, test_set = _get_data_idx_stores(lab_dir=self.cfg.PATH.LAB_PATH, idx_stores_dir=idx_stores_dir,
                                                        test_train_ratio=self.cfg.TEST.TEST_SET_RATIO, cfg=self.cfg, )
@@ -109,13 +109,13 @@ class Solver:
         else:
             LOGGER.error('no optimizer...')
         # scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=self.cfg.LR_EXPONENTIAL_DECAY_RATE)
-        scheduler = lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
+        scheduler = lr_scheduler.StepLR(optimizer, step_size=self.cfg.TRAIN.STEP_LR, gamma=0.1)
         return optimizer, scheduler
 
     def _calculate_loss(self, predict, dataset, losstype=None):
         total_loss = 0.
         losses = self.LossFun.Loss_Call(predict, dataset, losstype=losstype)
-        if self.cfg.BELONGS == 'obd':
+        if self.cfg.BELONGS == 'OBD':
             loss_names = ['[obj_loss]', '[noobj_loss]', '[cls_loss]', '[loc_loss]']  # obj_loss, noobj_loss, cls_loss, loc_loss
             loss_tmp = range(len(losses))
             for i in loss_tmp:
@@ -134,8 +134,10 @@ class Solver:
 
     def _save_checkpoint(self, epoch):
         checkpoint_path = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoint', '{}.pkl'.format(epoch))
+        checkpoint_now_path = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoint', 'now.pkl')
         os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
         torch.save(self.Model.state_dict(), checkpoint_path)
+        torch.save(self.Model.state_dict(), checkpoint_now_path)
         LOGGER.info('Epoch: %s, checkpoint is saved to %s', epoch, checkpoint_path)
 
     def _train_an_epoch(self, epoch, train_set, optimizer, scheduler):
@@ -194,7 +196,7 @@ class Solver:
             test_data = self.DataLoader.get_data_by_idx(test_set, step * batch_size, (step + 1) * batch_size)
             if test_data[0] is None: continue
             predict = self.Model.forward(test_data, eval=True)
-            if self.cfg.BELONGS in ['obd']: test_data = test_data[1]
+            if self.cfg.BELONGS in ['OBD']: test_data = test_data[1]
             self.score.cal_score(predict, test_data)
         score_out, precision, recall = self.score.score_out()
         self.save_parameter.save_parameters(epoch=epoch, f1_score=score_out, precision=precision, recall=recall)

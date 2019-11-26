@@ -1,4 +1,4 @@
-BELONGS: obd
+BELONGS: OBD
 
 PATH:
   DATA_PATH: 'E:/datasets/Noise_Images/NOISE_kitti/level_5/'
