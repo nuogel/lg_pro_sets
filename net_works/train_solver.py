@@ -31,8 +31,8 @@ class Solver:
         self.cfg = cfg
         self.args = args
         self.one_test = cfg.TEST.ONE_TEST
-        self.one_name = cfg.TEST.ONE_NAME
         if self.one_test:
+            self.one_name = cfg.TEST.ONE_NAME
             self.cfg.TRAIN.BATCH_SIZE = len(self.one_name)
         self.DataLoader = DataLoaderDict[cfg.BELONGS](cfg)
         self.save_parameter = TrainParame(cfg)
