@@ -44,6 +44,8 @@ class Dataaug:
             file_open = open(path, 'r')
             for line in file_open.readlines():
                 tmps = line.strip().split(' ')
+                if tmps[0] not in self.class_name:
+                    continue
                 if self.class_name[tmps[0]] in pass_obj:
                     continue
                 box_x1 = float(tmps[4])
@@ -56,6 +58,8 @@ class Dataaug:
             root = tree.getroot()
             for obj in root.findall('object'):
                 cls_name = obj.find('name').text
+                if cls_name not in self.class_name:
+                    continue
                 if self.class_name[cls_name] in pass_obj:
                     continue
                 bbox = obj.find('bndbox')

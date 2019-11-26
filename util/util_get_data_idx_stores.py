@@ -19,6 +19,8 @@ def _get_data_idx_stores(lab_dir, idx_stores_dir, test_train_ratio, cfg):
                     # print('checking file %s about:%s' % (label_file, cfg.TRAIN.CLASSES))
                     for line in f.readlines():
                         tmp = line.split(' ')
+                        if tmp[0] not in class_map:
+                            continue
                         if class_map[tmp[0]] in cfg.TRAIN.CLASSES:
                             label_files_list.append(label_file)
                             break
@@ -27,6 +29,8 @@ def _get_data_idx_stores(lab_dir, idx_stores_dir, test_train_ratio, cfg):
                     root = tree.getroot()
                     for object in root.findall('object'):
                         name = object.find('name').text
+                        if name not in class_map:
+                            continue
                         if class_map[name] in cfg.TRAIN.CLASSES:
                             label_files_list.append(label_file)
                             break
