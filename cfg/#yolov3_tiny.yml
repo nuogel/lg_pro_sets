@@ -54,7 +54,7 @@ TRAIN:
              [ 0.1947115 , 0.1971154 ],
              [ 0.3245192 , 0.4062500 ],
              [ 0.8269231 , 0.7668269 ],]  #yolo_anchors 6
-  ANCHOR_FMAP_NUM: 3
+  FMAP_ANCHOR_NUM: 3
 
 TEST:
   TEST_SET_RATIO: 0.1

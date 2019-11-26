@@ -9,7 +9,7 @@ class ParsePredict:
     def __init__(self, cfg):
         self.cfg = cfg
         self.anchors = torch.Tensor(cfg.TRAIN.ANCHORS)
-        self.anc_num = cfg.TRAIN.ANCHOR_FMAP_NUM
+        self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
         self.cls_num = len(cfg.TRAIN.CLASSES)
 
     def _parse_predict(self, f_maps):

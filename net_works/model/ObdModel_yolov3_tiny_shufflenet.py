@@ -102,8 +102,9 @@ class BackBone(nn.Module):
 class YoloV3_Tiny_ShuffleNet(nn.Module):
     def __init__(self, cfg):
         super(YoloV3_Tiny_ShuffleNet, self).__init__()
-        anc_num, cls_num = cfg.TRAIN.ANCHOR_FMAP_NUM, len(cfg.TRAIN.CLASSES)
-        out_ch = anc_num * (1 + 4 + cls_num)
+        self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
+        self.cls_num = len(cfg.TRAIN.CLASSES)
+        out_ch = self.anc_num * (1 + 4 + self.cls_num)
         self.ch_1 = [512, 256, 512, out_ch]
         self.ch_2 = [256, 128, 384, 256, out_ch]
 
