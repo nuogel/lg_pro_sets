@@ -98,7 +98,7 @@ class Solver:
         LOGGER.info('the train set is :{}, ant the test set is :{}'.format(len(train_set), len(test_set)))
         print(train_set[:10], test_set[:10])
         # _print_model_parm_nums(self.Model.cuda(), self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1])
-        return learning_rate, epoch_last, train_set, test_set
+        return learning_rate, epoch_last, train_set, test_set[:1000]
 
     def _get_optimizer(self, learning_rate, optimizer='adam'):
         if optimizer == 'adam' or optimizer == 'Adam':

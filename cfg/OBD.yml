@@ -1,24 +1,26 @@
 BELONGS: OBD
 
 PATH:
-  DATA_PATH: 'E://datasets//kitti//training/'
-  IMG_PATH: 'E://datasets//kitti//training//image_2//'
-  LAB_PATH: 'E://datasets//kitti//training/label_2//'
+#  DATA_PATH: 'E:/datasets/evasys'
+#  IMG_PATH: 'E:/datasets/evasys/images//'
+#  LAB_PATH: 'E:/datasets/evasys/labels//'
+  DATA_PATH: 'F:\datasets\kitti\training'
+  IMG_PATH: 'F:\datasets\kitti\training\images//'
+  LAB_PATH: 'F:\datasets\kitti\training/labels//'
   CLASSES_PATH: 'dataloader//class_names.txt'
-  TMP_PATH: 'tmp/'
-  PARAMETER_PATH: 'checkpoint//checkpoint.parameter'
+  TMP_PATH: 'tmp//'
+  PARAMETER_PATH: 'tmp//checkpoint//checkpoint.parameter'
   TEST_WEIGHT_PATH: ''
   GENERATE_LABEL_SAVE_PATH: 'tmp/predicted_labels/'
-
 
 TRAIN:
   MODEL: yolov3_tiny # yolov3 # yolov3_tiny # fcos
   EPOCH_SIZE: 400
-  BATCH_SIZE: 4
+  BATCH_SIZE: 16
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
 
   # loss parameters
-  CLASSES: ['Car', 'Cyclist', 'Pedestrian', 'Others']
+  CLASSES: ['Car', 'Others']
   STRIDES: [8, 16, 32, 64, 128]
   MILABSIZE: [0, 64, 128, 256, 512, 10000000] # this can be replaced by max(size)/16*2^n-->n [0, 1, 2, 3, 4, INF]
 
@@ -29,12 +31,12 @@ TRAIN:
   RELATIVE_LABELS: TRUE  # generate a relative labels to 0-1
   AREAR_RATIO: 0.3
   MIN_AREAR: 10 #400
-  IMG_SIZE: [384, 960] # the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[672, 376]) better to be 2^n---[last_feature_size*2^5
+  IMG_SIZE: [512, 512] # the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[672, 376]) better to be 2^n---[last_feature_size*2^5
 
   # optimizer:
   OPTIMIZER: 'adam'
   LR_START: 0.001
-  STEP_LR: 20
+  STEP_LR: 10
   LR_EXPONENTIAL_DECAY_RATE: 0.98
   BETAS_ADAM: 0.9
   LOSSTYPE: 'focalloss' #'mse' #
@@ -43,7 +45,7 @@ TRAIN:
   MULTI_SIZE_RATIO: [1]
 
   # NMS:
-  SCORE_THRESH: 0.3
+  SCORE_THRESH: 0.7
   IOU_THRESH: 0.5
 
   # CUDA:
@@ -52,22 +54,28 @@ TRAIN:
   # debug:
   LOG_FORMAT: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'  # logging format
 
-  ANCHORS: [[ 0.0772422 , 0.0632077 ],
-            [ 0.0332185 , 0.0699152 ],
-            [ 0.3039470 , 0.7423017 ],
-            [ 0.0491545 , 0.1041431 ],
-            [ 0.2348479 , 0.0989017 ],
-            [ 0.0193353 , 0.1177316 ],
-            [ 0.0864546 , 0.1502465 ],
-            [ 0.0378630 , 0.0336919 ],
-            [ 0.0057380 , 0.0268776 ],
-            [ 0.0211715 , 0.0501949 ],
-            [ 0.0141959 , 0.0302731 ],
-            [ 0.0120658 , 0.0846409 ],
-            [ 0.0639976 , 0.3795098 ],
-            [ 0.0079226 , 0.0525171 ],
-            [ 0.1565745 , 0.2865745 ],
-            [ 0.0307940 , 0.1949102 ],] #apollo_anchors 16
+#  ANCHORS: [[ 0.0772422 , 0.0632077 ],
+#            [ 0.0332185 , 0.0699152 ],
+#            [ 0.3039470 , 0.7423017 ],
+#            [ 0.0491545 , 0.1041431 ],
+#            [ 0.2348479 , 0.0989017 ],
+#            [ 0.0193353 , 0.1177316 ],
+#            [ 0.0864546 , 0.1502465 ],
+#            [ 0.0378630 , 0.0336919 ],
+#            [ 0.0057380 , 0.0268776 ],
+#            [ 0.0211715 , 0.0501949 ],
+#            [ 0.0141959 , 0.0302731 ],
+#            [ 0.0120658 , 0.0846409 ],
+#            [ 0.0639976 , 0.3795098 ],
+#            [ 0.0079226 , 0.0525171 ],
+#            [ 0.1565745 , 0.2865745 ],
+#            [ 0.0307940 , 0.1949102 ],] #apollo_anchors 16
+  ANCHORS: [[ 0.0240385 , 0.0336538 ],
+             [ 0.0552885 , 0.0649038 ],
+             [ 0.0889423 , 0.1394231 ],
+             [ 0.1947115 , 0.1971154 ],
+             [ 0.3245192 , 0.4062500 ],
+             [ 0.8269231 , 0.7668269 ],]
   ANCHOR_FMAP_NUM: 3
 
 
@@ -77,7 +85,7 @@ TEST:
   # NMS:
   NMS_TYPE: 'SOFT_NMS'# 'NMS'#
   SOFNMS_THETA: 0.5
-  SCORE_THRESH: 0.3
+  SCORE_THRESH: 0.6
   IOU_THRESH: 0.5
 
   DO_AUG: FALSE
@@ -86,8 +94,8 @@ TEST:
   SHOW_IMAGES: TRUE #FALSE
   SHOW_TIMES: 20000
   ONE_TEST: FALSE
-  #  ONE_TEST: TRUE
-  ONE_NAME: ['000000']# ['20190412_0132']#
+#  ONE_TEST: TRUE
+  ONE_NAME: ['COCO_train2014_000000280839']# ['20190412_0132']#
 
 
 

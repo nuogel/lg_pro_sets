@@ -1,10 +1,6 @@
 Car,Car
 Van,Car
 Truck,Car
-Pedestrian,Pedestrian
-Person_sitting,Pedestrian
-Cyclist,Cyclist
 Tram,Car
 Misc,Car
-DontCare
-Dontcare
+DontCare,Others

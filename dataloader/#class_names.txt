@@ -19,3 +19,12 @@ Cyclist,Cyclist
 Tram,Tram
 Misc,Misc
 DontCare,DontCare
+
+Person,Person
+Pedestrian,Person
+Man,Person
+Woman,Person
+Boy,Person
+Girl,Person
+Cyclist,Person
+Person_sitting,Person

@@ -28,7 +28,7 @@ class Dataaug:
         self.area_ratio = cfg.TRAIN.AREAR_RATIO
         self.min_area = cfg.TRAIN.MIN_AREAR
         self.class_name = _get_class_names(cfg.PATH.CLASSES_PATH)
-        self.print_path = True
+        self.print_path = False
 
     def _read_line(self, path, pass_obj=['DontCare', ]):
         """
@@ -44,6 +44,8 @@ class Dataaug:
             file_open = open(path, 'r')
             for line in file_open.readlines():
                 tmps = line.strip().split(' ')
+                if tmps[0] not in self.class_name:
+                    continue
                 if self.class_name[tmps[0]] in pass_obj:
                     continue
                 box_x1 = float(tmps[4])
@@ -56,6 +58,8 @@ class Dataaug:
             root = tree.getroot()
             for obj in root.findall('object'):
                 cls_name = obj.find('name').text
+                if cls_name not in self.class_name:
+                    continue
                 if self.class_name[cls_name] in pass_obj:
                     continue
                 bbox = obj.find('bndbox')
