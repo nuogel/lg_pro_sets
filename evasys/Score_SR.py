@@ -26,19 +26,11 @@ class SR_SCORE:
         for batch_i in range(predict.shape[0]):
             self.rate_batch += self.PSNR(predict[batch_i], target[batch_i])
         self.rate_all += self.rate_batch / predict.shape[0]
-        # parse_Tensor_img(predict, save_path=None, show_time=10000)
+        # parse_Tensor_img(predict, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=None, show_time=10000)
 
     def score_out(self):
         score = self.rate_all / self.batches
         return score, None, None
-
-    def denormalize(self, tensors):
-        mean = np.array([0.485, 0.456, 0.406])
-        std = np.array([0.229, 0.224, 0.225])
-        """ Denormalizes image tensors using mean and std """
-        for c in range(3):
-            tensors[:, c].mul_(std[c]).add_(mean[c])
-        return torch.clamp(tensors, 0, 255)
 
     def PSNR(self, pred, gt, shave_border=0):
         height, width = pred.shape[:2]

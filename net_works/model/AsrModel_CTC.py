@@ -4,7 +4,6 @@ from collections import OrderedDict
 from util.util_ctc_decoder import beam_decode
 from keras import backend as K
 import numpy as np
-import tensorflow as tf
 
 '''
 -》只用CNN，若去掉 layers.append(('batchnorm', nn.BatchNorm2d(out_ch))) 梯度很容易爆炸；加上后收敛很快。
