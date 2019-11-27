@@ -67,8 +67,11 @@ class YoloV3_Tiny(nn.Module):
         self.bb2_3 = make_layer(self.ch_2[-2], self.ch_2[-1], ksize=1, max_pool=0, last_layer=True)
 
     def forward(self, train_data):
-        input, lab = train_data
-        input = input.permute([0, 3, 1, 2])
+        if isinstance(train_data, tuple):
+            x, lab = train_data
+        else:
+            x = train_data
+        input = x.permute([0, 3, 1, 2])
 
         f1, f2 = self.backbone(input)  # jump2
         net1 = self.bb1_1(f1)
