@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 def _get_data_idx_stores(lab_dir, idx_stores_dir, test_train_ratio, cfg):
     label_files = glob.glob('{}/*'.format(lab_dir))
     label_files_list = []
-    is_name_in_dict = True  # if the image has this class in it ?
+    is_name_in_dict = False  # if the image has this class in it ?
     if cfg.BELONGS == 'OBD':
         if is_name_in_dict:
             class_map = _get_class_names(cfg.PATH.CLASSES_PATH)
@@ -18,10 +18,10 @@ def _get_data_idx_stores(lab_dir, idx_stores_dir, test_train_ratio, cfg):
                     f = open(label_file, 'r')
                     # print('checking file %s about:%s' % (label_file, cfg.TRAIN.CLASSES))
                     for line in f.readlines():
-                        name = line.split(' ')
-                        if name[0] not in class_map:
+                        tmp = line.split(' ')
+                        if tmp[0] not in class_map:
                             continue
-                        if class_map[name[0]] in cfg.TRAIN.CLASSES:
+                        if class_map[tmp[0]] in cfg.TRAIN.CLASSES:
                             label_files_list.append(label_file)
                             break
                 elif os.path.basename(label_file).split('.')[-1] == 'xml':

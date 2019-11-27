@@ -50,8 +50,9 @@ class BackBone(nn.Module):
 class YoloV3_Tiny(nn.Module):
     def __init__(self, cfg):
         super(YoloV3_Tiny, self).__init__()
-        anc_num, cls_num = cfg.TRAIN.ANCHOR_FMAP_NUM, len(cfg.TRAIN.CLASSES)
-        out_ch = anc_num * (1 + 4 + cls_num)
+        self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
+        self.cls_num = len(cfg.TRAIN.CLASSES)
+        out_ch = self.anc_num * (1 + 4 + self.cls_num)
         self.ch_1 = [1024, 256, 512, out_ch]
         self.ch_2 = [256, 128, 384, 256, out_ch]
 
@@ -70,9 +71,9 @@ class YoloV3_Tiny(nn.Module):
             x, lab = train_data
         else:
             x = train_data
-        x = x.permute([0, 3, 1, 2])
+        input = x.permute([0, 3, 1, 2])
 
-        f1, f2 = self.backbone(x)  # jump2
+        f1, f2 = self.backbone(input)  # jump2
         net1 = self.bb1_1(f1)
         net2 = net1  # jump1
 

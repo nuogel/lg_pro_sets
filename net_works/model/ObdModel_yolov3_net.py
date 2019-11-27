@@ -91,13 +91,14 @@ class YoloV3(nn.Module):
 
     def __init__(self, cfg):
         super(YoloV3, self).__init__()
-        anc_num, cls_num = cfg.TRAIN.ANCHOR_FMAP_NUM, len(cfg.TRAIN.CLASSES)
+        self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
+        self.cls_num = len(cfg.TRAIN.CLASSES)
+        self.final_out = self.anc_num * (1 + 4 + self.cls_num)
         self.layers_out_filters = [64, 128, 256, 512, 1024]
         self.backbone = darknet_21()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
         # self.final_in = 512
-        self.final_out = anc_num * (5 + cls_num)
         self.cls_pred_prob = torch.nn.Softmax(-1)
         self.obj_pred = torch.nn.Sigmoid()
 

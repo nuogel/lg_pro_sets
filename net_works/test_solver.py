@@ -156,8 +156,8 @@ class Test_SR(Test_Base):
     def test_backbone(self, img_path):
         """Test."""
         # prepare paramertas
-        test_img = (cv2.imread(img_path) - 177.0) / 1.0
-        test_img = torch.from_numpy(np.asarray(test_img)).unsqueeze(0).type(torch.FloatTensor)
+        test_img = cv2.imread(img_path)
+        test_img = torch.from_numpy(np.asarray((test_img - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).unsqueeze(0).type(torch.FloatTensor)
         if _is_use_cuda():
             test_img = test_img.cuda()
         self.cfg.TRAIN.BATCH_SIZE = 1
@@ -165,7 +165,7 @@ class Test_SR(Test_Base):
         if self.cfg.TEST.SAVE_LABELS == True:
             if not os.path.isdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH):
                 os.mkdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH)
-            save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, os.path.basename(img_path))
+            save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, os.path.basename(img_path).split('.')[0]+'_X4.jpg')
         else:
             save_path = None
         parse_Tensor_img(predict, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=save_path, show_time=10000)

@@ -31,10 +31,9 @@ class DataLoader:
         '''
         data = (None, None)
         idx = idx_store[index_from: index_to]
+        if self.one_test:
+            idx = self.one_name
         if idx:
-            if self.one_test:
-                idx = self.one_name
-
             wav_length = []
             lab_length = []
             wav_list = []

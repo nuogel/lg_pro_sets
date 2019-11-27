@@ -38,6 +38,8 @@ class F1Score:
             label = []
             for line in f_path.readlines():
                 tmp = line.split()
+                if tmp[0] not in self.cls_name:
+                    continue
                 if self.cls_name[tmp[0]] == 'DontCare':
                     continue
                 if not gt:

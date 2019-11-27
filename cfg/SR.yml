@@ -1,8 +1,8 @@
 BELONGS: SR
 
 PATH:
-  IMG_PATH: 'E:/datasets/kitti/training/image_2/'
-  LAB_PATH: 'E:/datasets/kitti/training/image_2/'
+  IMG_PATH: 'dataset/'
+  LAB_PATH: 'dataset/'
   TMP_PATH: 'tmp//'
   PARAMETER_PATH: 'tmp//checkpoint//checkpoint.parameter'
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
@@ -16,8 +16,8 @@ TRAIN:
 
   # aug
   UPSCALE_FACTOR: 4
-  IMG_SIZE: [960, 384]  #[W,H]
-  PIXCELS_NORM: [177.0, 1.0]  # [mean, std]
+  IMG_SIZE: [512, 512]  #[W,H]
+  PIXCELS_NORM: [177.0, 1]  # [mean, std]
   # optimizer:
   OPTIMIZER: 'adam'
   LR_START: 0.001
@@ -42,4 +42,4 @@ TEST:
 
   #  ONE_TEST: FALSE
   ONE_TEST: TRUE
-  ONE_NAME: ['000000']#,'000001']
+  ONE_NAME: ['0853_L']#,'000001']

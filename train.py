@@ -14,7 +14,7 @@ from cfg.yml_parse import parse_yaml
 
 def _parse_arguments():
     parser = ArgumentParser()
-    parser.add_argument('--yml_path', default='cfg/OBD.yml'#'cfg/SR.yml'  #''cfg/ASR.yml'  #
+    parser.add_argument('--yml_path', default='cfg/OBD.yml'  # 'cfg/SR.yml'  #''cfg/ASR.yml'  #
                         , type=str, help='yml_path')
     parser.add_argument('--checkpoint', default=None  #''tmp/checkpoint/2.pkl'#
                         , help='Path to the checkpoint to be loaded to the model')

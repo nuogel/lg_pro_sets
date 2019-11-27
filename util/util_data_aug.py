@@ -28,7 +28,7 @@ class Dataaug:
         self.area_ratio = cfg.TRAIN.AREAR_RATIO
         self.min_area = cfg.TRAIN.MIN_AREAR
         self.class_name = _get_class_names(cfg.PATH.CLASSES_PATH)
-        self.print_path = False
+        self.print_path = self.cfg.TRAIN.SHOW_TRAIN_NAMES
 
     def _read_line(self, path, pass_obj=['DontCare', ]):
         """
