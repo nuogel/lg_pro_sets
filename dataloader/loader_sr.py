@@ -22,9 +22,9 @@ class DataLoader:
         '''
         data = (None, None)
         idx = idx_store[index_from: index_to]
+        if self.one_test:
+            idx = self.one_name
         if idx:
-            if self.one_test:
-                idx = self.one_name
             imgs, labels = self._prepare_data(idx)
             if _is_use_cuda(self.cfg.TRAIN.GPU_NUM):
                 imgs = imgs.cuda(self.cfg.TRAIN.GPU_NUM)
@@ -38,12 +38,12 @@ class DataLoader:
         target_imgs = []
         for id in idx:
             img_path = os.path.join(self.cfg.PATH.IMG_PATH, id + '.png')
-            raw_img = (cv2.imread(img_path) - self.cfg.TRAIN.PIXCELS_NORM[0]) / self.cfg.TRAIN.PIXCELS_NORM[1]
+            raw_img = cv2.imread(img_path)
             target = cv2.resize(raw_img, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
             input = cv2.resize(target, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,
                                         self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR))
-            input = torch.from_numpy(np.asarray(input)).type(torch.FloatTensor)
-            target = torch.from_numpy(np.asarray(target)).type(torch.FloatTensor)
+            input = torch.from_numpy(np.asarray((input - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(torch.FloatTensor)
+            target = torch.from_numpy(np.asarray((target - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(torch.FloatTensor)
             input_imgs.append(input)
             target_imgs.append(target)
 

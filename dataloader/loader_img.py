@@ -23,12 +23,12 @@ class DataLoader:
         '''
         data = (None, None)
         idx = idx_store[index_from: index_to]
+        if self.one_test:
+            idx = self.one_name
+            do_aug = False
+        else:
+            do_aug = self.cfg.TRAIN.DO_AUG
         if idx:
-            if self.one_test:
-                idx = self.one_name
-                do_aug = False
-            else:
-                do_aug = self.cfg.TRAIN.DO_AUG
             imgs, labels = self.dataaug.augmentation(idx, do_aug=do_aug, resize=self.cfg.TRAIN.RESIZE,
                                                      relative=self.cfg.TRAIN.RELATIVE_LABELS, show_img=self.show_augimg)
             imgs = torch.Tensor(np.array(imgs))
