@@ -145,8 +145,14 @@ class F1Score:
             rec[i] = self.true_positive[i] / self.obj_num[i]
             f1_sore[i] = (1 + beta ** 2) * (prec[i] * rec[i]) / (beta ** 2 * prec[i] + rec[i])
 
+        # matrix = np.stack(f1_sore, prec, rec)
+        score_dict = dict(zip(self.cls_name, f1_sore))
+        prec_dict = dict(zip(self.cls_name, prec))
+        rec_dict = dict(zip(self.cls_name, rec))
+
         print('f1_sore: {}\nprec: {}\nrec: {}'.format(f1_sore, prec, rec))
-        return f1_sore, prec, rec
+
+        return score_dict, prec_dict, rec_dict
 
 
 if __name__ == "__main__":

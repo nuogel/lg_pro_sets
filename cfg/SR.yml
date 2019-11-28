@@ -27,6 +27,7 @@ TRAIN:
   LOSSTYPE: 'ctc' #''mse' #mse' #
   #LR_CONTINUE: None # CONTINUE: change the parameters and continue this training
   EPOCH_CONTINUE: None
+  SAVE_STEP: 100
 
   # CUDA:
   GPU_NUM: 0

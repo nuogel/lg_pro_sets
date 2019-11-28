@@ -4,12 +4,49 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 from cfg.yml_parse import parse_yaml
+from tensorboardX import SummaryWriter
+from tensorboard.backend.event_processing import event_accumulator
+import shutil
 
 
 class TrainParame:
     def __init__(self, cfg=None):
         self.cfg = cfg
         self.file = cfg.PATH.PARAMETER_PATH
+        self.folder = cfg.PATH.TMP_PATH + '/tbX_log/'
+
+    def clean_history_log(self):
+        """Init the parameters."""
+        # if os.path.isfile(self.file):
+        #     os.remove(self.file)
+        if os.path.isdir(self.folder):
+            try:
+                shutil.rmtree(self.folder)
+            except:
+                print('error:clean_history_log')
+        self.tbX_writer = SummaryWriter(self.folder)
+
+    def tbX_write(self, **kwargs):
+        epoch = kwargs['epoch']
+        for k, v in kwargs.items():
+            if k == 'epoch':
+                continue
+            if isinstance(v, dict):
+                self.tbX_writer.add_scalars('data/' + k, v, epoch)
+            else:
+                self.tbX_writer.add_scalar('data/' + k, v, epoch)
+        self.tbX_writer.close()
+
+    def tbX_read(self):
+        ea = event_accumulator.EventAccumulator(self.folder)
+        ea.Reload()
+        print(ea.scalars.Keys())
+        try:
+            learning_rate = ea.scalars.Items('data/learning_rate')[-1]
+        except:
+            print('error: no learning_rate in tbX,SET 0')
+            learning_rate = self.cfg.TRAIN.LR_START
+        return learning_rate.step, learning_rate.value
 
     def save_parameters(self, epoch,
                         learning_rate=None, batch_average_loss=None,
@@ -46,11 +83,6 @@ class TrainParame:
             dict_loaded['recall'].append(recall)
 
         torch.save(dict_loaded, self.file)
-
-    def clear_parameters(self):
-        """Init the parameters."""
-        if os.path.isfile(self.file):
-            os.remove(self.file)
 
     def show_parameters(self, start_epoch=0, end_epoch=None):
         """Show the parameters."""
@@ -118,7 +150,7 @@ class TrainParame:
 
 if __name__ == "__main__":
     """Test show_parameters."""
-    cfg = parse_yaml('../cfg/OBD.yml')
+    cfg = parse_yaml('../cfg/SR.yml')
     cfg.PATH.PARAMETER_PATH = os.path.join('..', cfg.PATH.PARAMETER_PATH)
     para = TrainParame(cfg)
-    para.show_parameters(0,)
+    para.show_parameters(1, )
