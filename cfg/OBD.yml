@@ -12,7 +12,7 @@ PATH:
 
 
 TRAIN:
-  MODEL: yolov3_tiny # yolov3 # yolov3_tiny # fcos #
+  MODEL: yolov3_tiny_mobilenet # yolov3 # yolov3_tiny # fcos # yolov3_tiny_mobilenet
   EPOCH_SIZE: 400
   BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
@@ -39,10 +39,9 @@ TRAIN:
   LR_EXPONENTIAL_DECAY_RATE: 0.98
   BETAS_ADAM: 0.9
   LOSSTYPE: 'focalloss' #'mse' #
-  LR_CONTINUE: None # CONTINUE: change the parameters and continue this training
   EPOCH_CONTINUE: None
   MULTI_SIZE_RATIO: [1]
-
+  SAVE_STEP: 100
   # NMS:
   SCORE_THRESH: 0.6
   IOU_THRESH: 0.5
@@ -54,22 +53,22 @@ TRAIN:
   LOG_FORMAT: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'  # logging format
 
   FMAP_ANCHOR_NUM: 3  # yolov2: 16 ; yolov3-:3
-#  ANCHORS: [[ 0.0772422 , 0.0632077 ],
-#            [ 0.0332185 , 0.0699152 ],
-#            [ 0.3039470 , 0.7423017 ],
-#            [ 0.0491545 , 0.1041431 ],
-#            [ 0.2348479 , 0.0989017 ],
-#            [ 0.0193353 , 0.1177316 ],
-#            [ 0.0864546 , 0.1502465 ],
-#            [ 0.0378630 , 0.0336919 ],
-#            [ 0.0057380 , 0.0268776 ],
-#            [ 0.0211715 , 0.0501949 ],
-#            [ 0.0141959 , 0.0302731 ],
-#            [ 0.0120658 , 0.0846409 ],
-#            [ 0.0639976 , 0.3795098 ],
-#            [ 0.0079226 , 0.0525171 ],
-#            [ 0.1565745 , 0.2865745 ],
-#            [ 0.0307940 , 0.1949102 ],] #apollo_anchors 16
+  #  ANCHORS: [[ 0.0772422 , 0.0632077 ],
+  #            [ 0.0332185 , 0.0699152 ],
+  #            [ 0.3039470 , 0.7423017 ],
+  #            [ 0.0491545 , 0.1041431 ],
+  #            [ 0.2348479 , 0.0989017 ],
+  #            [ 0.0193353 , 0.1177316 ],
+  #            [ 0.0864546 , 0.1502465 ],
+  #            [ 0.0378630 , 0.0336919 ],
+  #            [ 0.0057380 , 0.0268776 ],
+  #            [ 0.0211715 , 0.0501949 ],
+  #            [ 0.0141959 , 0.0302731 ],
+  #            [ 0.0120658 , 0.0846409 ],
+  #            [ 0.0639976 , 0.3795098 ],
+  #            [ 0.0079226 , 0.0525171 ],
+  #            [ 0.1565745 , 0.2865745 ],
+  #            [ 0.0307940 , 0.1949102 ],] #apollo_anchors 16
   ANCHORS: [[ 0.0240385 , 0.0336538 ],
             [ 0.0552885 , 0.0649038 ],
             [ 0.0889423 , 0.1394231 ],
@@ -92,9 +91,8 @@ TEST:
   SAVE_LABELS: TRUE
   SHOW_IMAGES: TRUE #FALSE
   SHOW_TIMES: 20000
-  ONE_TEST: FALSE
-#  ONE_TEST: TRUE
-  ONE_NAME: ['000000', '000001', '000002', '000003'] #['000000']# ['20190412_0132']#[000000, 000001, 000002, 000003] #
+  ONE_TEST: FALSE  #TRUE #
+  ONE_NAME: ['000000', '000001'] #['000000']# ['20190412_0132']#[000000, 000001, 000002, 000003] #
 
 
 

@@ -35,7 +35,7 @@ class Test_Base(object):
         self.Model.eval()
 
     def test_backbone(self, test_path):
-        ...
+        pass
 
     def test_run(self, file_s):
         """

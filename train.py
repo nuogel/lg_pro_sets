@@ -16,13 +16,15 @@ def _parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('--yml_path', default='cfg/OBD.yml'  # 'cfg/SR.yml'  #''cfg/ASR.yml'  #
                         , type=str, help='yml_path')
-    parser.add_argument('--checkpoint', default=None  #'tmp/checkpoint/now.pkl' # 'tmp/checkpoint/40.pkl'#
+    parser.add_argument('--checkpoint', default='tmp/checkpoint/now.pkl'  # 'tmp/checkpoint/40.pkl'#None  #
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--lr', default=0.001, type=float,
                         help='Learning rate')
+    parser.add_argument('--lr_continue', default=None, type=float,
+                        help='Learning rate')
     parser.add_argument('--epoch-continue', default=None, type=int,
                         help='Epoch of continue training')
-    parser.add_argument('-d', '--debug', action='store_true', default=True,
+    parser.add_argument('-d', '--debug', action='store_true', default=False,
                         help='Enable verbose info')
     return parser.parse_args()
 
