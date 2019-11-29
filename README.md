@@ -1,5 +1,5 @@
 #### V1.0.0_STEADY : master 
-### LuoGeng's programs set (forbid coping；禁止转传使用)
+### LuoGeng's programs set (forbid copying；禁止转传使用)
 This is a PyTorch implementation of ASR / OBD / SR
 #### ASR
     CTC, Seq2Seq, RNN, LSTM
