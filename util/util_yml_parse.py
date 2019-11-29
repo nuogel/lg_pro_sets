@@ -4,7 +4,7 @@ import os
 
 class AttrDict(dict):
     """
-    If name in dict,then get the name of the dict. NOT USED
+    If name in dict,then get the name of the dict.
     """
 
     def __getattr__(self, name):
@@ -34,15 +34,10 @@ def parse_yaml(ymlfilename):
         yaml_cfg = yaml.load(f, Loader=yaml.FullLoader)
         cfg = AttrDict(yaml_cfg)
         cfg.PATH = AttrDict(cfg.PATH)
-        # change the relative root to the absolute root.
-        # for k, path in cfg.PATH.items():
-        #     path = os.path.join(real_path, path)
-        #     cfg.PATH[k] = path
-
         cfg.TRAIN = AttrDict(cfg.TRAIN)
         cfg.TEST = AttrDict(cfg.TEST)
     return cfg
 
-#
+
 # global cfg
 # cfg = parse_yaml('../../cfg/OBD.yml')
