@@ -176,3 +176,4 @@ if __name__ == "__main__":
     cfg.PATH.PARAMETER_PATH = os.path.join('..', cfg.PATH.PARAMETER_PATH)
     para = TrainParame(cfg)
     para.show_parameters(1, )
+

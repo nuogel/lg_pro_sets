@@ -4,7 +4,7 @@ PATH:
   DATA_PATH: 'E://datasets//NLP//THCHS//data_thchs30//data//'
   LAB_PATH: 'E://datasets//NLP//THCHS//data_thchs30//data//'
   TMP_PATH: 'tmp//'
-  PARAMETER_PATH: 'tmp//checkpoint//s2s_without_attention_60.parameter'
+  PARAMETER_PATH: 'tmp//checkpoint//checkpoint.parameter'
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
 
 TRAIN:
