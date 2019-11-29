@@ -3,13 +3,72 @@ import os
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
-from cfg.yml_parse import parse_yaml
+from util.util_yml_parse import parse_yaml
+from tensorboardX import SummaryWriter
+from tensorboard.backend.event_processing import event_accumulator
+import shutil
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 
 class TrainParame:
     def __init__(self, cfg=None):
         self.cfg = cfg
         self.file = cfg.PATH.PARAMETER_PATH
+        self.folder = cfg.PATH.TMP_PATH + '/tbx_log_' + cfg.TRAIN.MODEL
+
+    def clean_history_and_init_log(self):
+        """Init the parameters."""
+        # if os.path.isfile(self.file):
+        #     os.remove(self.file)
+        if os.path.isdir(self.folder):
+            try:
+                shutil.rmtree(self.folder)
+            except:
+                exit(FileExistsError('FILE IS USING, PLEASE CLOSE IT: {}'.format(self.folder)))
+            else:
+                LOGGER.info('DELETE THE HISTORY LOG: {}'.format(self.folder))
+
+        self.tbX_writer = SummaryWriter(self.folder)
+        try:
+            f = open(self.cfg.PATH.CLASSES_PATH)
+        except:
+            pass
+        else:
+            lines = f.read().replace('\n', '\n\n')
+            self.tbX_writer.add_text('class_dict', lines, 0)
+        config_path = 'cfg/' + self.cfg.BELONGS + '.yml'
+        config_lines = open(config_path).read().replace('\n', '\n\n')
+        self.tbX_writer.add_text('config', config_lines, 0)
+
+    def tbX_write(self, **kwargs):
+        # self.tbX_writer = SummaryWriter(self.folder)
+        epoch = kwargs['epoch']
+        for k, v in kwargs.items():
+            if k == 'epoch' or v is None:
+                continue
+            if isinstance(v, dict):
+                self.tbX_writer.add_scalars('data/' + k, v, epoch)
+            else:
+                self.tbX_writer.add_scalar('data/' + k, v, epoch)
+        self.tbX_writer.close()
+
+    def tbX_read(self):
+        try:
+            ea = event_accumulator.EventAccumulator(self.folder)
+            ea.Reload()
+            print(ea.scalars.Keys())
+            learning_rate = ea.scalars.Items('data/learning_rate')[-1]
+        except:
+            print('error: no learning_rate in tbX,SET 0')
+            epoch = 0
+            learning_rate = self.cfg.TRAIN.LR_START
+        else:
+            epoch = learning_rate.step
+            learning_rate = learning_rate.value
+
+        return epoch, learning_rate
 
     def save_parameters(self, epoch,
                         learning_rate=None, batch_average_loss=None,
@@ -46,11 +105,6 @@ class TrainParame:
             dict_loaded['recall'].append(recall)
 
         torch.save(dict_loaded, self.file)
-
-    def clear_parameters(self):
-        """Init the parameters."""
-        if os.path.isfile(self.file):
-            os.remove(self.file)
 
     def show_parameters(self, start_epoch=0, end_epoch=None):
         """Show the parameters."""
@@ -118,7 +172,8 @@ class TrainParame:
 
 if __name__ == "__main__":
     """Test show_parameters."""
-    cfg = parse_yaml('../cfg/ASR.yml')
+    cfg = parse_yaml('../cfg/SR.yml')
     cfg.PATH.PARAMETER_PATH = os.path.join('..', cfg.PATH.PARAMETER_PATH)
     para = TrainParame(cfg)
-    para.show_parameters(1,)
+    para.show_parameters(1, )
+

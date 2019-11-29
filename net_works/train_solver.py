@@ -13,7 +13,7 @@ import logging
 import numpy as np
 import torch
 from torch.optim import lr_scheduler
-from evasys.score import Score
+from evasys.Score_Dict import Score
 from util.util_show_save_parmeters import TrainParame
 from net_works.model.Model_Loss_Dict import ModelDict, LossDict
 from util.util_time_stamp import Time
@@ -34,13 +34,13 @@ class Solver:
         self.one_name = cfg.TEST.ONE_NAME
         if self.one_test:
             self.cfg.TRAIN.BATCH_SIZE = len(self.one_name)
-        self.DataLoader = DataLoaderDict[cfg.TRAIN.BELONGS](cfg)
+        self.DataLoader = DataLoaderDict[cfg.BELONGS](cfg)
         self.save_parameter = TrainParame(cfg)
         self.Model = ModelDict[cfg.TRAIN.MODEL](cfg)
         self.LossFun = LossDict[cfg.TRAIN.MODEL](cfg)
-        self.score = Score[cfg.TRAIN.BELONGS](cfg)
-        self.train_batch_num = 50
-        self.test_batch_num = 1
+        self.score = Score[cfg.BELONGS](cfg)
+        self.train_batch_num = cfg.TEST.ONE_TEST_TRAIN_STEP
+        self.test_batch_num = cfg.TEST.ONE_TEST_TEST_STEP
 
     def train(self):
         """Train the network.
@@ -51,7 +51,7 @@ class Solver:
             checkpoint (str): Path to checkpoint
 
         """
-        LOGGER.info('Apollo Yolo Start Training...')
+        LOGGER.info('{} Start Training...'.format(self.cfg.TRAIN.MODEL))
         os.makedirs(self.cfg.PATH.TMP_PATH, exist_ok=True)
         # Prepare network, data set idx
         learning_rate, epoch_last, train_set, test_set = self._prepare_parameters()
@@ -77,11 +77,11 @@ class Solver:
         checkpoint = self.args.checkpoint
         if checkpoint:
             self.Model.load_state_dict(torch.load(checkpoint))
-            dict_loaded = torch.load(self.cfg.PATH.PARAMETER_PATH)
-            epoch_last = self.args.epoch_continue if self.args.epoch_continue else dict_loaded['epoch'] + 1
-            learning_rate = self.args.lr if self.args.lr else dict_loaded['learning_rate'][epoch_last - 1]
+            epoch_last, learning_rate_last = self.save_parameter.tbX_read()
+            epoch = self.args.epoch_continue if self.args.epoch_continue else epoch_last + 1
+            learning_rate = self.args.lr_continue if self.args.lr_continue else learning_rate_last
             LOGGER.info('Loading last checkpoint: %s, last learning rate:%s, last epoch:%s',
-                        os.path.split(checkpoint)[1], learning_rate, epoch_last)
+                        os.path.split(checkpoint)[1], learning_rate, epoch)
             #  load the last data set
             train_set = torch.load(os.path.join(idx_stores_dir, 'train_set'))
             test_set = torch.load(os.path.join(idx_stores_dir, 'test_set'))
@@ -89,16 +89,16 @@ class Solver:
         else:
             weights_init(self.Model)
             # start a new train, delete the exist parameters
-            self.save_parameter.clear_parameters()
-            epoch_last = 0
-            learning_rate = self.args.lr if self.args.lr else self.cfg.TRAIN.LR_START
+            self.save_parameter.clean_history_and_init_log()
+            epoch = 0
+            learning_rate = self.args.lr  # if self.args.lr else self.cfg.TRAIN.LR_CONTINUE
             # generate a new data set
             train_set, test_set = _get_data_idx_stores(lab_dir=self.cfg.PATH.LAB_PATH, idx_stores_dir=idx_stores_dir,
                                                        test_train_ratio=self.cfg.TEST.TEST_SET_RATIO, cfg=self.cfg, )
         LOGGER.info('the train set is :{}, ant the test set is :{}'.format(len(train_set), len(test_set)))
         print(train_set[:10], test_set[:10])
         # _print_model_parm_nums(self.Model.cuda(), self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1])
-        return learning_rate, epoch_last, train_set, test_set
+        return learning_rate, epoch, train_set, test_set
 
     def _get_optimizer(self, learning_rate, optimizer='adam'):
         if optimizer == 'adam' or optimizer == 'Adam':
@@ -107,16 +107,16 @@ class Solver:
         elif optimizer == 'sgd' or optimizer == 'SGD':
             optimizer = torch.optim.SGD(self.Model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
         else:
-            LOGGER.error('no optimizer...')
+            LOGGER.error('NO such a optimizer: ' + str(optimizer))
         # scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=self.cfg.LR_EXPONENTIAL_DECAY_RATE)
-        scheduler = lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
+        scheduler = lr_scheduler.StepLR(optimizer, step_size=self.cfg.TRAIN.STEP_LR, gamma=0.1)
         return optimizer, scheduler
 
     def _calculate_loss(self, predict, dataset, losstype=None):
         total_loss = 0.
         losses = self.LossFun.Loss_Call(predict, dataset, losstype=losstype)
-        if self.cfg.TRAIN.BELONGS == 'img':
-            loss_names = ['[obj_loss]', '[noobj_loss]', '[cls_loss]', '[loc_loss]']  #obj_loss, noobj_loss, cls_loss, loc_loss
+        if self.cfg.BELONGS == 'OBD':
+            loss_names = ['[obj_loss]', '[noobj_loss]', '[cls_loss]', '[loc_loss]']  # obj_loss, noobj_loss, cls_loss, loc_loss
             loss_tmp = range(len(losses))
             for i in loss_tmp:
                 total_loss += losses[i]
@@ -124,7 +124,7 @@ class Solver:
             for loss_name, head_loss in zip(loss_names[:len(loss_tmp)], losses):
                 loss_head_info += ' {}: {:6.4f}'.format(loss_name, head_loss.item())
             LOGGER.debug('Loss per head: %s', loss_head_info)
-        if self.cfg.TRAIN.BELONGS == 'ASR':
+        else:
             total_loss = losses[0]
             LOGGER.debug('Train Acc is: %s', losses[1])
         if torch.isnan(total_loss) or total_loss.item() == float("inf") or total_loss.item() == -float("inf"):
@@ -134,22 +134,20 @@ class Solver:
 
     def _save_checkpoint(self, epoch):
         checkpoint_path = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoint', '{}.pkl'.format(epoch))
+        checkpoint_now_path = os.path.join(self.cfg.PATH.TMP_PATH + '/tbx_log_' + self.cfg.TRAIN.MODEL, 'checkpoint.pkl')
         os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
         torch.save(self.Model.state_dict(), checkpoint_path)
+        torch.save(self.Model.state_dict(), checkpoint_now_path)
         LOGGER.info('Epoch: %s, checkpoint is saved to %s', epoch, checkpoint_path)
 
-    def _train_an_epoch(self, epoch, train_set, optimizer, scheduler, ):
+    def _train_an_epoch(self, epoch, train_set, optimizer, scheduler):
         # pylint: disable=too-many-arguments
         self.Model.train()
         scheduler.step()
         LOGGER.info('[TRAIN] Epoch: %s, learing_rate: %s', epoch, optimizer.param_groups[0]['lr'])
         np.random.shuffle(train_set)
         batch_size = self.cfg.TRAIN.BATCH_SIZE
-        if self.one_test:
-            batch_num = self.train_batch_num
-            batch_size = 1
-        else:
-            batch_num = len(train_set) // batch_size
+        batch_num = self.train_batch_num if self.one_test else len(train_set) // batch_size
         losses = 0
         # count the step time, total time...
         t1_timer = Time()
@@ -159,30 +157,25 @@ class Solver:
             train_data = self.DataLoader.get_data_by_idx(train_set, step * batch_size, (step + 1) * batch_size)
             if train_data[1] is None:
                 LOGGER.warning('[TRAIN] NO gt_labels IN THIS BATCH. Epoch: %3d, step: %4d/%4d ', epoch, step, batch_num)
-                t1_timer.time_end()
-                LOGGER.info('Step Time is: %.4f & Total Time is: %.4f', t1_timer.diff, t1_timer.from_begin)
                 continue
             # forward process
             predict = self.Model.forward(train_data)
             # calculate the total loss
             total_loss = self._calculate_loss(predict, train_data, losstype=self.cfg.TRAIN.LOSSTYPE)
             losses += total_loss.item()
-            LOGGER.info('[TRAIN] Epoch: %3d, step: %4d/%4d, Step_LOSS: %10.2f, '
-                        'Batch_Average_LOSS: %10.2f',
-                        epoch, step, batch_num, total_loss.item(), losses / (step + 1))
             # backward process
-            LOGGER.info('backwarding...')
             total_loss.backward()
+            # torch.nn.utils.clip_grad_value_(self.Model.parameters(), self.cfg.TRAIN.CLIP_VALUE)
             if step % self.cfg.TRAIN.BATCH_BACKWARD_SIZE == 0:
                 optimizer.step()
                 optimizer.zero_grad()
-            if (step + 1) % 100 == 0:
+            if (step + 1) % self.cfg.TRAIN.SAVE_STEP == 0:
                 self._save_checkpoint(epoch)
             t1_timer.time_end()
-            LOGGER.info('Step Time is: %.4f & Total Time is: %.4F', t1_timer.diff, t1_timer.from_begin)
+            LOGGER.info('[TRAIN] Epoch-Step:%3d-%4d/%4d, Step_LOSS: %10.2f, Batch_Average_LOSS: %10.2f, Time Step/Total-%s/%s',
+                        epoch, step, batch_num, total_loss.item(), losses / (step + 1), t1_timer.diff, t1_timer.from_begin)
         # save the main parameters
-        self.save_parameter.save_parameters(epoch=epoch, batch_average_loss=losses / batch_num,
-                                            learning_rate=optimizer.param_groups[0]['lr'])
+        self.save_parameter.tbX_write(epoch=epoch, learning_rate=optimizer.param_groups[0]['lr'], batch_average_loss=losses / batch_num, )
         LOGGER.info('[TRAIN] Summary: Epoch: %s, average total loss: %s', epoch, losses / batch_num)
 
     def _test_an_epoch(self, epoch, test_set):
@@ -190,35 +183,16 @@ class Solver:
         self.Model.eval()
         LOGGER.info('[EVALUATE] Evaluating from test data set ...')
         batch_size = self.cfg.TRAIN.BATCH_SIZE
-        if self.one_test:
-            batch_num = self.test_batch_num
-            batch_size = 1
-        else:
-            batch_num = len(test_set[:800]) // batch_size
-        losses = 0.
-        # print(score.true_positive, score.false_positive, score.obj_num)
+        batch_num = self.test_batch_num if self.one_test else len(test_set) // batch_size
         self.score.init_parameters()
         for step in range(batch_num):
+            # TODO: add timer
             test_data = self.DataLoader.get_data_by_idx(test_set, step * batch_size, (step + 1) * batch_size)
-            if test_data[0] is None:
-                continue
-            # forward process
+            if test_data[0] is None: continue
             predict = self.Model.forward(test_data, eval=True)
-            '''
-                        calculate the total loss
-            total_loss = self._calculate_loss(predict, test_data, losstype=self.cfg.TRAIN.LOSSTYPE)
-            losses += total_loss.item()
-            losses += total_loss.item()
-            LOGGER.info('[EVALUATE] Epoch: %3d, step: %4d/%4d, step_test_loss:  %10.2f, '
-                        'test_average_loss:  %10.2f',
-                        epoch, step, batch_num, total_loss, losses / (step + 1))
-            calculate the score
-            '''
-            if self.cfg.TRAIN.BELONGS == 'img':
-                test_data = test_data[1]
+            if self.cfg.BELONGS in ['OBD']: test_data = test_data[1]
             self.score.cal_score(predict, test_data)
+            LOGGER.info('[EVALUATE] Epoch-Step:%3d-%4d/%4d', epoch, step, batch_num)
         score_out, precision, recall = self.score.score_out()
-        self.save_parameter.save_parameters(epoch=epoch, f1_score=score_out, precision=precision, recall=recall)
-        LOGGER.info('[EVALUATE] Summary: Epoch: %s, average test loss: %s', epoch, losses / batch_num)
-        LOGGER.info('[EVALUATE] Summary: Epoch: %s, Score: %s, Precision: %s, Recall: %s',
-                    epoch, score_out, precision, recall)
+        self.save_parameter.tbX_write(epoch=epoch, score_out=score_out, precision=precision, recall=recall)
+        LOGGER.info('[EVALUATE] Summary: Epoch: %s, Score: %s, Precision: %s, Recall: %s', epoch, score_out, precision, recall)

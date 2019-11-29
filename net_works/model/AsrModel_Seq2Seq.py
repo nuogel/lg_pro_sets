@@ -6,6 +6,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+'''
+->不加attention 为84%， 加attention 为82%，why? 尝试修改lg_attention.
+->中途遇到list[]长度导致内存泄露；
+->改为Lg_attention 后，训练速度慢，并且效果不好。查看是什么原因。
+'''
+
 
 class Seq2Seq(nn.Module):
     def __init__(self, cfg):
@@ -50,66 +56,66 @@ class Seq2Seq(nn.Module):
             output, c_hid, ax, sx = self.decoder._step(inputs, c_hid, enc_y, ax, sx, add_attention)
             output = torch.softmax(output, dim=-1)
             score, inputs = output.max(dim=-1)  # 将上一次预测的结果作为下一次的输入
-            labels = [int(_inputs.data) for _inputs in inputs]
+            labels = [int(_inputs.item()) for _inputs in inputs]
             y_seqs.append(labels)
-            if sum(labels) == 0 or (len(y_seqs[0]) > 70):
+            if sum(labels) == 0 or (len(y_seqs) > 70):
                 STOP = True
         y_seqs = np.array(y_seqs)
         y_seqs = np.transpose(y_seqs, (1, 0))
-        return y_seqs, -score
+        return y_seqs, 0
 
-    def beam_search(self, xs, beam_size=10, max_len=200):
-        def decode_step(self, x, y, state=None, softmax=False):
-            """ `x` (TH), `y` (1) """
-            if state is None:
-                hx, ax, sx = None, None, None
-            else:
-                hx, ax, sx = state
-            out, hx, ax, sx = self.decoder._step(y, hx, x, ax, sx)
-            if softmax:
-                out = nn.functional.log_softmax(out, dim=1)
-            return out, (hx, ax, sx)
-
-        start_tok = self.vocab_size - 1;
-        end_tok = 0
-        x, h = self.encode(xs)
-        y = torch.autograd.Variable(torch.LongTensor([start_tok]), volatile=True)
-        beam = [((start_tok,), 0, (h, None, None))]
-        complete = []
-        for _ in range(max_len):
-            new_beam = []
-            for hyp, score, state in beam:
-                y[0] = hyp[-1]
-                out, state = decode_step(x, y, state=state, softmax=True)
-                out = out.cpu().data.numpy().squeeze(axis=0).tolist()
-                for i, p in enumerate(out):
-                    new_score = score + p
-                    new_hyp = hyp + (i,)
-                    new_beam.append((new_hyp, new_score, state))
-            new_beam = sorted(new_beam, key=lambda x: x[1], reverse=True)
-
-            # Remove complete hypotheses
-            for cand in new_beam[:beam_size]:
-                if cand[0][-1] == end_tok:
-                    complete.append(cand)
-
-            beam = filter(lambda x: x[0][-1] != end_tok, new_beam)
-            beam = beam[:beam_size]
-
-            if len(beam) == 0:
-                break
-
-            # Stopping criteria:
-            # complete contains beam_size more probable
-            # candidates than anything left in the beam
-            if sum(c[1] > beam[0][1] for c in complete) >= beam_size:
-                break
-
-        complete = sorted(complete, key=lambda x: x[1], reverse=True)
-        if len(complete) == 0:
-            complete = beam
-        hyp, score, _ = complete[0]
-        return hyp, score
+    # def beam_search(self, xs, beam_size=10, max_len=200):
+    #     def decode_step(self, x, y, state=None, softmax=False):
+    #         """ `x` (TH), `y` (1) """
+    #         if state is None:
+    #             hx, ax, sx = None, None, None
+    #         else:
+    #             hx, ax, sx = state
+    #         out, hx, ax, sx = self.decoder._step(y, hx, x, ax, sx)
+    #         if softmax:
+    #             out = nn.functional.log_softmax(out, dim=1)
+    #         return out, (hx, ax, sx)
+    #
+    #     start_tok = self.vocab_size - 1;
+    #     end_tok = 0
+    #     x, h = self.encode(xs)
+    #     y = torch.autograd.Variable(torch.LongTensor([start_tok]), volatile=True)
+    #     beam = [((start_tok,), 0, (h, None, None))]
+    #     complete = []
+    #     for _ in range(max_len):
+    #         new_beam = []
+    #         for hyp, score, state in beam:
+    #             y[0] = hyp[-1]
+    #             out, state = decode_step(x, y, state=state, softmax=True)
+    #             out = out.cpu().data.numpy().squeeze(axis=0).tolist()
+    #             for i, p in enumerate(out):
+    #                 new_score = score + p
+    #                 new_hyp = hyp + (i,)
+    #                 new_beam.append((new_hyp, new_score, state))
+    #         new_beam = sorted(new_beam, key=lambda x: x[1], reverse=True)
+    #
+    #         # Remove complete hypotheses
+    #         for cand in new_beam[:beam_size]:
+    #             if cand[0][-1] == end_tok:
+    #                 complete.append(cand)
+    #
+    #         beam = filter(lambda x: x[0][-1] != end_tok, new_beam)
+    #         beam = beam[:beam_size]
+    #
+    #         if len(beam) == 0:
+    #             break
+    #
+    #         # Stopping criteria:
+    #         # complete contains beam_size more probable
+    #         # candidates than anything left in the beam
+    #         if sum(c[1] > beam[0][1] for c in complete) >= beam_size:
+    #             break
+    #
+    #     complete = sorted(complete, key=lambda x: x[1], reverse=True)
+    #     if len(complete) == 0:
+    #         complete = beam
+    #     hyp, score, _ = complete[0]
+    #     return hyp, score
 
 
 class Encoder(nn.Module):
@@ -137,6 +143,8 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__(**kwargs)
         self.embedding = nn.Embedding(vocab_size, hidden_size)
         self.attention = NNAttention(hidden_size, log_t=True)
+        self.lg_attention = LGAttention(hidden_size, log_t=True)
+
         self.rnn = nn.GRUCell(hidden_size, hidden_size)
         self.fc = nn.Linear(hidden_size, vocab_size)  # no 'sos'
         self.vocab_size = vocab_size
@@ -170,15 +178,21 @@ class Decoder(nn.Module):
 
     def _step(self, target_i, c_hid, enc_y, ax, sx, add_attention=True):
         embeded = self.embedding(target_i)
-        if sx is not None:
-            # last context vector
-            embeded = embeded + sx
-        gru_cell_y = self.rnn(embeded, c_hid)
-        if add_attention:
-            sx, ax = self.attention(enc_y, gru_cell_y, ax)
-            output = self.fc(gru_cell_y + sx)
-        else:
+        lg_attend = True
+        if lg_attend:
+            at = self.lg_attention(enc_y, c_hid, embeded)
+            gru_cell_y = self.rnn(c_hid, at)
             output = self.fc(gru_cell_y)
+        else:
+            if sx is not None:
+                # last context vector
+                embeded = embeded + sx
+            gru_cell_y = self.rnn(embeded, c_hid)
+            if add_attention:
+                sx, ax = self.attention(enc_y, gru_cell_y, ax)
+                output = self.fc(gru_cell_y + sx)
+            else:
+                output = self.fc(gru_cell_y)
         return output, gru_cell_y, ax, sx
 
 
@@ -214,6 +228,30 @@ class NNAttention(nn.Module):
         sx = ax.unsqueeze(2)  # BT1
         sx = torch.sum(enc_y * sx, dim=1)  # BH
         return sx, ax
+
+
+class LGAttention(nn.Module):
+    def __init__(self, n_channels, kernel_size=15, log_t=False):
+        super(LGAttention, self).__init__()
+        assert kernel_size % 2 == 1, \
+            "Kernel size should be odd for 'same' conv."
+        self.nn = nn.Sequential(
+            nn.Linear(n_channels * 2, n_channels),
+            nn.ReLU())
+        self.log_t = log_t
+
+    def forward(self, enc_y, c_hid, embeded):
+        """ `enc_y` (BTH), `c_hid` (BH)
+         reference: https://guillaumegenthial.github.io/sequence-to-sequence.html
+         """
+        _c_hid = c_hid.unsqueeze(dim=1)
+        at = enc_y * _c_hid
+        a_hat = at.softmax(1)
+        ct = a_hat * enc_y
+        ct = torch.sum(ct, dim=1)
+        ct = torch.cat((embeded, ct), dim=1)
+        ct = self.nn(ct)
+        return ct
 
 # class Seq2Seq_old(nn.Module):
 #     def __init__(self, cfg):
@@ -286,28 +324,3 @@ class NNAttention(nn.Module):
 #         out = torch.cat(out, dim=1)
 #         aligns = torch.stack(aligns, dim=1)
 #         return out, aligns
-
-
-# class LinearND(nn.Module):
-#
-#     def __init__(self, *args):
-#         """
-#         A torch.nn.Linear layer modified to accept ND arrays.
-#         The function treats the last dimension of the input
-#         as the hidden dimension.
-#         """
-#         super(LinearND, self).__init__()
-#         self.fc = nn.Linear(*args)
-#
-#     def forward(self, x):
-#         size = x.size()
-#         n = int(np.prod(size[:-1]))
-#         out = x.contiguous().view(n, size[-1])
-#         out = self.fc(out)
-#         size = list(size)
-#         size[-1] = out.size()[-1]
-#         out = out.view(size)
-#         return out
-
-
-#####################################################

@@ -2,6 +2,9 @@
 import torch
 import numpy as np
 from util.util_nms import NMS, Soft_NMS
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ParsePredict:
@@ -9,7 +12,7 @@ class ParsePredict:
     def __init__(self, cfg):
         self.cfg = cfg
         self.anchors = torch.Tensor(cfg.TRAIN.ANCHORS)
-        self.anc_num = cfg.TRAIN.ANCHOR_FMAP_NUM
+        self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
         self.cls_num = len(cfg.TRAIN.CLASSES)
 
     def _parse_predict(self, f_maps):
@@ -28,6 +31,8 @@ class ParsePredict:
     def _predict2nms(self, pre_cls_score, pre_loc):
         labels_predict = []
         for batch_n in range(pre_cls_score.shape[0]):
+            # TODO: make a matrix instead of for...
+            LOGGER.info('[NMS] b')
             score = pre_cls_score[batch_n]
             loc = pre_loc[batch_n]
 

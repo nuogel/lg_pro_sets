@@ -16,9 +16,8 @@ class ApolloYoloV2(torch.nn.Module):
 
     def __init__(self, cfg):
         super(ApolloYoloV2, self).__init__()
-        anc_num, cls_num = cfg.TRAIN.ANCHOR_FMAP_NUM, len(cfg.TRAIN.CLASSES)
-        self.anc_num = anc_num
-        self.cls_num = cls_num
+        self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
+        self.cls_num = len(cfg.TRAIN.CLASSES)
         self.power = torch.pow
         self.conv1 = torch.nn.Conv2d(3, 16, 3, 1, 1, 1, bias=True)
         self.conv1_relu = torch.nn.ReLU(1)
@@ -68,7 +67,7 @@ class ApolloYoloV2(torch.nn.Module):
         self.concat8 = torch.cat
         self.conv9 = torch.nn.Conv2d(768, 512, 3, 1, 1, 1, bias=True)
         self.conv9_relu = torch.nn.ReLU(1)
-        self.conv_final = torch.nn.Conv2d(512, anc_num * (4 + 1 + cls_num), 1, 1, 0, bias=True)
+        self.conv_final = torch.nn.Conv2d(512, self.anc_num * (4 + 1 + self.cls_num), 1, 1, 0, bias=True)
 
     def forward(self, train_data, **args):
         if isinstance(train_data, tuple):

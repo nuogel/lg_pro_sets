@@ -9,11 +9,14 @@ from net_works.model.ObdModel_fcosnet import FCOS
 from net_works.model.AsrModel_RNN import RNN
 from net_works.model.AsrModel_CTC import MODEL_CTC
 from net_works.model.AsrModel_Seq2Seq import Seq2Seq
+from net_works.model.SrModel_EDSR import EDSR
 
-from net_works.loss.ObdLoss_yolo import YoloLoss
-from net_works.loss.ObdLoss_fcos import FCOSLOSS
-from net_works.loss.AsrLoss_ctc import RnnLoss
-from net_works.loss.AsrLoss_seq2seq import Seq2SeqLoss
+from net_works.loss.ObdLoss_YOLO import YoloLoss
+from net_works.loss.ObdLoss_FCOS import FCOSLOSS
+from net_works.loss.AsrLoss_CTC import RnnLoss
+from net_works.loss.AsrLoss_SEQ2SEQ import Seq2SeqLoss
+
+from net_works.loss.SrLoss_EDSR import EDSRLoss
 
 ModelDict = {'yolov2': ApolloYoloV2,
              'yolov3': YoloV3,
@@ -27,7 +30,11 @@ ModelDict = {'yolov2': ApolloYoloV2,
              # ASR
              'rnn': RNN,
              'ctc': MODEL_CTC,
-             'seq2seq': Seq2Seq}
+             'seq2seq': Seq2Seq,
+
+             # SR
+             'edsr': EDSR
+             }
 
 LossDict = {'yolov2': YoloLoss,
             'yolov3': YoloLoss,
@@ -41,4 +48,10 @@ LossDict = {'yolov2': YoloLoss,
             # ASR
             'rnn': RnnLoss,
             'ctc': RnnLoss,
-            'seq2seq':Seq2SeqLoss}
+            'seq2seq': Seq2SeqLoss,
+
+            # SR
+            'edsr': EDSRLoss,
+
+
+            }

@@ -1,3 +1,5 @@
+BELONGS: OBD
+
 PATH:
   DATA_PATH: 'E:/datasets/Noise_Images/NOISE_kitti/level_5/'
   IMG_PATH: 'E:/datasets/Noise_Images/NOISE_kitti/level_5//images//'
@@ -10,7 +12,6 @@ PATH:
 
 
 TRAIN:
-  BELONGS: img
   MODEL: yolov3
   EPOCH_SIZE: 400
   BATCH_SIZE: 1
@@ -62,7 +63,7 @@ TRAIN:
             [ 0.0079226 , 0.0525171 ],
             [ 0.1565745 , 0.2865745 ],
             [ 0.0307940 , 0.1949102 ],] #apollo_anchors 16  ## yolov3 writer's anchors: [10,13,  16,30,  33,23,  30,61,  62,45,  59,119,  116,90,  156,198,  373,326]
-  ANCHOR_FMAP_NUM: 3
+  FMAP_ANCHOR_NUM: 3
 
 
 TEST:

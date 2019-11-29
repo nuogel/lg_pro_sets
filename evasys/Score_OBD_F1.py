@@ -4,6 +4,7 @@ import torch
 import numpy as np
 
 from util.util_iou import iou_mat
+from util.util_get_cls_names import _get_class_names
 
 
 class F1Score:
@@ -12,7 +13,7 @@ class F1Score:
     def __init__(self, cfg):
         """Init the parameters."""
         self.cfg = cfg
-        self.cls_name = self._get_class_names()
+        self.cls_name = _get_class_names(cfg.PATH.CLASSES_PATH)
         self.cls_num = len(self.cfg.TRAIN.CLASSES)
         self.true_positive = np.zeros(self.cls_num)
         self.false_positive = np.zeros(self.cls_num)
@@ -30,20 +31,6 @@ class F1Score:
         self.false_positive = np.zeros(self.cls_num)
         self.obj_num = np.zeros(self.cls_num)
 
-    def _get_class_names(self):
-        classes = dict()
-        path = self.cfg.PATH.CLASSES_PATH
-        class_f = open(path, 'r')
-        for line in class_f.readlines():
-            tmp = line.strip().split(',')
-            try:
-                tmp[1]
-            except:
-                classes[tmp[0]] = 'DontCare'
-            else:
-                classes[tmp[0]] = tmp[1]
-        return classes
-
     def get_labels_txt(self, pre_path, gt_path):
         def read_line(path, gt=False):
             # TODO: read line of file.xml.
@@ -51,6 +38,8 @@ class F1Score:
             label = []
             for line in f_path.readlines():
                 tmp = line.split()
+                if tmp[0] not in self.cls_name:
+                    continue
                 if self.cls_name[tmp[0]] == 'DontCare':
                     continue
                 if not gt:
@@ -156,8 +145,14 @@ class F1Score:
             rec[i] = self.true_positive[i] / self.obj_num[i]
             f1_sore[i] = (1 + beta ** 2) * (prec[i] * rec[i]) / (beta ** 2 * prec[i] + rec[i])
 
+        # matrix = np.stack(f1_sore, prec, rec)
+        score_dict = dict(zip(self.cfg.TRAIN.CLASSES, f1_sore))
+        prec_dict = dict(zip(self.cfg.TRAIN.CLASSES, prec))
+        rec_dict = dict(zip(self.cfg.TRAIN.CLASSES, rec))
+
         print('f1_sore: {}\nprec: {}\nrec: {}'.format(f1_sore, prec, rec))
-        return f1_sore, prec, rec
+
+        return score_dict, prec_dict, rec_dict
 
 
 if __name__ == "__main__":

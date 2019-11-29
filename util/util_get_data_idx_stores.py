@@ -3,27 +3,42 @@ import glob
 from sklearn.model_selection import train_test_split
 import torch
 from util.util_get_cls_names import _get_class_names
+import xml.etree.ElementTree as ET
 
 
 def _get_data_idx_stores(lab_dir, idx_stores_dir, test_train_ratio, cfg):
     label_files = glob.glob('{}/*'.format(lab_dir))
     label_files_list = []
-    is_name_in_dict = False  # if the image has this class in it ?
-    if cfg.TRAIN.BELONGS == 'img':
+    is_name_in_dict = True  # if the image has this class in it ?
+    if cfg.BELONGS == 'OBD':
         if is_name_in_dict:
             class_map = _get_class_names(cfg.PATH.CLASSES_PATH)
             for label_file in label_files:
-                f = open(label_file, 'r')
-                # print('checking file %s about:%s' % (label_file, cfg.TRAIN.CLASSES))
-                for line in f.readlines():
-                    tmp = line.split(' ')
-                    if class_map[tmp[0]] in cfg.TRAIN.CLASSES:
-                        label_files_list.append(label_file)
-                        break
+                if os.path.basename(label_file).split('.')[-1] == 'txt':
+                    f = open(label_file, 'r')
+                    # print('checking file %s about:%s' % (label_file, cfg.TRAIN.CLASSES))
+                    for line in f.readlines():
+                        tmp = line.split(' ')
+                        if tmp[0] not in class_map:
+                            continue
+                        if class_map[tmp[0]] in cfg.TRAIN.CLASSES:
+                            label_files_list.append(label_file)
+                            break
+                elif os.path.basename(label_file).split('.')[-1] == 'xml':
+                    tree = ET.parse(label_file)
+                    root = tree.getroot()
+                    for object in root.findall('object'):
+                        name = object.find('name').text
+                        if name not in class_map:
+                            continue
+                        if class_map[name] in cfg.TRAIN.CLASSES:
+                            label_files_list.append(label_file)
+                            break
         else:
             label_files_list = label_files
-    elif cfg.TRAIN.BELONGS == 'ASR':
+    else:
         label_files_list = label_files
+
     data_idx = list(set([str(os.path.basename(x).split('.')[0]) for x in label_files_list]))
     assert len(data_idx) >= 1, 'No data found!'
 

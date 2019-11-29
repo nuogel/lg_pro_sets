@@ -1,4 +1,4 @@
-"""Loss calculation based on yolo2."""
+"""Loss calculation based on yolo."""
 import torch
 import numpy as np
 from util.util_iou import iou_xywh
@@ -15,7 +15,7 @@ class YoloLoss:
         #
         self.cfg = cfg
         self.anchors = torch.Tensor(cfg.TRAIN.ANCHORS)
-        self.anc_num = cfg.TRAIN.ANCHOR_FMAP_NUM
+        self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
         self.cls_num = len(cfg.TRAIN.CLASSES)
 
         self.batch_size = cfg.TRAIN.BATCH_SIZE
