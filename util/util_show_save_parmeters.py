@@ -3,19 +3,22 @@ import os
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
-from cfg.yml_parse import parse_yaml
+from util.util_yml_parse import parse_yaml
 from tensorboardX import SummaryWriter
 from tensorboard.backend.event_processing import event_accumulator
 import shutil
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 
 class TrainParame:
     def __init__(self, cfg=None):
         self.cfg = cfg
         self.file = cfg.PATH.PARAMETER_PATH
-        self.folder = cfg.PATH.TMP_PATH + '/tbX_log/'
+        self.folder = cfg.PATH.TMP_PATH + '/tbx_log_' + cfg.TRAIN.MODEL
 
-    def clean_history_log(self):
+    def clean_history_and_init_log(self):
         """Init the parameters."""
         # if os.path.isfile(self.file):
         #     os.remove(self.file)
@@ -23,13 +26,27 @@ class TrainParame:
             try:
                 shutil.rmtree(self.folder)
             except:
-                print('error:clean_history_log')
+                exit(FileExistsError('FILE IS USING, PLEASE CLOSE IT: {}'.format(self.folder)))
+            else:
+                LOGGER.info('DELETE THE HISTORY LOG: {}'.format(self.folder))
+
         self.tbX_writer = SummaryWriter(self.folder)
+        try:
+            f = open(self.cfg.PATH.CLASSES_PATH)
+        except:
+            pass
+        else:
+            lines = f.read().replace('\n', '\n\n')
+            self.tbX_writer.add_text('class_dict', lines, 0)
+        config_path = 'cfg/' + self.cfg.BELONGS + '.yml'
+        config_lines = open(config_path).read().replace('\n', '\n\n')
+        self.tbX_writer.add_text('config', config_lines, 0)
 
     def tbX_write(self, **kwargs):
+        # self.tbX_writer = SummaryWriter(self.folder)
         epoch = kwargs['epoch']
         for k, v in kwargs.items():
-            if k == 'epoch':
+            if k == 'epoch' or v is None:
                 continue
             if isinstance(v, dict):
                 self.tbX_writer.add_scalars('data/' + k, v, epoch)
@@ -38,15 +55,20 @@ class TrainParame:
         self.tbX_writer.close()
 
     def tbX_read(self):
-        ea = event_accumulator.EventAccumulator(self.folder)
-        ea.Reload()
-        print(ea.scalars.Keys())
         try:
+            ea = event_accumulator.EventAccumulator(self.folder)
+            ea.Reload()
+            print(ea.scalars.Keys())
             learning_rate = ea.scalars.Items('data/learning_rate')[-1]
         except:
             print('error: no learning_rate in tbX,SET 0')
+            epoch = 0
             learning_rate = self.cfg.TRAIN.LR_START
-        return learning_rate.step, learning_rate.value
+        else:
+            epoch = learning_rate.step
+            learning_rate = learning_rate.value
+
+        return epoch, learning_rate
 
     def save_parameters(self, epoch,
                         learning_rate=None, batch_average_loss=None,

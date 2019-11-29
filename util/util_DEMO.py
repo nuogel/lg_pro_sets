@@ -35,8 +35,8 @@ def read_tbX(path):
 
 
 if __name__ == '__main__':
-    p = '../tmp/tbX_log/'
+    p = '../tmp/tbx_log/'
     test_tensorboard(p)
-    # tbX_log - -logdir  p
+    # tbx_log - -logdir  p
     read_tbX(p)
 

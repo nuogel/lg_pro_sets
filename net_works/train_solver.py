@@ -39,8 +39,8 @@ class Solver:
         self.Model = ModelDict[cfg.TRAIN.MODEL](cfg)
         self.LossFun = LossDict[cfg.TRAIN.MODEL](cfg)
         self.score = Score[cfg.BELONGS](cfg)
-        self.train_batch_num = 40
-        self.test_batch_num = 1
+        self.train_batch_num = cfg.TEST.ONE_TEST_TRAIN_STEP
+        self.test_batch_num = cfg.TEST.ONE_TEST_TEST_STEP
 
     def train(self):
         """Train the network.
@@ -89,7 +89,7 @@ class Solver:
         else:
             weights_init(self.Model)
             # start a new train, delete the exist parameters
-            self.save_parameter.clean_history_log()
+            self.save_parameter.clean_history_and_init_log()
             epoch = 0
             learning_rate = self.args.lr  # if self.args.lr else self.cfg.TRAIN.LR_CONTINUE
             # generate a new data set
@@ -134,7 +134,7 @@ class Solver:
 
     def _save_checkpoint(self, epoch):
         checkpoint_path = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoint', '{}.pkl'.format(epoch))
-        checkpoint_now_path = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoint', 'now.pkl')
+        checkpoint_now_path = os.path.join(self.cfg.PATH.TMP_PATH + '/tbx_log_' + self.cfg.TRAIN.MODEL, 'checkpoint.pkl')
         os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
         torch.save(self.Model.state_dict(), checkpoint_path)
         torch.save(self.Model.state_dict(), checkpoint_now_path)
@@ -186,11 +186,13 @@ class Solver:
         batch_num = self.test_batch_num if self.one_test else len(test_set) // batch_size
         self.score.init_parameters()
         for step in range(batch_num):
+            # TODO: add timer
             test_data = self.DataLoader.get_data_by_idx(test_set, step * batch_size, (step + 1) * batch_size)
             if test_data[0] is None: continue
             predict = self.Model.forward(test_data, eval=True)
             if self.cfg.BELONGS in ['OBD']: test_data = test_data[1]
             self.score.cal_score(predict, test_data)
+            LOGGER.info('[EVALUATE] Epoch-Step:%3d-%4d/%4d', epoch, step, batch_num)
         score_out, precision, recall = self.score.score_out()
         self.save_parameter.tbX_write(epoch=epoch, score_out=score_out, precision=precision, recall=recall)
         LOGGER.info('[EVALUATE] Summary: Epoch: %s, Score: %s, Precision: %s, Recall: %s', epoch, score_out, precision, recall)

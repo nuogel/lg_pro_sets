@@ -3,7 +3,7 @@
 
 import sys
 from argparse import ArgumentParser
-from cfg.yml_parse import parse_yaml
+from util.util_yml_parse import parse_yaml
 from net_works.test_solver import Test
 
 
@@ -19,7 +19,9 @@ def _parse_arguments():
 def main():
     """Run the script."""
     exit_code = 0
-    file_s = 'dataset//0853_L.png'
+    # file_s = 'dataset//0853_L.png'
+    file_s = 'dataset//00000_L.png'
+    # file_s = 'E:/datasets/Noise_Images/NOISE_kitti/level_2/images/000002.png'
     # file_s = 'E://datasets//kitti//training//image_2//'
     # # file_s = 'datasets/kitti/training/image_2/000000.png'
     # file_s = 'E:/datasets/Noise_Images/NOISE_kitti/level_5/images/KITTI_005066_1.png'
