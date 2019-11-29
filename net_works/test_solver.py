@@ -8,14 +8,14 @@ import os
 import torch
 import cv2
 import numpy as np
-from net_works.model.Model_Loss_Dict import ModelDict, LossDict
+from net_works.model.Model_Loss_Dict import ModelDict
 from dataloader.DataLoaderDict import DataLoaderDict
 import glob
 from util.util_parse_prediction import ParsePredict
 from util.util_data_aug import Dataaug
 from util.util_show_img import _show_img
 from util.util_is_use_cuda import _is_use_cuda
-from evasys.F1Score.f1score import F1Score
+from evasys.Score_OBD_F1 import F1Score
 from util.util_parse_SR_img import parse_Tensor_img
 from evasys.Score_Dict import Score
 
@@ -165,7 +165,7 @@ class Test_SR(Test_Base):
         if self.cfg.TEST.SAVE_LABELS == True:
             if not os.path.isdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH):
                 os.mkdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH)
-            save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, os.path.basename(img_path).split('.')[0]+'_X4.jpg')
+            save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, os.path.basename(img_path).split('.')[0] + '_X{}.jpg'.format(self.cfg.TRAIN.UPSCALE_FACTOR))
         else:
             save_path = None
         parse_Tensor_img(predict, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=save_path, show_time=10000)

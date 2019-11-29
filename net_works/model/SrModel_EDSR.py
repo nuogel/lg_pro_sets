@@ -9,7 +9,11 @@ class EDSR(nn.Module):
     '''
 
     def __init__(self, cfg):
-        num_channels, base_channel, upscale_factor, num_residuals = 3, 64, cfg.TRAIN.UPSCALE_FACTOR, 4
+        self.cfg = cfg
+        num_channels = 3
+        base_channel = 64
+        upscale_factor = cfg.TRAIN.UPSCALE_FACTOR
+        num_residuals = 8
         super(EDSR, self).__init__()
         self.input_conv = nn.Conv2d(num_channels, base_channel, kernel_size=3, stride=1, padding=1)
 

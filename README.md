@@ -1,3 +1,4 @@
+#### V1.0.0_STEADY
 ### LuoGeng's programs set (forbid coping；禁止转传使用)
 This is a PyTorch implementation of ASR / OBD / SR
 #### ASR: luogeng

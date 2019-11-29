@@ -37,11 +37,15 @@ class DataLoader:
         input_imgs = []
         target_imgs = []
         for id in idx:
-            img_path = os.path.join(self.cfg.PATH.IMG_PATH, id + '.png')
-            raw_img = cv2.imread(img_path)
-            target = cv2.resize(raw_img, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
-            input = cv2.resize(target, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,
-                                        self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR))
+            raw_lab = cv2.imread(os.path.join(self.cfg.PATH.LAB_PATH, id + '.png'))  # no norse image or HR image
+            target = cv2.resize(raw_lab, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
+
+            if self.cfg.TRAIN.UPSCALE_FACTOR == 1:
+                raw_img = cv2.imread(os.path.join(self.cfg.PATH.IMG_PATH, id + '.png'))  # norse image or LR image
+            else:
+                raw_img = target
+            input = cv2.resize(raw_img, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,
+                                         self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR))
             input = torch.from_numpy(np.asarray((input - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(torch.FloatTensor)
             target = torch.from_numpy(np.asarray((target - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(torch.FloatTensor)
             input_imgs.append(input)

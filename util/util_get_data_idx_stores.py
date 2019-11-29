@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 def _get_data_idx_stores(lab_dir, idx_stores_dir, test_train_ratio, cfg):
     label_files = glob.glob('{}/*'.format(lab_dir))
     label_files_list = []
-    is_name_in_dict = False  # if the image has this class in it ?
+    is_name_in_dict = True  # if the image has this class in it ?
     if cfg.BELONGS == 'OBD':
         if is_name_in_dict:
             class_map = _get_class_names(cfg.PATH.CLASSES_PATH)

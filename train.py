@@ -9,18 +9,18 @@ import os
 import logging
 from argparse import ArgumentParser
 from net_works.train_solver import Solver
-from cfg.yml_parse import parse_yaml
+from util.util_yml_parse import parse_yaml
 
 
 def _parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('--yml_path', default='cfg/OBD.yml'  # 'cfg/SR.yml'  #''cfg/ASR.yml'  #
                         , type=str, help='yml_path')
-    parser.add_argument('--checkpoint', default='tmp/checkpoint/now.pkl'  # 'tmp/checkpoint/40.pkl'#None  #
+    parser.add_argument('--checkpoint', default=None  # 'tmp/checkpoint/now.pkl'  # 'tmp/checkpoint/40.pkl'#
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--lr', default=0.001, type=float,
                         help='Learning rate')
-    parser.add_argument('--lr_continue', default=None, type=float,
+    parser.add_argument('--lr_continue', default=0.0001, type=float,
                         help='Learning rate')
     parser.add_argument('--epoch-continue', default=None, type=int,
                         help='Epoch of continue training')

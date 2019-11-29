@@ -1,6 +1,15 @@
 """Count the time while training."""
 import time
+'''
+string转换为datetime：
+>>> string = '2014-01-08 11:59:58'
+>>> time1 = datetime.datetime.strptime(string,'%Y-%m-%d %H:%M:%S')
+>>> print time1
 
+datetime转为字符串：
+>>> time1_str = datetime.datetime.strftime(time1,'%Y-%m-%d %H:%M:%S')
+>>> time1_str
+'''
 
 class Time:
     """Timestamp."""

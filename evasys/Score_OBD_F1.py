@@ -146,9 +146,9 @@ class F1Score:
             f1_sore[i] = (1 + beta ** 2) * (prec[i] * rec[i]) / (beta ** 2 * prec[i] + rec[i])
 
         # matrix = np.stack(f1_sore, prec, rec)
-        score_dict = dict(zip(self.cls_name, f1_sore))
-        prec_dict = dict(zip(self.cls_name, prec))
-        rec_dict = dict(zip(self.cls_name, rec))
+        score_dict = dict(zip(self.cfg.TRAIN.CLASSES, f1_sore))
+        prec_dict = dict(zip(self.cfg.TRAIN.CLASSES, prec))
+        rec_dict = dict(zip(self.cfg.TRAIN.CLASSES, rec))
 
         print('f1_sore: {}\nprec: {}\nrec: {}'.format(f1_sore, prec, rec))
 

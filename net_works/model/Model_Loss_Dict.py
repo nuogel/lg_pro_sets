@@ -11,12 +11,12 @@ from net_works.model.AsrModel_CTC import MODEL_CTC
 from net_works.model.AsrModel_Seq2Seq import Seq2Seq
 from net_works.model.SrModel_EDSR import EDSR
 
-from net_works.loss.ObdLoss_yolo import YoloLoss
-from net_works.loss.ObdLoss_fcos import FCOSLOSS
-from net_works.loss.AsrLoss_ctc import RnnLoss
-from net_works.loss.AsrLoss_seq2seq import Seq2SeqLoss
+from net_works.loss.ObdLoss_YOLO import YoloLoss
+from net_works.loss.ObdLoss_FCOS import FCOSLOSS
+from net_works.loss.AsrLoss_CTC import RnnLoss
+from net_works.loss.AsrLoss_SEQ2SEQ import Seq2SeqLoss
 
-from net_works.loss.SrLoss_edsr import EDSRLoss
+from net_works.loss.SrLoss_EDSR import EDSRLoss
 
 ModelDict = {'yolov2': ApolloYoloV2,
              'yolov3': YoloV3,
