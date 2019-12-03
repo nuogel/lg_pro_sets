@@ -5,7 +5,7 @@ import numpy as np
 from util.util_parse_SR_img import parse_Tensor_img
 
 
-class SR_SCORE:
+class SR_DN_SCORE:
     def __init__(self, cfg):
         self.cfg = cfg
         self.rate_all = 0.
