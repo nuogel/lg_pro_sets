@@ -46,7 +46,7 @@ def _get_train_test_dataset(x_dir, y_dir, idx_stores_dir, test_train_ratio, cfg)
     data_idx = sorted(list(set([str(os.path.basename(x).split('.')[0]) for x in label_files_list])))
     for idx in data_idx:
         if not os.path.isfile(os.path.join(x_dir, idx + '.'+str(x_extend_name))):
-            data_idx = data_idx.remove(idx)
+            data_idx.remove(idx)
 
     assert len(data_idx) >= 1, 'No data found!'
 

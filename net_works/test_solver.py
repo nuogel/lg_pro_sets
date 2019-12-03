@@ -8,7 +8,7 @@ import os
 import torch
 import cv2
 import numpy as np
-from net_works.model.Model_Loss_Dict import ModelDict
+from net_works.Model_Loss_Dict import ModelDict
 from dataloader.DataLoaderDict import DataLoaderDict
 import glob
 from util.util_parse_prediction import ParsePredict

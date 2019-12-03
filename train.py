@@ -14,9 +14,9 @@ from util.util_yml_parse import parse_yaml
 
 def _parse_arguments():
     parser = ArgumentParser()
-    parser.add_argument('--yml_path', default='cfg/OBD.yml'  # 'cfg/SR.yml'  #''cfg/ASR.yml'  #
+    parser.add_argument('--yml_path', default='cfg/SR.yml'  # 'cfg/SR.yml'  #''cfg/ASR.yml'  #
                         , type=str, help='yml_path')
-    parser.add_argument('--checkpoint', default=None  # 'tmp/checkpoint/now.pkl'  # 'tmp/checkpoint/40.pkl'#
+    parser.add_argument('--checkpoint', default=None  #'tmp/checkpoint/now.pkl'  # 'tmp/checkpoint/40.pkl'#
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--lr', default=0.001, type=float,
                         help='Learning rate')

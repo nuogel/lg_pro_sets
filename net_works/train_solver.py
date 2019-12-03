@@ -15,12 +15,11 @@ import torch
 from torch.optim import lr_scheduler
 from evasys.Score_Dict import Score
 from util.util_show_save_parmeters import TrainParame
-from net_works.model.Model_Loss_Dict import ModelDict, LossDict
+from net_works.Model_Loss_Dict import ModelDict, LossDict
 from util.util_time_stamp import Time
 from util.util_weights_init import weights_init
 from util.util_get_train_test_dataset import _get_train_test_dataset, _read_train_test_dataset
 from util.util_is_use_cuda import _is_use_cuda
-from util.util_print_model_parm_nums import _print_model_parm_nums
 from dataloader.DataLoaderDict import DataLoaderDict
 
 LOGGER = logging.getLogger(__name__)

@@ -1,21 +1,21 @@
 BELONGS: SR
 
 PATH:
-  IMG_PATH: 'E:/datasets/Noise_Images/NOISE_kitti/level_2/images'
+  IMG_PATH: 'E:/datasets/kitti/training/images_noise'
   LAB_PATH: 'E:/datasets/kitti/training/images'
   TMP_PATH: 'tmp//'
   PARAMETER_PATH: 'tmp//checkpoint//checkpoint.parameter'
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
 
 TRAIN:
-  MODEL: edsr
+  MODEL: cbdnet  #edsr #
   EPOCH_SIZE: 4000
   BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 2   # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   CLASS_LENGTH: 1211  # this will change by the actual length in 'loader_asr.py' self.cfg.TRAIN.CLASS_LENGTH
 
   # aug
-  UPSCALE_FACTOR: 2
+  UPSCALE_FACTOR: 1
   IMG_SIZE: [960, 384]  #[W,H]
   PIXCELS_NORM: [177.0, 1]  # [mean, std]
   # optimizer:
@@ -40,9 +40,9 @@ TEST:
   # NMS:
   SCORE_THRESH: 0.5
   SAVE_LABELS: TRUE
-
+  SHOW_EVAL_IMAGE: TRUE
   #  ONE_TEST: FALSE
   ONE_TEST: TRUE
-  ONE_TEST_TRAIN_STEP: 10
+  ONE_TEST_TRAIN_STEP: 100
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: ['000002'] #['0853_L']#,
