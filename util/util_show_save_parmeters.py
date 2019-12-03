@@ -43,7 +43,6 @@ class TrainParame:
         self.tbX_writer.add_text('config', config_lines, 0)
 
     def tbX_write(self, **kwargs):
-        # self.tbX_writer = SummaryWriter(self.folder)
         epoch = kwargs['epoch']
         for k, v in kwargs.items():
             if k == 'epoch' or v is None:
@@ -67,7 +66,7 @@ class TrainParame:
         else:
             epoch = learning_rate.step
             learning_rate = learning_rate.value
-
+        self.tbX_writer = SummaryWriter(self.folder)
         return epoch, learning_rate
 
     def save_parameters(self, epoch,

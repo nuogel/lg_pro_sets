@@ -11,7 +11,7 @@ PATH:
 
 
 TRAIN:
-  MODEL: yolov3_tiny_shufflenet # yolov3 # yolov3_tiny # fcos # yolov3_tiny_mobilenet
+  MODEL: yolov3_tiny #yolov3_tiny_shufflenet # yolov3 #  fcos # yolov3_tiny_mobilenet
   EPOCH_SIZE: 400
   BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
@@ -88,9 +88,9 @@ TEST:
   DO_AUG: FALSE
   RESIZE: TRUE
   SAVE_LABELS: TRUE
-  SHOW_IMAGES: TRUE #FALSE
+  SHOW_IMAGES: FALSE #TRUE #
   SHOW_TIMES: 20000
-  ONE_TEST: FATRUE #LSE  #
+  ONE_TEST: TRUE #FALSE  #
   ONE_TEST_TRAIN_STEP: 10
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: ['000000', '000001'] #['000000']# ['20190412_0132']#[000000, 000001, 000002, 000003] #

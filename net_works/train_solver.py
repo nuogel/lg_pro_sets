@@ -18,7 +18,7 @@ from util.util_show_save_parmeters import TrainParame
 from net_works.model.Model_Loss_Dict import ModelDict, LossDict
 from util.util_time_stamp import Time
 from util.util_weights_init import weights_init
-from util.util_get_data_idx_stores import _get_data_idx_stores
+from util.util_get_train_test_dataset import _get_train_test_dataset, _read_train_test_dataset
 from util.util_is_use_cuda import _is_use_cuda
 from util.util_print_model_parm_nums import _print_model_parm_nums
 from dataloader.DataLoaderDict import DataLoaderDict
@@ -83,8 +83,7 @@ class Solver:
             LOGGER.info('Loading last checkpoint: %s, last learning rate:%s, last epoch:%s',
                         os.path.split(checkpoint)[1], learning_rate, epoch)
             #  load the last data set
-            train_set = torch.load(os.path.join(idx_stores_dir, 'train_set'))
-            test_set = torch.load(os.path.join(idx_stores_dir, 'test_set'))
+            train_set, test_set = _read_train_test_dataset(idx_stores_dir)
 
         else:
             weights_init(self.Model)
@@ -93,8 +92,9 @@ class Solver:
             epoch = 0
             learning_rate = self.args.lr  # if self.args.lr else self.cfg.TRAIN.LR_CONTINUE
             # generate a new data set
-            train_set, test_set = _get_data_idx_stores(lab_dir=self.cfg.PATH.LAB_PATH, idx_stores_dir=idx_stores_dir,
-                                                       test_train_ratio=self.cfg.TEST.TEST_SET_RATIO, cfg=self.cfg, )
+            train_set, test_set = _get_train_test_dataset(x_dir=self.cfg.PATH.IMG_PATH, y_dir=self.cfg.PATH.LAB_PATH, idx_stores_dir=idx_stores_dir,
+                                                          test_train_ratio=self.cfg.TEST.TEST_SET_RATIO, cfg=self.cfg, )
+            self.save_parameter.tbX_read()
         LOGGER.info('the train set is :{}, ant the test set is :{}'.format(len(train_set), len(test_set)))
         print(train_set[:10], test_set[:10])
         # _print_model_parm_nums(self.Model.cuda(), self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1])
@@ -133,12 +133,14 @@ class Solver:
         return total_loss
 
     def _save_checkpoint(self, epoch):
-        checkpoint_path = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoint', '{}.pkl'.format(epoch))
-        checkpoint_now_path = os.path.join(self.cfg.PATH.TMP_PATH + '/tbx_log_' + self.cfg.TRAIN.MODEL, 'checkpoint.pkl')
-        os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
-        torch.save(self.Model.state_dict(), checkpoint_path)
-        torch.save(self.Model.state_dict(), checkpoint_now_path)
-        LOGGER.info('Epoch: %s, checkpoint is saved to %s', epoch, checkpoint_path)
+        checkpoint_path_0 = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoint', '{}.pkl'.format(epoch))
+        checkpoint_path_1 = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoint', 'now.pkl'.format(epoch))
+        checkpoint_path_2 = os.path.join(self.cfg.PATH.TMP_PATH + '/tbx_log_' + self.cfg.TRAIN.MODEL, 'checkpoint.pkl')
+        for path_i in [checkpoint_path_0, checkpoint_path_1, checkpoint_path_2]:
+            os.makedirs(os.path.dirname(path_i), exist_ok=True)
+            torch.save(self.Model.state_dict(), path_i)
+            torch.save(self.Model.state_dict(), path_i)
+            LOGGER.info('Epoch: %s, checkpoint is saved to %s', epoch, path_i)
 
     def _train_an_epoch(self, epoch, train_set, optimizer, scheduler):
         # pylint: disable=too-many-arguments

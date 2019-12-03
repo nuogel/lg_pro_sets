@@ -55,7 +55,7 @@ class Test_Base(object):
                 FILES = [file_s]
         else:
             if os.path.isdir(file_s):
-                FILES = glob.glob('{}/*.wav'.format(file_s))
+                FILES = glob.glob('{}/*.*'.format(file_s))
 
             elif isinstance(list, file_s):
                 FILES = file_s
@@ -64,17 +64,18 @@ class Test_Base(object):
 
         _len = len(FILES)
         for i, file_path in enumerate(FILES):
+            # TODO: make a matrix instead of feed them one by one.
             print('testing [{}/{}] {}'.format(i + 1, _len, file_path))
             self.test_backbone(file_path)
 
         is_score = False
         if is_score:
-            score = Score[self.cfg.TRAIN.BELONGS](self.cfg)
-            if self.cfg.TRAIN.BELONGS == 'OBD' and self.cfg.TEST.SAVE_LABELS is True:
+            score = Score[self.cfg.BELONGS](self.cfg)
+            if self.cfg.BELONGS == 'OBD' and self.cfg.TEST.SAVE_LABELS is True:
                 pre_labels, gt_labels = score.get_labels_txt(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, self.cfg.PATH.LAB_PATH)
                 score.cal_score(pre_labels, gt_labels, from_net=False)
                 return score.score_out()
-            elif self.cfg.TRAIN.BELONGS is 'ASR':
+            elif self.cfg.BELONGS is 'ASR':
                 ...
 
 
@@ -83,7 +84,7 @@ class Test_OBD(Test_Base):
         super(Test_OBD, self).__init__(cfg, args)
         self.dataaug = Dataaug(cfg)
         self.parsepredict = ParsePredict(cfg)
-        self.DataLoader = DataLoaderDict[cfg.TRAIN.BELONGS](cfg)
+        self.DataLoader = DataLoaderDict[cfg.BELONGS](cfg)
 
     def test_backbone(self, test_picture_path):
         """Test."""
@@ -137,7 +138,7 @@ class Test_OBD(Test_Base):
 class Test_ASR(Test_Base):
     def __init__(self, cfg, args):
         super(Test_ASR, self).__init__(cfg, args)
-        self.DataLoader = DataLoaderDict[cfg.TRAIN.BELONGS](cfg)
+        self.DataLoader = DataLoaderDict[cfg.BELONGS](cfg)
 
     def test_backbone(self, wav_path):
         """Test."""

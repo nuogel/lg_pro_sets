@@ -32,7 +32,7 @@ def NMS(pre_score_raw, pre_loc, score_thresh, iou_thresh=0.5):
     :param iou_thresh:iou_thresh
     :return: labels_out
     """
-    print('using Greedy NMS')
+    # print('using Greedy NMS')
 
     class_num = pre_score_raw.shape[1]     # get the numbers of classes.
     pre_score_raw = pre_score_raw.max(-1)  # get the max score of the scores of classes.
@@ -73,7 +73,7 @@ def Soft_NMS(pre_score_raw, pre_loc, score_thresh, theta=0.5):
        :param iou_thresh:iou_thresh
        :return: labels_out
        """
-    print('using Soft NMS')
+    # print('using Soft NMS')
 
     class_num = pre_score_raw.shape[1]
     pre_score_raw = pre_score_raw.max(-1)
@@ -120,7 +120,7 @@ def NMS_from_FAST_RCNN(pre_score_raw, pre_loc, score_thresh, iou_thresh):  # NMS
     :param iou_thresh:iou_thresh
     :return: labels_out
     """
-    print('using NMS_from_FAST_RCNN')
+    # print('using NMS_from_FAST_RCNN')
     pre_score_raw = pre_score_raw.max(-1)
     scores = pre_score_raw[0]
     pre_class = pre_score_raw[1]
