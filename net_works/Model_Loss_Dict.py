@@ -11,7 +11,7 @@ from net_works.model.AsrModel_CTC import MODEL_CTC
 from net_works.model.AsrModel_Seq2Seq import Seq2Seq
 from net_works.model.SrModel_EDSR import EDSR
 from net_works.model.DeNoiseModel_CBDNet import CBDNet
-from net_works.model.DeNoiseModel_DnCnn import DnCNN
+from net_works.model.DeNoiseModel_DNCNN import DnCNN
 
 from net_works.loss.ObdLoss_YOLO import YoloLoss
 from net_works.loss.ObdLoss_FCOS import FCOSLOSS
