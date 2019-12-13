@@ -5,7 +5,7 @@ import numpy as np
 from util.util_parse_SR_img import parse_Tensor_img
 
 
-class SR_SCORE:
+class SR_DN_SCORE:
     def __init__(self, cfg):
         self.cfg = cfg
         self.rate_all = 0.
@@ -26,7 +26,9 @@ class SR_SCORE:
         for batch_i in range(predict.shape[0]):
             self.rate_batch += self.PSNR(predict[batch_i], target[batch_i])
         self.rate_all += self.rate_batch / predict.shape[0]
-        # parse_Tensor_img(predict, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=None, show_time=10000)
+        if self.cfg.TEST.SHOW_EVAL_TIME:
+            img_cat = torch.cat([input, predict, target], dim=1)
+            parse_Tensor_img(img_cat, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path='results/denoise/' + str(self.batches) + '.png', show_time=1)
 
     def score_out(self):
         score = self.rate_all / self.batches

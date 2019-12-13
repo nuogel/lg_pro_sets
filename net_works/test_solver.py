@@ -8,7 +8,7 @@ import os
 import torch
 import cv2
 import numpy as np
-from net_works.model.Model_Loss_Dict import ModelDict
+from net_works.Model_Loss_Dict import ModelDict
 from dataloader.DataLoaderDict import DataLoaderDict
 import glob
 from util.util_parse_prediction import ParsePredict
@@ -55,7 +55,7 @@ class Test_Base(object):
                 FILES = [file_s]
         else:
             if os.path.isdir(file_s):
-                FILES = glob.glob('{}/*.wav'.format(file_s))
+                FILES = glob.glob('{}/*.*'.format(file_s))
 
             elif isinstance(list, file_s):
                 FILES = file_s
@@ -64,17 +64,18 @@ class Test_Base(object):
 
         _len = len(FILES)
         for i, file_path in enumerate(FILES):
+            # TODO: make a matrix instead of feed them one by one.
             print('testing [{}/{}] {}'.format(i + 1, _len, file_path))
             self.test_backbone(file_path)
 
         is_score = False
         if is_score:
-            score = Score[self.cfg.TRAIN.BELONGS](self.cfg)
-            if self.cfg.TRAIN.BELONGS == 'OBD' and self.cfg.TEST.SAVE_LABELS is True:
+            score = Score[self.cfg.BELONGS](self.cfg)
+            if self.cfg.BELONGS == 'OBD' and self.cfg.TEST.SAVE_LABELS is True:
                 pre_labels, gt_labels = score.get_labels_txt(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, self.cfg.PATH.LAB_PATH)
                 score.cal_score(pre_labels, gt_labels, from_net=False)
                 return score.score_out()
-            elif self.cfg.TRAIN.BELONGS is 'ASR':
+            elif self.cfg.BELONGS is 'ASR':
                 ...
 
 
@@ -83,7 +84,7 @@ class Test_OBD(Test_Base):
         super(Test_OBD, self).__init__(cfg, args)
         self.dataaug = Dataaug(cfg)
         self.parsepredict = ParsePredict(cfg)
-        self.DataLoader = DataLoaderDict[cfg.TRAIN.BELONGS](cfg)
+        self.DataLoader = DataLoaderDict[cfg.BELONGS](cfg)
 
     def test_backbone(self, test_picture_path):
         """Test."""
@@ -137,7 +138,7 @@ class Test_OBD(Test_Base):
 class Test_ASR(Test_Base):
     def __init__(self, cfg, args):
         super(Test_ASR, self).__init__(cfg, args)
-        self.DataLoader = DataLoaderDict[cfg.TRAIN.BELONGS](cfg)
+        self.DataLoader = DataLoaderDict[cfg.BELONGS](cfg)
 
     def test_backbone(self, wav_path):
         """Test."""
@@ -149,9 +150,9 @@ class Test_ASR(Test_Base):
             print('pre:', k, self.DataLoader._number2pinying(v[:-1]))
 
 
-class Test_SR(Test_Base):
+class Test_SR_DN(Test_Base):
     def __init__(self, cfg, args):
-        super(Test_SR, self).__init__(cfg, args)
+        super(Test_SR_DN, self).__init__(cfg, args)
 
     def test_backbone(self, img_path):
         """Test."""
@@ -165,13 +166,13 @@ class Test_SR(Test_Base):
         if self.cfg.TEST.SAVE_LABELS == True:
             if not os.path.isdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH):
                 os.mkdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH)
-            save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, os.path.basename(img_path).split('.')[0] + '_X{}.jpg'.format(self.cfg.TRAIN.UPSCALE_FACTOR))
+            save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, os.path.basename(img_path).split('.')[0] + '.png')#.format(self.cfg.TRAIN.UPSCALE_FACTOR))
         else:
             save_path = None
-        parse_Tensor_img(predict, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=save_path, show_time=10000)
+        parse_Tensor_img(predict, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=save_path, show_time=self.cfg.TEST.SHOW_EVAL_TIME)
 
 
 Test = {'OBD': Test_OBD,
         'ASR': Test_ASR,
-        'SR': Test_SR,
+        'SR_DN': Test_SR_DN,
         }

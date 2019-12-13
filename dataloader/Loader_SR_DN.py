@@ -55,3 +55,7 @@ class DataLoader:
         target_imgs = torch.stack(target_imgs)
 
         return input_imgs, target_imgs
+
+    # def _prepare_data_denoise(self, idx):
+
+

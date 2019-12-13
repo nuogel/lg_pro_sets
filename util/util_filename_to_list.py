@@ -1,6 +1,6 @@
 import os
 
-
+ 
 def basename_imgpath_labpath():
     i = 5
     filepath = 'E://LG//programs//lg_pro_sets//tmp//kitti_level{}'.format(i)
@@ -26,14 +26,11 @@ def numbers_list():
     f.close()
 
 
-
-def just_get_basename(filepath, output_path):
+def just_get_basename(filepath):
+    output_path = "./cache/basename.txt"
     filelist = os.listdir(filepath)
     f = open(output_path, 'w', encoding='utf-8')
     for file in filelist:
         basename = os.path.basename(file).split('.')[-2]
         f.write('{}\n'.format(basename))
     f.close()
-
-
-

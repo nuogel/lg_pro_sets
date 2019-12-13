@@ -10,13 +10,15 @@ from net_works.model.AsrModel_RNN import RNN
 from net_works.model.AsrModel_CTC import MODEL_CTC
 from net_works.model.AsrModel_Seq2Seq import Seq2Seq
 from net_works.model.SrModel_EDSR import EDSR
+from net_works.model.DeNoiseModel_CBDNet import CBDNet
+from net_works.model.DeNoiseModel_DNCNN import DnCNN
 
 from net_works.loss.ObdLoss_YOLO import YoloLoss
 from net_works.loss.ObdLoss_FCOS import FCOSLOSS
 from net_works.loss.AsrLoss_CTC import RnnLoss
 from net_works.loss.AsrLoss_SEQ2SEQ import Seq2SeqLoss
 
-from net_works.loss.SrLoss_EDSR import EDSRLoss
+from net_works.loss.Sr_Dn_Loss import SR_DN_Loss
 
 ModelDict = {'yolov2': ApolloYoloV2,
              'yolov3': YoloV3,
@@ -33,7 +35,9 @@ ModelDict = {'yolov2': ApolloYoloV2,
              'seq2seq': Seq2Seq,
 
              # SR
-             'edsr': EDSR
+             'edsr': EDSR,
+             'cbdnet': CBDNet,
+             'dncnn': DnCNN,
              }
 
 LossDict = {'yolov2': YoloLoss,
@@ -50,8 +54,9 @@ LossDict = {'yolov2': YoloLoss,
             'ctc': RnnLoss,
             'seq2seq': Seq2SeqLoss,
 
-            # SR
-            'edsr': EDSRLoss,
-
+            # SR_DN
+            'edsr': SR_DN_Loss,
+            'cbdnet': SR_DN_Loss,
+            'dncnn':SR_DN_Loss
 
             }
