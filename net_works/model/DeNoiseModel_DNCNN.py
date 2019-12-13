@@ -29,5 +29,7 @@ class DnCNN(nn.Module):
         x = x.permute([0, 3, 1, 2])
         out = self.dncnn(x)
         out = out.permute([0, 2, 3, 1])
-
+        '''
+        out: represent the noise of the noise image.not the clean image.
+        '''
         return out

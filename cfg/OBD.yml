@@ -11,7 +11,7 @@ PATH:
 
 
 TRAIN:
-  MODEL: yolov3_tiny #yolov3_tiny_shufflenet # yolov3 #  fcos # yolov3_tiny_mobilenet
+  MODEL: yolov3 # yolov3_tiny #yolov3_tiny_shufflenet #  fcos # yolov3_tiny_mobilenet
   EPOCH_SIZE: 400
   BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
@@ -29,7 +29,7 @@ TRAIN:
   RELATIVE_LABELS: TRUE  # generate a relative labels to 0-1
   AREAR_RATIO: 0.3
   MIN_AREAR: 10 #400
-  IMG_SIZE: [384, 960] # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
+  IMG_SIZE: [384, 960] #[512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
 
   # optimizer:
   OPTIMIZER: 'adam'
@@ -51,7 +51,7 @@ TRAIN:
   # debug:
   LOG_FORMAT: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'  # logging format
 
-  FMAP_ANCHOR_NUM: 3  # yolov2: 16 ; yolov3-:3
+  FMAP_ANCHOR_NUM: 2  # yolov2: 16 ; yolov3:2; yolov3_tiny:3
   #  ANCHORS: [[ 0.0772422 , 0.0632077 ],
   #            [ 0.0332185 , 0.0699152 ],
   #            [ 0.3039470 , 0.7423017 ],
@@ -68,6 +68,7 @@ TRAIN:
   #            [ 0.0079226 , 0.0525171 ],
   #            [ 0.1565745 , 0.2865745 ],
   #            [ 0.0307940 , 0.1949102 ],] #apollo_anchors 16
+  #yolov3 writer's anchors: [10,13,  16,30,  33,23,  30,61,  62,45,  59,119,  116,90,  156,198,  373,326]
   ANCHORS: [[ 0.0240385 , 0.0336538 ],
             [ 0.0552885 , 0.0649038 ],
             [ 0.0889423 , 0.1394231 ],
@@ -86,11 +87,11 @@ TEST:
   IOU_THRESH: 0.5
 
   DO_AUG: FALSE
-  RESIZE: TRUE
+  RESIZE: TRUE  #FALSE #
   SAVE_LABELS: TRUE
   SHOW_IMAGES: FALSE #TRUE #
   SHOW_TIMES: 20000
   ONE_TEST: TRUE #FALSE  #
-  ONE_TEST_TRAIN_STEP: 10
+  ONE_TEST_TRAIN_STEP: 100
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: ['000000', '000001'] #['000000']# ['20190412_0132']#[000000, 000001, 000002, 000003] #

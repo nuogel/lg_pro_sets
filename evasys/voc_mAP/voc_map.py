@@ -233,7 +233,7 @@ def voc_eval(imagesetfile,
 
 
 def mAP_voc(pre_path, gt_path, reconvert_labels=False, object_size_level=3):
-    base_name = "basename.txt"
+    base_name = "cache/basename.txt"
     if object_size_level not in [-1, 1, 2, 3]:
         print('wrong size level.')
         return 0
@@ -264,11 +264,11 @@ def mAP_voc(pre_path, gt_path, reconvert_labels=False, object_size_level=3):
 if __name__ == '__main__':
     # pre_path = "E:\LG\programs\lg_pro_sets//tmp//kitti_level5//"
     # pre_path = "E://LG//programs//eva_sys//datasets//result//"
-    pre_path = 'E:/LG/GitHub/lg_pro_sets/tmp/predicted_labels_noise_2'
+    pre_path = 'E:/LG/GitHub/lg_pro_sets/tmp/predicted_labels/'
 
     # gt_path = "E://LG//programs//lg_pro_sets//datasets//Annotations_kitti//training//{}.xml"
-    # gt_path = 'E://LG//programs//eva_sys//datasets//predicted/refinedet_3//RefineDet_level345//labels//{}.xml'
-    gt_path = 'E:/datasets/kitti/training/labels_xml/{}.xml'
+    gt_path = 'E:/datasets/Car/VOC_Car/labels//{}.xml'
+    # gt_path = 'E:/datasets/kitti/training/labels_xml/{}.xml'
     just_get_basename(pre_path)
     reconvert_labels = True
     object_size_level = -1

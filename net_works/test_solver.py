@@ -150,9 +150,9 @@ class Test_ASR(Test_Base):
             print('pre:', k, self.DataLoader._number2pinying(v[:-1]))
 
 
-class Test_SR(Test_Base):
+class Test_SR_DN(Test_Base):
     def __init__(self, cfg, args):
-        super(Test_SR, self).__init__(cfg, args)
+        super(Test_SR_DN, self).__init__(cfg, args)
 
     def test_backbone(self, img_path):
         """Test."""
@@ -166,13 +166,13 @@ class Test_SR(Test_Base):
         if self.cfg.TEST.SAVE_LABELS == True:
             if not os.path.isdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH):
                 os.mkdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH)
-            save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, os.path.basename(img_path).split('.')[0] + '_X{}.jpg'.format(self.cfg.TRAIN.UPSCALE_FACTOR))
+            save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, os.path.basename(img_path).split('.')[0] + '.png')#.format(self.cfg.TRAIN.UPSCALE_FACTOR))
         else:
             save_path = None
-        parse_Tensor_img(predict, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=save_path, show_time=10000)
+        parse_Tensor_img(predict, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=save_path, show_time=self.cfg.TEST.SHOW_EVAL_TIME)
 
 
 Test = {'OBD': Test_OBD,
         'ASR': Test_ASR,
-        'SR': Test_SR,
+        'SR_DN': Test_SR_DN,
         }
