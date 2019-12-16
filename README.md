@@ -1,7 +1,7 @@
-#### V1.0.0_STEADY : master 
+#### V1.0.0_STEADY : luogeng 
 ### LuoGeng's Programs Set (Forbid Copying；禁止转传使用)
-This is a PyTorch implementation of ASR / OBD / SR /DENORSE
-#### ASR
+This is a PyTorch implementation of ASR / OBD / SR /DENORSE /TRACK
+#### ASR:
     CTC
     Seq2Seq
     RNN
@@ -21,6 +21,11 @@ This is a PyTorch implementation of ASR / OBD / SR /DENORSE
 #### DENORSE:
     DnCnn
     CBDNet
+    
+#### TRACK:
+    KCF
+
+
 #### Runtime environment
 ```
 pytorch
