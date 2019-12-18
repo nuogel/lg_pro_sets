@@ -165,6 +165,8 @@ def refine_match(threshold, truths, priors, variances, labels, loc_t, conf_t, id
     loc_t[idx] = loc  # [num_priors,4] encoded offsets to learn
     conf_t[idx] = conf  # [num_priors] top class label for each prior
 
+    return loc_t, conf_t
+
 
 def encode(matched, priors, variances):
     """Encode the variances from the priorbox layers into the ground truth boxes
@@ -220,7 +222,10 @@ def log_sum_exp(x):
         x (Variable(tensor)): conf_preds from conf layers
     """
     x_max = x.data.max()
-    return torch.log(torch.sum(torch.exp(x - x_max), 1, keepdim=True)) + x_max
+    c = x.min()
+    sum = torch.sum(torch.exp(x - x_max), 1, keepdim=True)
+    log_sum_exp = torch.log(sum) + x_max
+    return log_sum_exp
 
 
 # Original author: Francisco Massa:

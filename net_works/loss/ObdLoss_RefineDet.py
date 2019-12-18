@@ -103,7 +103,7 @@ class RefineDetMultiBoxLoss(nn.Module):
             targets (tensor): Ground truth boxes and labels for a batch,
                 shape: [batch_size,num_objs,5] (last idx is the label).
         """
-
+        # TODO: make a combination with SSD.
         arm_loc_data, arm_conf_data, odm_loc_data, odm_conf_data, priors = predictions
         # print(arm_loc_data.size(), arm_conf_data.size(),
         #      odm_loc_data.size(), odm_conf_data.size(), priors.size())
@@ -129,11 +129,9 @@ class RefineDetMultiBoxLoss(nn.Module):
                 labels = labels >= 0
             defaults = priors.cuda()
             if self.use_ARM:
-                refine_match(self.threshold, truths, defaults, self.variance, labels,
-                             loc_t, conf_t, idx, arm_loc_data[idx].data)
+                loc_t, conf_t = refine_match(self.threshold, truths, defaults, self.variance, labels, loc_t, conf_t, idx, arm_loc_data[idx].data)
             else:
-                refine_match(self.threshold, truths, defaults, self.variance, labels,
-                             loc_t, conf_t, idx)
+                loc_t, conf_t = refine_match(self.threshold, truths, defaults, self.variance, labels, loc_t, conf_t, idx)
         if self.use_gpu:
             loc_t = loc_t.cuda()
             conf_t = conf_t.cuda()
@@ -164,7 +162,12 @@ class RefineDetMultiBoxLoss(nn.Module):
 
         # Compute max conf across batch for hard negative mining
         batch_conf = conf_data.view(-1, self.num_classes)
-        loss_c = log_sum_exp(batch_conf) - batch_conf.gather(1, conf_t.view(-1, 1))
+
+        # batch_conf = batch_conf.clamp(-10., 10.)
+
+        a = log_sum_exp(batch_conf)
+        b = batch_conf.gather(1, conf_t.view(-1, 1))
+        loss_c = a - b
         # print(loss_c.size())
 
         # Hard Negative Mining

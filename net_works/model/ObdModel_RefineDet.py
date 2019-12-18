@@ -27,7 +27,7 @@ class RefineDet(nn.Module):
 
     def __init__(self, cfg):
         super(RefineDet, self).__init__()
-        size = 320
+        size = cfg.TRAIN.IMG_SIZE[0]
         self.num_classes = len(cfg.TRAIN.CLASSES)
 
         phase = 'train'
@@ -44,7 +44,7 @@ class RefineDet(nn.Module):
         # Layer learns to scale the l2 normalized features from conv4_3
         self.conv4_3_L2Norm = L2Norm(512, 10)
         self.conv5_3_L2Norm = L2Norm(512, 8)
-        self.extras = nn.ModuleList(self.extras)
+        self.extras = nn.ModuleList(self.extras_)
 
         self.arm_loc = nn.ModuleList(self.ARM[0])
         self.arm_conf = nn.ModuleList(self.ARM[1])
@@ -55,10 +55,6 @@ class RefineDet(nn.Module):
         self.tcb1 = nn.ModuleList(self.TCB[1])
         self.tcb2 = nn.ModuleList(self.TCB[2])
 
-        # if phase == 'test':
-        #     self.softmax = nn.Softmax(dim=-1)
-        #     self.detect = Detect_RefineDet(num_classes, self.size, 0, 1000, 0.01, 0.45, 0.01, 500)
-
     def init(self, phase, size, num_classes):
         if phase != "test" and phase != "train":
             print("ERROR: Phase: " + phase + " not recognized")
@@ -68,9 +64,9 @@ class RefineDet(nn.Module):
                   "currently only RefineDet320 and RefineDet512 is supported!")
             return
         self.base = vgg(base[str(size)], 3)
-        self.extras = add_extras(extras[str(size)], size, 1024)
-        self.ARM = self.arm_multibox(self.base, self.extras, mbox[str(size)])
-        self.ODM = self.odm_multibox(self.base, self.extras, mbox[str(size)], num_classes)
+        self.extras_ = add_extras(extras[str(size)], size, 1024)
+        self.ARM = self.arm_multibox(self.base, self.extras_, mbox[str(size)])
+        self.ODM = self.odm_multibox(self.base, self.extras_, mbox[str(size)], num_classes)
         self.TCB = self.add_tcb(tcb[str(size)])
 
     def forward(self, **args):
@@ -156,22 +152,12 @@ class RefineDet(nn.Module):
         odm_conf = torch.cat([o.view(o.size(0), -1) for o in odm_conf], 1)
         # print(arm_loc.size(), arm_conf.size(), odm_loc.size(), odm_conf.size())
 
-        if self.phase == "test":
-            # print(loc, conf)
-            output = self.detect(arm_loc.view(arm_loc.size(0), -1, 4),  # arm loc preds
-                                 self.softmax(arm_conf.view(arm_conf.size(0), -1, 2)),  # arm conf preds
-                                 odm_loc.view(odm_loc.size(0), -1, 4),  # odm loc preds
-                                 self.softmax(odm_conf.view(odm_conf.size(0), -1, self.num_classes)),  # odm conf preds
-                                 self.priors.type(type(x.data))  # default boxes
-                                 )
-        else:
-            output = (
-                arm_loc.view(arm_loc.size(0), -1, 4),
-                arm_conf.view(arm_conf.size(0), -1, 2),
-                odm_loc.view(odm_loc.size(0), -1, 4),
-                odm_conf.view(odm_conf.size(0), -1, self.num_classes),
-                self.priors.type(type(x))
-            )
+        output = (arm_loc.view(arm_loc.size(0), -1, 4),
+                  arm_conf.view(arm_conf.size(0), -1, 2),
+                  odm_loc.view(odm_loc.size(0), -1, 4),
+                  odm_conf.view(odm_conf.size(0), -1, self.num_classes),
+                  self.priors.type(type(x))
+                  )
         return output
 
     def arm_multibox(self, vgg, extra_layers, cfg):
