@@ -21,12 +21,8 @@ class DnCNN(nn.Module):
         layers.append(nn.Conv2d(in_channels=features, out_channels=channels, kernel_size=kernel_size, padding=padding, bias=False))
         self.dncnn = nn.Sequential(*layers)
 
-    def forward(self, train_data, **args):
-        if isinstance(train_data, tuple):
-            x, lab = train_data
-        else:
-            x = train_data
-        x = x.permute([0, 3, 1, 2])
+    def forward(self, **args):
+        x = args['input_x']
         out = self.dncnn(x)
         out = out.permute([0, 2, 3, 1])
         '''

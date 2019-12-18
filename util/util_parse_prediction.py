@@ -1,8 +1,10 @@
 """Parse the predictions."""
 import torch
 import numpy as np
-from util.util_nms import NMS, Soft_NMS
+from util.util_nms import NMS
 import logging
+from net_works.loss.ObdLoss_RefineDet import Detect_RefineDet
+from util.util_iou import xywh2xyxy
 
 LOGGER = logging.getLogger(__name__)
 
@@ -14,6 +16,7 @@ class ParsePredict:
         self.anchors = torch.Tensor(cfg.TRAIN.ANCHORS)
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
         self.cls_num = len(cfg.TRAIN.CLASSES)
+        self.NMS = NMS(cfg)
 
     def _parse_predict(self, f_maps):
         PARSEDICT = {
@@ -23,7 +26,8 @@ class ParsePredict:
             'yolov3_tiny_mobilenet': self._parse_yolo_predict,
             'yolov3_tiny_squeezenet': self._parse_yolo_predict,
             'yolov3_tiny_shufflenet': self._parse_yolo_predict,
-            'fcos': self._parse_fcos_predict
+            'fcos': self._parse_fcos_predict,
+            'refinedet': self._parse_refinedet_predict,
         }
         labels_predict = PARSEDICT[self.cfg.TRAIN.MODEL](f_maps)
         return labels_predict
@@ -35,12 +39,7 @@ class ParsePredict:
             LOGGER.info('[NMS] b')
             score = pre_cls_score[batch_n]
             loc = pre_loc[batch_n]
-
-            if self.cfg.TEST.NMS_TYPE in ['soft_nms', 'SOFT_NMS']:
-                labels = Soft_NMS(score, loc, self.cfg.TEST.SCORE_THRESH, self.cfg.TEST.SOFNMS_THETA)
-            else:
-                labels = NMS(score, loc, self.cfg.TEST.SCORE_THRESH, self.cfg.TEST.IOU_THRESH)
-
+            labels = self.NMS.forward(score, loc)
             labels_predict.append(labels)
         return labels_predict
 
@@ -196,5 +195,17 @@ class ParsePredict:
         locs = torch.cat(locs, 1)
 
         labels_predict = self._predict2nms(scores, locs)
+
+        return labels_predict
+
+    def _parse_refinedet_predict(self, predicts):
+        detecte = Detect_RefineDet(self.cfg)
+        pre_score, pre_loc = detecte.forward(predicts)
+
+        wh = pre_loc[..., 2:] - pre_loc[..., :2]
+        xy = pre_loc[..., :2] + wh / 2
+        _pre_loc = torch.cat([xy, wh], 2)
+
+        labels_predict = self._predict2nms(pre_score, _pre_loc)
 
         return labels_predict

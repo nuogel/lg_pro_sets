@@ -234,8 +234,7 @@ class FCOS(nn.Module):
 
 
     def forward(self, x):
-        x = x.permute([0, 3, 1, 2, ])
-        x = self.power(x * 0.00392156885937 + 0.0, 1.0)
+
         x = self.fpn(x)
         feature_all = []
         for i in range(len(x)):

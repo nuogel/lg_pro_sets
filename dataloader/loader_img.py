@@ -32,6 +32,10 @@ class DataLoader:
             imgs, labels = self.dataaug.augmentation(idx, do_aug=do_aug, resize=self.cfg.TRAIN.RESIZE,
                                                      relative=self.cfg.TRAIN.RELATIVE_LABELS, show_img=self.show_augimg)
             imgs = torch.Tensor(np.array(imgs))
+
+            imgs = imgs.permute([0, 3, 1, 2, ])
+            imgs = imgs * 0.00392156885937 + 0.0
+
             if _is_use_cuda(self.cfg.TRAIN.GPU_NUM):
                 imgs = imgs.cuda(self.cfg.TRAIN.GPU_NUM)
             data = (imgs, labels)  #

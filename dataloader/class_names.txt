@@ -1,1 +1,4 @@
 car,car
+background,background
+person,person
+aeroplane,aeroplane
