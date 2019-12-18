@@ -26,6 +26,7 @@ class DataLoader:
             idx = self.one_name
         if idx:
             imgs, labels = self._prepare_data(idx)
+            imgs = imgs.permute([0, 3, 1, 2, ])
             if _is_use_cuda(self.cfg.TRAIN.GPU_NUM):
                 imgs = imgs.cuda(self.cfg.TRAIN.GPU_NUM)
                 labels = labels.cuda(self.cfg.TRAIN.GPU_NUM)

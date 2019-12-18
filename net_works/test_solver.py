@@ -103,7 +103,9 @@ class Test_OBD(Test_Base):
             img_aug = img_raw
         img_in = torch.from_numpy(img_aug).unsqueeze(0).type(torch.FloatTensor).cuda()
         img_raw = torch.from_numpy(img_raw).unsqueeze(0).type(torch.FloatTensor)
-        predict = self.Model.forward(img_in)
+        img_in = img_in.permute([0, 3, 1, 2, ])
+        img_in = img_in * 0.00392156885937 + 0.0
+        predict = self.Model.forward(input_x=img_in)
         labels_pre = self.parsepredict._parse_predict(predict)
         return _show_img(img_raw, labels_pre, img_in=img_in[0], pic_path=test_picture_path, cfg=self.cfg)
 
@@ -166,7 +168,7 @@ class Test_SR_DN(Test_Base):
         if self.cfg.TEST.SAVE_LABELS == True:
             if not os.path.isdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH):
                 os.mkdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH)
-            save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, os.path.basename(img_path).split('.')[0] + '.png')#.format(self.cfg.TRAIN.UPSCALE_FACTOR))
+            save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, os.path.basename(img_path).split('.')[0] + '.png')  # .format(self.cfg.TRAIN.UPSCALE_FACTOR))
         else:
             save_path = None
         parse_Tensor_img(predict, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=save_path, show_time=self.cfg.TEST.SHOW_EVAL_TIME)

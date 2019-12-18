@@ -69,13 +69,8 @@ class ApolloYoloV2(torch.nn.Module):
         self.conv9_relu = torch.nn.ReLU(1)
         self.conv_final = torch.nn.Conv2d(512, self.anc_num * (4 + 1 + self.cls_num), 1, 1, 0, bias=True)
 
-    def forward(self, train_data, **args):
-        if isinstance(train_data, tuple):
-            x, lab = train_data
-        else:
-            x = train_data
-        x = x.permute([0, 3, 1, 2, ])
-        x = self.power(x * 0.00392156885937 + 0.0, 1.0)
+    def forward(self, **args):
+        x = args['input_x']
         x = self.conv1_relu(self.conv1(x))
         x = self.pool1(x)
         x = self.conv2_relu(self.conv2(x))
@@ -176,8 +171,6 @@ class ApolloYoloV2(torch.nn.Module):
 #     def forward(self, x):
 #         # pylint: disable=arguments-differ
 #         """Yolo Net forward process."""
-#         x = x.permute([0, 3, 1, 2, ])
-#         x = self.power(x * 0.00392156885937 + 0.0, 1.0)
 #         cat = self.conv1(x)
 #         x = self.conv2(cat)
 #         x = self.concat8((cat, x), 1)

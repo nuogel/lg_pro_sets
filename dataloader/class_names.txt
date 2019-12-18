@@ -1,6 +1,4 @@
-Car,Car
-Van,Car
-Truck,Car
-Tram,Car
-Misc,Car
-DontCare,Others
+car,car
+background,background
+person,person
+aeroplane,aeroplane

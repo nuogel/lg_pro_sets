@@ -36,7 +36,6 @@ class EDSR(nn.Module):
             x, y = datasets
         else:
             x = datasets
-        x = x.permute(0, 3, 1, 2)
         x = self.input_conv(x)
         residual = x
         x = self.residual_layers(x)
@@ -209,7 +208,6 @@ class EDSR_old(nn.Module):
             x, lab = datasets
         else:
             x = datasets
-        x = x.permute(0, 3, 1, 2)
         # x = self.sub_mean(x)
         x = self.head(x)
 

@@ -20,11 +20,24 @@ Tram,Tram
 Misc,Misc
 DontCare,DontCare
 
-Person,Person
-Pedestrian,Person
-Man,Person
-Woman,Person
-Boy,Person
-Girl,Person
-Cyclist,Person
-Person_sitting,Person
+ #VOC_CLASSES
+aeroplane,
+bicycle,
+bird,
+boat,
+bottle,
+bus,
+car,
+cat,
+chair,
+cow,
+diningtable,
+dog,
+horse,
+motorbike,
+person,
+pottedplant,
+sheep,
+sofa,
+train,
+tvmonitor

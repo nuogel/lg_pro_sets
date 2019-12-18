@@ -9,12 +9,8 @@ class CBDNet(nn.Module):
         self.fcn = FCN()
         self.unet = UNet()
 
-    def forward(self, train_data, **args):
-        if isinstance(train_data, tuple):
-            x, lab = train_data
-        else:
-            x = train_data
-        x = x.permute([0, 3, 1, 2])
+    def forward(self, **args):
+        x = args['input_x']
         noise_level = self.fcn(x)
         concat_img = torch.cat([x, noise_level], dim=1)
         out = self.unet(concat_img) + x
