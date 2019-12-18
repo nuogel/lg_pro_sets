@@ -116,11 +116,10 @@ class Solver:
         losses = self.LossFun.Loss_Call(predict, dataset, losstype=losstype)
         if self.cfg.BELONGS == 'OBD':
             loss_names = ['[obj_loss]', '[noobj_loss]', '[cls_loss]', '[loc_loss]']  # obj_loss, noobj_loss, cls_loss, loc_loss
-            loss_tmp = range(len(losses))
-            for i in loss_tmp:
+            for i in range(len(losses)):
                 total_loss += losses[i]
             loss_head_info = ''
-            for loss_name, head_loss in zip(loss_names[:len(loss_tmp)], losses):
+            for loss_name, head_loss in zip(loss_names[:len(losses)], losses):
                 loss_head_info += ' {}: {:6.4f}'.format(loss_name, head_loss.item())
             LOGGER.debug('Loss per head: %s', loss_head_info)
         else:
