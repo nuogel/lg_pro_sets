@@ -77,8 +77,8 @@ def collate_fn_2(batch):
     return torch.from_numpy(np.asarray(imgs)), list(labels)
 
 
-IMG_PATH = 'E://datasets//kitti//training//image_2//'
-LAB_PATH = 'E://datasets//kitti//training//label_2//'
+IMG_PATH = 'E://datasets//kitti//training//images//'
+LAB_PATH = 'E://datasets//kitti//training//labels//'
 mydata = MyDataset(IMG_PATH,LAB_PATH)
 
 traindata = DataLoader(dataset=mydata, batch_size=10, collate_fn=collate_fn_1, shuffle=False)
