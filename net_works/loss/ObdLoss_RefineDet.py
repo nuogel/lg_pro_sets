@@ -30,6 +30,9 @@ class Detect_RefineDet():
                 Shape: [1,num_priors,4]
         """
         arm_loc_data, arm_conf_data, odm_loc_data, odm_conf_data, prior_data = predicts
+
+        arm_conf_data = torch.softmax(arm_conf_data.view(arm_conf_data.size(0), -1, 2), -1)
+        odm_conf_data = torch.softmax(odm_conf_data.view(odm_conf_data.size(0), -1, self.num_classes), -1)
         loc_data = odm_loc_data
         conf_data = odm_conf_data
 

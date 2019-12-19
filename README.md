@@ -32,6 +32,10 @@ This is a PyTorch implementation of ASR / OBD / SR /DENORSE /TRACK
 you need to install all the environment before you enjoy this code.
 ```
 pytorch
+numpy
+pandas
+torch
+torchvision
 ...
 ```
 

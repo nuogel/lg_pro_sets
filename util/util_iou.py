@@ -2,11 +2,11 @@
 import torch
 
 
-def iou_mat(box1, box2):
+def iou_mat_xiangyan(box2, box1):
     """
     IOU calculation between box1 and box2,in the shape of [x1 y1 x2 y2].
 
-    :param box1:in the shape of [x1 y1 x2 y2]
+    :param box1:in the shape of [x1 y1 x2 y2]  #[-0.000, 0.6662, 0.0773...
     :param box2:in the shape of [x1 y1 x2 y2]
     :return:IOU of boxes1, boxes2
     """
@@ -30,15 +30,36 @@ def iou_mat(box1, box2):
         intersection = box_w * box_h
         ious[i] = intersection / (area1 + area2 - intersection)
         #
-        mask1 = (box1[..., 0] + box1[..., 2] - box2_[..., 2] - box2_[..., 0]).abs()\
-            - (box1[..., 2] - box1[..., 0] + box2_[..., 2] - box2_[..., 0])
+        mask1 = (box1[..., 0] + box1[..., 2] - box2_[..., 2] - box2_[..., 0]).abs() \
+                - (box1[..., 2] - box1[..., 0] + box2_[..., 2] - box2_[..., 0])
         mask1 = (mask1 < 0).cuda().float()
-        mask2 = (box1[..., 1] + box1[..., 3] - box2_[..., 3] - box2_[..., 1]).abs()\
-            - (box1[..., 3] - box1[..., 1] + box2_[..., 3] - box2_[..., 1])
+        mask2 = (box1[..., 1] + box1[..., 3] - box2_[..., 3] - box2_[..., 1]).abs() \
+                - (box1[..., 3] - box1[..., 1] + box2_[..., 3] - box2_[..., 1])
         mask2 = (mask2 < 0).cuda().float()
         #
         ious[i] = ious[i] * mask1 * mask2
     return ious
+
+
+def iou_mat(box1, box2):
+    '''
+    IOU calculation between box1 and box2,in the shape of [x1 y1 x2 y2].
+
+    :param box1:in the shape of [x1 y1 x2 y2]  #[-0.000, 0.6662, 0.0773...
+    :param box2:in the shape of [x1 y1 x2 y2]
+    :return:IOU of boxes1, boxes2
+    '''
+    area1 = (box2[..., 2] - box2[..., 0]) * (box2[..., 3] - box2[..., 1])
+    area2 = (box1[..., 2] - box1[..., 0]) * (box1[..., 3] - box1[..., 1])
+    iw = torch.min(box1[..., 2], box2[..., 2]) - torch.max(box1[..., 0], box2[..., 0])
+    ih = torch.min(box1[..., 3], box2[..., 3]) - torch.max(box1[..., 1], box2[..., 1])
+    iw = torch.clamp(iw, min=0)
+    ih = torch.clamp(ih, min=0)
+    intersection = iw * ih
+    ua = area1 + area2 - intersection
+    ua = torch.clamp(ua, min=1e-8)
+    IoU = intersection / ua
+    return IoU
 
 
 def iou_xywh(boxes1, boxes2):
@@ -59,7 +80,5 @@ def xywh2xyxy(boxes_xywh):
     """
 
     boxes_xyxy = torch.cat([boxes_xywh[..., :2] - boxes_xywh[..., 2:] / 2.0,
-                          boxes_xywh[..., :2] + boxes_xywh[..., 2:] / 2.0], -1)
+                            boxes_xywh[..., :2] + boxes_xywh[..., 2:] / 2.0], -1)
     return boxes_xyxy
-
-
