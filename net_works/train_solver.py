@@ -102,7 +102,7 @@ class Solver:
     def _get_optimizer(self, learning_rate, optimizer='adam'):
         if optimizer == 'adam' or optimizer == 'Adam':
             optimizer = torch.optim.Adam(self.Model.parameters(),
-                                         lr=learning_rate, betas=(self.cfg.TRAIN.BETAS_ADAM, 0.99), weight_decay=5e-4)
+                                         lr=learning_rate, betas=(self.cfg.TRAIN.BETAS_ADAM, 0.999), weight_decay=5e-4)
         elif optimizer == 'sgd' or optimizer == 'SGD':
             optimizer = torch.optim.SGD(self.Model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
         else:

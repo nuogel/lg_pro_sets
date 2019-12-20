@@ -40,7 +40,7 @@ TRAIN:
   OPTIMIZER: 'adam' #'SGD' #
   LR_START: 0.001
   STEP_LR: 20
-  LR_EXPONENTIAL_DECAY_RATE: 0.98
+  LR_EXPONENTIAL_DECAY_RATE: 0.98 #lr_scheduler.ExponentialLR
   BETAS_ADAM: 0.9
   LOSSTYPE: 'focalloss' #'mse' #
   EPOCH_CONTINUE: None
