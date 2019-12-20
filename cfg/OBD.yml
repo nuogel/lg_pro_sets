@@ -10,7 +10,7 @@ PATH:
 
 
 TRAIN:
-  MODEL: refinedet #yolov3_tiny #yolov3 # yolov3_tiny_shufflenet #  fcos # yolov3_tiny_mobilenet
+  MODEL: efficientdet #refinedet #yolov3_tiny #yolov3 # yolov3_tiny_shufflenet #  fcos # yolov3_tiny_mobilenet
   EPOCH_SIZE: 400
   BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
@@ -22,7 +22,7 @@ TRAIN:
     'bottle', 'bus', 'car', 'cat', 'chair',
     'cow', 'diningtable', 'dog', 'horse',
     'motorbike', 'person', 'pottedplant',
-    'sheep', 'sofa', 'train', 'tvmonitor', 'others']
+    'sheep', 'sofa', 'train', 'tvmonitor']
   STRIDES: [8, 16, 32, 64, 128]
   MILABSIZE: [0, 64, 128, 256, 512, 10000000] # this can be replaced by max(size)/16*2^n-->n [0, 1, 2, 3, 4, INF]
 
@@ -31,13 +31,13 @@ TRAIN:
   SHOW_AUG: FALSE #TRUE #
   SHOW_TRAIN_NAMES: FALSE #TRUE #
   RESIZE: TRUE
-  RELATIVE_LABELS: TRUE  # generate a relative labels to 0-1
+  RELATIVE_LABELS: FALSE #TRUE  # generate a relative labels to 0-1
   AREAR_RATIO: 0.3
   MIN_AREAR: 10 #400
-  IMG_SIZE: [320, 320] #[384, 960] #[512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
+  IMG_SIZE: [512,512] #[320, 320] # [384, 960] #[512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
 
   # optimizer:
-  OPTIMIZER: 'adam'
+  OPTIMIZER: 'adam' #'SGD' #
   LR_START: 0.001
   STEP_LR: 20
   LR_EXPONENTIAL_DECAY_RATE: 0.98
@@ -86,9 +86,9 @@ TEST:
   TEST_SET_RATIO: 0.1
 
   # NMS:
-  NMS_TYPE: 'NMS'#'SOFT_NMS'#
+  NMS_TYPE: 'SOFT_NMS'#'NMS'#
   SOFNMS_THETA: 0.5
-  SCORE_THRESH: 0.6
+  SCORE_THRESH: 0.8
   IOU_THRESH: 0.5
 
   DO_AUG: FALSE
@@ -96,7 +96,8 @@ TEST:
   SAVE_LABELS: TRUE
   SHOW_IMAGES: TRUE #FALSE #
   SHOW_TIMES: 20000
+
   ONE_TEST: TRUE #FALSE  #
-  ONE_TEST_TRAIN_STEP: 100
+  ONE_TEST_TRAIN_STEP: 50
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: ['008826']#  #['000000']# ['20190412_0132']#[000000, 000001, 000002, 000003] #
