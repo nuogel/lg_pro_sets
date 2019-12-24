@@ -66,6 +66,9 @@ def _show_img(imgs, labels_out, img_in=None,
                         ratio = (img_raw.shape[0], img_raw.shape[1])
                     elif img_in is not None:
                         ratio = (img_raw.shape[0] / img_in.shape[1], img_raw.shape[1] / img_in.shape[2])
+                    else:
+                        ratio = [1, 1]
+
                     box[0] *= ratio[1]
                     box[1] *= ratio[0]
                     box[2] *= ratio[1]
@@ -78,7 +81,7 @@ def _show_img(imgs, labels_out, img_in=None,
                 img_now = cv2.rectangle(img_raw, (box[0], box[1]),
                                         (box[2], box[3]), (0, 255, 0), 1)
                 img_now = cv2.putText(img_now,
-                                      str(class_out) + ': '+score_out,
+                                      str(class_out) + ': ' + score_out,
                                       (int(box[0] + 1), int(box[1] - 7)),
                                       fontFace=cv2.FONT_HERSHEY_COMPLEX,
                                       fontScale=0.4,
