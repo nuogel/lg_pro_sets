@@ -37,14 +37,15 @@ class NMS:
             if xywh2x1y1x2y2:
                 boxx1 = max(0, box[0] - box[2] / 2)
                 boxy1 = max(0, box[1] - box[3] / 2)
-                boxx2 = box[0] + box[2] / 2
-                boxy2 = box[1] + box[3] / 2
+                boxx2 = max(0, box[0] + box[2] / 2)
+                boxy2 = max(0, box[1] + box[3] / 2)
                 box_out = [boxx1, boxy1, boxx2, boxy2]
             else:
-                box_out = box
-            if min(box_out) < 0:
-                print('error!')
-                continue
+                boxx1 = max(0, box[0])
+                boxy1 = max(0, box[1])
+                boxx2 = max(0, box[2])
+                boxy2 = max(0, box[3])
+                box_out = [boxx1, boxy1, boxx2, boxy2]
             pre_score_out = pre_score[keep_idx].item()
             class_out = pre_class[keep_idx].item()
             if self.cfg.TRAIN.MODEL == 'refinedet':

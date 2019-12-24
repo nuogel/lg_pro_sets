@@ -92,9 +92,9 @@ class EfficientDetLoss():
             cls_loss = focal_weight * bce
 
             cls_loss = torch.where(torch.ne(class_targets, -1.0), cls_loss, torch.zeros(cls_loss.shape).to(anchors.device))
-            # classification_losses.append(cls_loss.sum() / torch.clamp(num_positive_anchors.float(), min=1.0))
+            classification_losses.append(cls_loss.sum() / torch.clamp(num_positive_anchors.float(), min=1.0))
 
-            classification_losses.append(cls_loss.sum())
+            # classification_losses.append(cls_loss.sum())
 
             # compute the loss for regression
 

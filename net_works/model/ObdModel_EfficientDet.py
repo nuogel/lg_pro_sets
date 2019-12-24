@@ -243,7 +243,8 @@ class EfficientDet(nn.Module):
         classification = torch.cat([out for out in outs[0]], dim=1)
         regression = torch.cat([out for out in outs[1]], dim=1)
         anchors = self.anchors(inputs)
-        # classification = torch.softmax(classification, -1)
+        print(classification.max())
+        classification = torch.softmax(classification, -1)
         # classification = classification.sigmoid()
         print(classification.max())
         if args['is_training']:
@@ -266,12 +267,6 @@ class EfficientDet(nn.Module):
             # anchors_nms_idx = nms(transformed_anchors[0, :, :], scores[0, :, 0], iou_threshold=self.iou_threshold)
             # nms_scores, nms_class = classification[0, anchors_nms_idx, :].max(dim=1)
             # return [nms_scores, nms_class, transformed_anchors[0, anchors_nms_idx, :]]
-
-    # def freeze_bn(self):
-    #     '''Freeze BatchNorm layers.'''
-    #     for layer in self.modules():
-    #         if isinstance(layer, nn.BatchNorm2d):
-    #             layer.eval()
 
     def extract_feat(self, img):
         """
