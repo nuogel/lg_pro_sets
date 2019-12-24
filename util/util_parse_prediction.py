@@ -28,18 +28,19 @@ class ParsePredict:
             'yolov3_tiny_shufflenet': self._parse_yolo_predict,
             'fcos': self._parse_fcos_predict,
             'refinedet': self._parse_refinedet_predict,
+            'efficientdet': self._parse_efficientdet_predict,
         }
         labels_predict = PARSEDICT[self.cfg.TRAIN.MODEL](f_maps)
         return labels_predict
 
-    def _predict2nms(self, pre_cls_score, pre_loc):
+    def _predict2nms(self, pre_cls_score, pre_loc, xywh2x1y1x2y2=True):
         labels_predict = []
         for batch_n in range(pre_cls_score.shape[0]):
             # TODO: make a matrix instead of for...
-            LOGGER.info('[NMS] b')
+            LOGGER.info('[NMS]')
             score = pre_cls_score[batch_n]
             loc = pre_loc[batch_n]
-            labels = self.NMS.forward(score, loc)
+            labels = self.NMS.forward(score, loc, xywh2x1y1x2y2)
             labels_predict.append(labels)
         return labels_predict
 
@@ -208,4 +209,9 @@ class ParsePredict:
 
         labels_predict = self._predict2nms(pre_score, _pre_loc)
 
+        return labels_predict
+
+    def _parse_efficientdet_predict(self, predicts):
+        pre_score, pre_loc = predicts
+        labels_predict = self._predict2nms(pre_score, pre_loc, xywh2x1y1x2y2=False)
         return labels_predict

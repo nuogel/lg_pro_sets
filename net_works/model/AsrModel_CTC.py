@@ -63,8 +63,8 @@ class MODEL_CTC(nn.Module):
 
         return nn.Sequential(OrderedDict(layers))
 
-    def forward(self, train_data, eval=False):
-        x = train_data[0]
+    def forward(self, **args):
+        x = args['input_x']
         x = x.unsqueeze(1)
         x = self.cnn_1(x)
         x = self.cnn_2(x)
@@ -88,7 +88,7 @@ class MODEL_CTC(nn.Module):
             x = self.relu(x)
             x = self.linear_2(x)
 
-        if not eval:
+        if args['is_training']:
             x = x.transpose(0, 1)
             x = x.log_softmax(dim=-1)  # ctc 输入要求
         else:

@@ -189,7 +189,7 @@ class RefineDetMultiBoxLoss(nn.Module):
         conf_p = conf_data[(pos_idx + neg_idx).gt(0)].view(-1, self.num_classes)
         targets_weighted = conf_t[(pos + neg).gt(0)]
         # print(pos_idx.size(), neg_idx.size(), conf_p.size(), targets_weighted.size())
-        loss_c = F.cross_entropy(conf_p, targets_weighted, reduction='sum')
+        loss_c = F.cross_entropy(conf_p, targets_weighted, reduction='sum')  # conf_p不用softmax()等一系列处理。。。见博客
 
         # Sum of losses: L(x,c,l,g) = (Lconf(x, c) + αLloc(x,l,g)) / N
 

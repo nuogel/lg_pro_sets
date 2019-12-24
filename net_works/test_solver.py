@@ -105,7 +105,7 @@ class Test_OBD(Test_Base):
         img_raw = torch.from_numpy(img_raw).unsqueeze(0).type(torch.FloatTensor)
         img_in = img_in.permute([0, 3, 1, 2, ])
         img_in = img_in * 0.00392156885937 + 0.0
-        predict = self.Model.forward(input_x=img_in)
+        predict = self.Model.forward(input_x=img_in, is_training=False)
         labels_pre = self.parsepredict._parse_predict(predict)
         return _show_img(img_raw, labels_pre, img_in=img_in[0], pic_path=test_picture_path, cfg=self.cfg)
 
@@ -147,7 +147,7 @@ class Test_ASR(Test_Base):
         # prepare paramertas
         self.cfg.TRAIN.BATCH_SIZE = 1
         test_data = self.DataLoader.get_one_data_for_test(wav_path)
-        predict = self.Model.forward(test_data, eval=True)
+        predict = self.Model.forward(test_data, is_training=False)
         for k, v in predict.items():
             print('pre:', k, self.DataLoader._number2pinying(v[:-1]))
 
@@ -164,7 +164,7 @@ class Test_SR_DN(Test_Base):
         if _is_use_cuda():
             test_img = test_img.cuda()
         self.cfg.TRAIN.BATCH_SIZE = 1
-        predict = self.Model.forward(test_img, eval=True)
+        predict = self.Model.forward(test_img, is_training=False)
         if self.cfg.TEST.SAVE_LABELS == True:
             if not os.path.isdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH):
                 os.mkdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH)

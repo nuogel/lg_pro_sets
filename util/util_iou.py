@@ -2,7 +2,7 @@
 import torch
 
 
-def iou_mat_xiangyan(box2, box1):
+def iou_mat_N2N(box1, box2):
     """
     IOU calculation between box1 and box2,in the shape of [x1 y1 x2 y2].
 
@@ -41,8 +41,9 @@ def iou_mat_xiangyan(box2, box1):
     return ious
 
 
-def iou_mat(box1, box2):
+def iou_mat_N21(box1, box2):
     '''
+    如果shape[N1, 4] iou [N2, 4]，则 N1=N2,一般用法为[N,4], [1, 4] 输出为[N], 如果
     IOU calculation between box1 and box2,in the shape of [x1 y1 x2 y2].
 
     :param box1:in the shape of [x1 y1 x2 y2]  #[-0.000, 0.6662, 0.0773...
@@ -62,7 +63,7 @@ def iou_mat(box1, box2):
     return IoU
 
 
-def iou_xywh(boxes1, boxes2):
+def iou_xywh(boxes1, boxes2, type='N2N'):
     """
     IOU calculation between box1 and box2,which is in the shape of [x y w h].
 
@@ -70,8 +71,29 @@ def iou_xywh(boxes1, boxes2):
     :param boxes2:in the shape of [x y w h]
     :return:IOU of boxes1, boxes2
     """
-    ious = iou_mat(xywh2xyxy(boxes1), xywh2xyxy(boxes2))
+    boxes1 = xywh2xyxy(boxes1)
+    boxes2 = xywh2xyxy(boxes2)
+    ious = iou_mat(boxes1, boxes2, type)
     return ious
+
+
+def iou_xyxy(boxes1, boxes2, type='N2N'):
+    """
+    IOU calculation between box1 and box2,which is in the shape of [x y x y]
+
+    :param boxes1:in the shape of [x y x y]
+    :param boxes2:in the shape of [x y x y]
+    :return:IOU of boxes1, boxes2
+    """
+    ious = iou_mat(boxes1, boxes2, type)
+    return ious
+
+
+def iou_mat(box1, box2, type='N2N'):
+    if type is 'N2N':
+        return iou_mat_N2N(box1, box2)
+    else:
+        return iou_mat_N21(box1, box2)
 
 
 def xywh2xyxy(boxes_xywh):

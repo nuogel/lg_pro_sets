@@ -102,7 +102,7 @@ class Solver:
     def _get_optimizer(self, learning_rate, optimizer='adam'):
         if optimizer == 'adam' or optimizer == 'Adam':
             optimizer = torch.optim.Adam(self.Model.parameters(),
-                                         lr=learning_rate, betas=(self.cfg.TRAIN.BETAS_ADAM, 0.99), weight_decay=5e-4)
+                                         lr=learning_rate, betas=(self.cfg.TRAIN.BETAS_ADAM, 0.999), weight_decay=5e-4)
         elif optimizer == 'sgd' or optimizer == 'SGD':
             optimizer = torch.optim.SGD(self.Model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
         else:
@@ -159,7 +159,7 @@ class Solver:
                 LOGGER.warning('[TRAIN] NO gt_labels IN THIS BATCH. Epoch: %3d, step: %4d/%4d ', epoch, step, batch_num)
                 continue
             # forward process
-            predict = self.Model.forward(input_x=train_data[0], input_y=train_data[1], train_data=train_data)
+            predict = self.Model.forward(input_x=train_data[0], input_y=train_data[1], input_data=train_data, is_training=True)
             # calculate the total loss
             total_loss = self._calculate_loss(predict, train_data, losstype=self.cfg.TRAIN.LOSSTYPE)
             losses += total_loss.item()
@@ -189,7 +189,7 @@ class Solver:
             # TODO: add timer
             test_data = self.DataLoader.get_data_by_idx(test_set, step * batch_size, (step + 1) * batch_size)
             if test_data[0] is None: continue
-            predict = self.Model.forward(input_x=test_data[0], input_y=test_data[1], train_data=test_data, eval=True)
+            predict = self.Model.forward(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)
             if self.cfg.BELONGS in ['OBD']: test_data = test_data[1]
             self.score.cal_score(predict, test_data)
             LOGGER.info('[EVALUATE] Epoch-Step:%3d-%4d/%4d', epoch, step, batch_num)

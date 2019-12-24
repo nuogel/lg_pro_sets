@@ -152,7 +152,6 @@ class RefineDet(nn.Module):
         odm_conf = torch.cat([o.view(o.size(0), -1) for o in odm_conf], 1)
         # print(arm_loc.size(), arm_conf.size(), odm_loc.size(), odm_conf.size())
 
-
         output = (arm_loc.view(arm_loc.size(0), -1, 4),
                   arm_conf.view(arm_conf.size(0), -1, 2),
                   odm_loc.view(odm_loc.size(0), -1, 4),
