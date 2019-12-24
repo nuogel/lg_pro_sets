@@ -18,7 +18,7 @@ def _parse_arguments():
                         , type=str, help='yml_path')
     parser.add_argument('--checkpoint', default=None  #'tmp/checkpoint/now.pkl'  #
                         , help='Path to the checkpoint to be loaded to the model')
-    parser.add_argument('--lr', default=0.000051, type=float,
+    parser.add_argument('--lr', default=0.001, type=float,
                         help='Learning rate')
     parser.add_argument('--lr_continue', default=0.0001, type=float,
                         help='Learning rate')

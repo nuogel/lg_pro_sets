@@ -33,14 +33,14 @@ class ParsePredict:
         labels_predict = PARSEDICT[self.cfg.TRAIN.MODEL](f_maps)
         return labels_predict
 
-    def _predict2nms(self, pre_cls_score, pre_loc):
+    def _predict2nms(self, pre_cls_score, pre_loc, xywh2x1y1x2y2=True):
         labels_predict = []
         for batch_n in range(pre_cls_score.shape[0]):
             # TODO: make a matrix instead of for...
-            LOGGER.info('[NMS] b')
+            LOGGER.info('[NMS]')
             score = pre_cls_score[batch_n]
             loc = pre_loc[batch_n]
-            labels = self.NMS.forward(score, loc)
+            labels = self.NMS.forward(score, loc, xywh2x1y1x2y2)
             labels_predict.append(labels)
         return labels_predict
 
@@ -212,17 +212,6 @@ class ParsePredict:
         return labels_predict
 
     def _parse_efficientdet_predict(self, predicts):
-        scores, classification, transformed_anchors = predicts
-        pred_annots = []
-        if (scores.shape[0] > 0):
-            pred_annots = []
-            for j in range(scores.shape[0]):
-                bbox = transformed_anchors[[j], :][0]
-                x1 = int(bbox[0])
-                y1 = int(bbox[1])
-                x2 = int(bbox[2])
-                y2 = int(bbox[3])
-                idx_name = int(classification[[j]])
-                score = scores[[j]].cpu().detach().numpy()[0]
-                pred_annots.append([score, idx_name, [x1, y1, x2, y2]])
-        return [pred_annots]
+        pre_score, pre_loc = predicts
+        labels_predict = self._predict2nms(pre_score, pre_loc, xywh2x1y1x2y2=False)
+        return labels_predict

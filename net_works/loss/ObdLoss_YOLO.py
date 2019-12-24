@@ -57,9 +57,9 @@ class YoloLoss:
                 box_center = (box_xy * torch.Tensor([shape[1], shape[0]]).cuda()).long()
                 anc = torch.cat([torch.zeros_like(anchors), anchors], 1)
                 box_iou = torch.cat([torch.Tensor([0, 0]).cuda(), box_wh])
-                iou = iou_xywh(anc.cuda(), box_iou.cuda())
-                iou_max = torch.max(iou, 1)
-                anc_idx = iou_max[1][0]
+                iou = iou_xywh(anc.cuda(), box_iou.cuda(), type='N21')
+                iou_max = torch.max(iou, 0)
+                anc_idx = iou_max[1].item()
                 lab_boxes.append(boxes)
                 # print(box_center, boxes)
 
@@ -146,7 +146,7 @@ class YoloLoss:
         for i in range(batch):
             b_box = lab_boxes[i]
             b_box = torch.stack(b_box, 0)
-            iou = iou_xywh(pre_loc[i], b_box)
+            iou = iou_xywh(pre_loc[i], b_box, type='N2N')
             iou_max = torch.max(iou, 0)
             # print(iou_max[0][15, 31:34])
             ignore_iou = torch.lt(iou_max[0], 0.6)

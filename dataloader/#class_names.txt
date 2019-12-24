@@ -41,3 +41,15 @@ sheep,sheep
 sofa,sofa
 train,train,
 tvmonitor,tvmonitor
+
+# BDD100
+bus,
+traffic light,
+traffic sign,
+person,
+bike,
+truck,
+moter,
+car,
+train,
+rider

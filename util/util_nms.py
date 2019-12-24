@@ -15,7 +15,7 @@ class NMS:
         else:
             self.class_range = range(len(cfg.TRAIN.CLASSES))
 
-    def forward(self, score, pre_loc):
+    def forward(self, score, pre_loc, xywh2x1y1x2y2):
         pre_score_raw = score.max(-1)  # get the max score of the scores of classes.
         pre_score = pre_score_raw[0]  # score out
         pre_class = pre_score_raw[1]  # idx of score: is class
@@ -25,20 +25,23 @@ class NMS:
         else:
             keep = self.NMS_Greedy(pre_score, pre_class, pre_loc)
 
-        labels_out = self.nms2labels(keep, pre_score, pre_class, pre_loc)
+        labels_out = self.nms2labels(keep, pre_score, pre_class, pre_loc, xywh2x1y1x2y2)
 
         return labels_out
 
-    def nms2labels(self, keep, pre_score, pre_class, pre_loc):
+    def nms2labels(self, keep, pre_score, pre_class, pre_loc, xywh2x1y1x2y2):
         labels_out = []
         for keep_idx in keep:
             box = pre_loc[keep_idx]
             box = box.squeeze()
-            boxx1 = max(0, box[0] - box[2] / 2)
-            boxy1 = max(0, box[1] - box[3] / 2)
-            boxx2 = box[0] + box[2] / 2
-            boxy2 = box[1] + box[3] / 2
-            box_out = [boxx1, boxy1, boxx2, boxy2]
+            if xywh2x1y1x2y2:
+                boxx1 = max(0, box[0] - box[2] / 2)
+                boxy1 = max(0, box[1] - box[3] / 2)
+                boxx2 = box[0] + box[2] / 2
+                boxy2 = box[1] + box[3] / 2
+                box_out = [boxx1, boxy1, boxx2, boxy2]
+            else:
+                box_out = box
             if min(box_out) < 0:
                 print('error!')
                 continue
@@ -48,7 +51,6 @@ class NMS:
                 class_out = class_out - 1
             labels_out.append([pre_score_out, class_out, box_out])
         return labels_out
-
 
     def NMS_Greedy(self, pre_score, pre_class, pre_loc):
         """
@@ -74,7 +76,7 @@ class NMS:
                 max_one = order_index[0].item()  # get index of the max score box.
                 box_head = pre_loc[max_one]  # get the score of it
                 box_others = pre_loc[order_index[1:]]  # the rest boxes.
-                ious = iou_xywh(box_head, box_others)  # count the ious between the max one and the others
+                ious = iou_xywh(box_head, box_others, type='N21')  # count the ious between the max one and the others
                 rest = torch.lt(ious, self.iou_thresh).squeeze()  # find the boxes of iou<0.5(thresh), discard the iou>0.5.
                 order_index = order_index[1:][rest]  # get the new index of the rest boxes, except the max one.
                 keep.append(max_one)
@@ -107,7 +109,7 @@ class NMS:
                 box_others = pre_loc[order_index[1:]]
                 score_others = pre_score[order_index[1:]]
                 # print(score_others)
-                ious = iou_xywh(box_head, box_others).reshape(1, -1)
+                ious = iou_xywh(box_head, box_others, type='N21').reshape(1, -1)
                 # print('iou', ious)
                 soft_score = score_others * torch.exp(-pow(ious, 2) / self.theta).squeeze()  # s = s*e^(-iou^2 / theta)
                 # print('s',soft_score)

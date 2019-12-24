@@ -65,7 +65,7 @@ def _show_img(imgs, labels_out, img_in=None,
                     if cfg.TRAIN.RELATIVE_LABELS:
                         ratio = (img_raw.shape[0], img_raw.shape[1])
                     elif img_in is not None:
-                        ratio = (img_raw.shape[0] / img_in.shape[0], img_raw.shape[1] / img_in.shape[1])
+                        ratio = (img_raw.shape[0] / img_in.shape[1], img_raw.shape[1] / img_in.shape[2])
                     box[0] *= ratio[1]
                     box[1] *= ratio[0]
                     box[2] *= ratio[1]

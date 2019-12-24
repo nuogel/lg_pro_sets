@@ -66,10 +66,10 @@ class EfficientDetLoss():
             # pdb.set_trace()
 
             # compute the loss for classification
-            targets = torch.ones(classification.shape) * -1
-            targets = targets.to(anchors.device)
+            class_targets = torch.ones(classification.shape) * -1
+            class_targets = class_targets.to(anchors.device)
 
-            targets[torch.lt(IoU_max, 0.4), :] = 0
+            class_targets[torch.lt(IoU_max, 0.4), :] = 0
 
             positive_indices = torch.ge(IoU_max, 0.5)
 
@@ -77,23 +77,24 @@ class EfficientDetLoss():
 
             assigned_annotations = bbox_annotation[IoU_argmax, :]
 
-            targets[positive_indices, :] = 0
-            targets[positive_indices, assigned_annotations[positive_indices, 0].long()] = 1
+            class_targets[positive_indices, :] = 0
+            class_targets[positive_indices, assigned_annotations[positive_indices, 0].long()] = 1
 
-            alpha_factor = torch.ones(targets.shape) * alpha
+            alpha_factor = torch.ones(class_targets.shape) * alpha
             alpha_factor = alpha_factor.to(anchors.device)
-            alpha_factor = torch.where(torch.eq(targets, 1.), alpha_factor, 1. - alpha_factor)
-            focal_weight = torch.where(torch.eq(targets, 1.), 1. - classification, classification)
+            alpha_factor = torch.where(torch.eq(class_targets, 1.), alpha_factor, 1. - alpha_factor)
+            focal_weight = torch.where(torch.eq(class_targets, 1.), 1. - classification, classification)
             focal_weight = alpha_factor * torch.pow(focal_weight, gamma)
-            a, A, b = targets.min(), targets.max(), classification.max()
-            # bce = -(targets * torch.log(classification) + (1.0 - targets) * torch.log(1.0 - classification))
-            bce = self.bceloss(classification, targets)
+            a, A, b = class_targets.min(), class_targets.max(), classification.max()
+            # bce = -(class_targets * torch.log(classification) + (1.0 - class_targets) * torch.log(1.0 - classification))
+            bce = self.bceloss(classification, class_targets)
             # cls_loss = focal_weight * torch.pow(bce, gamma)
             cls_loss = focal_weight * bce
 
-            cls_loss = torch.where(torch.ne(targets, -1.0), cls_loss, torch.zeros(cls_loss.shape).to(anchors.device))
+            cls_loss = torch.where(torch.ne(class_targets, -1.0), cls_loss, torch.zeros(cls_loss.shape).to(anchors.device))
+            # classification_losses.append(cls_loss.sum() / torch.clamp(num_positive_anchors.float(), min=1.0))
 
-            classification_losses.append(cls_loss.sum() / torch.clamp(num_positive_anchors.float(), min=1.0))
+            classification_losses.append(cls_loss.sum())
 
             # compute the loss for regression
 
@@ -127,7 +128,7 @@ class EfficientDetLoss():
                 negative_indices = ~positive_indices
 
                 regression_diff = torch.abs(targets - regression[positive_indices, :])
-
+                # regression_loss = torch.pow(regression_diff, 2)
                 regression_loss = torch.where(torch.le(regression_diff, 1.0 / 9.0), 0.5 * 9.0 * torch.pow(regression_diff, 2), regression_diff - 0.5 / 9.0)
                 regression_losses.append(regression_loss.mean())
             else:

@@ -219,8 +219,7 @@ class EfficientDet(nn.Module):
                           out_channels=W_bifpn,
                           stack=D_bifpn,
                           num_outs=5)
-        self.bbox_head = RetinaHead(num_classes=num_classes,
-                                    in_channels=W_bifpn)
+        self.bbox_head = RetinaHead(num_classes=num_classes, in_channels=W_bifpn, softmax_=True)
 
         self.anchors = Anchors()
         self.regressBoxes = BBoxTransform()
@@ -228,14 +227,14 @@ class EfficientDet(nn.Module):
         self.threshold = threshold
         self.iou_threshold = iou_threshold
 
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
-            elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
-        self.freeze_bn()
+        # for m in self.modules():
+        #     if isinstance(m, nn.Conv2d):
+        #         n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+        #         m.weight.data.normal_(0, math.sqrt(2. / n))
+        #     elif isinstance(m, nn.BatchNorm2d):
+        #         m.weight.data.fill_(1)
+        #         m.bias.data.zero_()
+        # self.freeze_bn()
 
     def forward(self, **args):
         inputs = args['input_x']
@@ -244,31 +243,35 @@ class EfficientDet(nn.Module):
         classification = torch.cat([out for out in outs[0]], dim=1)
         regression = torch.cat([out for out in outs[1]], dim=1)
         anchors = self.anchors(inputs)
+        # classification = torch.softmax(classification, -1)
+        # classification = classification.sigmoid()
+        print(classification.max())
         if args['is_training']:
             return classification, regression, anchors
         else:
             transformed_anchors = self.regressBoxes(anchors, regression)
             transformed_anchors = self.clipBoxes(transformed_anchors, inputs)
-            scores = torch.max(classification, dim=2, keepdim=True)[0]
-            A = scores.max()
-            scores_over_thresh = (scores > self.threshold)[0, :, 0]
+            return classification, transformed_anchors
+            # scores = torch.max(classification, dim=2, keepdim=True)[0]
+            # A = scores.max()
+            # scores_over_thresh = (scores > self.threshold)[0, :, 0]
+            #
+            # if scores_over_thresh.sum() == 0:
+            #     print('No boxes to NMS')
+            #     # no boxes to NMS, just return
+            #     return [torch.zeros(0), torch.zeros(0), torch.zeros(0, 4)]
+            # classification = classification[:, scores_over_thresh, :]
+            # transformed_anchors = transformed_anchors[:, scores_over_thresh, :]
+            # scores = scores[:, scores_over_thresh, :]
+            # anchors_nms_idx = nms(transformed_anchors[0, :, :], scores[0, :, 0], iou_threshold=self.iou_threshold)
+            # nms_scores, nms_class = classification[0, anchors_nms_idx, :].max(dim=1)
+            # return [nms_scores, nms_class, transformed_anchors[0, anchors_nms_idx, :]]
 
-            if scores_over_thresh.sum() == 0:
-                print('No boxes to NMS')
-                # no boxes to NMS, just return
-                return [torch.zeros(0), torch.zeros(0), torch.zeros(0, 4)]
-            classification = classification[:, scores_over_thresh, :]
-            transformed_anchors = transformed_anchors[:, scores_over_thresh, :]
-            scores = scores[:, scores_over_thresh, :]
-            anchors_nms_idx = nms(transformed_anchors[0, :, :], scores[0, :, 0], iou_threshold=self.iou_threshold)
-            nms_scores, nms_class = classification[0, anchors_nms_idx, :].max(dim=1)
-            return [nms_scores, nms_class, transformed_anchors[0, anchors_nms_idx, :]]
-
-    def freeze_bn(self):
-        '''Freeze BatchNorm layers.'''
-        for layer in self.modules():
-            if isinstance(layer, nn.BatchNorm2d):
-                layer.eval()
+    # def freeze_bn(self):
+    #     '''Freeze BatchNorm layers.'''
+    #     for layer in self.modules():
+    #         if isinstance(layer, nn.BatchNorm2d):
+    #             layer.eval()
 
     def extract_feat(self, img):
         """
