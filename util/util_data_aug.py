@@ -24,7 +24,7 @@ class Dataaug:
         self.area_ratio = cfg.TRAIN.AREAR_RATIO
         self.min_area = cfg.TRAIN.MIN_AREAR
 
-    def _parse_bbs(self, bbs_aug, relative=True):
+    def _parse_bbs(self, bbs_aug):
         """
         Parse the key points from augmentation.
     
@@ -65,10 +65,7 @@ class Dataaug:
         # print(idx)
         # prepare the augmentation functions
         images, labels = datas
-        if image_for_aug is None and labels is None:  # if there is no any label in classes,the return none.
-            return images, labels
         labels = [[ia.BoundingBox(x1=labs[1], y1=labs[2], x2=labs[3], y2=labs[4], label=labs[0]) for labs in _labels] for _labels in labels]
-
         base_funs = [
             iaa.Fliplr(.5),
             # iaa.Grayscale(alpha=(0, 1)),

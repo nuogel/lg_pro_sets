@@ -46,7 +46,7 @@ def _get_train_test_dataset(x_dir, y_dir, idx_stores_dir, test_train_ratio, cfg)
 
     train_set, test_set = train_test_split(label_files_list, test_size=test_train_ratio, random_state=1)
     os.makedirs(idx_stores_dir, exist_ok=True)
-    _wrte_dataset_txt((train_set, test_set), idx_stores_dir, [x_dir, x_extend_name, y_dir, y_extend_name])
+    _wrte_dataset_txt((train_set, test_set), idx_stores_dir)
     # torch.save(train_set, os.path.join(idx_stores_dir, 'train_set'))
     # torch.save(test_set, os.path.join(idx_stores_dir, 'test_set'))
     print('saving train_set&test_set to %s' % idx_stores_dir)
@@ -54,14 +54,14 @@ def _get_train_test_dataset(x_dir, y_dir, idx_stores_dir, test_train_ratio, cfg)
     return train_set, test_set
 
 
-def _wrte_dataset_txt(dataset, idx_stores_dir, path_info):
+def _wrte_dataset_txt(dataset, idx_stores_dir):
     train_set, test_set = dataset
     train_set_txt = ''
     test_set_txt = ''
     for i in train_set:
-        train_set_txt += str(i) + ';' + os.path.join(path_info[0], str(i) + '.' + str(path_info[1])) + ';' + os.path.join(path_info[2], str(i) + '.' + str(path_info[3])) + '\n'
+        train_set_txt += str(i[0]) + ';' + str(i[1]) + ';' + str(i[2]) + '\n'
     for i in test_set:
-        test_set_txt += str(i) + ';' + os.path.join(path_info[0], str(i) + '.' + str(path_info[1])) + ';' + os.path.join(path_info[2], str(i) + '.' + str(path_info[3])) + '\n'
+        test_set_txt += str(i[0]) + ';' + str(i[1]) + ';' + str(i[2]) + '\n'
     f = open(os.path.join(idx_stores_dir, 'train_set.txt'), 'w')
     f.write(train_set_txt)
     f.close()

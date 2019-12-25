@@ -31,12 +31,7 @@ class DataLoader:
         '''
         data = (None, None)
         if self.one_test:
-            idx = []
-            for idx_ in idx_store:
-                for one_name in self.one_name:
-                    if one_name in idx_:
-                        idx.append(idx_)
-                        break
+            idx = self.one_name
         else:
             idx = idx_store[index_from: index_to]
         if not idx:

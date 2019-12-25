@@ -91,11 +91,14 @@ class Solver:
             epoch = 0
             learning_rate = self.args.lr  # if self.args.lr else self.cfg.TRAIN.LR_CONTINUE
             # generate a new data set
-            train_set, test_set = _get_train_test_dataset(x_dir=self.cfg.PATH.IMG_PATH, y_dir=self.cfg.PATH.LAB_PATH, idx_stores_dir=idx_stores_dir,
-                                                          test_train_ratio=self.cfg.TEST.TEST_SET_RATIO, cfg=self.cfg, )
+            if self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
+                train_set, test_set = _read_train_test_dataset(idx_stores_dir)
+            else:
+                train_set, test_set = _get_train_test_dataset(x_dir=self.cfg.PATH.IMG_PATH, y_dir=self.cfg.PATH.LAB_PATH, idx_stores_dir=idx_stores_dir,
+                                                              test_train_ratio=self.cfg.TEST.TEST_SET_RATIO, cfg=self.cfg, )
+            print(train_set[:4], '\n', test_set[:4])
             self.save_parameter.tbX_read()
         LOGGER.info('the train set is :{}, ant the test set is :{}'.format(len(train_set), len(test_set)))
-        print(train_set[:10], test_set[:10])
         # _print_model_parm_nums(self.Model.cuda(), self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1])
         return learning_rate, epoch, train_set, test_set
 
