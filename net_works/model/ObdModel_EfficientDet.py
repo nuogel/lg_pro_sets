@@ -244,8 +244,8 @@ class EfficientDet(nn.Module):
         regression = torch.cat([out for out in outs[1]], dim=1)
         anchors = self.anchors(inputs)
         print(classification.max())
-        classification = torch.softmax(classification, -1)
-        # classification = classification.sigmoid()
+        # classification = torch.softmax(classification, -1)  # TF 版本用的sigmoid，outputs = layers.Activation('sigmoid')(outputs)
+        classification = classification.sigmoid()
         print(classification.max())
         if args['is_training']:
             return classification, regression, anchors
