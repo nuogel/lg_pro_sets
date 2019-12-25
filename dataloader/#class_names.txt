@@ -42,6 +42,11 @@ sofa,sofa
 train,train,
 tvmonitor,tvmonitor
 
+
+car,car
+person,person
+bus,car
+
 # BDD100
 bus,
 traffic light,
