@@ -2,7 +2,7 @@
 import torch
 
 
-def iou_mat_N2N(box1, box2):
+def _iou_mat_N2N_(box1, box2):
     """
     IOU calculation between box1 and box2,in the shape of [x1 y1 x2 y2].
 
@@ -41,7 +41,26 @@ def iou_mat_N2N(box1, box2):
     return ious
 
 
-def iou_mat_N21(box1, box2):
+def _iou_mat_N2N(a, b):
+    area = (b[:, 2] - b[:, 0]) * (b[:, 3] - b[:, 1])
+    iw = torch.min(torch.unsqueeze(a[:, 2], dim=1), b[:, 2]) - torch.max(torch.unsqueeze(a[:, 0], 1), b[:, 0])
+    ih = torch.min(torch.unsqueeze(a[:, 3], dim=1), b[:, 3]) - torch.max(torch.unsqueeze(a[:, 1], 1), b[:, 1])
+
+    iw = torch.clamp(iw, min=0)
+    ih = torch.clamp(ih, min=0)
+
+    ua = torch.unsqueeze((a[:, 2] - a[:, 0]) * (a[:, 3] - a[:, 1]), dim=1) + area - iw * ih
+
+    ua = torch.clamp(ua, min=1e-8)
+
+    intersection = iw * ih
+
+    IoU = intersection / ua
+
+    return IoU
+
+
+def _iou_mat_N21(box1, box2):
     '''
     如果shape[N1, 4] iou [N2, 4]，则 N1=N2,一般用法为[N,4], [1, 4] 输出为[N], 如果
     IOU calculation between box1 and box2,in the shape of [x1 y1 x2 y2].
@@ -73,7 +92,7 @@ def iou_xywh(boxes1, boxes2, type='N2N'):
     """
     boxes1 = xywh2xyxy(boxes1)
     boxes2 = xywh2xyxy(boxes2)
-    ious = iou_mat(boxes1, boxes2, type)
+    ious = _iou_mat(boxes1, boxes2, type)
     return ious
 
 
@@ -85,15 +104,23 @@ def iou_xyxy(boxes1, boxes2, type='N2N'):
     :param boxes2:in the shape of [x y x y]
     :return:IOU of boxes1, boxes2
     """
-    ious = iou_mat(boxes1, boxes2, type)
+    ious = _iou_mat(boxes1, boxes2, type)
     return ious
 
 
-def iou_mat(box1, box2, type='N2N'):
+def _iou_mat(box1, box2, type='N2N'):
+    '''
+
+    :param boxes1:in the shape of [x y x y]
+    :param boxes2:in the shape of [x y x y]
+    :param type:
+    :return:
+    '''
+
     if type is 'N2N':
-        return iou_mat_N2N(box1, box2)
+        return _iou_mat_N2N(box1, box2)
     else:
-        return iou_mat_N21(box1, box2)
+        return _iou_mat_N21(box1, box2)
 
 
 def xywh2xyxy(boxes_xywh):
@@ -104,3 +131,12 @@ def xywh2xyxy(boxes_xywh):
     boxes_xyxy = torch.cat([boxes_xywh[..., :2] - boxes_xywh[..., 2:] / 2.0,
                             boxes_xywh[..., :2] + boxes_xywh[..., 2:] / 2.0], -1)
     return boxes_xyxy
+
+
+def xyxy2xywh(boxes_xyxy):
+    """
+    Convert boxes with the shape xywh to x1y1x2y2.
+    """
+
+    boxes_xywh = torch.cat([(boxes_xyxy[..., :2] + boxes_xyxy[..., 2:]) / 2.0, boxes_xyxy[..., 2:] - boxes_xyxy[..., :2]], -1)
+    return boxes_xywh

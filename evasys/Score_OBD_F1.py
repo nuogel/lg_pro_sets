@@ -3,7 +3,7 @@ import os
 import torch
 import numpy as np
 
-from util.util_iou import iou_mat
+from util.util_iou import iou_xyxy
 from util.util_get_cls_names import _get_class_names
 
 
@@ -108,8 +108,9 @@ class F1Score:
                 for i, lab in enumerate(label):
                     if lab[0] is not cls:
                         continue
-                    _one_box = torch.Tensor(one_box[2]).cuda()
-                    iou = iou_mat(_one_box, torch.Tensor(lab[1:5]).to(_one_box.device))  # to(anchors.device))
+                    a = torch.Tensor(one_box[2]).cuda().unsqueeze(0)
+                    b = torch.Tensor(lab[1:5]).to(a.device).unsqueeze(0)
+                    iou = iou_xyxy(a, b)[0][0]  # to(anchors.device))
                     if iou > max_iou:
                         max_iou = iou
                         _id = i

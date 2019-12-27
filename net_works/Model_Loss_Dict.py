@@ -1,3 +1,4 @@
+from net_works.model.ObdModel_SSD_VGG import SSD
 from net_works.model.ObdModel_yolov2 import ApolloYoloV2
 from net_works.model.ObdModel_yolov3_net import YoloV3
 from net_works.model.ObdModel_yolov3_tiny import YoloV3_Tiny
@@ -15,7 +16,7 @@ from net_works.model.SrModel_EDSR import EDSR
 from net_works.model.DeNoiseModel_CBDNet import CBDNet
 from net_works.model.DeNoiseModel_DNCNN import DnCNN
 
-
+from net_works.loss.ObdLoss_SSD_Multiboxloss import MultiboxLoss
 from net_works.loss.ObdLoss_YOLO import YoloLoss
 from net_works.loss.ObdLoss_FCOS import FCOSLOSS
 from net_works.loss.AsrLoss_CTC import RnnLoss
@@ -36,6 +37,7 @@ ModelDict = {
     'fcos': FCOS,
     'refinedet': RefineDet,
     'efficientdet': EfficientDet,
+    'ssd': SSD,
 
     # ASR
     'rnn': RNN,
@@ -60,6 +62,7 @@ LossDict = {
     'fcos': FCOSLOSS,
     'refinedet': RefineDetLoss,
     'efficientdet': EfficientDetLoss,
+    'ssd': MultiboxLoss,
 
     # ASR
     'rnn': RnnLoss,

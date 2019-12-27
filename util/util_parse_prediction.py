@@ -4,7 +4,7 @@ import numpy as np
 from util.util_nms import NMS
 import logging
 from net_works.loss.ObdLoss_RefineDet import Detect_RefineDet
-from util.util_iou import xywh2xyxy
+from util.util_iou import xywh2xyxy, xyxy2xywh
 
 LOGGER = logging.getLogger(__name__)
 
@@ -212,6 +212,7 @@ class ParsePredict:
         return labels_predict
 
     def _parse_efficientdet_predict(self, predicts):
-        pre_score, pre_loc = predicts
-        labels_predict = self._predict2nms(pre_score, pre_loc, xywh2x1y1x2y2=False)
+        pre_score, pre_loc_xyxy = predicts
+        pre_loc_xywh = xyxy2xywh(pre_loc_xyxy)
+        labels_predict = self._predict2nms(pre_score, pre_loc_xywh)
         return labels_predict
