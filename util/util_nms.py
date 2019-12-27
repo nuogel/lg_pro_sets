@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from util.util_iou import iou_xywh
+from util.util_iou import iou_xywh,iou_xyxy
 from torchvision.ops import nms
 
 

@@ -3,8 +3,8 @@ import torch.nn as nn
 import numpy as np
 import math
 from net_works.model.ObdModel_EfficientNet import EfficientNet
-from util.util_efficientdet import RegressionModel, ClassificationModel, Anchors, ClipBoxes, BBoxTransform, ConvModule, RetinaHead
-
+from util.util_efficientdet import RegressionModel, ClassificationModel, ClipBoxes, DecodeBBox, ConvModule, RetinaHead
+from util.util_anchor_maker import Anchors
 from torchvision.ops import nms
 import torch.nn.functional as F
 
@@ -212,7 +212,7 @@ class EfficientDet(nn.Module):
         D_class = 3
         threshold = 0.5
         iou_threshold = 0.5
-
+        self.cfg = cfg
         super(EfficientDet, self).__init__()
         self.backbone = EfficientNet.from_pretrained(MODEL_MAP[network])
         self.neck = BIFPN(in_channels=self.backbone.get_list_features()[-5:],
@@ -221,8 +221,8 @@ class EfficientDet(nn.Module):
                           num_outs=5)
         self.bbox_head = RetinaHead(num_classes=num_classes, in_channels=W_bifpn, softmax_=True)
 
-        self.anchors = Anchors()
-        self.regressBoxes = BBoxTransform()
+        self.anchors_xywh = Anchors()
+        self.decodeBoxes = DecodeBBox()
         self.clipBoxes = ClipBoxes()
         self.threshold = threshold
         self.iou_threshold = iou_threshold
@@ -242,16 +242,16 @@ class EfficientDet(nn.Module):
         outs = self.bbox_head(x)
         classification = torch.cat([out for out in outs[0]], dim=1)
         regression = torch.cat([out for out in outs[1]], dim=1)
-        anchors = self.anchors(inputs)
+        anchors_xywh = self.anchors_xywh(inputs)
         print(classification.max())
         # classification = torch.softmax(classification, -1)  # TF 版本用的sigmoid，outputs = layers.Activation('sigmoid')(outputs)
         classification = classification.sigmoid()
         print(classification.max())
         if args['is_training']:
-            return classification, regression, anchors
+            return classification, regression, anchors_xywh
         else:
-            transformed_anchors = self.regressBoxes(anchors, regression)
-            transformed_anchors = self.clipBoxes(transformed_anchors, inputs)
+            transformed_anchors = self.decodeBoxes(regression, anchors_xywh)
+            transformed_anchors = self.clipBoxes(transformed_anchors, inputs, self.cfg)
             return classification, transformed_anchors
             # scores = torch.max(classification, dim=2, keepdim=True)[0]
             # A = scores.max()
