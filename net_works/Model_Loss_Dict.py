@@ -61,7 +61,7 @@ LossDict = {
     'yolov3_mobilenet': YoloLoss,
     'fcos': FCOSLOSS,
     'refinedet': RefineDetLoss,
-    'efficientdet': EfficientDetLoss,
+    'efficientdet': MultiboxLoss,
     'ssd': MultiboxLoss,
 
     # ASR

@@ -209,9 +209,9 @@ class EfficientDet(nn.Module):
         network = 'efficientdet-d0'
         D_bifpn = 3
         W_bifpn = 88
-        D_class = 3
-        threshold = 0.5
-        iou_threshold = 0.5
+        pyramid_levels = [3, 4, 5, 6, 7]
+        ratios = np.array([0.5, 1, 2])
+        scales = np.array([1, 1.25, 1.5])
         self.cfg = cfg
         super(EfficientDet, self).__init__()
         self.backbone = EfficientNet.from_pretrained(MODEL_MAP[network])
@@ -219,22 +219,10 @@ class EfficientDet(nn.Module):
                           out_channels=W_bifpn,
                           stack=D_bifpn,
                           num_outs=5)
-        self.bbox_head = RetinaHead(num_classes=num_classes, in_channels=W_bifpn, softmax_=True)
-
-        self.anchors_xywh = Anchors()
+        self.bbox_head = RetinaHead(num_classes=num_classes, in_channels=W_bifpn, num_anchors=len(ratios) * len(scales))
+        self.anchors_xywh = Anchors(pyramid_levels=pyramid_levels, ratios=ratios, scales=scales)
         self.decodeBoxes = DecodeBBox()
         self.clipBoxes = ClipBoxes()
-        self.threshold = threshold
-        self.iou_threshold = iou_threshold
-
-        # for m in self.modules():
-        #     if isinstance(m, nn.Conv2d):
-        #         n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-        #         m.weight.data.normal_(0, math.sqrt(2. / n))
-        #     elif isinstance(m, nn.BatchNorm2d):
-        #         m.weight.data.fill_(1)
-        #         m.bias.data.zero_()
-        # self.freeze_bn()
 
     def forward(self, **args):
         inputs = args['input_x']
@@ -242,31 +230,18 @@ class EfficientDet(nn.Module):
         outs = self.bbox_head(x)
         classification = torch.cat([out for out in outs[0]], dim=1)
         regression = torch.cat([out for out in outs[1]], dim=1)
-        anchors_xywh = self.anchors_xywh(inputs)
-        print(classification.max())
+        anchors_xywh = self.anchors_xywh(inputs)[0]
+        # print(classification.max())
         # classification = torch.softmax(classification, -1)  # TF 版本用的sigmoid，outputs = layers.Activation('sigmoid')(outputs)
-        classification = classification.sigmoid()
-        print(classification.max())
-        if args['is_training']:
-            return classification, regression, anchors_xywh
-        else:
-            transformed_anchors = self.decodeBoxes(regression, anchors_xywh)
-            transformed_anchors = self.clipBoxes(transformed_anchors, inputs, self.cfg)
-            return classification, transformed_anchors
-            # scores = torch.max(classification, dim=2, keepdim=True)[0]
-            # A = scores.max()
-            # scores_over_thresh = (scores > self.threshold)[0, :, 0]
-            #
-            # if scores_over_thresh.sum() == 0:
-            #     print('No boxes to NMS')
-            #     # no boxes to NMS, just return
-            #     return [torch.zeros(0), torch.zeros(0), torch.zeros(0, 4)]
-            # classification = classification[:, scores_over_thresh, :]
-            # transformed_anchors = transformed_anchors[:, scores_over_thresh, :]
-            # scores = scores[:, scores_over_thresh, :]
-            # anchors_nms_idx = nms(transformed_anchors[0, :, :], scores[0, :, 0], iou_threshold=self.iou_threshold)
-            # nms_scores, nms_class = classification[0, anchors_nms_idx, :].max(dim=1)
-            # return [nms_scores, nms_class, transformed_anchors[0, anchors_nms_idx, :]]
+        # classification = classification.sigmoid()
+        # print(classification.max())
+        # if args['is_training']:
+        #     return classification, regression, anchors_xywh
+        # else:
+        #     transformed_anchors = self.decodeBoxes(regression, anchors_xywh)
+        #     transformed_anchors = self.clipBoxes(transformed_anchors, inputs, self.cfg)
+        #     return classification, transformed_anchors
+        return classification, regression, anchors_xywh
 
     def extract_feat(self, img):
         """

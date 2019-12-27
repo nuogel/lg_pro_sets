@@ -708,34 +708,24 @@ class RetinaHead(nn.Module):
                  num_classes,
                  in_channels,
                  feat_channels=256,
-                 anchor_scales=[8, 16, 32],
-                 anchor_ratios=[0.5, 1.0, 2.0],
-                 anchor_strides=[4, 8, 16, 32, 64],
                  stacked_convs=4,
                  octave_base_scale=4,
                  scales_per_octave=3,
                  conv_cfg=None,
                  norm_cfg=None,
-                 softmax_=True,
+                 num_anchors = None,
                  **kwargs):
         super(RetinaHead, self).__init__()
         self.in_channels = in_channels
         self.num_classes = num_classes
         self.feat_channels = feat_channels
-        self.anchor_scales = anchor_scales
-        self.anchor_ratios = anchor_ratios
-        self.anchor_strides = anchor_strides
         self.stacked_convs = stacked_convs
         self.octave_base_scale = octave_base_scale
         self.scales_per_octave = scales_per_octave
         self.conv_cfg = conv_cfg
         self.norm_cfg = norm_cfg
-        self.softmax_ = softmax_
-        octave_scales = np.array(
-            [2 ** (i / scales_per_octave) for i in range(scales_per_octave)])
-        anchor_scales = octave_scales * octave_base_scale
         self.cls_out_channels = num_classes
-        self.num_anchors = len(self.anchor_ratios) * len(self.anchor_scales)
+        self.num_anchors = num_anchors
         self._init_layers()
 
     def _init_layers(self):
@@ -764,10 +754,6 @@ class RetinaHead(nn.Module):
                     norm_cfg=self.norm_cfg))
         self.retina_cls = nn.Conv2d(self.feat_channels, self.num_anchors * self.cls_out_channels, 3, padding=1)
         self.retina_reg = nn.Conv2d(self.feat_channels, self.num_anchors * 4, 3, padding=1)
-        if not self.softmax_:
-            self.output_act = nn.Sigmoid()
-        else:
-            self.output_act = nn.Softmax(-1)  # LG
 
     def forward_single(self, x):
         cls_feat = x
@@ -783,7 +769,6 @@ class RetinaHead(nn.Module):
         batch_size, width, height, channels = cls_score.shape
         cls_score = cls_score.view(batch_size, width, height, self.num_anchors, self.num_classes)
         cls_score = cls_score.contiguous().view(x.size(0), -1, self.num_classes)
-        # cls_score = self.output_act(cls_score)
 
         bbox_pred = self.retina_reg(reg_feat)
         bbox_pred = bbox_pred.permute(0, 2, 3, 1)
