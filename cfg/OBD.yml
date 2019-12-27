@@ -10,13 +10,13 @@ PATH:
 
 
 TRAIN:
-  MODEL: ssd #efficientdet #yolov3 # refinedet #yolov3_tiny #yolov3_tiny_shufflenet #  fcos # yolov3_tiny_mobilenet
+  MODEL: efficientdet #ssd #yolov3 # refinedet #yolov3_tiny #yolov3_tiny_shufflenet #  fcos # yolov3_tiny_mobilenet
   EPOCH_SIZE: 400
   BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   TRAIN_DATA_FROM_FILE: TRUE #FALSE #
   # loss parameters
-  CLASSES: ['background','car','anothers'] #['Car', 'Cyclist', 'Pedestrian', 'Others']#
+  CLASSES: ['background','car','others'] #['Car', 'Cyclist', 'Pedestrian', 'Others']#
   #  CLASSES: [ #VOC_CLASSES
   #    'aeroplane', 'bicycle', 'bird', 'boat',
   #    'bottle', 'bus', 'car', 'cat', 'chair',
@@ -99,8 +99,8 @@ TEST:
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
   ['000207', 'E:/datasets/VOCdevkit/VOC2007/JPEGImages/000207.jpg', 'E:/datasets/VOCdevkit/VOC2007/Annotations\\000207.xml'],
-    #  ['005839', 'E:/datasets/VOCdevkit/VOC2007/JPEGImages/005839.jpg', 'E:/datasets/VOCdevkit/VOC2007/Annotations\\005839.xml'],
-    #  ['008294', 'E:/datasets/VOCdevkit/VOC2007/JPEGImages/008294.jpg', 'E:/datasets/VOCdevkit/VOC2007/Annotations\\008294.xml'],
-    #  ['009737', 'E:/datasets/VOCdevkit/VOC2007/JPEGImages/009737.jpg', 'E:/datasets/VOCdevkit/VOC2007/Annotations\\009737.xml']
+#  ['008087', 'E:/datasets/VOCdevkit/VOC2007/JPEGImages/008087.jpg', 'E:/datasets/VOCdevkit/VOC2007/Annotations\\008087.xml'],
+#  ['002256', 'E:/datasets/VOCdevkit/VOC2007/JPEGImages/002256.jpg', 'E:/datasets/VOCdevkit/VOC2007/Annotations\\002256.xml'],
+#  ['009774', 'E:/datasets/VOCdevkit/VOC2007/JPEGImages/009774.jpg', 'E:/datasets/VOCdevkit/VOC2007/Annotations\\009774.xml']
   ]
   #['005371', '009732'] #,'003846', '002913', '009155']#  #['000000']# ['20190412_0132']#[000000, 000001, 000002, 000003] #

@@ -116,8 +116,8 @@ class SSD(nn.Module):
         anchors_xywh = self.anchor_maker(args['input_x'])[0]
 
         output = (
-            loc.view(loc.size(0), -1, 4),
             conf.view(conf.size(0), -1, self.num_classes),
+            loc.view(loc.size(0), -1, 4),
             anchors_xywh
         )
         return output

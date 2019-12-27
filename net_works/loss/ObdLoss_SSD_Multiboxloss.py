@@ -29,11 +29,10 @@ class MultiboxLoss():
             labels (batch_size, num_priors): real labels of all the priors.
             boxes (batch_size, num_priors, 4): real boxes corresponding all the priors.
         """
-        predicted_locations, confidence, anchors_xywh = predictions
+        confidence, predicted_locations, anchors_xywh = predictions
         batchsize = predicted_locations.shape[0]
         gt_images, gt_labels = targets
 
-        anchors_xyxy = xywh2xyxy(anchors_xywh)
         encode_target, labels = [], []
         for i in range(batchsize):
             lab = [box[0] for box in gt_labels[i]]
@@ -52,8 +51,9 @@ class MultiboxLoss():
             loss = -F.log_softmax(confidence, dim=2)[:, :, 0]
             mask = self._hard_negative_mining(loss, labels, self.neg_pos_ratio)
 
-        confidence = confidence[mask, :]
-        classification_loss = F.cross_entropy(confidence.reshape(-1, num_classes), labels[mask], size_average=False)
+        confidence = confidence[mask, :].reshape(-1, num_classes)
+        gt_labels = labels[mask]
+        classification_loss = F.cross_entropy(confidence, gt_labels, size_average=False)
         pos_mask = labels > 0
         predicted_locations = predicted_locations[pos_mask, :].reshape(-1, 4)
         encode_target = encode_target[pos_mask, :].reshape(-1, 4)
@@ -124,5 +124,3 @@ class MultiboxLoss():
             torch.log(center_form_boxes[..., 2:] / center_form_priors[..., 2:]) / 0.2
         ], dim=- 1)
         return encode_target
-
-

@@ -29,7 +29,7 @@ class ParsePredict:
             'yolov3_tiny_shufflenet': self._parse_yolo_predict,
             'fcos': self._parse_fcos_predict,
             'refinedet': self._parse_refinedet_predict,
-            'efficientdet': self._parse_efficientdet_predict,
+            'efficientdet': self._parse_ssd_predict,
             'ssd': self._parse_ssd_predict,
         }
         labels_predict = PARSEDICT[self.cfg.TRAIN.MODEL](f_maps)
@@ -202,7 +202,7 @@ class ParsePredict:
         return labels_predict
 
     def _parse_ssd_predict(self, predicts):
-        loc, pre_score, anchors_xywh = predicts
+        pre_score, loc, anchors_xywh = predicts
         pre_score = torch.softmax(pre_score, -1)  # conf preds
         pre_loc_xywh = self._decode_bboxes(loc, anchors_xywh)
         labels_predict = self._predict2nms(pre_score, pre_loc_xywh)
