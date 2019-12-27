@@ -10,7 +10,7 @@ PATH:
 
 
 TRAIN:
-  MODEL: efficientdet #ssd #yolov3 # refinedet #yolov3_tiny #yolov3_tiny_shufflenet #  fcos # yolov3_tiny_mobilenet
+  MODEL: ssd #efficientdet #yolov3 # refinedet #yolov3_tiny #yolov3_tiny_shufflenet #  fcos # yolov3_tiny_mobilenet
   EPOCH_SIZE: 400
   BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.

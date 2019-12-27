@@ -1,8 +1,10 @@
 import os
 import torch
+import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as init
+from util.util_anchor_maker import Anchors
 
 vgg_base = {
     '300': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
@@ -51,10 +53,11 @@ class SSD(nn.Module):
         self.base = nn.ModuleList(base)
         # Layer learns to scale the l2 normalized features from conv4_3
         self.extras = nn.ModuleList(extras)
-        self.L2Norm = L2Norm(512, 20)
-
+        # self.L2Norm = L2Norm(512, 20)
+        self.L2Norm = nn.BatchNorm2d(512)
         self.loc = nn.ModuleList(head[0])
         self.conf = nn.ModuleList(head[1])
+        self.anchor_maker = Anchors(pyramid_levels=[3, 4, 5, 6, 7, 8, 9], ratios=np.array([0.5, 1, 2]), scales=np.array([1, 1.5]))
 
         self.softmax = nn.Softmax()
 
@@ -109,16 +112,14 @@ class SSD(nn.Module):
         conf_layers = [o.view(o.size(0), -1) for o in conf]
         loc = torch.cat(loc_layers, 1)
         conf = torch.cat(conf_layers, 1)
-        if not args['is_training']:
-            output = (
-                loc.view(loc.size(0), -1, 4),  # loc preds
-                self.softmax(conf.view(-1, self.num_classes)),  # conf preds
-            )
-        else:
-            output = (
-                loc.view(loc.size(0), -1, 4),
-                conf.view(conf.size(0), -1, self.num_classes),
-            )
+
+        anchors_xywh = self.anchor_maker(args['input_x'])[0]
+
+        output = (
+            loc.view(loc.size(0), -1, 4),
+            conf.view(conf.size(0), -1, self.num_classes),
+            anchors_xywh
+        )
         return output
 
     def load_weights(self, base_file):

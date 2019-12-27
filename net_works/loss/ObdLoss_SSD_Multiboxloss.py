@@ -2,8 +2,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 import math
-from util.util_iou import iou_xyxy, xywh2xyxy, xyxy2xywh
-from util.util_anchor_maker import Anchors
+from util.util_iou import iou_xyxy, xywh2xyxy, xyxy2xywh, iou_xywh
+import numpy as np
 
 
 class MultiboxLoss():
@@ -29,22 +29,22 @@ class MultiboxLoss():
             labels (batch_size, num_priors): real labels of all the priors.
             boxes (batch_size, num_priors, 4): real boxes corresponding all the priors.
         """
-        predicted_locations, confidence = predictions
+        predicted_locations, confidence, anchors_xywh = predictions
         batchsize = predicted_locations.shape[0]
         gt_images, gt_labels = targets
-        anchors = Anchors()(gt_images)[0]
-        anchors = xywh2xyxy(anchors)
-        gt_locations, labels = [], []
+
+        anchors_xyxy = xywh2xyxy(anchors_xywh)
+        encode_target, labels = [], []
         for i in range(batchsize):
             lab = [box[0] for box in gt_labels[i]]
             box = [box[1:] for box in gt_labels[i]]
-            lab = torch.LongTensor(lab).to(anchors.device)
-            box = torch.Tensor(box).to(anchors.device)
-            _gt_locations, _labels = self._assign_priors(box, lab, anchors, self.iou_threshold)
-            _gt_locations = self._encode_bbox(xyxy2xywh(_gt_locations), xyxy2xywh(anchors))
-            gt_locations.append(_gt_locations)
+            lab = torch.LongTensor(lab).to(anchors_xywh.device)
+            box_xywh = xyxy2xywh(torch.Tensor(box).to(anchors_xywh.device))
+            _gt_loc_xywh, _labels = self._assign_priors(box_xywh, lab, anchors_xywh, self.iou_threshold)
+            _gt_loc_xywh = self._encode_bbox(_gt_loc_xywh, anchors_xywh)
+            encode_target.append(_gt_loc_xywh)
             labels.append(_labels)
-        gt_locations = torch.stack(gt_locations, dim=0)
+        encode_target = torch.stack(encode_target, dim=0)
         labels = torch.stack(labels, dim=0)
         num_classes = confidence.size(2)
         with torch.no_grad():
@@ -56,11 +56,14 @@ class MultiboxLoss():
         classification_loss = F.cross_entropy(confidence.reshape(-1, num_classes), labels[mask], size_average=False)
         pos_mask = labels > 0
         predicted_locations = predicted_locations[pos_mask, :].reshape(-1, 4)
-        gt_locations = gt_locations[pos_mask, :].reshape(-1, 4)
+        encode_target = encode_target[pos_mask, :].reshape(-1, 4)
 
-        smooth_l1_loss = F.smooth_l1_loss(predicted_locations, gt_locations, size_average=False)
-        num_pos = gt_locations.size(0)
-        return smooth_l1_loss / num_pos, classification_loss / num_pos
+        smooth_l1_loss = F.smooth_l1_loss(predicted_locations, encode_target, size_average=False)
+        num_pos = encode_target.size(0)
+        loc_loss = smooth_l1_loss / num_pos
+        class_loss = classification_loss / num_pos
+
+        return loc_loss, class_loss
 
     def _hard_negative_mining(self, loss, labels, neg_pos_ratio):
         """
@@ -99,7 +102,7 @@ class MultiboxLoss():
             labels (num_priros): labels for priors.
         """
         # size: num_priors x num_targets
-        ious = iou_xyxy(corner_form_priors, gt_boxes, type='N2N')
+        ious = iou_xywh(corner_form_priors, gt_boxes, type='N2N')
         # size: num_priors
         best_target_per_prior, best_target_per_prior_index = ious.max(1)
         # size: num_targets
@@ -123,40 +126,3 @@ class MultiboxLoss():
         return encode_target
 
 
-class DecodeBBox(nn.Module):
-
-    def __init__(self, mean=None, std=None):
-        super(DecodeBBox, self).__init__()
-        if mean is None:
-            self.mean = torch.from_numpy(np.array([0, 0, 0, 0]).astype(np.float32))
-        else:
-            self.mean = mean
-        if std is None:
-            self.std = torch.from_numpy(np.array([0.1, 0.1, 0.2, 0.2]).astype(np.float32))
-        else:
-            self.std = std
-
-    def forward(self, predicts, anchors):
-        a_width = anchors[:, :, 2] - anchors[:, :, 0]
-        a_height = anchors[:, :, 3] - anchors[:, :, 1]
-        ctr_x = anchors[:, :, 0] + 0.5 * a_width
-        ctr_y = anchors[:, :, 1] + 0.5 * a_height
-
-        dx = predicts[:, :, 0] * self.std[0] + self.mean[0]
-        dy = predicts[:, :, 1] * self.std[1] + self.mean[1]
-        dw = predicts[:, :, 2] * self.std[2] + self.mean[2]
-        dh = predicts[:, :, 3] * self.std[3] + self.mean[3]
-
-        pred_ctr_x = ctr_x + dx * a_width
-        pred_ctr_y = ctr_y + dy * a_height
-        pred_w = torch.exp(dw) * a_width
-        pred_h = torch.exp(dh) * a_height
-
-        pred_boxes_x1 = pred_ctr_x - 0.5 * pred_w
-        pred_boxes_y1 = pred_ctr_y - 0.5 * pred_h
-        pred_boxes_x2 = pred_ctr_x + 0.5 * pred_w
-        pred_boxes_y2 = pred_ctr_y + 0.5 * pred_h
-
-        pred_boxes = torch.stack([pred_boxes_x1, pred_boxes_y1, pred_boxes_x2, pred_boxes_y2], dim=2)
-
-        return pred_boxes

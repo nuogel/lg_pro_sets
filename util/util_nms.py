@@ -10,7 +10,7 @@ class NMS:
         self.score_thresh = cfg.TEST.SCORE_THRESH
         self.theta = cfg.TEST.SOFNMS_THETA
         self.iou_thresh = cfg.TEST.IOU_THRESH
-        if self.cfg.TRAIN.MODEL == 'refinedet':
+        if self.cfg.TRAIN.MODEL in ['refinedet', 'ssd']:
             self.class_range = range(1, len(cfg.TRAIN.CLASSES) + 1)
         else:
             self.class_range = range(len(cfg.TRAIN.CLASSES))
