@@ -71,7 +71,7 @@ class DataLoader:
 
             imgs = torch.Tensor(np.array(imgs))
             imgs = imgs.permute([0, 3, 1, 2, ])
-            imgs = imgs * 0.00392156885937 + 0.0
+            imgs = imgs / 127.5 - 1.
 
             if _is_use_cuda(self.cfg.TRAIN.GPU_NUM):
                 imgs = imgs.cuda(self.cfg.TRAIN.GPU_NUM)

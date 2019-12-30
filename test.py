@@ -11,8 +11,11 @@ def _parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('--yml_path', default='cfg/OBD.yml'  # OBD SR_DN
                         , type=str, help='yml_path')
-    parser.add_argument('--checkpoint', default='tmp/checkpoint/now.pkl',#'F:/test_results/saved_tbx_log_yolov3_tiny_clean/checkpoint.pkl', #'E:/LG/GitHub/lg_pro_sets/tmp/tbx_log_cbdnet/checkpoint.pkl',  #
-                        help='Path to the checkpoint to be loaded to the model')
+    parser.add_argument('--checkpoint', default=
+                        'tmp/checkpoint/now.pkl'
+                        # 'F:/test_results/saved_tbx_log_yolov3_tiny_clean/checkpoint.pkl',
+                        # 'F:/test_results/tbx_log_ssd/checkpoint.pkl'
+                        , help='Path to the checkpoint to be loaded to the model')
     return parser.parse_args()
 
 
@@ -27,12 +30,13 @@ def main():
     # file_s = 'E:/datasets/Noise_Images/NOISE_kitti/level_5/images/KITTI_005066_1.png'
     # file_s = 'evasys/voc_mAP/occ_good.txt'
     # file_s = 'E:/datasets/NLP/THCHS/data_thchs30/data/A2_0.wav'  # /'
-    file_s = 'E:/datasets/VOCdevkit/VOC2007/JPEGImages/000207.jpg'
+    # file_s = 'E:/datasets/VOCdevkit/VOC2007/JPEGImages/000207.jpg'
     # file_s = 'E:/LG/GitHub/lg_pro_sets/tmp/idx_stores/occ_2.txt'
-    # file_s = 'E:/LG/GitHub/lg_pro_sets/tmp/generated_labels_train_NI2CI'
-    # file_s = 'E:/datasets/Car/VOC_Car/images/'
+    # file_s = 'tmp/idx_stores/test_set_voc_car.txt'
+    file_s = 'E:/datasets/Car/COCO_Car/images/COCO_train2014_000000036639.jpg'
     args = _parse_arguments()
     cfg = parse_yaml(args.yml_path)
+    # file_s = cfg.TEST.ONE_NAME[0]
     test = Test[cfg.BELONGS](cfg, args)
     test.test_run(file_s)
     return exit_code

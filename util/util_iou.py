@@ -2,7 +2,7 @@
 import torch
 
 
-def _iou_mat_N2N_(box1, box2):
+def _iou_mat_N2N_yolo(box1, box2):
     """
     IOU calculation between box1 and box2,in the shape of [x1 y1 x2 y2].
 
@@ -119,6 +119,8 @@ def _iou_mat(box1, box2, type='N2N'):
 
     if type is 'N2N':
         return _iou_mat_N2N(box1, box2)
+    elif type is 'N2N_yolo':
+        return _iou_mat_N2N_yolo(box1, box2)
     else:
         return _iou_mat_N21(box1, box2)
 
