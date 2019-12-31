@@ -166,7 +166,7 @@ def _show_img(images, labels, show_img=True, show_time=30000, save_img=False):
 
 def main():
     print_path = True
-    path = 'F:/datasets/bdd100k'
+    path = 'E:/datasets/Car/COCO_Car'
     #
     # im_file = os.path.join(path, "images", "1478019971185917857.jpg")
     # label_file = os.path.join(path, "labels", "1478019971185917857.xml")

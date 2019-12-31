@@ -51,9 +51,11 @@ class MultiboxLoss():
             loss = -F.log_softmax(confidence, dim=2)[:, :, 0]
             mask = self._hard_negative_mining(loss, labels, self.neg_pos_ratio)
 
-        confidence = confidence[mask, :].reshape(-1, num_classes)
-        gt_labels = labels[mask]
-        classification_loss = F.cross_entropy(confidence, gt_labels, size_average=False)
+        confidence_ = confidence[mask, :].reshape(-1, num_classes)
+        labels_ = labels[mask]
+        # print(confidence_[labels_>0])
+        # print(torch.softmax(confidence_[labels_>0], -1))
+        classification_loss = F.cross_entropy(confidence_, labels_, size_average=False)
         pos_mask = labels > 0
         predicted_locations = predicted_locations[pos_mask, :].reshape(-1, 4)
         encode_target = encode_target[pos_mask, :].reshape(-1, 4)

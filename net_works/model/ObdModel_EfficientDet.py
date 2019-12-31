@@ -215,6 +215,8 @@ class EfficientDet(nn.Module):
         self.cfg = cfg
         super(EfficientDet, self).__init__()
         self.backbone = EfficientNet.from_pretrained(MODEL_MAP[network])
+        # self.backbone = EfficientNet()
+
         self.neck = BIFPN(in_channels=self.backbone.get_list_features()[-5:],
                           out_channels=W_bifpn,
                           stack=D_bifpn,

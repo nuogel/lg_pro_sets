@@ -23,7 +23,6 @@ from net_works.loss.AsrLoss_CTC import RnnLoss
 from net_works.loss.AsrLoss_SEQ2SEQ import Seq2SeqLoss
 from net_works.loss.Sr_Dn_Loss import SR_DN_Loss
 from net_works.loss.ObdLoss_RefineDet import RefineDetLoss
-from net_works.loss.ObdLoss_EfficientDet import EfficientDetLoss
 
 ModelDict = {
     # OBD

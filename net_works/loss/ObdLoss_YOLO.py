@@ -146,7 +146,7 @@ class YoloLoss:
         for i in range(batch):
             b_box = lab_boxes[i]
             b_box = torch.stack(b_box, 0)
-            iou = iou_xywh(pre_loc[i], b_box, type='N2N')
+            iou = iou_xywh(pre_loc[i], b_box, type='N2N_yolo')
             iou_max = torch.max(iou, 0)
             # print(iou_max[0][15, 31:34])
             ignore_iou = torch.lt(iou_max[0], 0.6)

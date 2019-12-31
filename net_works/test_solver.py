@@ -104,7 +104,7 @@ class Test_OBD(Test_Base):
         img_in = torch.from_numpy(img_aug).unsqueeze(0).type(torch.FloatTensor).cuda()
         img_raw = torch.from_numpy(img_raw).unsqueeze(0).type(torch.FloatTensor)
         img_in = img_in.permute([0, 3, 1, 2, ])
-        img_in = img_in * 0.00392156885937 + 0.0
+        img_in = img_in / 127.5 - 1.
         predict = self.Model.forward(input_x=img_in, is_training=False)
         labels_pre = self.parsepredict._parse_predict(predict)
         return _show_img(img_raw, labels_pre, img_in=img_in[0], pic_path=test_picture_path, cfg=self.cfg)
