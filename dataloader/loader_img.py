@@ -100,6 +100,7 @@ class DataLoader:
                 box_y1 = float(tmps[5])
                 box_x2 = float(tmps[6])
                 box_y2 = float(tmps[7])
+                if not self._is_finedata([box_x1, box_y1, box_x2, box_y2]): continue
                 bbs.append([self.cls2idx[self.class_name[tmps[0]]], box_x1, box_y1, box_x2, box_y2])
         elif os.path.basename(path).split('.')[-1] == 'xml':
             tree = ET.parse(path)
@@ -115,6 +116,7 @@ class DataLoader:
                 box_y1 = float(bbox.find('ymin').text)
                 box_x2 = float(bbox.find('xmax').text)
                 box_y2 = float(bbox.find('ymax').text)
+                if not self._is_finedata([box_x1, box_y1, box_x2, box_y2]): continue
                 bbs.append([self.cls2idx[self.class_name[cls_name]], box_x1, box_y1, box_x2, box_y2])
         return bbs
 
@@ -157,3 +159,11 @@ class DataLoader:
         if labels == [[]]:
             labels = None
         return images, labels
+
+    def _is_finedata(self, xyxy):
+        x1, y1, x2, y2 = xyxy
+        for point in xyxy:
+            if point < 0: return False
+        if x2 - x1 <= 0: return False
+        if y2 - y1 <= 0: return False
+        return True
