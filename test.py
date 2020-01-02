@@ -12,9 +12,9 @@ def _parse_arguments():
     parser.add_argument('--yml_path', default='cfg/OBD.yml'  # OBD SR_DN
                         , type=str, help='yml_path')
     parser.add_argument('--checkpoint', default=
-                        # 'tmp/checkpoint/now.pkl'
+                        'tmp/checkpoint/now.pkl'
                         # 'F:/test_results/saved_tbx_log_yolov3_tiny_clean/checkpoint.pkl',
-                        'F:/test_results/tbx_log_ssd_coco/checkpoint.pkl'
+                        # 'F:/test_results/tbx_log_ssd_coco/checkpoint.pkl'
                         , help='Path to the checkpoint to be loaded to the model')
     return parser.parse_args()
 
@@ -32,8 +32,9 @@ def main():
     # file_s = 'E:/datasets/NLP/THCHS/data_thchs30/data/A2_0.wav'  # /'
     # file_s = 'E:/datasets/VOCdevkit/VOC2007/JPEGImages/000207.jpg'
     # file_s = 'E:/LG/GitHub/lg_pro_sets/tmp/idx_stores/occ_2.txt'
-    file_s = 'tmp/idx_stores/test_set_coco_car.txt'
-    # file_s = 'E:/datasets/Car/COCO_Car/images/COCO_train2014_000000036639.jpg'
+    # file_s = 'tmp/idx_stores/test_set_coco_car.txt'
+    file_s = 'E:/datasets/BDD100k/images/77d72c41-9fcb211a.jpg'
+
     args = _parse_arguments()
     cfg = parse_yaml(args.yml_path)
     # file_s = cfg.TEST.ONE_NAME[0]

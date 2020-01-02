@@ -1,4 +1,2 @@
-car,car
-Car,car
-Bus,car
-Truck,car
+car,Car
+Car,Car
