@@ -37,8 +37,9 @@ pandas
 torch
 torchvision
 ...
-```
+conda install -c conda-forge imgaug 
 
+```
 #### Training Dataset
 you can use any data sets in shape of [images, labels], labels can be **.xml or **.txt
 ```

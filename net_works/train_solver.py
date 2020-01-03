@@ -68,6 +68,7 @@ class Solver:
         Get the self.Model, learning_rate, epoch_last, train_set, test_set.
         :return: learning_rate, epoch_last, train_set, test_set.
         """
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         idx_stores_dir = os.path.join(self.cfg.PATH.TMP_PATH, 'idx_stores')
         if _is_use_cuda(self.cfg.TRAIN.GPU_NUM):

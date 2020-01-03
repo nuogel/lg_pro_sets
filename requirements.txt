@@ -1,9 +1,13 @@
-torch>=1.0
+torch
 torchvision
 tensorflow
 matplotlib
 numpy
 scipy
 scikit-image
-kears
-
+keras
+pyyaml
+tensorboardX
+scikit-learn
+shapely
+imgaug
