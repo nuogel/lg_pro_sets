@@ -1,7 +1,6 @@
 import os
 import torch
 import numpy as np
-from util.util_is_use_cuda import _is_use_cuda
 import cv2
 
 
@@ -26,9 +25,9 @@ class DataLoader:
             idx = self.one_name
         if idx:
             imgs, labels = self._prepare_data(idx)
-            if _is_use_cuda(self.cfg.TRAIN.GPU_NUM):
-                imgs = imgs.cuda(self.cfg.TRAIN.GPU_NUM)
-                labels = labels.cuda(self.cfg.TRAIN.GPU_NUM)
+            imgs = imgs.permute([0, 3, 1, 2, ])
+            imgs = imgs.to(self.cfg.TRAIN.DEVICE)
+            labels = labels.to(self.cfg.TRAIN.DEVICE)
             data = (imgs, labels)  #
         return data
 

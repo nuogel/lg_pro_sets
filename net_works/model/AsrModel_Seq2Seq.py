@@ -29,14 +29,14 @@ class Seq2Seq(nn.Module):
         self.vocab_size = vocab_size
         self.add_attention = True
 
-    def forward(self, data, eval=False):
+    def forward(self, **args):
         '''
         `inputs`: (batch, length, dim)
         `targets`: (batch, length)
         '''
-        inputs, targets, _, __ = data  # INPUT:[B, T, H]
+        inputs, targets, _, __ = args['input_data']  # INPUT:[B, T, H]
         enc_y, c_hid = self.encoder(inputs)  # 一个GRU，获得输出层和隐藏层[B, T, H], [B,H]，c_hid 相当于C.
-        if not eval:
+        if args['is_training']:
             out = self.decoder(targets, enc_y, c_hid, self.add_attention)
         else:
             out, logp = self.greedy_decode(enc_y, c_hid, self.add_attention)

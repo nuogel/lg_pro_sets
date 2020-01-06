@@ -1,8 +1,11 @@
 """Parse the predictions."""
 import torch
+import torch.nn as nn
 import numpy as np
-from util.util_nms import NMS, Soft_NMS
+from util.util_nms import NMS
 import logging
+from net_works.loss.ObdLoss_RefineDet import Detect_RefineDet
+from util.util_iou import xywh2xyxy, xyxy2xywh
 
 LOGGER = logging.getLogger(__name__)
 
@@ -14,6 +17,7 @@ class ParsePredict:
         self.anchors = torch.Tensor(cfg.TRAIN.ANCHORS)
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
         self.cls_num = len(cfg.TRAIN.CLASSES)
+        self.NMS = NMS(cfg)
 
     def _parse_predict(self, f_maps):
         PARSEDICT = {
@@ -23,24 +27,22 @@ class ParsePredict:
             'yolov3_tiny_mobilenet': self._parse_yolo_predict,
             'yolov3_tiny_squeezenet': self._parse_yolo_predict,
             'yolov3_tiny_shufflenet': self._parse_yolo_predict,
-            'fcos': self._parse_fcos_predict
+            'fcos': self._parse_fcos_predict,
+            'refinedet': self._parse_refinedet_predict,
+            'efficientdet': self._parse_ssd_predict,
+            'ssd': self._parse_ssd_predict,
         }
         labels_predict = PARSEDICT[self.cfg.TRAIN.MODEL](f_maps)
         return labels_predict
 
-    def _predict2nms(self, pre_cls_score, pre_loc):
+    def _predict2nms(self, pre_cls_score, pre_loc, xywh2x1y1x2y2=True):
         labels_predict = []
         for batch_n in range(pre_cls_score.shape[0]):
             # TODO: make a matrix instead of for...
-            LOGGER.info('[NMS] b')
+            LOGGER.info('[NMS]')
             score = pre_cls_score[batch_n]
             loc = pre_loc[batch_n]
-
-            if self.cfg.TEST.NMS_TYPE in ['soft_nms', 'SOFT_NMS']:
-                labels = Soft_NMS(score, loc, self.cfg.TEST.SCORE_THRESH, self.cfg.TEST.SOFNMS_THETA)
-            else:
-                labels = NMS(score, loc, self.cfg.TEST.SCORE_THRESH, self.cfg.TEST.IOU_THRESH)
-
+            labels = self.NMS.forward(score, loc, xywh2x1y1x2y2)
             labels_predict.append(labels)
         return labels_predict
 
@@ -79,12 +81,12 @@ class ParsePredict:
         grid_x = torch.arange(0, shape[1]).view(-1, 1).repeat(1, shape[0]).unsqueeze(2).permute(1, 0, 2)
         grid_y = torch.arange(0, shape[0]).view(-1, 1).repeat(1, shape[1]).unsqueeze(2)
         grid_xy = torch.cat([grid_x, grid_y], 2).unsqueeze(2).unsqueeze(0). \
-            expand(1, shape[0], shape[1], self.anc_num, 2).expand_as(pre_loc_xy).type(torch.cuda.FloatTensor)
+            expand(1, shape[0], shape[1], self.anc_num, 2).expand_as(pre_loc_xy).type(torch.FloatTensor).to(loc_pred.device)
 
         # prepare gird xy
-        box_ch = torch.Tensor([shape[1], shape[0]]).cuda()
+        box_ch = torch.Tensor([shape[1], shape[0]]).to(loc_pred.device)
         pre_realtive_xy = (pre_loc_xy + grid_xy) / box_ch
-        anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).expand(1, shape[0], shape[1], self.anc_num, 2).cuda()
+        anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).expand(1, shape[0], shape[1], self.anc_num, 2).to(loc_pred.device)
         pre_realtive_wh = pre_loc_wh.exp() * anchor_ch
 
         pre_relative_box = torch.cat([pre_realtive_xy, pre_realtive_wh], -1)
@@ -198,3 +200,70 @@ class ParsePredict:
         labels_predict = self._predict2nms(scores, locs)
 
         return labels_predict
+
+    def _parse_ssd_predict(self, predicts):
+        pre_score, loc, anchors_xywh = predicts
+        pre_score = torch.softmax(pre_score, -1)  # conf preds
+        pre_loc_xywh = self._decode_bboxes(loc, anchors_xywh)
+        labels_predict = self._predict2nms(pre_score, pre_loc_xywh)
+        return labels_predict
+
+    def _parse_refinedet_predict(self, predicts):
+        detecte = Detect_RefineDet(self.cfg)
+        pre_score, pre_loc = detecte.forward(predicts)
+        pre_loc_xywh = xyxy2xywh(pre_loc)
+        labels_predict = self._predict2nms(pre_score, pre_loc_xywh)
+
+        return labels_predict
+
+    def _parse_efficientdet_predict(self, predicts):
+        pre_score, pre_loc_xyxy = predicts
+        pre_loc_xywh = xyxy2xywh(pre_loc_xyxy)
+        labels_predict = self._predict2nms(pre_score, pre_loc_xywh)
+        return labels_predict
+
+    def _decode_bboxes(self, locations, priors):
+        bboxes = torch.cat([
+            locations[..., :2] * 0.1 * priors[..., 2:] + priors[..., :2],
+            torch.exp(locations[..., 2:] * 0.2) * priors[..., 2:]
+        ], dim=locations.dim() - 1)
+        return bboxes
+
+
+class DecodeBBox(nn.Module):
+
+    def __init__(self, mean=None, std=None):
+        super(DecodeBBox, self).__init__()
+        if mean is None:
+            self.mean = torch.from_numpy(np.array([0, 0, 0, 0]).astype(np.float32))
+        else:
+            self.mean = mean
+        if std is None:
+            self.std = torch.from_numpy(np.array([0.1, 0.1, 0.2, 0.2]).astype(np.float32))
+        else:
+            self.std = std
+
+    def forward(self, predicts, anchors):
+        a_width = anchors[:, :, 2] - anchors[:, :, 0]
+        a_height = anchors[:, :, 3] - anchors[:, :, 1]
+        ctr_x = anchors[:, :, 0] + 0.5 * a_width
+        ctr_y = anchors[:, :, 1] + 0.5 * a_height
+
+        dx = predicts[:, :, 0] * self.std[0] + self.mean[0]
+        dy = predicts[:, :, 1] * self.std[1] + self.mean[1]
+        dw = predicts[:, :, 2] * self.std[2] + self.mean[2]
+        dh = predicts[:, :, 3] * self.std[3] + self.mean[3]
+
+        pred_ctr_x = ctr_x + dx * a_width
+        pred_ctr_y = ctr_y + dy * a_height
+        pred_w = torch.exp(dw) * a_width
+        pred_h = torch.exp(dh) * a_height
+
+        pred_boxes_x1 = pred_ctr_x - 0.5 * pred_w
+        pred_boxes_y1 = pred_ctr_y - 0.5 * pred_h
+        pred_boxes_x2 = pred_ctr_x + 0.5 * pred_w
+        pred_boxes_y2 = pred_ctr_y + 0.5 * pred_h
+
+        pred_boxes = torch.stack([pred_boxes_x1, pred_boxes_y1, pred_boxes_x2, pred_boxes_y2], dim=2)
+
+        return pred_boxes

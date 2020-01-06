@@ -12,47 +12,41 @@ def _get_train_test_dataset(x_dir, y_dir, idx_stores_dir, test_train_ratio, cfg)
     label_files_list = []
     x_extend_name = os.path.basename(x_files[0]).split('.')[-1]
     y_extend_name = os.path.basename(label_files[0]).split('.')[-1]
-
-    is_name_in_dict = True  # if the image has this class in it ?
     if cfg.BELONGS == 'OBD':
-        if is_name_in_dict:
-            class_map = _get_class_names(cfg.PATH.CLASSES_PATH)
-            for label_file in label_files:
-                if y_extend_name == 'txt':
-                    f = open(label_file, 'r')
-                    # print('checking file %s about:%s' % (label_file, cfg.TRAIN.CLASSES))
-                    for line in f.readlines():
-                        name = line.split(' ')[0]
-                        if name not in class_map:
-                            continue
-                        if class_map[name] in cfg.TRAIN.CLASSES:
-                            label_files_list.append(label_file)
-                            break
-                elif y_extend_name == 'xml':
-                    tree = ET.parse(label_file)
-                    root = tree.getroot()
-                    for object in root.findall('object'):
-                        name = object.find('name').text
-                        if name not in class_map:
-                            continue
-                        if class_map[name] in cfg.TRAIN.CLASSES:
-                            label_files_list.append(label_file)
-                            break
-        else:
-            label_files_list = label_files
+        class_map = _get_class_names(cfg.PATH.CLASSES_PATH)
+        for label_file in label_files:
+            file_name = os.path.basename(label_file).split('.')[0]
+            img_file = os.path.join(cfg.PATH.IMG_PATH, file_name + '.' + x_extend_name)
+            if not os.path.isfile(img_file):
+                continue
+            if y_extend_name == 'txt':
+                f = open(label_file, 'r')
+                # print('checking file %s about:%s' % (label_file, cfg.TRAIN.CLASSES))
+                for line in f.readlines():
+                    cls = line.split(' ')[0]
+                    if cls not in class_map:
+                        continue
+                    if class_map[cls] in cfg.TRAIN.CLASSES:
+                        label_files_list.append([file_name, img_file, label_file])
+                        break
+            elif y_extend_name == 'xml':
+                tree = ET.parse(label_file)
+                root = tree.getroot()
+                for object in root.findall('object'):
+                    cls = object.find('name').text
+                    if cls not in class_map:
+                        continue
+                    if class_map[cls] in cfg.TRAIN.CLASSES:
+                        label_files_list.append([file_name, img_file, label_file])
+                        break
     else:
         label_files_list = label_files
 
-    data_idx = sorted(list(set([str(os.path.basename(x).split('.')[0]) for x in label_files_list])))
-    for idx in data_idx:
-        if not os.path.isfile(os.path.join(x_dir, idx + '.'+str(x_extend_name))):
-            data_idx.remove(idx)
+    assert len(label_files_list) >= 1, 'No data found!'
 
-    assert len(data_idx) >= 1, 'No data found!'
-
-    train_set, test_set = train_test_split(data_idx, test_size=test_train_ratio, random_state=1)
+    train_set, test_set = train_test_split(label_files_list, test_size=test_train_ratio, random_state=1)
     os.makedirs(idx_stores_dir, exist_ok=True)
-    _wrte_dataset_txt((train_set, test_set), idx_stores_dir, [x_dir, x_extend_name, y_dir, y_extend_name])
+    _wrte_dataset_txt((train_set, test_set), idx_stores_dir)
     # torch.save(train_set, os.path.join(idx_stores_dir, 'train_set'))
     # torch.save(test_set, os.path.join(idx_stores_dir, 'test_set'))
     print('saving train_set&test_set to %s' % idx_stores_dir)
@@ -60,14 +54,14 @@ def _get_train_test_dataset(x_dir, y_dir, idx_stores_dir, test_train_ratio, cfg)
     return train_set, test_set
 
 
-def _wrte_dataset_txt(dataset, idx_stores_dir, path_info):
+def _wrte_dataset_txt(dataset, idx_stores_dir):
     train_set, test_set = dataset
     train_set_txt = ''
     test_set_txt = ''
     for i in train_set:
-        train_set_txt += str(i) + ';' + os.path.join(path_info[0], str(i) + '.' + str(path_info[1])) + ';' + os.path.join(path_info[2], str(i) + '.' + str(path_info[3])) + '\n'
+        train_set_txt += str(i[0]) + ';' + str(i[1]) + ';' + str(i[2]) + '\n'
     for i in test_set:
-        test_set_txt += str(i) + ';' + os.path.join(path_info[0], str(i) + '.' + str(path_info[1])) + ';' + os.path.join(path_info[2], str(i) + '.' + str(path_info[3])) + '\n'
+        test_set_txt += str(i[0]) + ';' + str(i[1]) + ';' + str(i[2]) + '\n'
     f = open(os.path.join(idx_stores_dir, 'train_set.txt'), 'w')
     f.write(train_set_txt)
     f.close()
@@ -79,9 +73,9 @@ def _wrte_dataset_txt(dataset, idx_stores_dir, path_info):
 def _read_train_test_dataset(idx_stores_dir):
     print('reading train_set&test_set from %s' % idx_stores_dir)
     f = open(os.path.join(idx_stores_dir, 'train_set.txt'), 'r')
-    train_set = [line.split(';')[0] for line in f.readlines()]
+    train_set = [line.strip().split(';') for line in f.readlines()]
     f = open(os.path.join(idx_stores_dir, 'test_set.txt'), 'r')
-    test_set = [line.split(';')[0] for line in f.readlines()]
+    test_set = [line.strip().split(';') for line in f.readlines()]
     return train_set, test_set
 
 

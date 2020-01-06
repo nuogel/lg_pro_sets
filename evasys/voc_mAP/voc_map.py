@@ -266,8 +266,10 @@ if __name__ == '__main__':
     # pre_path = "E://LG//programs//eva_sys//datasets//result//"
     pre_path = 'E:/LG/GitHub/lg_pro_sets/tmp/predicted_labels/'
 
+
     # gt_path = "E://LG//programs//lg_pro_sets//datasets//Annotations_kitti//training//{}.xml"
-    gt_path = 'E:/datasets/Car/VOC_Car/labels//{}.xml'
+    # gt_path = 'E:/datasets/Car/VOC_Car/labels//{}.xml'
+    gt_path = 'E:/datasets/VOCdevkit/Annotations/{}.xml'
     # gt_path = 'E:/datasets/kitti/training/labels_xml/{}.xml'
     just_get_basename(pre_path)
     reconvert_labels = True

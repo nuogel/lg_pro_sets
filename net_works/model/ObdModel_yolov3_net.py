@@ -130,7 +130,7 @@ class YoloV3(nn.Module):
         mlist.add_module("conv_out", nn.Conv2d(in_out[1], _out, 1, 1, 0, True))
         return mlist
 
-    def forward(self, train_data, **args):
+    def forward(self, **args):
         def _branch(_embedding, _in):
             out_branch = None
             for i, e in enumerate(_embedding):
@@ -139,12 +139,7 @@ class YoloV3(nn.Module):
                     out_branch = _in
             return _in, out_branch
 
-        if isinstance(train_data, tuple):
-            x, lab = train_data
-        else:
-            x = train_data
-        x = x.permute([0, 3, 1, 2])
-
+        x = args['input_x']
         # x2, x1, x0: 256, 512, 1024
         x2, x1, x0 = self.backbone(x)
         # featuremap0:144, net_out0:512

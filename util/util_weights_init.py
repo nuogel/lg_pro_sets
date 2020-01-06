@@ -1,5 +1,5 @@
 import torch
-
+import torch.nn
 
 def weights_init(Modle):
     for m in Modle.modules():
@@ -19,10 +19,14 @@ def weights_init(Modle):
                 m.bias_ih_l0.data.zero_()
             if m.bias_hh_l0 is not None:
                 m.bias_hh_l0.data.zero_()
-        elif isinstance(m, torch.nn.BatchNorm2d):
+        elif isinstance(m, torch.nn.BatchNorm2d) or isinstance(m, torch.nn.GroupNorm) or isinstance(m, torch.nn.SyncBatchNorm):
             m.weight.data.fill_(1)
             m.bias.data.zero_()
         elif isinstance(m, torch.nn.Linear):
             m.weight.data.normal_(0, 0.01)
+            if m.bias is not None:
+                m.bias.data.zero_()
+        elif isinstance(m, torch.nn.ConvTranspose2d):
+            torch.nn.init.kaiming_normal_(m.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
             if m.bias is not None:
                 m.bias.data.zero_()

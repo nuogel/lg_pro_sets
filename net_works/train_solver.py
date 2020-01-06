@@ -12,6 +12,7 @@ import logging
 
 import numpy as np
 import torch
+import torch.nn
 from torch.optim import lr_scheduler
 from evasys.Score_Dict import Score
 from util.util_show_save_parmeters import TrainParame
@@ -19,7 +20,7 @@ from net_works.Model_Loss_Dict import ModelDict, LossDict
 from util.util_time_stamp import Time
 from util.util_weights_init import weights_init
 from util.util_get_train_test_dataset import _get_train_test_dataset, _read_train_test_dataset
-from util.util_is_use_cuda import _is_use_cuda
+from util.util_prepare_device import load_device
 from dataloader.DataLoaderDict import DataLoaderDict
 
 LOGGER = logging.getLogger(__name__)
@@ -31,15 +32,16 @@ class Solver:
         self.args = args
         self.one_test = cfg.TEST.ONE_TEST
         self.one_name = cfg.TEST.ONE_NAME
+        self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg.TRAIN.GPU_NUM)
         if self.one_test:
             self.cfg.TRAIN.BATCH_SIZE = len(self.one_name)
-        self.DataLoader = DataLoaderDict[cfg.BELONGS](cfg)
-        self.save_parameter = TrainParame(cfg)
-        self.Model = ModelDict[cfg.TRAIN.MODEL](cfg)
-        self.LossFun = LossDict[cfg.TRAIN.MODEL](cfg)
-        self.score = Score[cfg.BELONGS](cfg)
-        self.train_batch_num = cfg.TEST.ONE_TEST_TRAIN_STEP
-        self.test_batch_num = cfg.TEST.ONE_TEST_TEST_STEP
+        self.DataLoader = DataLoaderDict[self.cfg.BELONGS](self.cfg)
+        self.save_parameter = TrainParame(self.cfg)
+        self.Model = ModelDict[self.cfg.TRAIN.MODEL](self.cfg)
+        self.LossFun = LossDict[self.cfg.TRAIN.MODEL](self.cfg)
+        self.score = Score[self.cfg.BELONGS](self.cfg)
+        self.train_batch_num = self.cfg.TEST.ONE_TEST_TRAIN_STEP
+        self.test_batch_num = self.cfg.TEST.ONE_TEST_TEST_STEP
 
     def train(self):
         """Train the network.
@@ -68,10 +70,7 @@ class Solver:
         Get the self.Model, learning_rate, epoch_last, train_set, test_set.
         :return: learning_rate, epoch_last, train_set, test_set.
         """
-
         idx_stores_dir = os.path.join(self.cfg.PATH.TMP_PATH, 'idx_stores')
-        if _is_use_cuda(self.cfg.TRAIN.GPU_NUM):
-            self.Model = self.Model.cuda(self.cfg.TRAIN.GPU_NUM)
         # load the last train parameters
         checkpoint = self.args.checkpoint
         if checkpoint:
@@ -91,18 +90,26 @@ class Solver:
             epoch = 0
             learning_rate = self.args.lr  # if self.args.lr else self.cfg.TRAIN.LR_CONTINUE
             # generate a new data set
-            train_set, test_set = _get_train_test_dataset(x_dir=self.cfg.PATH.IMG_PATH, y_dir=self.cfg.PATH.LAB_PATH, idx_stores_dir=idx_stores_dir,
-                                                          test_train_ratio=self.cfg.TEST.TEST_SET_RATIO, cfg=self.cfg, )
+            if self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
+                train_set, test_set = _read_train_test_dataset(idx_stores_dir)
+            else:
+                train_set, test_set = _get_train_test_dataset(x_dir=self.cfg.PATH.IMG_PATH, y_dir=self.cfg.PATH.LAB_PATH, idx_stores_dir=idx_stores_dir,
+                                                              test_train_ratio=self.cfg.TEST.TEST_SET_RATIO, cfg=self.cfg, )
+            print(train_set[:4], '\n', test_set[:4])
             self.save_parameter.tbX_read()
+
+        self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
+        if len(self.device_ids) > 1:
+            self.Model = torch.nn.DataParallel(self.Model, device_ids=self.device_ids)
+
         LOGGER.info('the train set is :{}, ant the test set is :{}'.format(len(train_set), len(test_set)))
-        print(train_set[:10], test_set[:10])
         # _print_model_parm_nums(self.Model.cuda(), self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1])
         return learning_rate, epoch, train_set, test_set
 
     def _get_optimizer(self, learning_rate, optimizer='adam'):
         if optimizer == 'adam' or optimizer == 'Adam':
             optimizer = torch.optim.Adam(self.Model.parameters(),
-                                         lr=learning_rate, betas=(self.cfg.TRAIN.BETAS_ADAM, 0.99), weight_decay=5e-4)
+                                         lr=learning_rate, betas=(self.cfg.TRAIN.BETAS_ADAM, 0.999), weight_decay=5e-4)
         elif optimizer == 'sgd' or optimizer == 'SGD':
             optimizer = torch.optim.SGD(self.Model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
         else:
@@ -116,11 +123,10 @@ class Solver:
         losses = self.LossFun.Loss_Call(predict, dataset, losstype=losstype)
         if self.cfg.BELONGS == 'OBD':
             loss_names = ['[obj_loss]', '[noobj_loss]', '[cls_loss]', '[loc_loss]']  # obj_loss, noobj_loss, cls_loss, loc_loss
-            loss_tmp = range(len(losses))
-            for i in loss_tmp:
+            for i in range(len(losses)):
                 total_loss += losses[i]
             loss_head_info = ''
-            for loss_name, head_loss in zip(loss_names[:len(loss_tmp)], losses):
+            for loss_name, head_loss in zip(loss_names[:len(losses)], losses):
                 loss_head_info += ' {}: {:6.4f}'.format(loss_name, head_loss.item())
             LOGGER.debug('Loss per head: %s', loss_head_info)
         else:
@@ -155,12 +161,12 @@ class Solver:
         optimizer.zero_grad()
         for step in range(batch_num):
             t1_timer.time_start()
-            train_data = self.DataLoader.get_data_by_idx(train_set, step * batch_size, (step + 1) * batch_size)
+            train_data = self.DataLoader.get_data_by_idx(train_set, step * batch_size, (step + 1) * batch_size, is_training=True)
             if train_data[1] is None:
                 LOGGER.warning('[TRAIN] NO gt_labels IN THIS BATCH. Epoch: %3d, step: %4d/%4d ', epoch, step, batch_num)
                 continue
             # forward process
-            predict = self.Model.forward(train_data)
+            predict = self.Model.forward(input_x=train_data[0], input_y=train_data[1], input_data=train_data, is_training=True)
             # calculate the total loss
             total_loss = self._calculate_loss(predict, train_data, losstype=self.cfg.TRAIN.LOSSTYPE)
             losses += total_loss.item()
@@ -188,9 +194,9 @@ class Solver:
         self.score.init_parameters()
         for step in range(batch_num):
             # TODO: add timer
-            test_data = self.DataLoader.get_data_by_idx(test_set, step * batch_size, (step + 1) * batch_size)
+            test_data = self.DataLoader.get_data_by_idx(test_set, step * batch_size, (step + 1) * batch_size, is_training=False)
             if test_data[0] is None: continue
-            predict = self.Model.forward(test_data, eval=True)
+            predict = self.Model.forward(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)
             if self.cfg.BELONGS in ['OBD']: test_data = test_data[1]
             self.score.cal_score(predict, test_data)
             LOGGER.info('[EVALUATE] Epoch-Step:%3d-%4d/%4d', epoch, step, batch_num)

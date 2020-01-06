@@ -1,43 +1,57 @@
-#### V1.0.0_STEADY : master 
-### LuoGeng's Programs Set (Forbid Copying；禁止转传使用)
-This is a PyTorch implementation of ASR / OBD / SR /DENORSE
-#### ASR
+#### V1.1.0 STEADY : luogeng->master 
+### LuoGeng's Programs Set (Forbid Copying)
+This is a PyTorch implementation of ASR / OBD / SR /DENORSE /TRACK
+#### ASR:
     CTC
     Seq2Seq
     RNN
     LSTM
     Transformer
-#### OBD:
+#### OBD/OBC:
     YOLOv2
     YOLOV3
-    YoloV3_Tin
+    YoloV3_Tiny
     YoloV3_Tiny_SqueezeNet
     YoloV3_Tiny_MobileNet
     YoloV3_Tiny_ShuffleNet
     YoloV3_MobileNet
-    FCOS.
+    FCOS
+    RefineDet
+    MobileNetV3
 #### SR:
     EDSR
 #### DENORSE:
     DnCnn
     CBDNet
+    
+#### TRACK:
+    KCF
+
+
 #### Runtime environment
+you need to install all the environment before you enjoy this code.
 ```
 pytorch
+numpy
+pandas
+torch
+torchvision
 ...
-```
+conda install -c conda-forge imgaug 
 
-#### Training Dataset
 ```
-KITTI, VOC, SPEACH ...
+#### Training Dataset
+you can use any data sets in shape of [images, labels], labels can be **.xml or **.txt
+```
+KITTI, VOC, COCO, SPEACH ...
 ```
 
 #### Train The Model
 ```
-python train.py
+python train.py --yml_path xxx  --checkpoint xxx --lr xxx
 ```
 #### Test The Model
 ```
-python test.py
+python test.py --yml_path xxx --checkpoint xxx
 ```
 
