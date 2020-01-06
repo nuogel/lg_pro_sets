@@ -70,11 +70,6 @@ class Solver:
         Get the self.Model, learning_rate, epoch_last, train_set, test_set.
         :return: learning_rate, epoch_last, train_set, test_set.
         """
-
-        self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
-        if len(self.device_ids) > 1:
-            self.Model = torch.nn.DataParallel(self.Model, device_ids=self.device_ids)
-
         idx_stores_dir = os.path.join(self.cfg.PATH.TMP_PATH, 'idx_stores')
         # load the last train parameters
         checkpoint = self.args.checkpoint
@@ -102,6 +97,11 @@ class Solver:
                                                               test_train_ratio=self.cfg.TEST.TEST_SET_RATIO, cfg=self.cfg, )
             print(train_set[:4], '\n', test_set[:4])
             self.save_parameter.tbX_read()
+
+        self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
+        if len(self.device_ids) > 1:
+            self.Model = torch.nn.DataParallel(self.Model, device_ids=self.device_ids)
+
         LOGGER.info('the train set is :{}, ant the test set is :{}'.format(len(train_set), len(test_set)))
         # _print_model_parm_nums(self.Model.cuda(), self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1])
         return learning_rate, epoch, train_set, test_set
