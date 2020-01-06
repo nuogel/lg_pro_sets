@@ -4,7 +4,6 @@ import random
 import cv2
 from util.util_data_aug import Dataaug
 import numpy as np
-from util.util_is_use_cuda import _is_use_cuda
 import xml.etree.ElementTree as ET
 from util.util_get_cls_names import _get_class_names
 from util.util_show_img import _show_img
@@ -22,7 +21,7 @@ class DataLoader:
         self.print_path = self.cfg.TRAIN.SHOW_TRAIN_NAMES
         self.cls2idx = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
 
-    def get_data_by_idx(self, idx_store, index_from, index_to):
+    def get_data_by_idx(self, idx_store, index_from, index_to, is_training):
         '''
         :param idx_store:
         :param index_from:
@@ -38,7 +37,8 @@ class DataLoader:
             print('error, no IDX in loader_img.py')
             exit()
         imgs, labels = self._read_datas(idx)
-        if self.cfg.TRAIN.DO_AUG:
+        do_aug = self.cfg.TRAIN.DO_AUG if is_training else self.cfg.TEST.DO_AUG
+        if do_aug:
             imgs, labels = self.dataaug.augmentation((imgs, labels))
         if self.cfg.TRAIN.RESIZE:
             size = random.choice(self.cfg.TRAIN.MULTI_SIZE_RATIO) * self.cfg.TRAIN.IMG_SIZE
@@ -73,8 +73,7 @@ class DataLoader:
             imgs = imgs.permute([0, 3, 1, 2, ])
             imgs = imgs / 127.5 - 1.
 
-            if _is_use_cuda(self.cfg.TRAIN.GPU_NUM):
-                imgs = imgs.cuda(self.cfg.TRAIN.GPU_NUM)
+            imgs = imgs.to(self.cfg.TRAIN.DEVICE)
             data = (imgs, labels)  #
         return data
 

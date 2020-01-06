@@ -48,7 +48,8 @@ TRAIN:
   SAVE_STEP: 100
 
   # CUDA:
-  GPU_NUM: 0
+  GPU_NUM: [] #[0,] # if is [] means use CPU.
+  DEVICE: 'nice'
 
   # debug:
   LOG_FORMAT: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'  # logging format
@@ -101,8 +102,8 @@ TEST:
     #['912f23a7-2752ed05', 'E:/datasets/BDD100k/images/912f23a7-2752ed05.jpg', 'E:/datasets/BDD100k/labels\\912f23a7-2752ed05.xml'],
     #['2b65ffe6-044386b4', 'E:/datasets/BDD100k/images/2b65ffe6-044386b4.jpg', 'E:/datasets/BDD100k/labels\\2b65ffe6-044386b4.xml'],
     #['6be419a4-49a12049', 'E:/datasets/BDD100k/images/6be419a4-49a12049.jpg', 'E:/datasets/BDD100k/labels\\6be419a4-49a12049.xml'],
-#['77d72c41-9fcb211a', 'E:/datasets/BDD100k/images/77d72c41-9fcb211a.jpg', 'E:/datasets/BDD100k/labels/77d72c41-9fcb211a.xml']
-      ['COCO_train2014_000000421775','E:/datasets/COCO_Car/images/COCO_train2014_000000421775.jpg','E:/datasets/COCO_Car/labels\COCO_train2014_000000421775.xml'],
-#      ['COCO_train2014_000000171339','E:/datasets/COCO_Car/images/COCO_train2014_000000171339.jpg','E:/datasets/COCO_Car/labels\COCO_train2014_000000171339.xml'],
+    #['77d72c41-9fcb211a', 'E:/datasets/BDD100k/images/77d72c41-9fcb211a.jpg', 'E:/datasets/BDD100k/labels/77d72c41-9fcb211a.xml']
+  ['COCO_train2014_000000421775','E:/datasets/COCO_Car/images/COCO_train2014_000000421775.jpg','E:/datasets/COCO_Car/labels\COCO_train2014_000000421775.xml'],
+    #      ['COCO_train2014_000000171339','E:/datasets/COCO_Car/images/COCO_train2014_000000171339.jpg','E:/datasets/COCO_Car/labels\COCO_train2014_000000171339.xml'],
   ]
   #['005371', '009732'] #,'003846', '002913', '009155']#  #['000000']# ['20190412_0132']#[000000, 000001, 000002, 000003] #

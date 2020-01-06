@@ -12,6 +12,7 @@ import logging
 
 import numpy as np
 import torch
+import torch.nn
 from torch.optim import lr_scheduler
 from evasys.Score_Dict import Score
 from util.util_show_save_parmeters import TrainParame
@@ -19,7 +20,7 @@ from net_works.Model_Loss_Dict import ModelDict, LossDict
 from util.util_time_stamp import Time
 from util.util_weights_init import weights_init
 from util.util_get_train_test_dataset import _get_train_test_dataset, _read_train_test_dataset
-from util.util_is_use_cuda import _is_use_cuda
+from util.util_prepare_device import load_device
 from dataloader.DataLoaderDict import DataLoaderDict
 
 LOGGER = logging.getLogger(__name__)
@@ -31,15 +32,16 @@ class Solver:
         self.args = args
         self.one_test = cfg.TEST.ONE_TEST
         self.one_name = cfg.TEST.ONE_NAME
+        self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg.TRAIN.GPU_NUM)
         if self.one_test:
             self.cfg.TRAIN.BATCH_SIZE = len(self.one_name)
-        self.DataLoader = DataLoaderDict[cfg.BELONGS](cfg)
-        self.save_parameter = TrainParame(cfg)
-        self.Model = ModelDict[cfg.TRAIN.MODEL](cfg)
-        self.LossFun = LossDict[cfg.TRAIN.MODEL](cfg)
-        self.score = Score[cfg.BELONGS](cfg)
-        self.train_batch_num = cfg.TEST.ONE_TEST_TRAIN_STEP
-        self.test_batch_num = cfg.TEST.ONE_TEST_TEST_STEP
+        self.DataLoader = DataLoaderDict[self.cfg.BELONGS](self.cfg)
+        self.save_parameter = TrainParame(self.cfg)
+        self.Model = ModelDict[self.cfg.TRAIN.MODEL](self.cfg)
+        self.LossFun = LossDict[self.cfg.TRAIN.MODEL](self.cfg)
+        self.score = Score[self.cfg.BELONGS](self.cfg)
+        self.train_batch_num = self.cfg.TEST.ONE_TEST_TRAIN_STEP
+        self.test_batch_num = self.cfg.TEST.ONE_TEST_TEST_STEP
 
     def train(self):
         """Train the network.
@@ -68,11 +70,12 @@ class Solver:
         Get the self.Model, learning_rate, epoch_last, train_set, test_set.
         :return: learning_rate, epoch_last, train_set, test_set.
         """
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+        self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
+        if len(self.device_ids) > 1:
+            self.Model = torch.nn.DataParallel(self.Model, device_ids=self.device_ids)
 
         idx_stores_dir = os.path.join(self.cfg.PATH.TMP_PATH, 'idx_stores')
-        if _is_use_cuda(self.cfg.TRAIN.GPU_NUM):
-            self.Model = self.Model.cuda(self.cfg.TRAIN.GPU_NUM)
         # load the last train parameters
         checkpoint = self.args.checkpoint
         if checkpoint:
@@ -158,7 +161,7 @@ class Solver:
         optimizer.zero_grad()
         for step in range(batch_num):
             t1_timer.time_start()
-            train_data = self.DataLoader.get_data_by_idx(train_set, step * batch_size, (step + 1) * batch_size)
+            train_data = self.DataLoader.get_data_by_idx(train_set, step * batch_size, (step + 1) * batch_size, is_training=True)
             if train_data[1] is None:
                 LOGGER.warning('[TRAIN] NO gt_labels IN THIS BATCH. Epoch: %3d, step: %4d/%4d ', epoch, step, batch_num)
                 continue
@@ -191,7 +194,7 @@ class Solver:
         self.score.init_parameters()
         for step in range(batch_num):
             # TODO: add timer
-            test_data = self.DataLoader.get_data_by_idx(test_set, step * batch_size, (step + 1) * batch_size)
+            test_data = self.DataLoader.get_data_by_idx(test_set, step * batch_size, (step + 1) * batch_size, is_training=False)
             if test_data[0] is None: continue
             predict = self.Model.forward(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)
             if self.cfg.BELONGS in ['OBD']: test_data = test_data[1]

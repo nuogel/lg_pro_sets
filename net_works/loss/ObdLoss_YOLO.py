@@ -41,23 +41,23 @@ class YoloLoss:
         anchors = self.anchors[mask]
 
         labels_obj = torch.zeros([self.batch_size, shape[0], shape[1],
-                                  self.anc_num, 1]).cuda()
+                                  self.anc_num, 1]).to(self.cfg.TRAIN.DEVICE)
         labels_loc = torch.zeros([self.batch_size, shape[0], shape[1],
-                                  self.anc_num, 4]).cuda()
+                                  self.anc_num, 4]).to(self.cfg.TRAIN.DEVICE)
         labels_cls = torch.zeros([self.batch_size, shape[0], shape[1],
-                                  self.anc_num, self.cls_num]).cuda()
+                                  self.anc_num, self.cls_num]).to(self.cfg.TRAIN.DEVICE)
         labels_boxes = []
         for batch_idx, labs in enumerate(labels):
             lab_boxes = []
             for lab in labs:
-                lab = torch.Tensor(lab).cuda()
+                lab = torch.Tensor(lab).to(self.cfg.TRAIN.DEVICE)
                 box_xy = (lab[1:3] + lab[3:5]) / 2
                 box_wh = (lab[3:5] - lab[1:3])
                 boxes = torch.cat([box_xy, box_wh])
-                box_center = (box_xy * torch.Tensor([shape[1], shape[0]]).cuda()).long()
+                box_center = (box_xy * torch.Tensor([shape[1], shape[0]]).to(self.cfg.TRAIN.DEVICE)).long()
                 anc = torch.cat([torch.zeros_like(anchors), anchors], 1)
-                box_iou = torch.cat([torch.Tensor([0, 0]).cuda(), box_wh])
-                iou = iou_xywh(anc.cuda(), box_iou.cuda(), type='N21')
+                box_iou = torch.cat([torch.Tensor([0, 0]).to(self.cfg.TRAIN.DEVICE), box_wh])
+                iou = iou_xywh(anc.to(self.cfg.TRAIN.DEVICE), box_iou.to(self.cfg.TRAIN.DEVICE), type='N21')
                 iou_max = torch.max(iou, 0)
                 anc_idx = iou_max[1].item()
                 lab_boxes.append(boxes)
@@ -76,11 +76,11 @@ class YoloLoss:
         else:
             area_scale = 1.0
         # print(area_scal.shape, area_scal[0, 14, 39, 12:])
-        lab_loc_xy = lab_loc_xy * torch.Tensor([shape[1], shape[0]]).cuda() - grid_xy
-        anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).expand(1, shape[0], shape[1], self.anc_num, 2).cuda()
+        lab_loc_xy = lab_loc_xy * torch.Tensor([shape[1], shape[0]]).to(self.cfg.TRAIN.DEVICE) - grid_xy
+        anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).expand(1, shape[0], shape[1], self.anc_num, 2).to(self.cfg.TRAIN.DEVICE)
         lab_loc_wh = lab_loc_wh / anchor_ch
-        lab_loc_wh = torch.log(torch.min(torch.max(lab_loc_wh, torch.Tensor([1e-9]).expand_as(lab_loc_wh).cuda()),
-                                         torch.Tensor([1e9]).expand_as(lab_loc_wh).cuda()))
+        lab_loc_wh = torch.log(torch.min(torch.max(lab_loc_wh, torch.Tensor([1e-9]).expand_as(lab_loc_wh).to(self.cfg.TRAIN.DEVICE)),
+                                         torch.Tensor([1e9]).expand_as(lab_loc_wh).to(self.cfg.TRAIN.DEVICE)))
 
         return labels_obj, labels_cls, lab_loc_xy, lab_loc_wh, labels_boxes, area_scale
 
@@ -121,9 +121,9 @@ class YoloLoss:
     #         expand(1, shape[0], shape[1], self.anc_num, 2).expand_as(pre_loc_xy).type(torch.cuda.FloatTensor)
     #
     #     # prepare gird xy
-    #     box_ch = torch.Tensor([shape[1], shape[0]]).cuda()
+    #     box_ch = torch.Tensor([shape[1], shape[0]]).to(self.cfg.TRAIN.DEVICE)
     #     pre_realtive_xy = (pre_loc_xy + grid_xy) / box_ch
-    #     anchor_ch = self.anchors.view(1, 1, 1, self.anc_num, 2).expand(1, shape[0], shape[1], self.anc_num, 2).cuda()
+    #     anchor_ch = self.anchors.view(1, 1, 1, self.anc_num, 2).expand(1, shape[0], shape[1], self.anc_num, 2).to(self.cfg.TRAIN.DEVICE)
     #     pre_realtive_wh = pre_loc_wh.exp() * anchor_ch
     #
     #     pre_relative_box = torch.cat([pre_realtive_xy, pre_realtive_wh], -1)
@@ -265,7 +265,7 @@ class YoloLoss:
         obj_mask = lab_obj
         # ignore_mask:[N,self.cfg.BOX_HEIGHT,self.cfg.BOX_WIDTH,self.anc_num,1]
         ignore_mask = self._ignore(pre_relative_box, lab_boxes)
-        ignore_mask = ignore_mask.unsqueeze(-1).type(torch.cuda.FloatTensor)
+        ignore_mask = ignore_mask.unsqueeze(-1).type(torch.FloatTensor).to(self.cfg.TRAIN.DEVICE)
         ignore_mask = (1 - obj_mask) * ignore_mask
         # print(ignore_mask.sum())
 
