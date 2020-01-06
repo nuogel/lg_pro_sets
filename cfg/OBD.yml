@@ -10,7 +10,7 @@ PATH:
 
 
 TRAIN:
-  MODEL: efficientdet #yolov3_tiny #ssd #refinedet #yolov3_tiny_mobilenet #yolov3 # yolov3_tiny_shufflenet #  fcos #
+  MODEL: refinedet #efficientdet #yolov3_tiny #ssd #yolov3_tiny_mobilenet #yolov3 # yolov3_tiny_shufflenet #  fcos #
   EPOCH_SIZE: 400
   BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
@@ -33,7 +33,7 @@ TRAIN:
   RELATIVE_LABELS: TRUE  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0.1
   MIN_AREAR: 200 #400
-  IMG_SIZE: [512, 768] #[512,512] #[H,W] #[256, 256] # [384, 960] # [512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
+  IMG_SIZE: [512,512] #[512, 768] #[H,W] #[256, 256] # [384, 960] # [512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
   MULTI_SIZE_RATIO: [1] # [1, 0.9, 0.8...]
   SHOW_INPUT: FALSE #TRUE #
 
