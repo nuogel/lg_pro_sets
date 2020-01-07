@@ -1,7 +1,8 @@
 import torch
 
 
-def load_device(device):
+def load_device(cfg):
+    device = cfg.TRAIN.GPU_NUM
     n_gpu_use = len(device)
     n_gpu = torch.cuda.device_count()
     if n_gpu_use > 0 and n_gpu == 0:
