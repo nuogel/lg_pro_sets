@@ -1,5 +1,5 @@
 from net_works.model.ObdModel_SSD_VGG import SSD
-from net_works.model.ObdModel_yolov2 import ApolloYoloV2
+from net_works.model.ObdModel_yolov2 import YoloV2
 from net_works.model.ObdModel_yolov3_net import YoloV3
 from net_works.model.ObdModel_yolov3_tiny import YoloV3_Tiny
 from net_works.model.ObdModel_yolov3_tiny_mobilenet import YoloV3_Tiny_MobileNet
@@ -26,7 +26,7 @@ from net_works.loss.ObdLoss_RefineDet import RefineDetLoss
 
 ModelDict = {
     # OBD
-    'yolov2': ApolloYoloV2,
+    'yolov2': YoloV2,
     'yolov3': YoloV3,
     'yolov3_tiny': YoloV3_Tiny,
     'yolov3_tiny_squeezenet': YoloV3_Tiny_SqueezeNet,
