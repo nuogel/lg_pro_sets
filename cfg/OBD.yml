@@ -10,7 +10,7 @@ PATH:
 
 
 TRAIN:
-  MODEL: yolov3_tiny #efficientdet #refinedet #ssd #yolov3_tiny_mobilenet #yolov3 # yolov3_tiny_shufflenet #  fcos #
+  MODEL: yolov3 #yolov3_tiny #efficientdet #refinedet #ssd #yolov3_tiny_mobilenet #yolov3 # yolov3_tiny_shufflenet #  fcos #
   EPOCH_SIZE: 4000
   BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
@@ -54,7 +54,7 @@ TRAIN:
   # debug:
   LOG_FORMAT: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'  # logging format
 
-  FMAP_ANCHOR_NUM: 2  # yolov2: 16 ; yolov3:2; yolov3_tiny:3
+  FMAP_ANCHOR_NUM: ''  # yolov2: 16 ; yolov3:2; yolov3_tiny:3
   #  ANCHORS: [[ 0.0772422 , 0.0632077 ],
   #            [ 0.0332185 , 0.0699152 ],
   #            [ 0.3039470 , 0.7423017 ],
@@ -77,7 +77,7 @@ TRAIN:
             [ 0.0889423 , 0.1394231 ],
             [ 0.1947115 , 0.1971154 ],
             [ 0.3245192 , 0.4062500 ],
-            [ 0.8269231 , 0.7668269 ],] # yolov3_tiny 6
+            [ 0.8269231 , 0.7668269 ],] # yolov3_tiny
 
 
 TEST:

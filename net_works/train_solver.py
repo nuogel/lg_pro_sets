@@ -22,6 +22,7 @@ from util.util_weights_init import weights_init
 from util.util_get_train_test_dataset import _get_train_test_dataset, _read_train_test_dataset
 from util.util_prepare_device import load_device
 from util.util_load_state_dict import load_state_dict
+from util.util_prepare_cfg import prepare_cfg
 from dataloader.DataLoaderDict import DataLoaderDict
 
 LOGGER = logging.getLogger(__name__)
@@ -29,13 +30,11 @@ LOGGER = logging.getLogger(__name__)
 
 class Solver:
     def __init__(self, cfg, args):
-        self.cfg = cfg
+
+        self.cfg = prepare_cfg(cfg)
         self.args = args
-        self.one_test = cfg.TEST.ONE_TEST
-        self.one_name = cfg.TEST.ONE_NAME
-        self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg.TRAIN.GPU_NUM)
-        if self.one_test:
-            self.cfg.TRAIN.BATCH_SIZE = len(self.one_name)
+        self.one_test = self.cfg.TEST.ONE_TEST
+        self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)
         self.DataLoader = DataLoaderDict[self.cfg.BELONGS](self.cfg)
         self.save_parameter = TrainParame(self.cfg)
         self.Model = ModelDict[self.cfg.TRAIN.MODEL](self.cfg)
