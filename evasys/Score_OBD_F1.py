@@ -108,7 +108,7 @@ class F1Score:
                 for i, lab in enumerate(label):
                     if lab[0] is not cls:
                         continue
-                    a = torch.Tensor(one_box[2]).cuda().unsqueeze(0)
+                    a = torch.Tensor(one_box[2]).unsqueeze(0).to(self.cfg.TRAIN.DEVICE)
                     b = torch.Tensor(lab[1:5]).to(a.device).unsqueeze(0)
                     iou = iou_xyxy(a, b)[0][0]  # to(anchors.device))
                     if iou > max_iou:

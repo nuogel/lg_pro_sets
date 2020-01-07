@@ -14,7 +14,7 @@ def _iou_mat_N2N_yolo(box1, box2):
         box1 = box1.view(1, box1.shape[0])
     if len(box2.shape) == 1:
         box2 = box2.view(1, box2.shape[0])
-    ious = torch.zeros((box2.shape[0],) + box1.shape[:-1]).cuda()
+    ious = torch.zeros((box2.shape[0],) + box1.shape[:-1]).to(box1.device)
     for i in range(box2.shape[0]):
         box2_ = box2[i]
         box_tmp = {}
@@ -32,10 +32,10 @@ def _iou_mat_N2N_yolo(box1, box2):
         #
         mask1 = (box1[..., 0] + box1[..., 2] - box2_[..., 2] - box2_[..., 0]).abs() \
                 - (box1[..., 2] - box1[..., 0] + box2_[..., 2] - box2_[..., 0])
-        mask1 = (mask1 < 0).cuda().float()
+        mask1 = (mask1 < 0).float().to(box1.device)
         mask2 = (box1[..., 1] + box1[..., 3] - box2_[..., 3] - box2_[..., 1]).abs() \
                 - (box1[..., 3] - box1[..., 1] + box2_[..., 3] - box2_[..., 1])
-        mask2 = (mask2 < 0).cuda().float()
+        mask2 = (mask2 < 0).float().to(box1.device)
         #
         ious[i] = ious[i] * mask1 * mask2
     return ious

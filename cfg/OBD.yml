@@ -10,7 +10,7 @@ PATH:
 
 
 TRAIN:
-  MODEL: efficientdet #yolov3_tiny #ssd #refinedet #yolov3_tiny_mobilenet #yolov3 # yolov3_tiny_shufflenet #  fcos #
+  MODEL: yolov3_tiny #efficientdet #refinedet #ssd #yolov3_tiny_mobilenet #yolov3 # yolov3_tiny_shufflenet #  fcos #
   EPOCH_SIZE: 400
   BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
@@ -33,7 +33,7 @@ TRAIN:
   RELATIVE_LABELS: TRUE  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0.1
   MIN_AREAR: 200 #400
-  IMG_SIZE: [512, 768] #[512,512] #[H,W] #[256, 256] # [384, 960] # [512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
+  IMG_SIZE: [512,512] #[512, 768] #[H,W] #[256, 256] # [384, 960] # [512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
   MULTI_SIZE_RATIO: [1] # [1, 0.9, 0.8...]
   SHOW_INPUT: FALSE #TRUE #
 
@@ -48,7 +48,8 @@ TRAIN:
   SAVE_STEP: 100
 
   # CUDA:
-  GPU_NUM: 0
+  GPU_NUM: [0,1] #[] # if is [] means use CPU.
+  DEVICE: 'gpu'
 
   # debug:
   LOG_FORMAT: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'  # logging format
@@ -101,8 +102,8 @@ TEST:
     #['912f23a7-2752ed05', 'E:/datasets/BDD100k/images/912f23a7-2752ed05.jpg', 'E:/datasets/BDD100k/labels\\912f23a7-2752ed05.xml'],
     #['2b65ffe6-044386b4', 'E:/datasets/BDD100k/images/2b65ffe6-044386b4.jpg', 'E:/datasets/BDD100k/labels\\2b65ffe6-044386b4.xml'],
     #['6be419a4-49a12049', 'E:/datasets/BDD100k/images/6be419a4-49a12049.jpg', 'E:/datasets/BDD100k/labels\\6be419a4-49a12049.xml'],
-#['77d72c41-9fcb211a', 'E:/datasets/BDD100k/images/77d72c41-9fcb211a.jpg', 'E:/datasets/BDD100k/labels/77d72c41-9fcb211a.xml']
-      ['COCO_train2014_000000421775','E:/datasets/COCO_Car/images/COCO_train2014_000000421775.jpg','E:/datasets/COCO_Car/labels\COCO_train2014_000000421775.xml'],
-#      ['COCO_train2014_000000171339','E:/datasets/COCO_Car/images/COCO_train2014_000000171339.jpg','E:/datasets/COCO_Car/labels\COCO_train2014_000000171339.xml'],
+    #['77d72c41-9fcb211a', 'E:/datasets/BDD100k/images/77d72c41-9fcb211a.jpg', 'E:/datasets/BDD100k/labels/77d72c41-9fcb211a.xml']
+  ['COCO_train2014_000000421775','E:/datasets/COCO_Car/images/COCO_train2014_000000421775.jpg','E:/datasets/COCO_Car/labels\COCO_train2014_000000421775.xml'],
+    #      ['COCO_train2014_000000171339','E:/datasets/COCO_Car/images/COCO_train2014_000000171339.jpg','E:/datasets/COCO_Car/labels\COCO_train2014_000000171339.xml'],
   ]
   #['005371', '009732'] #,'003846', '002913', '009155']#  #['000000']# ['20190412_0132']#[000000, 000001, 000002, 000003] #

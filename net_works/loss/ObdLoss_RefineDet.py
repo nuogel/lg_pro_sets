@@ -46,7 +46,7 @@ class Detect_RefineDet():
         scores_out = conf_data
         boxes_out = []
         for i in range(num):
-            default = decode(arm_loc_data[i], prior_data.cuda(), self.variance)
+            default = decode(arm_loc_data[i], prior_data.to(arm_loc_data[i].device), self.variance)
             default = center_size(default)
             decoded_boxes = decode(loc_data[i], default, self.variance)
             # For each class, perform nms
@@ -126,11 +126,11 @@ class RefineDetMultiBoxLoss(nn.Module):
         conf_t = torch.LongTensor(num, num_priors)
         for idx in range(num):
             target = torch.Tensor(np.array(targets[idx]))
-            truths = target[:, 1:].cuda()
+            truths = target[:, 1:].to(arm_loc_data.device)
             labels = target[:, 0]
             if num_classes == 2:
                 labels = labels >= 0
-            defaults = priors.cuda()
+            defaults = priors.to(truths.device)
             if self.use_ARM:
                 loc_t, conf_t = refine_match(self.threshold, truths, defaults, self.variance, labels, loc_t, conf_t, idx, arm_loc_data[idx].data)
             else:

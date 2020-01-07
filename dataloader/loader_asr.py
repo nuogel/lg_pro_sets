@@ -6,7 +6,6 @@ import scipy
 from scipy import signal
 import glob
 from python_speech_features import mfcc, delta
-from util.util_is_use_cuda import _is_use_cuda
 
 
 class DataLoader:
@@ -69,9 +68,8 @@ class DataLoader:
                 wav_input[i, 0:wav_length[i]] = torch.LongTensor(wav_list[i])
                 lab_input[i, 0:lab_length[i]] = torch.LongTensor(lab_list[i])
 
-            if _is_use_cuda(self.cfg.TRAIN.GPU_NUM):
-                wav_input = wav_input.cuda(self.cfg.TRAIN.GPU_NUM)
-                lab_input = lab_input.cuda(self.cfg.TRAIN.GPU_NUM)
+            wav_input = wav_input.to(self.cfg.TRAIN.DEVICE)
+            lab_input = lab_input.to(self.cfg.TRAIN.DEVICE)
 
             data = (wav_input, lab_input, wav_length, lab_length)
         return data
@@ -85,8 +83,7 @@ class DataLoader:
         wav_input = torch.zeros((1, wav_length, self.win_length))
         wav_input[0, 0:len(wav_feature)] = torch.from_numpy(wav_feature)
         wav_length = torch.LongTensor(wav_length)
-        if _is_use_cuda(self.cfg.TRAIN.GPU_NUM):
-            wav_input = wav_input.cuda(self.cfg.TRAIN.GPU_NUM)
+        wav_input = wav_input.to(self.cfg.TRAIN.DEVICE)
         data = (wav_input, wav_length, None, None)
         return data
 

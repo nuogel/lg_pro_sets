@@ -39,7 +39,7 @@ class ParsePredict:
         labels_predict = []
         for batch_n in range(pre_cls_score.shape[0]):
             # TODO: make a matrix instead of for...
-            LOGGER.info('[NMS]')
+            # LOGGER.info('[NMS]')
             score = pre_cls_score[batch_n]
             loc = pre_loc[batch_n]
             labels = self.NMS.forward(score, loc, xywh2x1y1x2y2)
@@ -81,12 +81,12 @@ class ParsePredict:
         grid_x = torch.arange(0, shape[1]).view(-1, 1).repeat(1, shape[0]).unsqueeze(2).permute(1, 0, 2)
         grid_y = torch.arange(0, shape[0]).view(-1, 1).repeat(1, shape[1]).unsqueeze(2)
         grid_xy = torch.cat([grid_x, grid_y], 2).unsqueeze(2).unsqueeze(0). \
-            expand(1, shape[0], shape[1], self.anc_num, 2).expand_as(pre_loc_xy).type(torch.cuda.FloatTensor)
+            expand(1, shape[0], shape[1], self.anc_num, 2).expand_as(pre_loc_xy).type(torch.FloatTensor).to(loc_pred.device)
 
         # prepare gird xy
-        box_ch = torch.Tensor([shape[1], shape[0]]).cuda()
+        box_ch = torch.Tensor([shape[1], shape[0]]).to(loc_pred.device)
         pre_realtive_xy = (pre_loc_xy + grid_xy) / box_ch
-        anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).expand(1, shape[0], shape[1], self.anc_num, 2).cuda()
+        anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).expand(1, shape[0], shape[1], self.anc_num, 2).to(loc_pred.device)
         pre_realtive_wh = pre_loc_wh.exp() * anchor_ch
 
         pre_relative_box = torch.cat([pre_realtive_xy, pre_realtive_wh], -1)

@@ -11,10 +11,10 @@ import numpy as np
 from net_works.Model_Loss_Dict import ModelDict
 from dataloader.DataLoaderDict import DataLoaderDict
 import glob
+from util.util_prepare_device import load_device
 from util.util_parse_prediction import ParsePredict
 from util.util_data_aug import Dataaug
 from util.util_show_img import _show_img
-from util.util_is_use_cuda import _is_use_cuda
 from evasys.Score_OBD_F1 import F1Score
 from util.util_parse_SR_img import parse_Tensor_img
 from evasys.Score_Dict import Score
@@ -24,14 +24,16 @@ class Test_Base(object):
     def __init__(self, cfg, args):
         self.cfg = cfg
         self.args = args
-        self.Model = ModelDict[cfg.TRAIN.MODEL](cfg)
+        self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg.TRAIN.GPU_NUM)
+        self.Model = ModelDict[self.cfg.TRAIN.MODEL](self.cfg)
         if self.args.checkpoint:
             self.model_path = self.args.checkpoint
         else:
             self.model_path = self.cfg.PATH.TEST_WEIGHT_PATH
         self.Model.load_state_dict(torch.load(self.model_path))
-        if _is_use_cuda():
-            self.Model = self.Model.cuda()
+        self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
+        if len(self.device_ids) > 1:
+            self.Model = torch.nn.DataParallel(self.Model, device_ids=self.device_ids)
         self.Model.eval()
 
     def test_backbone(self, test_path):
@@ -94,14 +96,13 @@ class Test_OBD(Test_Base):
         if img_raw is None:
             print('ERROR：no such a image')
         if self.cfg.TEST.DO_AUG:
-            img_aug, _ = self.dataaug.augmentation(for_one_image=img_raw, do_aug=self.cfg.TEST.DO_AUG,
-                                                   resize=self.cfg.TEST.RESIZE)
+            img_aug, _ = self.dataaug.augmentation(for_one_image=img_raw, do_aug=self.cfg.TEST.DO_AUG, resize=self.cfg.TEST.RESIZE)
             img_aug = img_aug[0]
         elif self.cfg.TEST.RESIZE:
             img_aug = cv2.resize(img_raw, (int(self.cfg.TRAIN.IMG_SIZE[1]), int(self.cfg.TRAIN.IMG_SIZE[0])))
         else:
             img_aug = img_raw
-        img_in = torch.from_numpy(img_aug).unsqueeze(0).type(torch.FloatTensor).cuda()
+        img_in = torch.from_numpy(img_aug).unsqueeze(0).type(torch.FloatTensor).to(self.cfg.TRAIN.DEVICE)
         img_raw = torch.from_numpy(img_raw).unsqueeze(0).type(torch.FloatTensor)
         img_in = img_in.permute([0, 3, 1, 2, ])
         img_in = img_in / 127.5 - 1.
@@ -161,8 +162,7 @@ class Test_SR_DN(Test_Base):
         # prepare paramertas
         test_img = cv2.imread(img_path)
         test_img = torch.from_numpy(np.asarray((test_img - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).unsqueeze(0).type(torch.FloatTensor)
-        if _is_use_cuda():
-            test_img = test_img.cuda()
+        test_img = test_img.to(self.cfg.TRAIN.DEVICE)
         self.cfg.TRAIN.BATCH_SIZE = 1
         predict = self.Model.forward(test_img, is_training=False)
         if self.cfg.TEST.SAVE_LABELS == True:

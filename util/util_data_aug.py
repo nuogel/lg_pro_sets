@@ -67,7 +67,11 @@ class Dataaug:
         images, labels = datas
         labels = [[ia.BoundingBox(x1=labs[1], y1=labs[2], x2=labs[3], y2=labs[4], label=labs[0]) for labs in _labels] for _labels in labels]
         base_funs = [
-            iaa.Fliplr(.5),
+            iaa.Fliplr(.5),  # 增加原图的概率。
+            iaa.Fliplr(.5),  # 增加原图的概率。
+            iaa.Fliplr(.5),  # 增加原图的概率。
+            iaa.Fliplr(.5),  # 增加原图的概率。
+            iaa.Fliplr(.5),  # 增加原图的概率。
             # iaa.Grayscale(alpha=(0, 1)),
             # iaa.ChangeColorspace('BGR'),
             # iaa.Add((-50, 50)),
