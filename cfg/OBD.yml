@@ -11,9 +11,9 @@ PATH:
 
 TRAIN:
   MODEL: yolov3_tiny #efficientdet #refinedet #ssd #yolov3_tiny_mobilenet #yolov3 # yolov3_tiny_shufflenet #  fcos #
-  EPOCH_SIZE: 400
+  EPOCH_SIZE: 4000
   BATCH_SIZE: 4
-  BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
+  BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   TRAIN_DATA_FROM_FILE: TRUE #FALSE #
   # loss parameters
   CLASSES: ['Background','Car','Others1', 'Others2'] #['Car', 'Cyclist', 'Pedestrian', 'Others']#
@@ -27,13 +27,13 @@ TRAIN:
   MILABSIZE: [0, 64, 128, 256, 512, 10000000] # this can be replaced by max(size)/16*2^n-->n [0, 1, 2, 3, 4, INF]
 
   # data aug:
-  DO_AUG: FALSE #TRUE #
-  SHOW_TRAIN_NAMES: TRUE #FALSE #
+  DO_AUG: TRUE #FALSE #
+  SHOW_TRAIN_NAMES: FALSE #TRUE #
   RESIZE: TRUE
   RELATIVE_LABELS: TRUE  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0.1
   MIN_AREAR: 200 #400
-  IMG_SIZE: [512,512] #[512, 768] #[H,W] #[256, 256] # [384, 960] # [512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
+  IMG_SIZE: [512,768] #[512, 768] #[H,W] #[256, 256] # [384, 960] # [512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
   MULTI_SIZE_RATIO: [1] # [1, 0.9, 0.8...]
   SHOW_INPUT: FALSE #TRUE #
 
@@ -89,10 +89,10 @@ TEST:
   IOU_THRESH: 0.5
   SOFNMS_THETA: 0.5
 
-  DO_AUG: FALSE
+  DO_AUG: FALSE #TRUE  #
   RESIZE: TRUE  #FALSE #
   SAVE_LABELS: TRUE
-  SHOW_IMAGES: TRUE #FALSE #
+  SHOW_IMAGES: FALSE #TRUE #
   SHOW_TIMES: 20000
 
   ONE_TEST: FALSE  #TRUE #

@@ -60,9 +60,9 @@ class Solver:
         # Prepare optimizer
         optimizer, scheduler = self._get_optimizer(learning_rate, optimizer=self.cfg.TRAIN.OPTIMIZER)
         for epoch in range(epoch_last, self.cfg.TRAIN.EPOCH_SIZE):
-            # self._train_an_epoch(epoch, train_set, optimizer, scheduler)
+            self._train_an_epoch(epoch, train_set, optimizer, scheduler)
             # saving the weights to checkpoint
-            # self._save_checkpoint(epoch)
+            self._save_checkpoint(epoch)
             # evaluating from test data set
             self._test_an_epoch(epoch, test_set)
 
@@ -71,7 +71,6 @@ class Solver:
         Get the self.Model, learning_rate, epoch_last, train_set, test_set.
         :return: learning_rate, epoch_last, train_set, test_set.
         """
-
         idx_stores_dir = os.path.join(self.cfg.PATH.TMP_PATH, 'idx_stores')
         # load the last train parameters
         if self.args.checkpoint:
@@ -172,7 +171,6 @@ class Solver:
             losses += total_loss.item()
             # backward process
             total_loss.backward()
-            # torch.nn.utils.clip_grad_value_(self.Model.parameters(), self.cfg.TRAIN.CLIP_VALUE)
             if step % self.cfg.TRAIN.BATCH_BACKWARD_SIZE == 0:
                 optimizer.step()
                 optimizer.zero_grad()
@@ -181,7 +179,6 @@ class Solver:
             _timer.time_end()
             LOGGER.info('[TRAIN] Epoch-Step:%3d-%4d/%4d, Step_LOSS: %10.2f, Batch_Average_LOSS: %10.2f, Time Step/Total-%s/%s',
                         epoch, step, batch_num, total_loss.item(), losses / (step + 1), _timer.diff, _timer.from_begin)
-        # save the main parameters
         self.save_parameter.tbX_write(epoch=epoch, learning_rate=optimizer.param_groups[0]['lr'], batch_average_loss=losses / batch_num, )
         LOGGER.info('[TRAIN] Summary: Epoch: %s, average total loss: %s', epoch, losses / batch_num)
 
@@ -190,14 +187,11 @@ class Solver:
         self.Model.eval()
         LOGGER.info('[EVALUATE] Evaluating from test data set ...')
         _timer = Time()
-
         batch_size = self.cfg.TRAIN.BATCH_SIZE
         batch_num = self.test_batch_num if self.one_test else len(test_set) // batch_size
         self.score.init_parameters()
         for step in range(batch_num):
-            # TODO: add timer
             _timer.time_start()
-
             test_data = self.DataLoader.get_data_by_idx(test_set, step * batch_size, (step + 1) * batch_size, is_training=False)
             if test_data[0] is None: continue
             predict = self.Model.forward(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)
@@ -205,7 +199,6 @@ class Solver:
             self.score.cal_score(predict, test_data)
             _timer.time_end()
             LOGGER.info('[EVALUATE] Epoch-Step:%3d-%4d/%4d, Time Step/Total-%s/%s', epoch, step, batch_num, _timer.diff, _timer.from_begin)
-
         score_out, precision, recall = self.score.score_out()
         self.save_parameter.tbX_write(epoch=epoch, score_out=score_out, precision=precision, recall=recall)
         LOGGER.info('[EVALUATE] Summary: Epoch: %s, Score: %s, Precision: %s, Recall: %s', epoch, score_out, precision, recall)
