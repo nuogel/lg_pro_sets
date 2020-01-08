@@ -94,7 +94,6 @@ class Solver:
                 train_set, test_set = _get_train_test_dataset(x_dir=self.cfg.PATH.IMG_PATH, y_dir=self.cfg.PATH.LAB_PATH, idx_stores_dir=idx_stores_dir,
                                                               test_train_ratio=self.cfg.TEST.TEST_SET_RATIO, cfg=self.cfg, )
             print(train_set[:4], '\n', test_set[:4])
-            self.save_parameter.tbX_read()
 
         self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
         if len(self.device_ids) > 1:
