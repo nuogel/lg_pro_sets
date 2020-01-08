@@ -60,7 +60,7 @@ class TrainParame:
             print(ea.scalars.Keys())
             learning_rate = ea.scalars.Items('data/learning_rate')[-1]
         except:
-            print('error: no learning_rate in tbX,SET 0')
+            print('error: no learning_rate in tbX,SET :', self.cfg.TRAIN.LR_START)
             epoch = 0
             learning_rate = self.cfg.TRAIN.LR_START
         else:
@@ -175,4 +175,3 @@ if __name__ == "__main__":
     cfg.PATH.PARAMETER_PATH = os.path.join('..', cfg.PATH.PARAMETER_PATH)
     para = TrainParame(cfg)
     para.show_parameters(1, )
-
