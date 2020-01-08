@@ -12,8 +12,8 @@ PATH:
 TRAIN:
   MODEL: refinedet #yolov3_tiny #yolov3 #efficientdet #ssd #yolov3_tiny_mobilenet #yolov3 # yolov3_tiny_shufflenet #  fcos #
   EPOCH_SIZE: 4000
-  BATCH_SIZE: 1
-  BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
+  BATCH_SIZE: 4
+  BATCH_BACKWARD_SIZE: 4  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   TRAIN_DATA_FROM_FILE: TRUE #FALSE #
   # loss parameters
   CLASSES: ['Background','Car','Others1', 'Others2'] #['Car', 'Cyclist', 'Pedestrian', 'Others']#
@@ -95,7 +95,7 @@ TEST:
   SHOW_IMAGES: TRUE #FALSE #
   SHOW_TIMES: 20000
 
-  ONE_TEST: TRUE #FALSE  #
+  ONE_TEST: FALSE  #TRUE #
   ONE_TEST_TRAIN_STEP: 50
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
