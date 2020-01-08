@@ -38,8 +38,6 @@ class RefineDet(nn.Module):
         self.cfg = voc_refinedet
         self.priorbox = PriorBox(self.cfg[str(size)])
         self.anchors = Anchors(pyramid_levels=[3, 4, 5, 6], ratios=np.array([0.5, 1, 2]), scales=np.array([1]))
-        with torch.no_grad():
-            self.priors = self.priorbox.forward()
         self.size = size
 
         # SSD network
@@ -159,7 +157,7 @@ class RefineDet(nn.Module):
                   arm_conf.view(arm_conf.size(0), -1, 2),
                   odm_loc.view(odm_loc.size(0), -1, 4),
                   odm_conf.view(odm_conf.size(0), -1, self.num_classes),
-                  # self.priors.type(type(x))  # raw code anchor
+                  # self.priors = self.priorbox.forward().type(type(x))  # raw code anchor
                   self.anchors(args['input_x']).type(type(x))[0]  # lg anchor
                   )
 
