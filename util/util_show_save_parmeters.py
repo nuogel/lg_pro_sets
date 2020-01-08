@@ -31,16 +31,7 @@ class TrainParame:
                 LOGGER.info('DELETE THE HISTORY LOG: {}'.format(self.folder))
 
         self.tbX_writer = SummaryWriter(self.folder)
-        try:
-            f = open(self.cfg.PATH.CLASSES_PATH)
-        except:
-            pass
-        else:
-            lines = f.read().replace('\n', '\n\n')
-            self.tbX_writer.add_text('class_dict', lines, 0)
-        config_path = 'cfg/' + self.cfg.BELONGS + '.yml'
-        config_lines = open(config_path).read().replace('\n', '\n\n')
-        self.tbX_writer.add_text('config', config_lines, 0)
+        self._write_txt(epoch=0)
 
     def tbX_write(self, **kwargs):
         epoch = kwargs['epoch']
@@ -67,7 +58,21 @@ class TrainParame:
             epoch = learning_rate.step
             learning_rate = learning_rate.value
         self.tbX_writer = SummaryWriter(self.folder)
+        self._write_txt(epoch=epoch)
         return epoch, learning_rate
+
+    def _write_txt(self, epoch=0):
+        try:
+            f = open(self.cfg.PATH.CLASSES_PATH)
+        except:
+            pass
+        else:
+            lines = f.read().replace('\n', ' ||\t ')
+            lines = lines.replace(',', ' <-> ')
+            self.tbX_writer.add_text('class_dict', lines, epoch)
+        config_path = 'cfg/' + self.cfg.BELONGS + '.yml'
+        config_lines = open(config_path).read().replace('\n', '\n\n')
+        self.tbX_writer.add_text('config', config_lines, epoch)
 
     def save_parameters(self, epoch,
                         learning_rate=None, batch_average_loss=None,
