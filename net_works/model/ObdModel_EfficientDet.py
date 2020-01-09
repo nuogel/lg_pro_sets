@@ -224,8 +224,8 @@ class EfficientDet(nn.Module):
         self.priorbox = PriorBox(image_shape=self.cfg.TRAIN.IMG_SIZE, pyramid_levels=pyramid_levels, scales=scales)
         self.anchors_xywh = self.priorbox.forward()
 
-        self.decodeBoxes = DecodeBBox()
-        self.clipBoxes = ClipBoxes()
+        # self.decodeBoxes = DecodeBBox()
+        # self.clipBoxes = ClipBoxes()
 
     def forward(self, **args):
         inputs = args['input_x']
@@ -252,13 +252,3 @@ class EfficientDet(nn.Module):
         x = self.backbone(img)
         x = self.neck(x[-5:])
         return x
-
-
-if __name__ == '__main__':
-    inputs = torch.randn(5, 3, 512, 512)
-
-    model = EfficientDet()
-    model = model
-    output = model(inputs)
-    for p in output:
-        print(p.size())

@@ -4,7 +4,7 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as init
-from util.util_anchor_maker import Anchors
+from util.util_anchor_maker_lg import PriorBox
 
 vgg_base = {
     '300': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
@@ -41,6 +41,7 @@ class SSD(nn.Module):
 
     def __init__(self, cfg):
         super(SSD, self).__init__()
+        self.cfg = cfg
         self.num_classes = len(cfg.TRAIN.CLASSES)
         # TODO: implement __call__ in PriorBox
         self.size = 512
@@ -57,8 +58,8 @@ class SSD(nn.Module):
         self.L2Norm = nn.BatchNorm2d(512)
         self.loc = nn.ModuleList(head[0])
         self.conf = nn.ModuleList(head[1])
-        self.anchor_maker = Anchors(pyramid_levels=[3, 4, 5, 6, 7, 8, 9], ratios=np.array([0.5, 1, 2]), scales=np.array([1, 1.5]))
-
+        self.priorbox = PriorBox(image_shape=self.cfg.TRAIN.IMG_SIZE, pyramid_levels=[3, 4, 5, 6, 7, 8, 9], scales=np.array([1, 1.25]))
+        self.anchors_xywh = self.priorbox.forward()
         self.softmax = nn.Softmax()
 
     def forward(self, **args):
@@ -113,12 +114,10 @@ class SSD(nn.Module):
         loc = torch.cat(loc_layers, 1)
         conf = torch.cat(conf_layers, 1)
 
-        anchors_xywh = self.anchor_maker(args['input_x'])[0]
-
         output = (
             conf.view(conf.size(0), -1, self.num_classes),
             loc.view(loc.size(0), -1, 4),
-            anchors_xywh
+            self.anchors_xywh.to(loc.device)
         )
         return output
 
