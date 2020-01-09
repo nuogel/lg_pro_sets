@@ -5,39 +5,22 @@ import torch.nn.functional as F
 import torch.nn.init as init
 from itertools import product as product
 from math import sqrt as sqrt
-from util.util_anchor_maker import Anchors
+from util.util_anchor_maker_lg import PriorBox
 import numpy as np
 
 
 class RefineDet(nn.Module):
-    """Single Shot Multibox Architecture
-    The network is composed of a base VGG network followed by the
-    added multibox conv layers.  Each multibox layer branches into
-        1) conv2d for class conf scores
-        2) conv2d for localization predictions
-        3) associated priorbox layer to produce default bounding
-           boxes specific to the layer's feature map size.
-    See: https://arxiv.org/pdf/1512.02325.pdf for more details.
-
-    Args:
-        phase: (string) Can be "test" or "train"
-        size: input image size
-        base: VGG16 layers for input, size of either 300 or 500
-        extras: extra layers that feed to multibox loc and conf layers
-        head: "multibox head" consists of loc and conf conv layers
-    """
 
     def __init__(self, cfg):
         super(RefineDet, self).__init__()
-        size = cfg.TRAIN.IMG_SIZE[0]
+        self.cfg = cfg
+        size = self.cfg.TRAIN.IMG_SIZE[0]
         self.num_classes = len(cfg.TRAIN.CLASSES)
 
         phase = 'train'
         self.init(phase, size, self.num_classes)
         self.phase = phase
-        self.cfg = voc_refinedet
-        self.priorbox = PriorBox(self.cfg[str(size)])
-        self.anchors = Anchors(pyramid_levels=[3, 4, 5, 6], ratios=np.array([0.5, 1, 2]), scales=np.array([1]))
+        self.anchors = PriorBox(image_shape=self.cfg.TRAIN.IMG_SIZE, pyramid_levels=[3, 4, 5, 6], scales=np.array([1]))
         self.size = size
 
         # SSD network
@@ -71,24 +54,7 @@ class RefineDet(nn.Module):
         self.TCB = self.add_tcb(tcb[str(size)])
 
     def forward(self, **args):
-        """Applies network layers and ops on input image(s) x.
 
-        Args:
-            x: input image or batch of images. Shape: [batch,3,300,300].
-
-        Return:
-            Depending on phase:
-            test:
-                Variable(tensor) of output class label predictions,
-                confidence score, and corresponding location predictions for
-                each object detected. Shape: [batch,topk,7]
-
-            train:
-                list of concat outputs from:
-                    1: confidence layers, Shape: [batch*num_priors,num_classes]
-                    2: localization layers, Shape: [batch,num_priors*4]
-                    3: priorbox layers, Shape: [2,num_priors*4]
-        """
         x = args['input_x']
 
         sources = list()
@@ -157,8 +123,8 @@ class RefineDet(nn.Module):
                   arm_conf.view(arm_conf.size(0), -1, 2),
                   odm_loc.view(odm_loc.size(0), -1, 4),
                   odm_conf.view(odm_conf.size(0), -1, self.num_classes),
-                  # self.priors = self.priorbox.forward().type(type(x))  # raw code anchor
-                  self.anchors(args['input_x']).type(type(x))[0]  # lg anchor
+                  # self.priorbox.forward().type(type(x)),  # raw code anchor
+                  self.anchors.forward().type(type(x))  # lg anchor
                   )
 
         return output
@@ -281,37 +247,6 @@ tcb = {
     '512': [512, 512, 1024, 512],
 }
 
-voc_refinedet = {
-    '320': {
-        'num_classes': 21,
-        'lr_steps': (80000, 100000, 120000),
-        'max_iter': 120000,
-        'feature_maps': [40, 20, 10, 5],
-        'min_dim': 320,
-        'steps': [8, 16, 32, 64],
-        'min_sizes': [32, 64, 128, 256],
-        'max_sizes': [],
-        'aspect_ratios': [[2], [2], [2], [2]],
-        'variance': [0.1, 0.2],
-        'clip': True,
-        'name': 'RefineDet_VOC_320',
-    },
-    '512': {
-        'num_classes': 21,
-        'lr_steps': (80000, 100000, 120000),
-        'max_iter': 120000,
-        'feature_maps': [64, 32, 16, 8],
-        'min_dim': 512,
-        'steps': [8, 16, 32, 64],
-        'min_sizes': [32, 64, 128, 256],
-        'max_sizes': [],
-        'aspect_ratios': [[2], [2], [2], [2]],
-        'variance': [0.1, 0.2],
-        'clip': True,
-        'name': 'RefineDet_VOC_320',
-    }
-}
-
 
 class L2Norm(nn.Module):
     def __init__(self, n_channels, scale):
@@ -332,55 +267,84 @@ class L2Norm(nn.Module):
         out = self.weight.unsqueeze(0).unsqueeze(2).unsqueeze(3).expand_as(x) * x
         return out
 
-
-class PriorBox(object):
-    """Compute priorbox coordinates in center-offset form for each source
-    feature map.
-    """
-
-    def __init__(self, cfg):
-        super(PriorBox, self).__init__()
-        self.image_size = cfg['min_dim']
-        # number of priors for feature map location (either 4 or 6)
-        self.num_priors = len(cfg['aspect_ratios'])
-        self.variance = cfg['variance'] or [0.1]
-        self.feature_maps = cfg['feature_maps']
-        self.min_sizes = cfg['min_sizes']
-        self.max_sizes = cfg['max_sizes']
-        self.steps = cfg['steps']
-        self.aspect_ratios = cfg['aspect_ratios']
-        self.clip = cfg['clip']
-        self.version = cfg['name']
-        for v in self.variance:
-            if v <= 0:
-                raise ValueError('Variances must be greater than 0')
-
-    def forward(self):
-        mean = []
-        for k, f in enumerate(self.feature_maps):
-            for i, j in product(range(f), repeat=2):
-                f_k = self.image_size / self.steps[k]
-                # unit center x,y
-                cx = (j + 0.5) / f_k
-                cy = (i + 0.5) / f_k
-
-                # aspect_ratio: 1
-                # rel size: min_size
-                s_k = self.min_sizes[k] / self.image_size
-                mean += [cx, cy, s_k, s_k]
-
-                # aspect_ratio: 1
-                # rel size: sqrt(s_k * s_(k+1))
-                if self.max_sizes:
-                    s_k_prime = sqrt(s_k * (self.max_sizes[k] / self.image_size))
-                    mean += [cx, cy, s_k_prime, s_k_prime]
-
-                # rest of aspect ratios
-                for ar in self.aspect_ratios[k]:
-                    mean += [cx, cy, s_k * sqrt(ar), s_k / sqrt(ar)]
-                    mean += [cx, cy, s_k / sqrt(ar), s_k * sqrt(ar)]
-        # back to torch land
-        output = torch.Tensor(mean).view(-1, 4)
-        if self.clip:
-            output.clamp_(max=1, min=0)
-        return output
+# class PriorBox(object):
+#     """Compute priorbox coordinates in center-offset form for each source
+#     feature map.
+#     """
+#
+#     def __init__(self, cfg):
+#         super(PriorBox, self).__init__()
+#         self.image_size = cfg['min_dim']
+#         # number of priors for feature map location (either 4 or 6)
+#         self.num_priors = len(cfg['aspect_ratios'])
+#         self.variance = cfg['variance'] or [0.1]
+#         self.feature_maps = cfg['feature_maps']
+#         self.min_sizes = cfg['min_sizes']
+#         self.max_sizes = cfg['max_sizes']
+#         self.steps = cfg['steps']
+#         self.aspect_ratios = cfg['aspect_ratios']
+#         self.clip = cfg['clip']
+#         self.version = cfg['name']
+#         for v in self.variance:
+#             if v <= 0:
+#                 raise ValueError('Variances must be greater than 0')
+#
+#     def forward(self):
+#         mean = []
+#         for k, f in enumerate(self.feature_maps):
+#             for i, j in product(range(f), repeat=2):
+#                 f_k = self.image_size / self.steps[k]
+#                 # unit center x,y
+#                 cx = (j + 0.5) / f_k
+#                 cy = (i + 0.5) / f_k
+#
+#                 # aspect_ratio: 1
+#                 # rel size: min_size
+#                 s_k = self.min_sizes[k] / self.image_size
+#                 mean += [cx, cy, s_k, s_k]
+#
+#                 # aspect_ratio: 1
+#                 # rel size: sqrt(s_k * s_(k+1))
+#                 if self.max_sizes:
+#                     s_k_prime = sqrt(s_k * (self.max_sizes[k] / self.image_size))
+#                     mean += [cx, cy, s_k_prime, s_k_prime]
+#
+#                 # rest of aspect ratios
+#                 for ar in self.aspect_ratios[k]:
+#                     mean += [cx, cy, s_k * sqrt(ar), s_k / sqrt(ar)]
+#                     mean += [cx, cy, s_k / sqrt(ar), s_k * sqrt(ar)]
+#         # back to torch land
+#         output = torch.Tensor(mean).view(-1, 4)
+#         if self.clip:
+#             output.clamp_(max=1, min=0)
+#         return output
+# voc_refinedet = {
+#     '320': {
+#         'num_classes': 21,
+#         'lr_steps': (80000, 100000, 120000),
+#         'max_iter': 120000,
+#         'feature_maps': [40, 20, 10, 5],
+#         'min_dim': 320,
+#         'steps': [8, 16, 32, 64],
+#         'min_sizes': [32, 64, 128, 256],
+#         'max_sizes': [],
+#         'aspect_ratios': [[2], [2], [2], [2]],
+#         'variance': [0.1, 0.2],
+#         'clip': True,
+#         'name': 'RefineDet_VOC_320',
+#     },
+#     '512': {
+#         'num_classes': 21,
+#         'lr_steps': (80000, 100000, 120000),
+#         'max_iter': 120000,
+#         'feature_maps': [64, 32, 16, 8],
+#         'min_dim': 512,
+#         'steps': [8, 16, 32, 64],
+#         'min_sizes': [32, 64, 128, 256],
+#         'max_sizes': [],
+#         'aspect_ratios': [[2], [2], [2], [2]],
+#         'variance': [0.1, 0.2],
+#         'clip': True,
+#         'name': 'RefineDet_VOC_320',
+#     }
+# }
