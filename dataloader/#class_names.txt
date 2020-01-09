@@ -1,7 +1,11 @@
 IMG_PATH: ''#'E:/datasets/VOC_Car/images/' #'E://datasets//kitti//training//images//'#'/home/mao/ssd3/datasets/Car/VOC_Car/images/' #'E:/datasets/COCO_Car/images/' #'E:/datasets/BDD100k/images/' #'E:/datasets/VOCdevkit/VOC2007/JPEGImages/' #
 LAB_PATH: ''#'E:/datasets/VOC_Car/labels/' #'E://datasets//kitti//training//labels//'#'/home/mao/ssd3/datasets/Car/VOC_Car/labels/' #'E:/datasets/COCO_Car/labels/' #'E:/datasets/BDD100k/labels/' #'E:/datasets/VOCdevkit/VOC2007/Annotations/'#
 
-
+CLASSES: [  'aeroplane', 'bicycle', 'bird', 'boat',#VOC_CLASSES
+            'bottle', 'bus', 'car', 'cat', 'chair',
+            'cow', 'diningtable', 'dog', 'horse',
+            'motorbike', 'person', 'pottedplant',
+            'sheep', 'sofa', 'train', 'tvmonitor']
 Car,Car
 Van,Car
 Truck,Car

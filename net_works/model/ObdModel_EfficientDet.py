@@ -4,7 +4,7 @@ import numpy as np
 import math
 from net_works.model.ObdModel_EfficientNet import EfficientNet
 from util.util_efficientdet import RegressionModel, ClassificationModel, ClipBoxes, DecodeBBox, ConvModule, RetinaHead
-from util.util_anchor_maker import Anchors
+from util.util_anchor_maker_lg import PriorBox
 from torchvision.ops import nms
 import torch.nn.functional as F
 
@@ -210,7 +210,6 @@ class EfficientDet(nn.Module):
         D_bifpn = 3
         W_bifpn = 88
         pyramid_levels = [3, 4, 5, 6, 7]
-        ratios = np.array([0.5, 1, 2])
         scales = np.array([1, 1.25, 1.5])
         self.cfg = cfg
         super(EfficientDet, self).__init__()
@@ -221,8 +220,10 @@ class EfficientDet(nn.Module):
                           out_channels=W_bifpn,
                           stack=D_bifpn,
                           num_outs=5)
-        self.bbox_head = RetinaHead(num_classes=num_classes, in_channels=W_bifpn, num_anchors=len(ratios) * len(scales))
-        self.anchors_xywh = Anchors(pyramid_levels=pyramid_levels, ratios=ratios, scales=scales)
+        self.bbox_head = RetinaHead(num_classes=num_classes, in_channels=W_bifpn, num_anchors=3 * (len(scales)))
+        self.priorbox = PriorBox(image_shape=self.cfg.TRAIN.IMG_SIZE, pyramid_levels=pyramid_levels, scales=scales)
+        self.anchors_xywh = self.priorbox.forward()
+
         self.decodeBoxes = DecodeBBox()
         self.clipBoxes = ClipBoxes()
 
@@ -231,19 +232,18 @@ class EfficientDet(nn.Module):
         x = self.extract_feat(inputs)
         outs = self.bbox_head(x)
         classification = torch.cat([out for out in outs[0]], dim=1)
-        regression = torch.cat([out for out in outs[1]], dim=1)
-        anchors_xywh = self.anchors_xywh(inputs)[0]
+        location = torch.cat([out for out in outs[1]], dim=1)
         # print(classification.max())
         # classification = torch.softmax(classification, -1)  # TF 版本用的sigmoid，outputs = layers.Activation('sigmoid')(outputs)
         # classification = classification.sigmoid()
         # print(classification.max())
         # if args['is_training']:
-        #     return classification, regression, anchors_xywh
+        #     return classification, location, anchors_xywh
         # else:
-        #     transformed_anchors = self.decodeBoxes(regression, anchors_xywh)
+        #     transformed_anchors = self.decodeBoxes(location, anchors_xywh)
         #     transformed_anchors = self.clipBoxes(transformed_anchors, inputs, self.cfg)
         #     return classification, transformed_anchors
-        return classification, regression, anchors_xywh
+        return classification, location, self.anchors_xywh.to(classification.device)
 
     def extract_feat(self, img):
         """

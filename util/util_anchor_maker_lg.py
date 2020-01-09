@@ -46,7 +46,6 @@ class PriorBox(object):
                 # rel size: min_size
                 s_k_w = self.min_sizes[k] / self.image_shape[1]
                 s_k_h = self.min_sizes[k] / self.image_shape[0]
-                mean += [cx, cy, s_k_w, s_k_h]
 
                 # aspect_ratio: 1
                 # rel size: torch.sqrt(s_k * s_(k+1))
@@ -54,6 +53,7 @@ class PriorBox(object):
                 # rest of aspect ratios
                 for s in self.scales:
                     ratio = np.sqrt(2)
+                    mean += [cx, cy, s_k_w * s, s_k_h * s]
                     mean += [cx, cy, s_k_w * ratio * s, s_k_h / ratio * s]
                     mean += [cx, cy, s_k_w / ratio * s, s_k_h * ratio * s]
 
@@ -65,6 +65,6 @@ class PriorBox(object):
 
 
 if __name__ == '__main__':
-    p = PriorBox(pyramid_levels=[3, 4, 5, 6], scales=[1])
+    p = PriorBox(image_shape=[512, 512], pyramid_levels=[3, 4, 5, 6], scales=[1])
     z = p.forward()
     a = 0
