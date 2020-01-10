@@ -30,7 +30,10 @@ class DataLoader:
         '''
         data = (None, None)
         if self.one_test:
-            idx = self.one_name
+            if self.one_name:
+                idx = self.one_name
+            else:
+                idx = idx_store[1:2]
         else:
             idx = idx_store[index_from: index_to]
         if not idx:
@@ -132,9 +135,8 @@ class DataLoader:
             for id in idx:
                 if self.print_path:
                     print(id[1], '<--->', id[2])
-                if not os.path.isfile(id[1]) and os.path.isfile(id[2]):
-                    print('ERROR, NO SUCH A FILE.')
-                    print(id[1], '<--->', id[2])
+                if not (os.path.isfile(id[1]) and os.path.isfile(id[2])):
+                    print('ERROR, NO SUCH A FILE.', id[1], '<--->', id[2])
                     exit()
                 # labels come first.
                 label = self._read_line(id[2])

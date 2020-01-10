@@ -52,7 +52,7 @@ class Solver:
             checkpoint (str): Path to checkpoint
 
         """
-        LOGGER.info('{} Start Training...'.format(self.cfg.TRAIN.MODEL))
+        LOGGER.info('>' * 30 + '{} Start Training'.format(self.cfg.TRAIN.MODEL))
         os.makedirs(self.cfg.PATH.TMP_PATH, exist_ok=True)
         # Prepare network, data set idx
         learning_rate, epoch_last, train_set, test_set = self._prepare_parameters()
@@ -77,7 +77,7 @@ class Solver:
             epoch_last, learning_rate_last = self.save_parameter.tbX_read()
             epoch = self.args.epoch_continue if self.args.epoch_continue else epoch_last + 1
             learning_rate = self.args.lr_continue if self.args.lr_continue else learning_rate_last
-            LOGGER.info('Loading Last Checkpoint: %s, Last Learning Rate:%s, Last Epoch:%s',
+            LOGGER.info('>' * 30 + 'Loading Last Checkpoint: %s, Last Learning Rate:%s, Last Epoch:%s',
                         self.args.checkpoint, learning_rate, epoch)
             #  load the last data set
             train_set, test_set = _read_train_test_dataset(idx_stores_dir)
@@ -99,7 +99,7 @@ class Solver:
         if len(self.device_ids) > 1:
             self.Model = torch.nn.DataParallel(self.Model, device_ids=self.device_ids)
 
-        LOGGER.info('the train set is :{}, ant the test set is :{}'.format(len(train_set), len(test_set)))
+        LOGGER.info('>' * 30 + 'The Train Set is :{}, and The Test Set is :{}'.format(len(train_set), len(test_set)))
         # _print_model_parm_nums(self.Model.cuda(), self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1])
         return learning_rate, epoch, train_set, test_set
 
@@ -148,8 +148,8 @@ class Solver:
         # pylint: disable=too-many-arguments
         self.Model.train()
         scheduler.step()
-        LOGGER.info('[TRAIN] Epoch: %s, learing_rate: %s', epoch, optimizer.param_groups[0]['lr'])
-        np.random.shuffle(train_set)
+        LOGGER.info('>' * 30 + '[TRAIN] Epoch: %s, learing_rate: %s', epoch, optimizer.param_groups[0]['lr'])
+        if not self.one_test: np.random.shuffle(train_set)
         batch_size = self.cfg.TRAIN.BATCH_SIZE
         batch_num = self.train_batch_num if self.one_test else len(train_set) // batch_size
         losses = 0

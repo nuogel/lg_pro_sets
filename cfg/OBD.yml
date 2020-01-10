@@ -10,32 +10,23 @@ PATH:
 
 
 TRAIN:
-  MODEL: refinedet #ssd #yolov3_tiny #yolov3 #efficientdet #yolov3_tiny_mobilenet #yolov3 # yolov3_tiny_shufflenet #  fcos #
+  MODEL: yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #yolov3_tiny_shufflenet #ssd #efficientdet #refinedet #yolov3_tiny #yolov3 #yolov3 #   fcos #
   EPOCH_SIZE: 4000
-  BATCH_SIZE: 2
+  BATCH_SIZE: 32
   BATCH_BACKWARD_SIZE: 4  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   TRAIN_DATA_FROM_FILE: TRUE #FALSE #
-  # loss parameters
   CLASSES: ['Background','Car','Others1', 'Others2'] #['Car', 'Cyclist', 'Pedestrian', 'Others']#
-  #  CLASSES: [ #VOC_CLASSES
-  #    'aeroplane', 'bicycle', 'bird', 'boat',
-  #    'bottle', 'bus', 'car', 'cat', 'chair',
-  #    'cow', 'diningtable', 'dog', 'horse',
-  #    'motorbike', 'person', 'pottedplant',
-  #    'sheep', 'sofa', 'train', 'tvmonitor']
-  STRIDES: [8, 16, 32, 64, 128]
-  MILABSIZE: [0, 64, 128, 256, 512, 10000000] # this can be replaced by max(size)/16*2^n-->n [0, 1, 2, 3, 4, INF]
 
   # data aug:
   DO_AUG: FALSE #TRUE #
+  SHOW_INPUT: FALSE #TRUE #
   SHOW_TRAIN_NAMES: FALSE #TRUE #
   RESIZE: TRUE
   RELATIVE_LABELS: TRUE  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0.1
-  MIN_AREAR: 200 #400
-  IMG_SIZE: [512,512] #[512, 768] #[H,W] #[256, 256] # [384, 960] # [512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
+  MIN_AREAR: 100 #400
+  IMG_SIZE: [512,768] #[512, 768] #[H,W] #[256, 256] # [384, 960] # [512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
   MULTI_SIZE_RATIO: [1] # [1, 0.9, 0.8...]
-  SHOW_INPUT: FALSE #TRUE #
 
   # optimizer:
   OPTIMIZER: 'adam' #'SGD' #
@@ -53,24 +44,7 @@ TRAIN:
 
   # debug:
   LOG_FORMAT: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'  # logging format
-
   FMAP_ANCHOR_NUM: ''  # yolov2: 16 ; yolov3:2; yolov3_tiny:3
-  #  ANCHORS: [[ 0.0772422 , 0.0632077 ],
-  #            [ 0.0332185 , 0.0699152 ],
-  #            [ 0.3039470 , 0.7423017 ],
-  #            [ 0.0491545 , 0.1041431 ],
-  #            [ 0.2348479 , 0.0989017 ],
-  #            [ 0.0193353 , 0.1177316 ],
-  #            [ 0.0864546 , 0.1502465 ],
-  #            [ 0.0378630 , 0.0336919 ],
-  #            [ 0.0057380 , 0.0268776 ],
-  #            [ 0.0211715 , 0.0501949 ],
-  #            [ 0.0141959 , 0.0302731 ],
-  #            [ 0.0120658 , 0.0846409 ],
-  #            [ 0.0639976 , 0.3795098 ],
-  #            [ 0.0079226 , 0.0525171 ],
-  #            [ 0.1565745 , 0.2865745 ],
-  #            [ 0.0307940 , 0.1949102 ],] #apollo_anchors 16
   #yolov3 writer's anchors: [10,13,  16,30,  33,23,  30,61,  62,45,  59,119,  116,90,  156,198,  373,326]
   ANCHORS: [[ 0.0240385 , 0.0336538 ],
             [ 0.0552885 , 0.0649038 ],
@@ -95,15 +69,9 @@ TEST:
   SHOW_IMAGES: TRUE #FALSE #
   SHOW_TIMES: 20000
 
-  ONE_TEST: TRUE #FALSE  #
+  ONE_TEST: FALSE  #TRUE #
   ONE_TEST_TRAIN_STEP: 50
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
-    ['912f23a7-2752ed05', 'E:/datasets/BDD100k/images/912f23a7-2752ed05.jpg', 'E:/datasets/BDD100k/labels\\912f23a7-2752ed05.xml'],
-    #['2b65ffe6-044386b4', 'E:/datasets/BDD100k/images/2b65ffe6-044386b4.jpg', 'E:/datasets/BDD100k/labels\\2b65ffe6-044386b4.xml'],
-    #['6be419a4-49a12049', 'E:/datasets/BDD100k/images/6be419a4-49a12049.jpg', 'E:/datasets/BDD100k/labels\\6be419a4-49a12049.xml'],
-    #['77d72c41-9fcb211a', 'E:/datasets/BDD100k/images/77d72c41-9fcb211a.jpg', 'E:/datasets/BDD100k/labels/77d72c41-9fcb211a.xml']
-#  ['COCO_train2014_000000422130','E:/datasets/COCO_Car/images/COCO_train2014_000000422130.jpg','E:/datasets/COCO_Car/labels\COCO_train2014_000000422130.xml'],
-    #      ['COCO_train2014_000000422130','E:/datasets/COCO_Car/images/COCO_train2014_000000422130.jpg','E:/datasets/COCO_Car/labels\COCO_train2014_000000422130.xml'],
+        ['912f23a7-2752ed05', 'E:/datasets/BDD100k/images/912f23a7-2752ed05.jpg', 'E:/datasets/BDD100k/labels\\912f23a7-2752ed05.xml'],
   ]
-  #['005371', '009732'] #,'003846', '002913', '009155']#  #['000000']# ['20190412_0132']#[000000, 000001, 000002, 000003] #

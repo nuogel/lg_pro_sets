@@ -20,9 +20,14 @@ class DataLoader:
         :return: imags: torch.Float32, relative labels:[[cls, x1, y1, x2, y2],[...],...]
         '''
         data = (None, None)
-        idx = idx_store[index_from: index_to]
         if self.one_test:
-            idx = self.one_name
+            if self.one_name:
+                idx = self.one_name
+
+            else:
+                idx = idx_store[0]
+        else:
+            idx = idx_store[index_from: index_to]
         if idx:
             imgs, labels = self._prepare_data(idx)
             imgs = imgs.permute([0, 3, 1, 2, ])
