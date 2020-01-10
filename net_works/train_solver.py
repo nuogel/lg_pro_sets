@@ -148,7 +148,7 @@ class Solver:
         # pylint: disable=too-many-arguments
         self.Model.train()
         scheduler.step()
-        LOGGER.info('>' * 30 + '[TRAIN] Epoch: %s, learing_rate: %s', epoch, optimizer.param_groups[0]['lr'])
+        LOGGER.info('>' * 30 + '[TRAIN] Model:%s,   Epoch: %s,   Learning Rate: %s', self.cfg.TRAIN.MODEL, epoch, optimizer.param_groups[0]['lr'])
         if not self.one_test: np.random.shuffle(train_set)
         batch_size = self.cfg.TRAIN.BATCH_SIZE
         batch_num = self.train_batch_num if self.one_test else len(train_set) // batch_size
@@ -183,7 +183,7 @@ class Solver:
     def _test_an_epoch(self, epoch, test_set):
         # if epoch < 5: pass
         self.Model.eval()
-        LOGGER.info('[EVALUATE] Evaluating from test data set ...')
+        LOGGER.info('[EVALUATE] Model:%s, Evaluating ...', self.cfg.TRAIN.MODEL)
         _timer = Time()
         batch_size = self.cfg.TRAIN.BATCH_SIZE
         batch_num = self.test_batch_num if self.one_test else len(test_set) // batch_size

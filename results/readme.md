@@ -1,4 +1,4 @@
-The result of F1-score of kitti data set 
+The result of F1-score of Car in KITTI DATA SET.
 
 networks | image size |  F1-SCORE |weight size| PS
  --- | --- | --- |  --- |---
@@ -9,7 +9,7 @@ yolov3_tiny_mobilenet|x|x|3.37 M|
 yolov3_tiny_shufflenet|x|x|686 KB|
 refinedet | 512x768 | 0.91|129 M|收敛快，效果好
 efficientdet_b0|512x768|0.9|42.7M|收敛快，效果好
-ssd|512x768|x|94.7 M|
+ssd|512x768|0.8904|94.7 M|收敛慢，效果好
 
 ![Image text](https://github.com/nuogel/lg_pro_sets/blob/master/results/yolov3_tiny.png)
 
