@@ -18,13 +18,14 @@ from util.util_show_img import _show_img
 from evasys.Score_OBD_F1 import F1Score
 from util.util_parse_SR_img import parse_Tensor_img
 from evasys.Score_Dict import Score
+from util.util_prepare_cfg import prepare_cfg
 
 
 class Test_Base(object):
     def __init__(self, cfg, args):
-        self.cfg = cfg
+        self.cfg = prepare_cfg(cfg)
         self.args = args
-        self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg.TRAIN.GPU_NUM)
+        self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)
         self.Model = ModelDict[self.cfg.TRAIN.MODEL](self.cfg)
         if self.args.checkpoint:
             self.model_path = self.args.checkpoint
