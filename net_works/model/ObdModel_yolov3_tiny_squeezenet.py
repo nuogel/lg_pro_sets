@@ -56,7 +56,7 @@ def make_layer(in_ch, out_ch, ksize=3, max_pool=2, conv=False, fire=True, up_sam
 class BackBone(nn.Module):
     def __init__(self):
         super(BackBone, self).__init__()
-        self.out_chs = [16, 32, 64, 128, 256, 512, 512]
+        self.out_chs = [16, 32, 64, 128, 256, 512, 1024]
         self.squeeze_chs = []
 
         self.layer1 = make_layer(3, self.out_chs[0], conv=True, fire=False)
@@ -90,7 +90,7 @@ class YoloV3_Tiny_SqueezeNet(nn.Module):
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
         self.cls_num = len(cfg.TRAIN.CLASSES)
         out_ch = self.anc_num * (1 + 4 + self.cls_num)
-        self.ch_1 = [512, 256, 512, out_ch]
+        self.ch_1 = [1024, 256, 512, out_ch]
         self.ch_2 = [256, 128, 384, 256, out_ch]
 
         self.backbone = BackBone()
@@ -105,7 +105,6 @@ class YoloV3_Tiny_SqueezeNet(nn.Module):
 
     def forward(self, **args):
         x = args['input_x']
-
         f1, f2 = self.backbone(x)  # jump2
         net1 = self.bb1_1(f1)
         net2 = net1  # jump1

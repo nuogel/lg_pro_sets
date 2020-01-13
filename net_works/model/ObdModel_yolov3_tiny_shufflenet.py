@@ -74,7 +74,7 @@ def make_layer(in_ch, out_ch, conv=False, shuffle=True, stride=1, ksize=3, max_p
 class BackBone(nn.Module):
     def __init__(self):
         super(BackBone, self).__init__()
-        self.out_chs = [16, 48, 112, 240, 256, 512, 512]
+        self.out_chs = [16, 48, 112, 240, 256, 512, 1024]
 
         self.layer1 = make_layer(3, self.out_chs[0], conv=True, shuffle=False)
         self.layer2 = make_layer(self.out_chs[0], self.out_chs[1])
@@ -105,7 +105,7 @@ class YoloV3_Tiny_ShuffleNet(nn.Module):
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
         self.cls_num = len(cfg.TRAIN.CLASSES)
         out_ch = self.anc_num * (1 + 4 + self.cls_num)
-        self.ch_1 = [512, 256, 512, out_ch]
+        self.ch_1 = [1024, 256, 512, out_ch]
         self.ch_2 = [256, 128, 384, 256, out_ch]
 
         self.backbone = BackBone()
