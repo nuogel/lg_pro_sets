@@ -47,9 +47,9 @@ def main():
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     # GT_PATH = os.path.join(os.getcwd(), 'input', 'ground-truth')
-    GT_PATH =  'E://LG//programs//eva_sys//datasets//refinedet_3//RefineDet_level345//labels//' #"E://LG//programs//lg_pro_sets//datasets//Annotations_kitti//training"
+    GT_PATH = 'E:/LG/GitHub/lg_pro_sets/tmp//idx_stores/test_set.txt'  # "E://LG//programs//lg_pro_sets//datasets//Annotations_kitti//training"
     # DR_PATH = os.path.join(os.getcwd(), 'input', 'detection-results')
-    DR_PATH =  'E://LG//programs//eva_sys//datasets//refinedet_3//RefineDet_level345//result'# "E://LG//programs//lg_pro_sets//tmp//kitti_train_predicted_labels"
+    DR_PATH = 'E:/LG/GitHub/lg_pro_sets/tmp/predicted_labels/'  # "E://LG//programs//lg_pro_sets//tmp//kitti_train_predicted_labels"
     # if there are no images then no animation can be shown
     IMG_PATH = os.path.join(os.getcwd(), 'input', 'images-optionalL')
     if os.path.exists(IMG_PATH):
@@ -441,7 +441,9 @@ def main():
                  Create a list of all the class names present in the ground-truth (gt_classes).
             """
         # get a list with the ground-truth files
-        ground_truth_files_list = glob.glob(GT_PATH + '/*.xml')
+        # ground_truth_files_list = glob.glob(GT_PATH + '/*.xml')
+        ground_truth_files_list = [line.split(';')[2].strip() for line in open(GT_PATH, 'r').readlines()]
+
         if len(ground_truth_files_list) == 0:
             error("Error: No ground-truth files found!")
         ground_truth_files_list.sort()
@@ -481,7 +483,7 @@ def main():
                 except ValueError:
                     error_msg = "Error: File " + txt_file + " in the wrong format.\n"
                     error_msg += " Expected: <class_name> <left> <top> <right> <bottom> ['difficult']\n"
-                    error_msg += " Received: " + line
+                    error_msg += " Received: "
                     error_msg += "\n\nIf you have a <class_name> with spaces between words you should remove them\n"
                     error_msg += "by running the script \"remove_space.py\" or \"rename_class.py\" in the \"extra/\" folder."
                     error(error_msg)
@@ -563,7 +565,7 @@ def main():
             # the first time it checks if all the corresponding ground-truth files exist
             file_id = txt_file.split(".txt", 1)[0]
             file_id = os.path.basename(os.path.normpath(file_id))
-            temp_path = os.path.join(GT_PATH, (file_id + ".xml"))
+            temp_path = os.path.join('E:/datasets/kitti/training/labels/', (file_id + ".xml"))
             if class_index == 0:
                 if not os.path.exists(temp_path):
                     error_msg = "Error. File not found: {}\n".format(temp_path)

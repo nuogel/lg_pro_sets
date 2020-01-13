@@ -20,6 +20,7 @@ class DataLoader:
         self.class_name = _get_class_names(cfg.PATH.CLASSES_PATH)
         self.print_path = self.cfg.TRAIN.SHOW_TRAIN_NAMES
         self.cls2idx = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
+        self.a = 0
 
     def get_data_by_idx(self, idx_store, index_from, index_to, is_training):
         '''
@@ -80,7 +81,7 @@ class DataLoader:
             data = (imgs, labels)  #
         return data
 
-    def _read_line(self, path, pass_obj=['DontCare', ]):
+    def _read_line(self, path, predicted_line=False, pass_obj=['DontCare', ]):
         """
         Parse the labels from file.
 
@@ -90,7 +91,7 @@ class DataLoader:
         :return:lists of the classes and the key points.
         """
         bbs = []
-        if os.path.basename(path).split('.')[-1] == 'txt':
+        if os.path.basename(path).split('.')[-1] == 'txt' and not predicted_line:
             file_open = open(path, 'r')
             for line in file_open.readlines():
                 tmps = line.strip().split(' ')
@@ -104,7 +105,7 @@ class DataLoader:
                 box_y2 = float(tmps[7])
                 if not self._is_finedata([box_x1, box_y1, box_x2, box_y2]): continue
                 bbs.append([self.cls2idx[self.class_name[tmps[0]]], box_x1, box_y1, box_x2, box_y2])
-        elif os.path.basename(path).split('.')[-1] == 'xml':
+        elif os.path.basename(path).split('.')[-1] == 'xml' and not predicted_line:
             tree = ET.parse(path)
             root = tree.getroot()
             for obj in root.findall('object'):
@@ -120,6 +121,12 @@ class DataLoader:
                 box_y2 = float(bbox.find('ymax').text)
                 if not self._is_finedata([box_x1, box_y1, box_x2, box_y2]): continue
                 bbs.append([self.cls2idx[self.class_name[cls_name]], box_x1, box_y1, box_x2, box_y2])
+
+        elif os.path.basename(path).split('.')[-1] == 'txt' and predicted_line:
+            f_path = open(path, 'r')
+            for line in f_path.readlines():
+                tmp = line.split()
+                bbs.append([float(tmp[1]), self.cls2idx[self.class_name[tmp[0]]], [float(tmp[2]), float(tmp[3]), float(tmp[4]), float(tmp[5])]])
         return bbs
 
     def _read_datas(self, idx, image=None):

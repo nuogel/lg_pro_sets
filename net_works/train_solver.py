@@ -59,10 +59,9 @@ class Solver:
         # Prepare optimizer
         optimizer, scheduler = self._get_optimizer(learning_rate, optimizer=self.cfg.TRAIN.OPTIMIZER)
         for epoch in range(epoch_last, self.cfg.TRAIN.EPOCH_SIZE):
-            self._train_an_epoch(epoch, train_set, optimizer, scheduler)
-            # saving the weights to checkpoint
-            self._save_checkpoint(epoch)
-            # evaluating from test data set
+            if not self.cfg.TEST.TEST_ONLY:
+                self._train_an_epoch(epoch, train_set, optimizer, scheduler)
+                self._save_checkpoint(epoch)
             self._test_an_epoch(epoch, test_set)
 
     def _prepare_parameters(self):
@@ -152,6 +151,7 @@ class Solver:
         if not self.one_test: np.random.shuffle(train_set)
         batch_size = self.cfg.TRAIN.BATCH_SIZE
         batch_num = self.train_batch_num if self.one_test else len(train_set) // batch_size
+        if batch_num == 0: return 0
         losses = 0
         # count the step time, total time...
         _timer = Time()
@@ -181,6 +181,7 @@ class Solver:
         LOGGER.info('[TRAIN] Summary: Epoch: %s, average total loss: %s', epoch, losses / batch_num)
 
     def _test_an_epoch(self, epoch, test_set):
+        # TODO: ADD THE MAP SCORES.
         # if epoch < 5: pass
         self.Model.eval()
         LOGGER.info('[EVALUATE] Model:%s, Evaluating ...', self.cfg.TRAIN.MODEL)
