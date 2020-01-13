@@ -7,10 +7,11 @@ import shutil
 import os
 import xml.etree.ElementTree as ET
 from util.util_filename_to_list import just_get_basename
+from util.util_get_cls_names import _get_class_names
 
 logger = logging.getLogger(__name__)
 object_size_clip = [0, 7000, 90000, 1e9]
-
+cls_dic = _get_class_names('../../dataloader/class_names.txt')
 
 def parse_rec(filename, area_size=[0, 1000]):
     """Parse a Labels of xml file."""
@@ -18,7 +19,9 @@ def parse_rec(filename, area_size=[0, 1000]):
     objects = []
     for obj in tree.findall('object'):
         obj_struct = {}
-        obj_struct['name'] = obj.find('name').text
+        obj_name = obj.find('name').text
+        if obj_name not in cls_dic: continue
+        obj_struct['name'] = cls_dic[obj_name]
         # obj_struct['pose'] = obj.find('pose').text
         # obj_struct['truncated'] = int(obj.find('truncated').text)
         obj_struct['difficult'] = 0
@@ -91,11 +94,7 @@ def voc_ap(rec, prec, use_07_metric=False):
     return ap
 
 
-def voc_eval(imagesetfile,
-             classname,
-             gt_path,
-             area_size,
-             reconvert_labels=False,
+def voc_eval(imagesetfile, classname, gt_path, area_size, reconvert_labels=False,
              cachedir='./cache/',
              ovthresh=0.5,
              use_07_metric=False,
@@ -266,11 +265,10 @@ if __name__ == '__main__':
     # pre_path = "E://LG//programs//eva_sys//datasets//result//"
     pre_path = 'E:/LG/GitHub/lg_pro_sets/tmp/predicted_labels/'
 
-
     # gt_path = "E://LG//programs//lg_pro_sets//datasets//Annotations_kitti//training//{}.xml"
     # gt_path = 'E:/datasets/Car/VOC_Car/labels//{}.xml'
-    gt_path = 'E:/datasets/VOCdevkit/Annotations/{}.xml'
-    # gt_path = 'E:/datasets/kitti/training/labels_xml/{}.xml'
+    # gt_path = 'E:/datasets/VOCdevkit/Annotations/{}.xml'
+    gt_path = 'E:/datasets/kitti/training/labels/{}.xml'
     just_get_basename(pre_path)
     reconvert_labels = True
     object_size_level = -1

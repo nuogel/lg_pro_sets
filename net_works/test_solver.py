@@ -15,7 +15,7 @@ from util.util_prepare_device import load_device
 from util.util_parse_prediction import ParsePredict
 from util.util_data_aug import Dataaug
 from util.util_show_img import _show_img
-from evasys.Score_OBD_F1 import F1Score
+from evasys.Score_OBD import OBD_SCORE
 from util.util_parse_SR_img import parse_Tensor_img
 from evasys.Score_Dict import Score
 from util.util_prepare_cfg import prepare_cfg
@@ -25,6 +25,7 @@ class Test_Base(object):
     def __init__(self, cfg, args):
         self.cfg = prepare_cfg(cfg)
         self.args = args
+        self.apolloclass2num = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
         self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)
         self.Model = ModelDict[self.cfg.TRAIN.MODEL](self.cfg)
         if self.args.checkpoint:
@@ -51,9 +52,12 @@ class Test_Base(object):
             if file_s.split('.')[1] == 'txt':  # .txt
                 lines = open(file_s, 'r').readlines()
                 FILES = []
+                GTS = []
                 for line in lines:
                     tmp = line.split(";")
                     FILES.append(tmp[1])
+                    if len(tmp) > 1:  # ground truth.
+                        GTS.append(tmp[2].strip())
             else:  # xx.jpg
                 FILES = [file_s]
         else:
@@ -71,16 +75,6 @@ class Test_Base(object):
             print('testing [{}/{}] {}'.format(i + 1, _len, file_path))
             self.test_backbone(file_path)
 
-        is_score = False
-        if is_score:
-            score = Score[self.cfg.BELONGS](self.cfg)
-            if self.cfg.BELONGS == 'OBD' and self.cfg.TEST.SAVE_LABELS is True:
-                pre_labels, gt_labels = score.get_labels_txt(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, self.cfg.PATH.LAB_PATH)
-                score.cal_score(pre_labels, gt_labels, from_net=False)
-                return score.score_out()
-            elif self.cfg.BELONGS is 'ASR':
-                ...
-
 
 class Test_OBD(Test_Base):
     def __init__(self, cfg, args):
@@ -88,6 +82,8 @@ class Test_OBD(Test_Base):
         self.dataaug = Dataaug(cfg)
         self.parsepredict = ParsePredict(cfg)
         self.DataLoader = DataLoaderDict[cfg.BELONGS](cfg)
+        self.SCORE = Score[self.cfg.BELONGS](self.cfg)
+        self.SCORE.init_parameters()
 
     def test_backbone(self, test_picture_path):
         """Test."""
@@ -97,7 +93,7 @@ class Test_OBD(Test_Base):
         if img_raw is None:
             print('ERROR：no such a image')
         if self.cfg.TEST.DO_AUG:
-            img_aug, _ = self.dataaug.augmentation(for_one_image=img_raw, do_aug=self.cfg.TEST.DO_AUG, resize=self.cfg.TEST.RESIZE)
+            img_aug, _ = self.dataaug.augmentation(for_one_image=img_raw)
             img_aug = img_aug[0]
         elif self.cfg.TEST.RESIZE:
             img_aug = cv2.resize(img_raw, (int(self.cfg.TRAIN.IMG_SIZE[1]), int(self.cfg.TRAIN.IMG_SIZE[0])))
@@ -111,32 +107,23 @@ class Test_OBD(Test_Base):
         labels_pre = self.parsepredict._parse_predict(predict)
         return _show_img(img_raw, labels_pre, img_in=img_in[0], pic_path=test_picture_path, cfg=self.cfg)
 
-    def test_set(self):
-        set_path = '../tmp/checkpoint/apollo_lg_1_test_set'
-        test_set = torch.load(set_path)
-        do_aug = False
-        resize = True
-        for img_idx in test_set:
-            if os.path.isfile(self.cfg.IMGPATH + '%06d.png' % img_idx):
-                file_name = '%06d.png' % img_idx
-            else:
-                file_name = '%06d.jpg' % img_idx
-            imagepath = self.cfg.IMGPATH + file_name
-            # label_path = cfg.LABPATH + '%06d.txt' % img_idx
-            image1 = self.test_backbone(imagepath, do_aug, resize)
-            # imgs, labels = self.augmentation([img_idx], do_aug=False, resize=False)
-            image2 = _show_img([img_idx], do_aug, resize)
-            image_cat = np.vstack((image1, image2))
-            cv2.imshow('img', image_cat)
-            cv2.waitKey()
+    def score(self, txt_info, pre_path):
+        pre_path_list = glob.glob(pre_path + '/*.*')
+        lines = open(txt_info, 'r').readlines()
+        gt_labels = []
+        pre_labels = []
+        for line in lines:
+            tmp = line.split(";")
+            gt_name = tmp[0].strip()
+            for pre_path_i in pre_path_list:
+                if gt_name == os.path.basename(pre_path_i).split('.')[0]:
+                    gt_path = tmp[2].strip()
+                    gt_labels.append(self.DataLoader._read_line(gt_path))
+                    pre_labels.append(self.DataLoader._read_line(pre_path_i, predicted_line=True))
+                    break
 
-    def calculate_f1_score(self, cfg):
-        print('calculating the F1score...')
-        f1sore = F1Score(cfg)
-        pre_labels, gt_labels = f1sore.get_labels_txt(cfg.pre_path, cfg.lab_path)
-        f1sore.cal_tp_fp(pre_labels, gt_labels, from_net=False)
-        f1_sore, prec, rec = f1sore.f1_score()
-        print('f1_sore: {}\nprec: {}\nrec: {}'.format(f1_sore, prec, rec))
+        self.SCORE.cal_score(pre_labels, gt_labels, from_net=False)
+        return self.SCORE.score_out()
 
 
 class Test_ASR(Test_Base):
