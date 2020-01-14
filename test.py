@@ -28,7 +28,7 @@ def main():
     # file_s = 'E://datasets//kitti//training//image_2//'
     # # file_s = 'datasets/kitti/training/image_2/000000.png'
     # file_s = 'E:/datasets/Noise_Images/NOISE_kitti/level_5/images/KITTI_005066_1.png'
-    # file_s = 'evasys/voc_mAP/occ_good.txt'
+    # file_s = 'score/voc_mAP/occ_good.txt'
     # file_s = 'E:/datasets/NLP/THCHS/data_thchs30/data/A2_0.wav'  # /'
     # file_s = 'E:/datasets/VOCdevkit/VOC2007/JPEGImages/000207.jpg'
     # file_s = 'E:/LG/GitHub/lg_pro_sets/tmp/idx_stores/occ_2.txt'

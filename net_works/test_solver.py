@@ -15,9 +15,9 @@ from util.util_prepare_device import load_device
 from util.util_parse_prediction import ParsePredict
 from util.util_data_aug import Dataaug
 from util.util_show_img import _show_img
-from evasys.Score_OBD import OBD_SCORE
+from score.Score_OBD import OBD_SCORE
 from util.util_parse_SR_img import parse_Tensor_img
-from evasys.Score_Dict import Score
+from score.Score_Dict import Score
 from util.util_prepare_cfg import prepare_cfg
 
 

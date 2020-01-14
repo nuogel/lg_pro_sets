@@ -1,7 +1,7 @@
 BELONGS: OBD
 
 PATH:
-  IMG_PATH: ''
+  INPUT_PATH: ''
   LAB_PATH: ''
   CLASSES_PATH: 'dataloader//class_names.txt'
   TMP_PATH: 'tmp/'
