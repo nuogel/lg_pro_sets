@@ -14,7 +14,7 @@ import numpy as np
 import torch
 import torch.nn
 from torch.optim import lr_scheduler
-from evasys.Score_Dict import Score
+from score.Score_Dict import Score
 from util.util_show_save_parmeters import TrainParame
 from net_works.Model_Loss_Dict import ModelDict, LossDict
 from util.util_time_stamp import Time
@@ -90,7 +90,7 @@ class Solver:
             if self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
                 train_set, test_set = _read_train_test_dataset(idx_stores_dir)
             else:
-                train_set, test_set = _get_train_test_dataset(x_dir=self.cfg.PATH.IMG_PATH, y_dir=self.cfg.PATH.LAB_PATH, idx_stores_dir=idx_stores_dir,
+                train_set, test_set = _get_train_test_dataset(x_dir=self.cfg.PATH.INPUT_PATH, y_dir=self.cfg.PATH.LAB_PATH, idx_stores_dir=idx_stores_dir,
                                                               test_train_ratio=self.cfg.TEST.TEST_SET_RATIO, cfg=self.cfg, )
             print(train_set[:4], '\n', test_set[:4])
 
