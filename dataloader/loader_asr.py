@@ -44,7 +44,7 @@ class DataLoader:
             lab_list = []
             for i, name in enumerate(idx):  # read wav and lab
                 # name = self.datalist[start_idx + i]
-                wav_path = os.path.join(self.cfg.PATH.INPUT_PATH, name + '.wav')
+                wav_path = os.path.join(self.cfg.PATH.INPUT_PATH, name[1])
                 # print(wav_path)
                 wavsignal, fs = self._read_wav_data(wav_path)
                 wavsignal = wavsignal[0]  # 取一个通道。
@@ -55,7 +55,7 @@ class DataLoader:
                 wav_length.append(wav_feature.shape[0])
                 wav_list.append(wav_feature)
 
-                lab_path = os.path.join(self.cfg.PATH.INPUT_PATH, name + '.wav.trn')
+                lab_path = os.path.join(self.cfg.PATH.LAB_PATH, name[0] + '.wav.trn')
                 lab_compiled = self._get_wav_symbol(lab_path)
                 lab_compiled.insert(0, self.SymbolNum - 2)  # 添加 【START]
                 lab_compiled.append(self.SymbolNum - 1)  # 添加 【END]
@@ -179,7 +179,7 @@ class DataLoader:
         加载拼音符号列表，用于标记符号
         返回一个列表list类型变量
         '''
-        tmp_dic_savepath = 'tmp//asr//'
+        tmp_dic_savepath = 'tmp/asr/'
         tmp_dic_file = os.path.join(tmp_dic_savepath, 'asr_dict_list_symbol.pt')
         if os.path.isfile(tmp_dic_file) and not remake:
             print('Loading the dict of words...')
@@ -201,7 +201,7 @@ class DataLoader:
                         list_symbol.append(txt_l[0])
                 txt_obj.close()
             else:
-                lab_files = glob.glob(self.cfg.PATH.INPUT_PATH + '*.wav.trn')
+                lab_files = glob.glob(self.cfg.PATH.LAB_PATH + '/*.wav.trn')
                 for lab_f in lab_files:
                     txt_text = open(lab_f, 'r', encoding='UTF-8').read()
                     txt_lines = txt_text.split('\n')  # 文本分割
