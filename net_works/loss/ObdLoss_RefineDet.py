@@ -136,8 +136,8 @@ class RefineDetMultiBoxLoss(nn.Module):
             else:
                 loc_t, conf_t = refine_match(self.threshold, truths, defaults, self.variance, labels, loc_t, conf_t, idx)
         if self.use_gpu:
-            loc_t = loc_t.cuda()
-            conf_t = conf_t.cuda()
+            loc_t = loc_t.to(self.cfg.TRAIN.DEVICE)
+            conf_t = conf_t.to(self.cfg.TRAIN.DEVICE)
         # wrap targets
         # loc_t = Variable(loc_t, requires_grad=False)
         # conf_t = Variable(conf_t, requires_grad=False)

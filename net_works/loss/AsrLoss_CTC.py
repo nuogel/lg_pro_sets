@@ -25,7 +25,7 @@ class RnnLoss:
         return loss
 
     def _mse_loss(self, input, target, input_lengths=None, target_lengths=None):
-        target = to_onehot(target, self.cfg.TRAIN.CLASS_LENGTH).cuda()
+        target = to_onehot(target, self.cfg.TRAIN.CLASS_LENGTH).to(self.cfg.TRAIN.DEVICE)
         # print(target[0, 0])
         loss = self.loss_mse(input, target)
         precision = 0

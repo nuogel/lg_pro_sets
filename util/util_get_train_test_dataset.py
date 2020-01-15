@@ -16,7 +16,7 @@ def _get_train_test_dataset(x_dir, y_dir, idx_stores_dir, test_train_ratio, cfg)
         class_map = _get_class_names(cfg.PATH.CLASSES_PATH)
         for label_file in label_files:
             file_name = os.path.basename(label_file).split('.')[0]
-            img_file = os.path.join(cfg.PATH.IMG_PATH, file_name + '.' + x_extend_name)
+            img_file = os.path.join(cfg.PATH.INPUT_PATH, file_name + '.' + x_extend_name)
             if not os.path.isfile(img_file):
                 continue
             if y_extend_name == 'txt':

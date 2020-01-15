@@ -19,7 +19,7 @@ class Dataaug:
 
     def __init__(self, cfg):
         self.cfg = cfg
-        self.img_path = cfg.PATH.IMG_PATH
+        self.img_path = cfg.PATH.INPUT_PATH
         self.lab_path = cfg.PATH.LAB_PATH
         self.area_ratio = cfg.TRAIN.AREAR_RATIO
         self.min_area = cfg.TRAIN.MIN_AREAR

@@ -27,7 +27,7 @@ class Seq2Seq(nn.Module):
         self.encoder = Encoder(input_size, hidden_size, num_layers, dropout, bidirectional)  # 一个GRU
         self.decoder = Decoder(vocab_size, hidden_size, sample_rate, cfg)
         self.vocab_size = vocab_size
-        self.add_attention = True
+        self.add_attention = None  # 'raw_att'
 
     def forward(self, **args):
         '''
@@ -48,7 +48,7 @@ class Seq2Seq(nn.Module):
         batch_size = enc_y.size(0)
         start_number = self.cfg.TRAIN.CLASS_LENGTH - 2  # 1209==START
         inputs = torch.LongTensor([start_number] * batch_size)  # 随便给一个启动sequence, 实验表明，我给任意数都行！。？？最后还是加了起始和结束标记
-        if enc_y.is_cuda: inputs = inputs.cuda()
+        if enc_y.is_cuda: inputs = inputs.to(self.cfg.TRAIN.DEVICE)
         y_seqs = []
         STOP = False  # give a number not equal to 0
         ax = sx = None
@@ -163,7 +163,7 @@ class Decoder(nn.Module):
         ax = sx = None
         out = []
         align = []
-        pre = torch.zeros((self.cfg.TRAIN.BATCH_SIZE, length, self.cfg.TRAIN.CLASS_LENGTH)).cuda()
+        pre = torch.zeros((self.cfg.TRAIN.BATCH_SIZE, length, self.cfg.TRAIN.CLASS_LENGTH)).to(self.cfg.TRAIN.DEVICE)
         for i in range(0, length):
             output, c_hid, ax, sx = self._step(target_i, c_hid, enc_y, ax, sx, add_attention)
             # TODO: 以一定的机率从上一次预测出来的结果作为下一次的输入。
@@ -176,10 +176,9 @@ class Decoder(nn.Module):
 
         return pre
 
-    def _step(self, target_i, c_hid, enc_y, ax, sx, add_attention=True):
+    def _step(self, target_i, c_hid, enc_y, ax, sx, add_attention='raw_att'):
         embeded = self.embedding(target_i)
-        lg_attend = True
-        if lg_attend:
+        if add_attention == 'lg_att':
             at = self.lg_attention(enc_y, c_hid, embeded)
             gru_cell_y = self.rnn(c_hid, at)
             output = self.fc(gru_cell_y)
@@ -188,7 +187,7 @@ class Decoder(nn.Module):
                 # last context vector
                 embeded = embeded + sx
             gru_cell_y = self.rnn(embeded, c_hid)
-            if add_attention:
+            if add_attention == 'raw_att':
                 sx, ax = self.attention(enc_y, gru_cell_y, ax)
                 output = self.fc(gru_cell_y + sx)
             else:
@@ -270,7 +269,7 @@ class LGAttention(nn.Module):
 #             num_layers=1,
 #             batch_first=True)
 #         if _is_use_cuda():
-#             self.layer_1 = self.layer_1.cuda()
+#             self.layer_1 = self.layer_1.to(self.cfg.TRAIN.DEVICE)
 #
 #     def forward(self, train_data):
 #         x = train_data[0]
@@ -300,7 +299,7 @@ class LGAttention(nn.Module):
 #
 #         hx = torch.Tensor(torch.zeros((x.shape[0], x.shape[2]), requires_grad=False))  # [4, 16]
 #         if _is_use_cuda():
-#             hx = hx.cuda()
+#             hx = hx.to(self.cfg.TRAIN.DEVICE)
 #         ax = None;
 #         sx = None;
 #         for t in range(y.size()[1] - 1):

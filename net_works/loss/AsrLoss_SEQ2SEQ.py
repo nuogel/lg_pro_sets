@@ -14,6 +14,6 @@ class Seq2SeqLoss:
         _, target, input_lengths, target_lengths = train_data
         target = target.contiguous().view(-1)  #
         pre = pre.view(-1, pre.shape[-1])
-        loss = self.loss_ce(pre, target)  # 交叉熵
+        loss = self.loss_ce(pre, target.to(pre.device))  # 交叉熵
         loss = loss / self.cfg.TRAIN.BATCH_SIZE
         return loss, None
