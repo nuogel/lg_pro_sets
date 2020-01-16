@@ -8,6 +8,7 @@ import numpy as np
 
 '''
 ->不加attention 为84%， 加attention 为82%，why? 尝试修改lg_attention.
+->以上是在训练集上为100%，但是在测试集上为0？？？？
 ->中途遇到list[]长度导致内存泄露；
 ->改为Lg_attention 后，训练速度慢，并且效果不好。查看是什么原因。
 '''
@@ -25,9 +26,9 @@ class Seq2Seq(nn.Module):
         bidirectional = False
         sample_rate = .0
         self.encoder = Encoder(input_size, hidden_size, num_layers, dropout, bidirectional)  # 一个GRU
-        self.decoder = Decoder(vocab_size, hidden_size, sample_rate, cfg)
+        self.decoder = Decoder(vocab_size, hidden_size, sample_rate, self.cfg)
         self.vocab_size = vocab_size
-        self.add_attention = None  # 'raw_att'
+        self.add_attention = 'raw_att'  # None  #
 
     def forward(self, **args):
         '''
@@ -48,7 +49,7 @@ class Seq2Seq(nn.Module):
         batch_size = enc_y.size(0)
         start_number = self.cfg.TRAIN.CLASS_LENGTH - 2  # 1209==START
         inputs = torch.LongTensor([start_number] * batch_size)  # 随便给一个启动sequence, 实验表明，我给任意数都行！。？？最后还是加了起始和结束标记
-        if enc_y.is_cuda: inputs = inputs.to(self.cfg.TRAIN.DEVICE)
+        inputs = inputs.to(self.cfg.TRAIN.DEVICE)
         y_seqs = []
         STOP = False  # give a number not equal to 0
         ax = sx = None
@@ -121,8 +122,7 @@ class Seq2Seq(nn.Module):
 class Encoder(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, dropout, bidirectional, **kwargs):
         super(Encoder, self).__init__(**kwargs)
-        self.rnn = nn.GRU(input_size, hidden_size, num_layers, batch_first=True, dropout=dropout,
-                          bidirectional=bidirectional)  # bidirectional双向的。
+        self.rnn = nn.GRU(input_size, hidden_size, num_layers, batch_first=True, dropout=dropout, bidirectional=bidirectional)
 
     def forward(self, inputs, hidden=None):
         '''

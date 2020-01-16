@@ -8,9 +8,9 @@ PATH:
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
 
 TRAIN:
-  MODEL: ctc  #seq2seq #
+  MODEL: seq2seq #ctc  #
   EPOCH_SIZE: 400
-  BATCH_SIZE: 2
+  BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1   # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   CLASS_LENGTH: 1211  # this will change by the acturel length in 'loader_asr.py' self.cfg.TRAIN.CLASS_LENGTH
   TRAIN_DATA_FROM_FILE: TRUE #FALSE #
@@ -45,14 +45,16 @@ TEST:
   TEST_SET_RATIO: 0.1
   # NMS:
   SCORE_THRESH: 0.5
+  SHOW_PREDICTED: FALSE #TRUE #
   SAVE_LABELS: TRUE #FALSE
 
-  TEST_ONLY: FALSE #TRUE #
+  TEST_ONLY: TRUE #FALSE #
 
-  ONE_TEST: FALSE #TRUE #
-  ONE_TEST_TRAIN_STEP: 50
+  ONE_TEST: TRUE #FALSE #
+  ONE_TEST_TRAIN_STEP: 5
   ONE_TEST_TEST_STEP: 1
-  ONE_NAME: [['A11_0', 'data_thchs30/train/A11_0.wav'],
-             ['A11_1', 'data_thchs30/train/A11_1.wav'],
-             ['A11_10', 'data_thchs30/train/A11_10.wav']]
+  ONE_NAME: [
+  ['D11_750', 'data_thchs30/test/D11_750.wav'],
+  ['D11_751', 'data_thchs30/test/D11_751.wav']
+  ]
 

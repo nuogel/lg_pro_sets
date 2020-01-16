@@ -23,7 +23,7 @@ import numpy as np
 '''
 
 
-class MODEL_CTC(nn.Module):
+class MODEL_CTC(nn.Module):  # write by LG
     def __init__(self, cfg):
         super(MODEL_CTC, self).__init__()
         cnn_last_size = 128

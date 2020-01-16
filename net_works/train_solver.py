@@ -92,8 +92,7 @@ class Solver:
             else:
                 train_set, test_set = _get_train_test_dataset(x_dir=self.cfg.PATH.INPUT_PATH, y_dir=self.cfg.PATH.LAB_PATH, idx_stores_dir=idx_stores_dir,
                                                               test_train_ratio=self.cfg.TEST.TEST_SET_RATIO, cfg=self.cfg, )
-            print(train_set[:4], '\n', test_set[:4])
-
+        print('TRAIN SET:', train_set[:4], '\n', 'TEST SET:', test_set[:4])
         self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
         if len(self.device_ids) > 1:
             self.Model = torch.nn.DataParallel(self.Model, device_ids=self.device_ids)
@@ -199,5 +198,5 @@ class Solver:
             _timer.time_end()
             LOGGER.info('[EVALUATE] Epoch-Step:%3d-%4d/%4d, Time Step/Total-%s/%s', epoch, step, batch_num, _timer.diff, _timer.from_begin)
         score_out, precision, recall = self.score.score_out()
-        self.save_parameter.tbX_write(epoch=epoch, score_out=score_out, precision=precision, recall=recall)
-        LOGGER.info('[EVALUATE] Summary: Epoch: %s, Score: %s, Precision: %s, Recall: %s', epoch, score_out, precision, recall)
+        self.save_parameter.tbX_write(epoch=epoch, score_out=score_out, precision=precision, recall=recall, )
+        LOGGER.info('[EVALUATE] Summary: Epoch: %s, Score0: %s, Score1: %s, Score2: %s', epoch, score_out, precision, recall)

@@ -65,7 +65,7 @@ yolov2|512x768|0.86|58.5 M|used 16 Anchors.
 yolov3|384x960|0.9|136 M|收敛快，效果好
 yolov3_tiny | 512x768| 0.857 | 33 M|收敛快，效果好
 yolov3_tiny_squeezenet | 384x960 | 0.844 |5.85 M|收敛快，效果好
-yolov3_tiny_mobilenet|512x768|0.79|3.37 M|
+yolov3_tiny_mobilenet|512x768|0.836|3.37 M|
 yolov3_tiny_shufflenet|512x768|0.726|686 KB|
 refinedet | 512x768 | 0.91|129 M|收敛快，效果好
 efficientdet_b0|512x768|0.9|42.7M|收敛快，效果好
@@ -77,7 +77,7 @@ ASR:
 
 networks | WER |weight size| PS
  --- | --- | --- |  --- 
-CTC         |0.1|58.5 M|XXX
+CTC         |0.1|154 M|XXX
 Seq2Seq     |0.1|58.5 M|XXX
 Transformer |0.1|58.5 M|XXX
 
