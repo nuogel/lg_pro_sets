@@ -29,8 +29,8 @@ class ASR_SCORE:  # WER（字错误率）/CER（字符错误率）和SER（句�
             # yes = torch.eq(pre_i[:target_lengths[i]], gt_i.type(torch.FloatTensor))
             # self.rate_batch += float(yes.sum() / target_lengths[i])
             WER = self._wer(s_pr, s_gt) / len(s_gt.split())
-            CER = self._cer(s_pr, s_gt) / len(s_gt.replace(' ', '')),
-            SER = 1 if WER != 0. or CER != 0. else 0
+            CER = self._cer(s_pr, s_gt) / len(s_gt.replace(' ', ''))
+            SER = 1 if WER != 0. or CER != 0. else 0.
 
             self.rate_batch[0] += WER
             self.rate_batch[1] += SER
@@ -43,8 +43,8 @@ class ASR_SCORE:  # WER（字错误率）/CER（字符错误率）和SER（句�
         self.batches += 1
 
     def score_out(self):
-        rate = self.rate_all / self.batches
-        print('[WER]:', rate[0], ' [SER]:', rate[1], ' [CER]:', rate[2])
+        rate = 1. - self.rate_all / self.batches
+        print('[WRR]:', rate[0], ' [SRR]:', rate[1], ' [CRR]:', rate[2])
         return rate[0], rate[1], rate[2]
 
     def _wer(self, s1, s2):

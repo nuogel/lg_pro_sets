@@ -30,6 +30,7 @@ def _get_train_test_dataset(x_dir, y_dir, idx_stores_dir, test_train_ratio, cfg)
                         label_files_list.append([file_name, img_file, label_file])
                         break
             elif y_extend_name == 'xml':
+                print(label_file)
                 tree = ET.parse(label_file)
                 root = tree.getroot()
                 for object in root.findall('object'):

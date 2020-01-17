@@ -28,7 +28,7 @@ class Seq2Seq(nn.Module):
         self.encoder = Encoder(input_size, hidden_size, num_layers, dropout, bidirectional)  # 一个GRU
         self.decoder = Decoder(vocab_size, hidden_size, sample_rate, self.cfg)
         self.vocab_size = vocab_size
-        self.add_attention = 'raw_att'  # None  #
+        self.add_attention = 'raw_att'  #None  #
 
     def forward(self, **args):
         '''
@@ -166,8 +166,10 @@ class Decoder(nn.Module):
         pre = torch.zeros((self.cfg.TRAIN.BATCH_SIZE, length, self.cfg.TRAIN.CLASS_LENGTH)).to(self.cfg.TRAIN.DEVICE)
         for i in range(0, length):
             output, c_hid, ax, sx = self._step(target_i, c_hid, enc_y, ax, sx, add_attention)
-            # TODO: 以一定的机率从上一次预测出来的结果作为下一次的输入。
-            target_i = target[i]
+            if random.random() < 0.4:
+                target_i = output.max(dim=1)[1]
+            else:
+                target_i = target[i]
             pre[:, i, :] = output
             out.append(output)
             align.append(ax)

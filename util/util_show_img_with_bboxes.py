@@ -168,7 +168,7 @@ def main():
     print_path = True
     # path = 'E:/datasets/Car/COCO_Car'
     # path = 'E:/datasets/BDD100k/'
-    path ='E:/datasets/NOISE_Images/NOISE_KITTI/level_3/'
+    path ='E:/datasets/OpenImage_Car'
     # im_file = os.path.join(path, "images", "1478019971185917857.jpg")
     # label_file = os.path.join(path, "labels", "1478019971185917857.xml")
     # img, label = _read_datas(im_file, label_file)

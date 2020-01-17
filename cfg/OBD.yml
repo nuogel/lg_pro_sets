@@ -1,9 +1,9 @@
 BELONGS: OBD
 
 PATH:
-  INPUT_PATH: ''
-  LAB_PATH: ''
-  CLASSES_PATH: 'dataloader//class_names.txt'
+  INPUT_PATH: 'E:/datasets/UdacitySelfDriving/images/'
+  LAB_PATH: 'E:/datasets/UdacitySelfDriving/labels/'
+  CLASSES_PATH: 'dataloader/class_names.txt'
   TMP_PATH: 'tmp/'
   PARAMETER_PATH: 'tmp/checkpoint//checkpoint.parameter'
   GENERATE_LABEL_SAVE_PATH: 'tmp/predicted_labels/'

@@ -59,17 +59,32 @@ python test.py --yml_path xxx --checkpoint xxx
 OBD:
 The result of F1-score of Car in KITTI DATA SET.
 
-networks | input size |  F1-SCORE |weight size| PS
- --- | --- | --- |  --- |---
-yolov2|512x768|0.86|58.5 M|used 16 Anchors.
-yolov3|384x960|0.9|136 M|收敛快，效果好
-yolov3_tiny | 512x768| 0.857 | 33 M|收敛快，效果好
-yolov3_tiny_squeezenet | 384x960 | 0.844 |5.85 M|收敛快，效果好
-yolov3_tiny_mobilenet|512x768|0.836|3.37 M|
-yolov3_tiny_shufflenet|512x768|0.726|686 KB|
-refinedet | 512x768 | 0.91|129 M|收敛快，效果好
-efficientdet_b0|512x768|0.9|42.7M|收敛快，效果好
-ssd|512x768|0.8904|94.7 M|收敛慢，效果好
+networks | input size |  F1-SCORE |mAP| weight size| PS
+ --- | --- | --- |  --- |---|---
+yolov2|512x768|0.86|X|58.5 M|used 16 Anchors.
+yolov3|384x960|0.9|X|136 M|收敛快，效果好
+yolov3_tiny | 512x768| 0.857 |0.76571836| 33 M|
+yolov3_tiny_squeezenet | 384x960 | 0.844 |X|5.85 M|收敛快，效果好
+yolov3_tiny_mobilenet|512x768|0.836|X|3.37 M|
+yolov3_tiny_shufflenet|512x768|0.726|X|686 KB|
+refinedet | 512x768 | 0.91|X|129 M|收敛快，效果好
+efficientdet_b0|512x768|0.9|X|42.7M|收敛快，效果好
+ssd|512x768|0.8904|X|94.7 M|收敛慢，效果好
+
+以上分数是在 SCORE_THRESH: 0.7 下得到的，以yolov3_tiny为例: 
+SCORE_THRESH: 0.7 :
+FSCORE:0.857 ;AP: 0.76571836; precision 0.96, recall 0.77。
+如果设为SCORE_THRESH 0.6
+FSCORE:0.866 ;AP: 0.80; precision 0.93, recall 0.806
+如果设为SCORE_THRESH 0.55
+FSCORE:0.87006 ;AP: 0.8105; precision 0.92127, recall 0.82423
+
+score thresh|f1-score|AP|precision|recall
+---|---|---|---|---
+0.7|0.857|0.7657|0.96,|0.77
+0.6|0.866|0.80|0.93,|0.806
+0.55|0.870|0.8105|0.921|0.824
+0.5|0.871|0.822|0.905|0.840
 
 =================================================
 
