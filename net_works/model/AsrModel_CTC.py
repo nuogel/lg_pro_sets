@@ -114,11 +114,11 @@ class MODEL_CTC(nn.Module):  # write by LG
         pre = pred.data.cpu().numpy()
         pre_list_all = []
         for batch in range(pre.shape[0]):
-            pre_list = [1211 - 2]  # tmp
+            pre_list = [0]  # tmp
             for num in pre[batch]:
                 if num != 0 and num != pre_list[-1]:  # drop the _ and repeat word.
                     pre_list.append(num)
-            pre_list_all.append(pre_list)
+            pre_list_all.append(np.asarray(pre_list))
         return pre_list_all
 
     def decode_ctc_K(self, y_pred, input_length, greedy=False):  # okay

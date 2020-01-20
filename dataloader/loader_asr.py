@@ -6,6 +6,7 @@ import scipy
 from scipy import signal
 import glob
 from python_speech_features import mfcc, delta
+import librosa
 
 
 class DataLoader:
@@ -57,8 +58,9 @@ class DataLoader:
 
                 lab_path = os.path.join(self.cfg.PATH.LAB_PATH, name[0] + '.wav.trn')
                 lab_compiled = self._get_wav_symbol(lab_path)
-                lab_compiled.insert(0, self.SymbolNum - 2)  # 添加 【START]
-                lab_compiled.append(self.SymbolNum - 1)  # 添加 【END]
+                # lab_compiled.insert(0, self.SymbolNum - 2)  # 添加 【START]
+                # lab_compiled.append(self.SymbolNum - 1)  # 添加 【END]
+                lab_compiled.append(0)  # 添加 '_'
                 lab_length.append(len(lab_compiled))
                 lab_list.append(lab_compiled)
 
@@ -117,22 +119,35 @@ class DataLoader:
         # wav波形 加时间窗以及时移10ms
         window_length = int(fs * self.cfg.TRAIN.CHUNK_DURATION_S)  # 计算窗长度的公式，目前全部为400固定值
         stride_length = int(fs * self.cfg.TRAIN.STRIDE_S)  # 160 步长帧数
-        wav_arr = np.array(wavsignal)
+        wav_arr = np.array(wavsignal, dtype=float)
         signal = np.squeeze(wav_arr)
         if signal.ndim != 1:
             raise TypeError("enframe input must be a 1-dimensional array.")
-        n_frames = 1 + np.int(np.floor((len(signal) - window_length) / float(stride_length)))  # 778
-        signal_framed = np.zeros((n_frames, int(window_length / 2)))  # 200
-        for i in range(n_frames):
-            signal_divide = signal[i * stride_length: i * stride_length + window_length]
-            signal_win = signal_divide * np.hamming(window_length)
-            signal_fft = np.abs(np.fft.fft(signal_win)) / (window_length / 2)
-            signal_framed[i] = signal_fft[0:int(window_length / 2)]
-        data_input = np.log(signal_framed + (1e-10))
+
+        use_lg_function = 1
+        if use_lg_function:
+            n_frames = 1 + np.int(np.floor((len(signal) - window_length) / float(stride_length)))  # 778
+            signal_framed = np.zeros((n_frames, int(window_length / 2)))  # 200
+            for i in range(n_frames):
+                signal_divide = signal[i * stride_length: i * stride_length + window_length]
+                signal_win = signal_divide * np.hamming(window_length)
+                signal_fft = np.abs(np.fft.fft(signal_win)) / (window_length / 2)
+                signal_framed[i] = signal_fft[0:int(window_length / 2)]
+            data_input = np.log(signal_framed + (1e-10))
+
+        use_function = 0
+        if use_function:
+            n_fft = window_length
+            # STFT
+            D = librosa.stft(signal, n_fft=n_fft - 1, hop_length=stride_length, win_length=window_length - 1)
+            spect, phase = librosa.magphase(D)
+            # S = log(S+1)
+            data_input = np.log(spect)
+            data_input = np.transpose(data_input, (1, 0))
+
         return data_input
 
-    def _log_specgram(self, audio, sample_rate, window_size=25,
-                      step_size=10, eps=1e-10):
+    def _log_specgram(self, audio, sample_rate, window_size=25, step_size=10, eps=1e-10):
         nperseg = int(window_size * sample_rate / 1e3)
         nsteplap = int(step_size * sample_rate / 1e3)
         _f, _t, spec = signal.spectrogram(audio,  # spec[1, 201, 778] (0,1e14)
@@ -209,6 +224,7 @@ class DataLoader:
                         lab = lab.strip()
                         if lab not in list_symbol:
                             list_symbol.append(lab)
+            list_symbol.sort()
             list_symbol.insert(0, '_')
             list_symbol.append('<START>')
             list_symbol.append('<END>')

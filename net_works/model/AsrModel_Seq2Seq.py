@@ -28,7 +28,7 @@ class Seq2Seq(nn.Module):
         self.encoder = Encoder(input_size, hidden_size, num_layers, dropout, bidirectional)  # 一个GRU
         self.decoder = Decoder(vocab_size, hidden_size, sample_rate, self.cfg)
         self.vocab_size = vocab_size
-        self.add_attention = 'raw_att'  #None  #
+        self.add_attention = None  # 'raw_att'  #
 
     def forward(self, **args):
         '''
@@ -159,22 +159,26 @@ class Decoder(nn.Module):
         '''
         target = target.transpose(0, 1)
         length = target.shape[0]
-        target_i = target[0]  # batch 中的第一个字全拿 出来
+        batch_size = enc_y.size(0)
+        # <START>
+        start_number = self.cfg.TRAIN.CLASS_LENGTH - 2  # 1209==START
+        target_i = torch.LongTensor([start_number] * batch_size).to(enc_y.device)  # 随便给一个启动sequence, 实验表明，我给任意数都行！。？？最后还是加了起始和结束标记
+
         ax = sx = None
         out = []
         align = []
         pre = torch.zeros((self.cfg.TRAIN.BATCH_SIZE, length, self.cfg.TRAIN.CLASS_LENGTH)).to(self.cfg.TRAIN.DEVICE)
-        for i in range(0, length):
+        for i in range(length):
             output, c_hid, ax, sx = self._step(target_i, c_hid, enc_y, ax, sx, add_attention)
-            if random.random() < 0.4:
+            if random.random() < 0:
                 target_i = output.max(dim=1)[1]
             else:
                 target_i = target[i]
             pre[:, i, :] = output
             out.append(output)
             align.append(ax)
-        out = torch.cat(out, dim=0)
-        out = out.view(-1, out.shape[-1])
+        # out = torch.cat(out, dim=0)
+        # out = out.view(-1, out.shape[-1])
 
         return pre
 
@@ -253,75 +257,3 @@ class LGAttention(nn.Module):
         ct = torch.cat((embeded, ct), dim=1)
         ct = self.nn(ct)
         return ct
-
-# class Seq2Seq_old(nn.Module):
-#     def __init__(self, cfg):
-#         super(Seq2Seq_old, self).__init__()
-#
-#         self.layer_1 = torch.nn.Conv2d(1, 32, kernel_size=3, stride=4, padding=1)
-#         self.embedding = nn.Embedding(cfg.TRAIN.CLASS_LENGTH, 1424)  # 定义词向量vocab_size个单词，每个单词embed_dim维的词向量
-#         self.attend = NNAttention(1424, log_t=False)
-#         self.dec_rnn = torch.nn.GRUCell(input_size=1424,  # 定义一个GRU单元GRUCELL(16, 16)
-#                                         hidden_size=1424)
-#         self.fc = LinearND(1424, 1424)  # （16， 64）
-#
-#         self.layer_rnn = nn.RNN(
-#             input_size=1600,
-#             hidden_size=cfg.TRAIN.HIDEN_SIZE,
-#             num_layers=1,
-#             batch_first=True)
-#         if _is_use_cuda():
-#             self.layer_1 = self.layer_1.to(self.cfg.TRAIN.DEVICE)
-#
-#     def forward(self, train_data):
-#         x = train_data[0]
-#         # x [N, 1600, 200]
-#         x = x.unsqueeze(1)
-#         x = self.layer_1(x)
-#         x = torch.transpose(x, 1, 2).contiguous()
-#         b, t, f, c = x.size()
-#         x = x.view((b, t, f * c))
-#         x, hn = self.layer_rnn(x)  # [2, 64 ,1424]
-#         # x = torch.nn.functional.softmax(x, dim=2)
-#         out, aligns = self.decode(x, train_data[1])
-#         batch_size, _, out_dim = out.size()
-#         out = out.view((-1, out_dim))
-#         return out
-#
-#     def decode(self, x, y):
-#         """
-#         x should be shape (batch, time, hidden dimension)
-#         y should be shape (batch, label sequence length)
-#         """
-#         y = y.type(torch.cuda.LongTensor)
-#         inputs = self.embedding(y[:, :-1])  # 将单词转为词向量，为什么不要最后 一维？
-#
-#         out = [];
-#         aligns = []
-#
-#         hx = torch.Tensor(torch.zeros((x.shape[0], x.shape[2]), requires_grad=False))  # [4, 16]
-#         if _is_use_cuda():
-#             hx = hx.to(self.cfg.TRAIN.DEVICE)
-#         ax = None;
-#         sx = None;
-#         for t in range(y.size()[1] - 1):
-#             sample = out
-#             if sample:
-#                 ix = torch.max(out[-1], dim=2)[1]
-#                 ix = self.embedding(ix)
-#             else:
-#                 ix = inputs[:, t:t + 1, :]
-#
-#             if sx is not None:
-#                 ix = ix + sx
-#
-#             hx = self.dec_rnn(ix.squeeze(dim=1), hx)  # ix[4,16]  hx[4, 16]
-#             ox = hx.unsqueeze(dim=1)
-#
-#             sx, ax = self.attend(x, ox, ax)
-#             aligns.append(ax)
-#             out.append(self.fc(ox + sx))
-#
-#         out = torch.cat(out, dim=1)
-#         aligns = torch.stack(aligns, dim=1)
-#         return out, aligns

@@ -66,7 +66,7 @@ yolov3|384x960|0.9|X|136 M|收敛快，效果好
 yolov3_tiny | 512x768| 0.857 |0.76571836| 33 M|
 yolov3_tiny_squeezenet | 384x960 | 0.844 |X|5.85 M|收敛快，效果好
 yolov3_tiny_mobilenet|512x768|0.836|X|3.37 M|
-yolov3_tiny_shufflenet|512x768|0.726|X|686 KB|
+yolov3_tiny_shufflenet|512x768|0.790|0.672|686 KB|
 refinedet | 512x768 | 0.91|X|129 M|收敛快，效果好
 efficientdet_b0|512x768|0.9|X|42.7M|收敛快，效果好
 ssd|512x768|0.8904|X|94.7 M|收敛慢，效果好

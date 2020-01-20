@@ -30,8 +30,7 @@ LOGGER = logging.getLogger(__name__)
 
 class Solver:
     def __init__(self, cfg, args):
-
-        self.cfg = prepare_cfg(cfg)
+        self.cfg = prepare_cfg(cfg, args)
         self.args = args
         self.one_test = self.cfg.TEST.ONE_TEST
         self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)
@@ -59,7 +58,7 @@ class Solver:
         # Prepare optimizer
         optimizer, scheduler = self._get_optimizer(learning_rate, optimizer=self.cfg.TRAIN.OPTIMIZER)
         for epoch in range(epoch_last, self.cfg.TRAIN.EPOCH_SIZE):
-            if not self.cfg.TEST.TEST_ONLY:
+            if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch, train_set, optimizer, scheduler)
                 self._save_checkpoint(epoch)
             self._test_an_epoch(epoch, test_set)
@@ -71,7 +70,7 @@ class Solver:
         """
         idx_stores_dir = os.path.join(self.cfg.PATH.TMP_PATH, 'idx_stores')
         # load the last train parameters
-        if self.args.checkpoint:
+        if self.args.checkpoint not in [0, '0', 'None', 'no', 'none', "''"]:
             self.Model = load_state_dict(self.Model, self.args.checkpoint, self.cfg.TRAIN.DEVICE)
             epoch_last, learning_rate_last = self.save_parameter.tbX_read()
             epoch = self.args.epoch_continue if self.args.epoch_continue else epoch_last + 1

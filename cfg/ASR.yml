@@ -2,13 +2,13 @@ BELONGS: ASR
 
 PATH:
   INPUT_PATH: 'E://datasets//NLP//THCHS/' #'/home/mao/data/' #
-  LAB_PATH: 'E://datasets//NLP//THCHS/data_thchs30/data' #'/home/mao/data/data_thchs30/data ' #
+  LAB_PATH: 'E://datasets//NLP//THCHS/data_thchs30/data' #'/home/mao/data/data_thchs30/data/' #
   TMP_PATH: 'tmp//'
   PARAMETER_PATH: 'tmp//checkpoint//checkpoint.parameter'
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
 
 TRAIN:
-  MODEL: seq2seq #ctc  #
+  MODEL: ctc  #seq2seq #
   EPOCH_SIZE: 400
   BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1   # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
@@ -48,10 +48,10 @@ TEST:
   SHOW_PREDICTED: TRUE #FALSE #
   SAVE_LABELS: FALSE #TRUE #
 
-  TEST_ONLY: FALSE #TRUE #
+  TEST_ONLY: 1 #TRUE #
 
-  ONE_TEST: FALSE #TRUE #
-  ONE_TEST_TRAIN_STEP: 5
+  ONE_TEST: 0 #FALSE #T
+  ONE_TEST_TRAIN_STEP: 50
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
   ['D11_750', 'data_thchs30/test/D11_750.wav'],

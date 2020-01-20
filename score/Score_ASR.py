@@ -20,7 +20,7 @@ class ASR_SCORE:  # WER（字错误率）/CER（字符错误率）和SER（句�
         # print('batch NO:', self.batches)
         for i in range(self.cfg.TRAIN.BATCH_SIZE):
             pre_i = pre[i][pre[i] > 0]
-            gt_i = target[i, :target_lengths[i]].cpu()
+            gt_i = target[i, :target_lengths[i]-1].cpu()
             s_pr = " ".join(str(i) for i in self.dataloader._number2pinying(pre_i))
             s_gt = " ".join(str(i) for i in self.dataloader._number2pinying(gt_i.numpy().tolist()))  # [1:-1]
 
@@ -36,8 +36,8 @@ class ASR_SCORE:  # WER（字错误率）/CER（字符错误率）和SER（句�
             self.rate_batch[1] += SER
             self.rate_batch[2] += CER
             if self.cfg.TEST.SHOW_PREDICTED:
-                print(s_pr)
-                print(s_gt)
+                print('PR: ', s_pr)
+                print('GT: ', s_gt)
                 print('[WER]:', WER, ' [SER]:', SER, ' [CER]:', CER)
         self.rate_all += self.rate_batch / self.cfg.TRAIN.BATCH_SIZE
         self.batches += 1
