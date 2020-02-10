@@ -7,3 +7,7 @@ Tram,Car
 Misc,Car
 bus,Car
 Bus,Car
+
+Background,Background
+Others1,Others1
+Others2,Others2

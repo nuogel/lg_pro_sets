@@ -30,8 +30,7 @@ LOGGER = logging.getLogger(__name__)
 
 class Solver:
     def __init__(self, cfg, args):
-
-        self.cfg = prepare_cfg(cfg)
+        self.cfg = prepare_cfg(cfg, args)
         self.args = args
         self.one_test = self.cfg.TEST.ONE_TEST
         self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)
@@ -59,7 +58,7 @@ class Solver:
         # Prepare optimizer
         optimizer, scheduler = self._get_optimizer(learning_rate, optimizer=self.cfg.TRAIN.OPTIMIZER)
         for epoch in range(epoch_last, self.cfg.TRAIN.EPOCH_SIZE):
-            if not self.cfg.TEST.TEST_ONLY:
+            if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch, train_set, optimizer, scheduler)
                 self._save_checkpoint(epoch)
             self._test_an_epoch(epoch, test_set)
@@ -71,7 +70,7 @@ class Solver:
         """
         idx_stores_dir = os.path.join(self.cfg.PATH.TMP_PATH, 'idx_stores')
         # load the last train parameters
-        if self.args.checkpoint:
+        if self.args.checkpoint not in [0, '0', 'None', 'no', 'none', "''"]:
             self.Model = load_state_dict(self.Model, self.args.checkpoint, self.cfg.TRAIN.DEVICE)
             epoch_last, learning_rate_last = self.save_parameter.tbX_read()
             epoch = self.args.epoch_continue if self.args.epoch_continue else epoch_last + 1
@@ -92,14 +91,13 @@ class Solver:
             else:
                 train_set, test_set = _get_train_test_dataset(x_dir=self.cfg.PATH.INPUT_PATH, y_dir=self.cfg.PATH.LAB_PATH, idx_stores_dir=idx_stores_dir,
                                                               test_train_ratio=self.cfg.TEST.TEST_SET_RATIO, cfg=self.cfg, )
-            print(train_set[:4], '\n', test_set[:4])
-
+        print('TRAIN SET:', train_set[:4], '\n', 'TEST SET:', test_set[:4])
         self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
         if len(self.device_ids) > 1:
             self.Model = torch.nn.DataParallel(self.Model, device_ids=self.device_ids)
 
         LOGGER.info('>' * 30 + 'The Train Set is :{}, and The Test Set is :{}'.format(len(train_set), len(test_set)))
-        # _print_model_parm_nums(self.Model.cuda(), self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1])
+        # _print_model_parm_nums(self.Model.to(self.cfg.TRAIN.DEVICE), self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1])
         return learning_rate, epoch, train_set, test_set
 
     def _get_optimizer(self, learning_rate, optimizer='adam'):
@@ -199,5 +197,5 @@ class Solver:
             _timer.time_end()
             LOGGER.info('[EVALUATE] Epoch-Step:%3d-%4d/%4d, Time Step/Total-%s/%s', epoch, step, batch_num, _timer.diff, _timer.from_begin)
         score_out, precision, recall = self.score.score_out()
-        self.save_parameter.tbX_write(epoch=epoch, score_out=score_out, precision=precision, recall=recall)
-        LOGGER.info('[EVALUATE] Summary: Epoch: %s, Score: %s, Precision: %s, Recall: %s', epoch, score_out, precision, recall)
+        self.save_parameter.tbX_write(epoch=epoch, score_out=score_out, precision=precision, recall=recall, )
+        LOGGER.info('[EVALUATE] Summary: Epoch: %s, Score0: %s, Score1: %s, Score2: %s', epoch, score_out, precision, recall)

@@ -124,9 +124,11 @@ class DataLoader:
 
         elif os.path.basename(path).split('.')[-1] == 'txt' and predicted_line:
             f_path = open(path, 'r')
+            print(path)
             for line in f_path.readlines():
                 tmp = line.split()
-                bbs.append([float(tmp[1]), self.cls2idx[self.class_name[tmp[0]]], [float(tmp[2]), float(tmp[3]), float(tmp[4]), float(tmp[5])]])
+                cls_name = tmp[0]
+                bbs.append([float(tmp[1]), self.cls2idx[self.class_name[cls_name]], [float(tmp[2]), float(tmp[3]), float(tmp[4]), float(tmp[5])]])
         return bbs
 
     def _read_datas(self, idx, image=None):

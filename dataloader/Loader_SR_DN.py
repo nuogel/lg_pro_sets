@@ -45,7 +45,7 @@ class DataLoader:
             target = cv2.resize(raw_lab, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
 
             if self.cfg.TRAIN.UPSCALE_FACTOR == 1:
-                raw_img = cv2.imread(os.path.join(self.cfg.PATH.IMG_PATH, id + '.png'))  # norse image or LR image
+                raw_img = cv2.imread(os.path.join(self.cfg.PATH.INPUT_PATH, id + '.png'))  # norse image or LR image
             else:
                 raw_img = target
             input = cv2.resize(raw_img, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,

@@ -23,7 +23,7 @@ from util.util_prepare_cfg import prepare_cfg
 
 class Test_Base(object):
     def __init__(self, cfg, args):
-        self.cfg = prepare_cfg(cfg)
+        self.cfg = prepare_cfg(cfg, args)
         self.args = args
         self.apolloclass2num = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
         self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)

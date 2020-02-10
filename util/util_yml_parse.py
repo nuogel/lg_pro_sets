@@ -30,14 +30,13 @@ def parse_yaml(ymlfilename):
     e.g :
         yaml_cfg['PATH']['TMP_DIR']
     """
-    with open(ymlfilename, 'r', encoding='UTF-8') as f:
+    with open('cfg/{}.yml'.format(ymlfilename), 'r', encoding='UTF-8') as f:
         yaml_cfg = yaml.load(f, Loader=yaml.FullLoader)
         cfg = AttrDict(yaml_cfg)
         cfg.PATH = AttrDict(cfg.PATH)
         cfg.TRAIN = AttrDict(cfg.TRAIN)
         cfg.TEST = AttrDict(cfg.TEST)
     return cfg
-
 
 # global cfg
 # cfg = parse_yaml('../../cfg/OBD.yml')

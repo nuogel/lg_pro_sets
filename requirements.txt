@@ -11,3 +11,5 @@ tensorboardX
 scikit-learn
 shapely
 imgaug
+python-levenshtein
+librosa

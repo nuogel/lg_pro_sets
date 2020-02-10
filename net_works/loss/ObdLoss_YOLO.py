@@ -79,8 +79,7 @@ class YoloLoss:
         lab_loc_xy = lab_loc_xy * torch.Tensor([shape[1], shape[0]]).to(self.cfg.TRAIN.DEVICE) - grid_xy
         anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).expand(1, shape[0], shape[1], self.anc_num, 2).to(self.cfg.TRAIN.DEVICE)
         lab_loc_wh = lab_loc_wh / anchor_ch
-        lab_loc_wh = torch.log(torch.min(torch.max(lab_loc_wh, torch.Tensor([1e-9]).expand_as(lab_loc_wh).to(self.cfg.TRAIN.DEVICE)),
-                                         torch.Tensor([1e9]).expand_as(lab_loc_wh).to(self.cfg.TRAIN.DEVICE)))
+        lab_loc_wh = torch.log(torch.clamp(lab_loc_wh, 1e-9, 1e9))
 
         return labels_obj, labels_cls, lab_loc_xy, lab_loc_wh, labels_boxes, area_scale
 
@@ -219,8 +218,7 @@ class YoloLoss:
         if losstype == 'focalloss':
             # FOCAL loss
             alpha = 0.25
-            obj_loss = alpha * pow((torch.ones_like(pre_obj) - pre_obj), 2) * self.bceloss(pre_obj * obj_mask,
-                                                                                           lab_obj * obj_mask)
+            obj_loss = alpha * pow((torch.ones_like(pre_obj) - pre_obj), 2) * self.bceloss(pre_obj * obj_mask, lab_obj * obj_mask)
             noobj_loss = (1 - alpha) * pow(pre_obj, 2) * self.bceloss(pre_obj * ignore_mask, lab_obj * ignore_mask)
             obj_loss = torch.sum(obj_loss) / self.batch_size
             noobj_loss = torch.sum(noobj_loss) / self.batch_size

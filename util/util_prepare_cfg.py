@@ -1,4 +1,6 @@
-def prepare_cfg(cfg):
+def prepare_cfg(cfg, arg):
+    if arg.batch_size != 0:
+        cfg.TRAIN.BATCH_SIZE = arg.batch_size
     anchor_yolov2_apollo = [[0.0772422, 0.0632077],
                             [0.0332185, 0.0699152],
                             [0.3039470, 0.7423017],

@@ -12,9 +12,10 @@ def _parse_arguments():
     parser.add_argument('--yml_path', default='cfg/OBD.yml'  # OBD SR_DN
                         , type=str, help='yml_path')
     parser.add_argument('--checkpoint', default=
-    'tmp/checkpoint/now.pkl'
+    # 'tmp/checkpoint/now.pkl'
                         # 'F:/test_results/saved_tbx_log_yolov3_tiny_clean/checkpoint.pkl',
                         # 'F:/test_results/tbx_log_ssd_coco/checkpoint.pkl'
+    'F:/test_results/saved_tbx_log_yolov3_tiny_clean_kitti_car_512x768/checkpoint.pkl'
                         , help='Path to the checkpoint to be loaded to the model')
     return parser.parse_args()
 
@@ -34,12 +35,13 @@ def main():
     # file_s = 'E:/LG/GitHub/lg_pro_sets/tmp/idx_stores/occ_2.txt'
     file_s = 'tmp/idx_stores/test_set.txt'
     # file_s = 'E:/datasets/BDD100k/images/77d72c41-9fcb211a.jpg'
+    # file_s = 'E:/datasets/Udacity Self-Driving/Udacity Self-Driving/images/'
     score = True
     args = _parse_arguments()
     cfg = parse_yaml(args.yml_path)
     # file_s = cfg.TEST.ONE_NAME[0]
     test = Test[cfg.BELONGS](cfg, args)
-    # test.test_run(file_s)
+    test.test_run(file_s)
     if score:
         test.score(txt_info=file_s, pre_path=cfg.PATH.GENERATE_LABEL_SAVE_PATH)
     return exit_code
