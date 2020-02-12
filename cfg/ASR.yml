@@ -8,7 +8,7 @@ PATH:
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
 
 TRAIN:
-  MODEL: seq2seq #ctc  #
+  MODEL: seq2seq #ctc  # #
   EPOCH_SIZE: 400
   BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1   # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
