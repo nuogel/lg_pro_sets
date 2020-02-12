@@ -179,7 +179,6 @@ class Solver:
         LOGGER.info('[TRAIN] Summary: Epoch: %s, average total loss: %s', epoch, losses / batch_num)
 
     def _test_an_epoch(self, epoch, test_set):
-        # TODO: ADD THE MAP SCORES.
         # if epoch < 5: pass
         self.Model.eval()
         LOGGER.info('[EVALUATE] Model:%s, Evaluating ...', self.cfg.TRAIN.MODEL)

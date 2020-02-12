@@ -45,7 +45,7 @@ class DataLoader:
             lab_list = []
             for i, name in enumerate(idx):  # read wav and lab
                 # name = self.datalist[start_idx + i]
-                wav_path = os.path.join(self.cfg.PATH.INPUT_PATH, name[1])
+                wav_path = name[1]
                 # print(wav_path)
                 wavsignal, fs = self._read_wav_data(wav_path)
                 wavsignal = wavsignal[0]  # 取一个通道。
@@ -56,7 +56,7 @@ class DataLoader:
                 wav_length.append(wav_feature.shape[0])
                 wav_list.append(wav_feature)
 
-                lab_path = os.path.join(self.cfg.PATH.LAB_PATH, name[0] + '.wav.trn')
+                lab_path =name[2]
                 lab_compiled = self._get_wav_symbol(lab_path)
                 # lab_compiled.insert(0, self.SymbolNum - 2)  # 添加 【START]
                 # lab_compiled.append(self.SymbolNum - 1)  # 添加 【END]

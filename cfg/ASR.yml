@@ -1,19 +1,19 @@
 BELONGS: ASR
 
 PATH:
-  INPUT_PATH: 'E://datasets//NLP//THCHS/' #'/home/mao/data/' #
+  INPUT_PATH: 'E://datasets//NLP//THCHS/data_thchs30/data' #'/home/mao/data/' #
   LAB_PATH: 'E://datasets//NLP//THCHS/data_thchs30/data' #'/home/mao/data/data_thchs30/data/' #
   TMP_PATH: 'tmp//'
   PARAMETER_PATH: 'tmp//checkpoint//checkpoint.parameter'
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
 
 TRAIN:
-  MODEL: ctc  #seq2seq #
+  MODEL: seq2seq #ctc  # ###
   EPOCH_SIZE: 400
   BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1   # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   CLASS_LENGTH: 1211  # this will change by the acturel length in 'loader_asr.py' self.cfg.TRAIN.CLASS_LENGTH
-  TRAIN_DATA_FROM_FILE: TRUE #FALSE #
+  TRAIN_DATA_FROM_FILE: 0
 
   #WAV_LENGTH:  1600  # 分窗的最大长度，最大窗数，窗长为200. 改为变长序列
   AUDIO_FEATURE_LENGTH: 200
@@ -45,16 +45,15 @@ TEST:
   TEST_SET_RATIO: 0.1
   # NMS:
   SCORE_THRESH: 0.5
-  SHOW_PREDICTED: TRUE #FALSE #
+  SHOW_PREDICTED: 0 #FALSE #
   SAVE_LABELS: FALSE #TRUE #
 
-  TEST_ONLY: 1 #TRUE #
+  TEST_ONLY: 0 #TRUE #
 
   ONE_TEST: 0 #FALSE #T
   ONE_TEST_TRAIN_STEP: 50
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
-  ['D11_750', 'data_thchs30/test/D11_750.wav'],
-  ['D11_751', 'data_thchs30/test/D11_751.wav']
+  ['C19_714', 'E://datasets//NLP//THCHS/data_thchs30/data\\C19_714.wav', 'E://datasets//NLP//THCHS/data_thchs30/data\\C19_714.wav.trn']
   ]
 

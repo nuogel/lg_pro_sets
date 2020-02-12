@@ -99,7 +99,7 @@ class MODEL_CTC(nn.Module):  # write by LG
         return x
 
     def beam_decode_For(self, y_pred):  # cpu 版，太慢。
-        print('beam_decode for CTC')
+        # print('beam_decode for CTC')
         decode_out = []
         for i in range(y_pred.shape[0]):
             # input = xs[i].cpu().detach().numpy()
@@ -109,7 +109,7 @@ class MODEL_CTC(nn.Module):  # write by LG
         return decode_out
 
     def ctc_greedy_decode_LG(self, y_pred):  # greedy by LG
-        print('ctc_greedy_decode for CTC')
+        # print('ctc_greedy_decode for CTC')
         logp, pred = torch.max(y_pred, dim=-1)
         pre = pred.data.cpu().numpy()
         pre_list_all = []

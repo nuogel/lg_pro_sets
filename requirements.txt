@@ -11,5 +11,5 @@ tensorboardX
 scikit-learn
 shapely
 imgaug
-python-levenshtein
+python-Levenshtein
 librosa
