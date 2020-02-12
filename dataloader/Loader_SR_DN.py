@@ -12,7 +12,7 @@ class DataLoader:
         self.train_batch_num = 100
         self.test_batch_num = 1
 
-    def get_data_by_idx(self, idx_store, index_from, index_to):
+    def get_data_by_idx(self, idx_store, index_from, index_to, is_training):
         '''
         :param idx_store:
         :param index_from:
@@ -23,11 +23,13 @@ class DataLoader:
         if self.one_test:
             if self.one_name:
                 idx = self.one_name
-
             else:
-                idx = idx_store[0]
+                idx = idx_store[1:2]
         else:
             idx = idx_store[index_from: index_to]
+        if not idx:
+            print('error, no IDX in loader_img.py')
+            exit()
         if idx:
             imgs, labels = self._prepare_data(idx)
             imgs = imgs.permute([0, 3, 1, 2, ])
@@ -37,7 +39,6 @@ class DataLoader:
         return data
 
     def _prepare_data(self, idx):
-
         input_imgs = []
         target_imgs = []
         for id in idx:
@@ -61,5 +62,3 @@ class DataLoader:
         return input_imgs, target_imgs
 
     # def _prepare_data_denoise(self, idx):
-
-

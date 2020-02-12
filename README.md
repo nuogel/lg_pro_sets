@@ -38,8 +38,12 @@ torch
 torchvision
 ...
 conda install -c conda-forge imgaug 
-
 ```
+-------------------------
+Notice:
+if python-Levenshtein failed，then try Pipy, python-Levenshtein-wheels.
+
+
 #### Training Dataset
 you can use any data sets in shape of [images, labels], labels can be **.xml or **.txt
 ```

@@ -15,7 +15,7 @@ from net_works.model.AsrModel_Seq2Seq import Seq2Seq
 from net_works.model.SrModel_EDSR import EDSR
 from net_works.model.DeNoiseModel_CBDNet import CBDNet
 from net_works.model.DeNoiseModel_DNCNN import DnCNN
-
+from net_works.model.SrModel_SRCNN import SRCNN
 from net_works.loss.ObdLoss_SSD_Multiboxloss import MultiboxLoss
 from net_works.loss.ObdLoss_YOLO import YoloLoss
 from net_works.loss.ObdLoss_FCOS import FCOSLOSS
@@ -43,8 +43,9 @@ ModelDict = {
     'ctc': MODEL_CTC,
     'seq2seq': Seq2Seq,
 
-    # SR
+    # SR_DN
     'edsr': EDSR,
+    'srcnn': SRCNN,
     'cbdnet': CBDNet,
     'dncnn': DnCNN,
 }
@@ -70,6 +71,7 @@ LossDict = {
 
     # SR_DN
     'edsr': SR_DN_Loss,
+    'srcnn': SR_DN_Loss,
     'cbdnet': SR_DN_Loss,
     'dncnn': SR_DN_Loss
 
