@@ -32,7 +32,7 @@ class DataLoader:
             exit()
         if idx:
             imgs, labels = self._prepare_data(idx)
-            imgs = imgs.permute([0, 3, 1, 2, ])
+            imgs = imgs.permute([0, 3, 1, 2])
             imgs = imgs.to(self.cfg.TRAIN.DEVICE)
             labels = labels.to(self.cfg.TRAIN.DEVICE)
             data = (imgs, labels)  #

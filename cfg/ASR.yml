@@ -28,6 +28,7 @@ TRAIN:
   STEP_LR: 80
   LR_EXPONENTIAL_DECAY_RATE: 0.98
   BETAS_ADAM: 0.9
+  WEIGHT_DECAY: 0
   LOSSTYPE: 'ctc' #''mse' #mse' #
   LR_CONTINUE: None # CONTINUE: change the parameters and continue this training
   EPOCH_CONTINUE: None

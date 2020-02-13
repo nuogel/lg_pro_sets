@@ -1,6 +1,9 @@
 import torch.nn as nn
 import torch
-import cv2
+
+'''
+1. 4倍的效果，2倍效果都還可以，單張圖像的PSNR->27.4左右
+'''
 
 
 class SRCNN(nn.Module):
@@ -8,9 +11,9 @@ class SRCNN(nn.Module):
         super(SRCNN, self).__init__()
         self.cfg = cfg
         self.conv1 = nn.Conv2d(3, 64, kernel_size=9, padding=4)
-        self.relu1 = nn.ReLU()
+        self.relu1 = nn.ReLU6()
         self.conv2 = nn.Conv2d(64, 32, kernel_size=1, padding=0)
-        self.relu2 = nn.ReLU()
+        self.relu2 = nn.ReLU6()
         self.conv3 = nn.Conv2d(32, 3, kernel_size=5, padding=2)
 
     def forward(self, **args):
