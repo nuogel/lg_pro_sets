@@ -1,21 +1,21 @@
 BELONGS: SR_DN
 
 PATH:
-  INPUT_PATH: 'dataloader/tmp_data/sr_dn/x'
-  LAB_PATH: 'dataloader/tmp_data/sr_dn/y'
+  INPUT_PATH: 'E:/datasets/BSR_bsds500/BSR/BSDS500/data/images/train'
+  LAB_PATH: 'E:/datasets/BSR_bsds500/BSR/BSDS500/data/images/train'
   TMP_PATH: 'tmp//'
   PARAMETER_PATH: 'tmp//checkpoint//checkpoint.parameter'
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
 
 TRAIN:
-  MODEL: espcn #vdsr #fsrcnn #edsr #srcnn #cbdnet  #dncnn #
+  MODEL: vdsr #espcn #fsrcnn #edsr #srcnn #cbdnet  #dncnn #
   EPOCH_SIZE: 4000
-  BATCH_SIZE: 1
+  BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1   # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
-  TRAIN_DATA_FROM_FILE: 1
+  TRAIN_DATA_FROM_FILE: 0
 
   # aug
-  UPSCALE_FACTOR: 4
+  UPSCALE_FACTOR: 2
   IMG_SIZE: [512, 384]  #[W,H]
   PIXCELS_NORM: [0., 255.]  # [mean, std] #must be float.
   # optimizer:
@@ -46,7 +46,7 @@ TEST:
 
   TEST_ONLY: FALSE
 
-  ONE_TEST: 1 #0 #
+  ONE_TEST: 0 #0 #
   ONE_TEST_TRAIN_STEP: 500
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: ['x']#,
