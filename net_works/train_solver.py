@@ -102,8 +102,7 @@ class Solver:
 
     def _get_optimizer(self, learning_rate, optimizer='adam'):
         if optimizer == 'adam' or optimizer == 'Adam':
-            optimizer = torch.optim.Adam(self.Model.parameters(),
-                                         lr=learning_rate, betas=(self.cfg.TRAIN.BETAS_ADAM, 0.999), weight_decay=5e-4)
+            optimizer = torch.optim.Adam(self.Model.parameters(), lr=learning_rate, betas=(self.cfg.TRAIN.BETAS_ADAM, 0.999), weight_decay=self.cfg.TRAIN.WEIGHT_DECAY)
         elif optimizer == 'sgd' or optimizer == 'SGD':
             optimizer = torch.optim.SGD(self.Model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
         else:
@@ -125,7 +124,6 @@ class Solver:
             LOGGER.debug('Loss per head: %s', loss_head_info)
         else:
             total_loss = losses[0]
-            LOGGER.debug('Train Acc is: %s', losses[1])
         if torch.isnan(total_loss) or total_loss.item() == float("inf") or total_loss.item() == -float("inf"):
             LOGGER.error("received an nan/inf loss")
             exit()
@@ -173,14 +171,14 @@ class Solver:
             if (step + 1) % self.cfg.TRAIN.SAVE_STEP == 0:
                 self._save_checkpoint(epoch)
             _timer.time_end()
-            LOGGER.info('[TRAIN] Epoch-Step:%3d-%4d/%4d, Step_LOSS: %10.2f, Batch_Average_LOSS: %10.2f, Time Step/Total-%s/%s',
+            LOGGER.info('[TRAIN] Epoch-Step:%3d-%4d/%4d, Step_LOSS: %10.4f, Batch_Average_LOSS: %10.4f, Time Step/Total-%s/%s',
                         epoch, step, batch_num, total_loss.item(), losses / (step + 1), _timer.diff, _timer.from_begin)
         self.save_parameter.tbX_write(epoch=epoch, learning_rate=optimizer.param_groups[0]['lr'], batch_average_loss=losses / batch_num, )
         LOGGER.info('[TRAIN] Summary: Epoch: %s, average total loss: %s', epoch, losses / batch_num)
 
     def _test_an_epoch(self, epoch, test_set):
         # if epoch < 5: pass
-        self.Model.eval()
+        # self.Model.eval()
         LOGGER.info('[EVALUATE] Model:%s, Evaluating ...', self.cfg.TRAIN.MODEL)
         _timer = Time()
         batch_size = self.cfg.TRAIN.BATCH_SIZE

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """A test file."""
 import cv2
 import torch
@@ -62,9 +63,6 @@ def _test_2():
     print(torch.numel(mask) / torch.numel(a))
 
     print(pow(0.995, 100))
-
-
-
 
 
 

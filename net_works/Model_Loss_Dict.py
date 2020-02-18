@@ -12,10 +12,15 @@ from net_works.model.ObdModel_EfficientDet import EfficientDet
 from net_works.model.AsrModel_RNN import RNN
 from net_works.model.AsrModel_CTC import MODEL_CTC
 from net_works.model.AsrModel_Seq2Seq import Seq2Seq
+
+from net_works.model.SrModel_SRCNN import SRCNN
+from net_works.model.SrModel_FSRCNN import FSRCNN
+from net_works.model.SrModel_ESPCN import ESPCN
+from net_works.model.SrModel_VDSR import VDSR
 from net_works.model.SrModel_EDSR import EDSR
 from net_works.model.DeNoiseModel_CBDNet import CBDNet
 from net_works.model.DeNoiseModel_DNCNN import DnCNN
-from net_works.model.SrModel_SRCNN import SRCNN
+
 from net_works.loss.ObdLoss_SSD_Multiboxloss import MultiboxLoss
 from net_works.loss.ObdLoss_YOLO import YoloLoss
 from net_works.loss.ObdLoss_FCOS import FCOSLOSS
@@ -44,8 +49,11 @@ ModelDict = {
     'seq2seq': Seq2Seq,
 
     # SR_DN
-    'edsr': EDSR,
     'srcnn': SRCNN,
+    'fsrcnn': FSRCNN,
+    'espcn': ESPCN,
+    'edsr': EDSR,
+    'vdsr': VDSR,
     'cbdnet': CBDNet,
     'dncnn': DnCNN,
 }
@@ -70,8 +78,11 @@ LossDict = {
     'seq2seq': Seq2SeqLoss,
 
     # SR_DN
-    'edsr': SR_DN_Loss,
+    'espcn': SR_DN_Loss,
     'srcnn': SR_DN_Loss,
+    'fsrcnn': SR_DN_Loss,
+    'edsr': SR_DN_Loss,
+    'vdsr': SR_DN_Loss,
     'cbdnet': SR_DN_Loss,
     'dncnn': SR_DN_Loss
 

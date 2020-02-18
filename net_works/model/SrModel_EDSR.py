@@ -5,7 +5,7 @@ import torch.nn as nn
 
 class EDSR(nn.Module):
     '''
-    EDSR: xxxxx
+    EDSR: xxxxx  訓練比較慢。
     '''
 
     def __init__(self, cfg):

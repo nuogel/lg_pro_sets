@@ -34,6 +34,7 @@ TRAIN:
   STEP_LR: 100
   LR_EXPONENTIAL_DECAY_RATE: 0.98 #lr_scheduler.ExponentialLR
   BETAS_ADAM: 0.9
+  WEIGHT_DECAY: 0
   LOSSTYPE: 'focalloss' #'mse' #
   EPOCH_CONTINUE: None
   SAVE_STEP: 100

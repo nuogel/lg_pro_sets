@@ -19,6 +19,10 @@ This is a PyTorch implementation of ASR / OBD / SR /DENORSE /TRACK
     RefineDet
     MobileNetV3
 #### SR:
+    SRCNN
+    FSRCNN
+    ESPCN
+    VDSR
     EDSR
 #### DENORSE:
     DnCnn
@@ -99,4 +103,15 @@ networks | WER |weight size| PS
 CTC         |0.1|154 M|XXX
 Seq2Seq     |0.1|58.5 M|XXX
 Transformer |0.1|58.5 M|XXX
+
+==================================================
+SR:
+
+
+networks | PSNR |weight size| PS
+ --- | --- | --- |  --- 
+SRCNN|0.1|154 M|XXX
+FSRCNN|0.1|58.5 M|XXX
+VDSR |0.1|58.5 M|XXX
+EDSR |0.1|58.5 M|XXX
 

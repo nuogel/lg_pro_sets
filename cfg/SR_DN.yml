@@ -1,30 +1,31 @@
 BELONGS: SR_DN
 
 PATH:
-  INPUT_PATH: 'dataloader/tmp_data/sr_dn/x'
-  LAB_PATH: 'dataloader/tmp_data/sr_dn/y'
-  TMP_PATH: 'tmp//'
+  INPUT_PATH: '/home/mao/ssd3/datasets/BDD100k/images/'
+  LAB_PATH: '/home/mao/ssd3/datasets/BDD100k/images/'
+  TMP_PATH: 'tmp/'
   PARAMETER_PATH: 'tmp//checkpoint//checkpoint.parameter'
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
 
 TRAIN:
-  MODEL: srcnn #edsr #cbdnet  #dncnn #
+  MODEL: vdsr #espcn #fsrcnn #edsr #srcnn #cbdnet  #dncnn #
   EPOCH_SIZE: 4000
-  BATCH_SIZE: 1
-  BATCH_BACKWARD_SIZE: 2   # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
+  BATCH_SIZE: 4
+  BATCH_BACKWARD_SIZE: 1   # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   TRAIN_DATA_FROM_FILE: 0
 
   # aug
   UPSCALE_FACTOR: 4
-  IMG_SIZE: [512, 320]  #[W,H]
-  PIXCELS_NORM: [177.0, 1]  # [mean, std]
+  IMG_SIZE: [1280, 720] #[512, 384]  #[W,H] #
+  PIXCELS_NORM: [0., 255.]  # [mean, std] #must be float.
   # optimizer:
-  OPTIMIZER: 'adam'
+  OPTIMIZER: 'adam' #'sgd' #
   LR_START: 0.001
   STEP_LR: 20
   LR_EXPONENTIAL_DECAY_RATE: 0.98
   BETAS_ADAM: 0.9
-  LOSSTYPE: 'MSE'  # 'l1'  #
+  WEIGHT_DECAY: 0
+  LOSSTYPE: 'MSE'  #'l1'  #
   #LR_CONTINUE: None # CONTINUE: change the parameters and continue this training
   EPOCH_CONTINUE: None
   SAVE_STEP: 100
@@ -45,7 +46,7 @@ TEST:
 
   TEST_ONLY: FALSE
 
-  ONE_TEST: 1 #0 #
-  ONE_TEST_TRAIN_STEP: 100
+  ONE_TEST: 0 #0 #
+  ONE_TEST_TRAIN_STEP: 500
   ONE_TEST_TEST_STEP: 1
-  ONE_NAME: ['0853_L']#,
+  ONE_NAME: ['x']#,
