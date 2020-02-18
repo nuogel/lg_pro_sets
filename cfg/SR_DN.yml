@@ -1,9 +1,9 @@
 BELONGS: SR_DN
 
 PATH:
-  INPUT_PATH: 'E:/datasets/BSR_bsds500/BSR/BSDS500/data/images/train'
-  LAB_PATH: 'E:/datasets/BSR_bsds500/BSR/BSDS500/data/images/train'
-  TMP_PATH: 'tmp//'
+  INPUT_PATH: '/home/mao/ssd3/datasets/BDD100k/images/'
+  LAB_PATH: '/home/mao/ssd3/datasets/BDD100k/images/'
+  TMP_PATH: 'tmp/'
   PARAMETER_PATH: 'tmp//checkpoint//checkpoint.parameter'
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
 
@@ -15,8 +15,8 @@ TRAIN:
   TRAIN_DATA_FROM_FILE: 0
 
   # aug
-  UPSCALE_FACTOR: 2
-  IMG_SIZE: [512, 384]  #[W,H]
+  UPSCALE_FACTOR: 4
+  IMG_SIZE: [1280, 720] #[512, 384]  #[W,H] #
   PIXCELS_NORM: [0., 255.]  # [mean, std] #must be float.
   # optimizer:
   OPTIMIZER: 'adam' #'sgd' #

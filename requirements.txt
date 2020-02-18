@@ -13,3 +13,4 @@ shapely
 imgaug
 python-Levenshtein
 librosa
+lmdb

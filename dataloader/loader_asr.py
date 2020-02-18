@@ -7,6 +7,7 @@ from scipy import signal
 import glob
 from python_speech_features import mfcc, delta
 import librosa
+# import multiprocessing as mp
 
 
 class DataLoader:
@@ -39,46 +40,50 @@ class DataLoader:
         else:
             idx = idx_store[index_from: index_to]
         if idx:
-            wav_length = []
-            lab_length = []
-            wav_list = []
-            lab_list = []
-            for i, name in enumerate(idx):  # read wav and lab
-                # name = self.datalist[start_idx + i]
-                wav_path = name[1]
-                # print(wav_path)
-                wavsignal, fs = self._read_wav_data(wav_path)
-                wavsignal = wavsignal[0]  # 取一个通道。
-                wav_feature = self._get_wav_features(wavsignal, fs)
-                ## test for __log_specgram()
-                # out = self._log_specgram(wavsignal, fs)
-                # wav_feature = self._get_mfcc_feature(wavsignal, fs)
-                wav_length.append(wav_feature.shape[0])
-                wav_list.append(wav_feature)
+            data = self._prepare_data(idx)
 
-                lab_path =name[2]
-                lab_compiled = self._get_wav_symbol(lab_path)
-                # lab_compiled.insert(0, self.SymbolNum - 2)  # 添加 【START]
-                # lab_compiled.append(self.SymbolNum - 1)  # 添加 【END]
-                lab_compiled.append(0)  # 添加 '_'
-                lab_length.append(len(lab_compiled))
-                lab_list.append(lab_compiled)
+        return data
 
-            # make a matrix 变长序列
-            wav_length = torch.LongTensor(wav_length)
-            lab_length = torch.LongTensor(lab_length)
-            max_wav_len = wav_length.max()
-            max_lab_len = lab_length.max()
-            wav_input = torch.zeros((self.batchsize, max_wav_len, self.win_length))
-            lab_input = torch.zeros(size=(self.batchsize, max_lab_len), dtype=torch.long)
-            for i in range(len(wav_list)):
-                wav_input[i, 0:wav_length[i]] = torch.LongTensor(wav_list[i])
-                lab_input[i, 0:lab_length[i]] = torch.LongTensor(lab_list[i])
+    def _prepare_data(self, idx):
+        wav_length = []
+        lab_length = []
+        wav_list = []
+        lab_list = []
+        for i, name in enumerate(idx):  # read wav and lab
+            # name = self.datalist[start_idx + i]
+            wav_path = name[1]
+            # print(wav_path)
+            wavsignal, fs = self._read_wav_data(wav_path)
+            wavsignal = wavsignal[0]  # 取一个通道。
+            wav_feature = self._get_wav_features(wavsignal, fs)
+            ## test for __log_specgram()
+            # out = self._log_specgram(wavsignal, fs)
+            # wav_feature = self._get_mfcc_feature(wavsignal, fs)
+            wav_length.append(wav_feature.shape[0])
+            wav_list.append(wav_feature)
 
-            wav_input = wav_input.to(self.cfg.TRAIN.DEVICE)
-            lab_input = lab_input.to(self.cfg.TRAIN.DEVICE)
+            lab_path = name[2]
+            lab_compiled = self._get_wav_symbol(lab_path)
+            # lab_compiled.insert(0, self.SymbolNum - 2)  # 添加 【START]
+            # lab_compiled.append(self.SymbolNum - 1)  # 添加 【END]
+            lab_compiled.append(0)  # 添加 '_'
+            lab_length.append(len(lab_compiled))
+            lab_list.append(lab_compiled)
 
-            data = (wav_input, lab_input, wav_length, lab_length)
+        # make a matrix 变长序列
+        wav_length = torch.LongTensor(wav_length)
+        lab_length = torch.LongTensor(lab_length)
+        max_wav_len = wav_length.max()
+        max_lab_len = lab_length.max()
+        wav_input = torch.zeros((self.batchsize, max_wav_len, self.win_length))
+        lab_input = torch.zeros(size=(self.batchsize, max_lab_len), dtype=torch.long)
+        for i in range(len(wav_list)):
+            wav_input[i, 0:wav_length[i]] = torch.LongTensor(wav_list[i])
+            lab_input[i, 0:lab_length[i]] = torch.LongTensor(lab_list[i])
+
+        wav_input = wav_input.to(self.cfg.TRAIN.DEVICE)
+        lab_input = lab_input.to(self.cfg.TRAIN.DEVICE)
+        data = (wav_input, lab_input, wav_length, lab_length)
         return data
 
     def get_one_data_for_test(self, wav_path):

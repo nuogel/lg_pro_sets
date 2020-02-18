@@ -11,6 +11,11 @@ import numpy as np
 ->以上是在训练集上为100%，但是在测试集上为0？？？？
 ->中途遇到list[]长度导致内存泄露；
 ->改为Lg_attention 后，训练速度慢，并且效果不好。查看是什么原因。
+
+->  单向RNN对训练集效果好，但测试集不得，改为：bidirectional = True；num_layers = 2后，测试集效果不错。
+作用no_att :[WRR]: 0.7882364684852814  [SRR]: 0.79453125  [CRR]: 0.8356708720119862
+使用raw_att:[WRR]: 0.23902110332813387  [SRR]: 0.28463855421686746  [CRR]: 0.4100081112949657
+
 '''
 
 
@@ -28,7 +33,7 @@ class Seq2Seq(nn.Module):
         self.encoder = Encoder(input_size, hidden_size, num_layers, dropout, bidirectional)  # 一个GRU
         self.decoder = Decoder(vocab_size, hidden_size, sample_rate, self.cfg)
         self.vocab_size = vocab_size
-        self.add_attention = None  # 'raw_att'  #
+        self.add_attention = None  # 'raw_att'  #'lg_att'
 
     def forward(self, **args):
         '''

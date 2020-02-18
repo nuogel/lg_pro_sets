@@ -2,6 +2,7 @@ import os
 import torch
 import numpy as np
 import cv2
+# import multiprocessing as mp
 
 
 class DataLoader:
@@ -31,6 +32,8 @@ class DataLoader:
             print('error, no IDX in loader_img.py')
             exit()
         if idx:
+            # processes = mp.Pool(4)
+            # imgs, labels = processes.apply_async(self._prepare_data, (idx))
             imgs, labels = self._prepare_data(idx)
             imgs = imgs.permute([0, 3, 1, 2])
             imgs = imgs.to(self.cfg.TRAIN.DEVICE)

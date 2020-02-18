@@ -1,8 +1,8 @@
 BELONGS: ASR
 
 PATH:
-  INPUT_PATH: 'E://datasets//NLP//THCHS/data_thchs30/data' #'/home/mao/data/' #
-  LAB_PATH: 'E://datasets//NLP//THCHS/data_thchs30/data' #'/home/mao/data/data_thchs30/data/' #
+  INPUT_PATH: '/home/mao/data/' #'E://datasets//NLP//THCHS/data_thchs30/data' #
+  LAB_PATH: '/home/mao/data/data_thchs30/data/' #'E://datasets//NLP//THCHS/data_thchs30/data' #
   TMP_PATH: 'tmp//'
   PARAMETER_PATH: 'tmp//checkpoint//checkpoint.parameter'
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
@@ -46,7 +46,7 @@ TEST:
   TEST_SET_RATIO: 0.1
   # NMS:
   SCORE_THRESH: 0.5
-  SHOW_PREDICTED: 0 #FALSE #
+  SHOW_PREDICTED: 1 #FALSE #
   SAVE_LABELS: FALSE #TRUE #
 
   TEST_ONLY: 0 #TRUE #
