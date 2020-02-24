@@ -27,6 +27,8 @@ class MODEL_CTC(nn.Module):  # write by LG
     def __init__(self, cfg):
         super(MODEL_CTC, self).__init__()
         cnn_last_size = 128
+        bidirectional = True
+        direction = 2 if bidirectional else 1
         liner_mid_size = 1024  # 如果设置太小，很难收敛，收敛慢。中间神经元越多收敛越快。但显存消耗大。
         self.cnn_1 = self.make_layer(1, 32)
         self.cnn_2 = self.make_layer(32, 64)
@@ -42,9 +44,9 @@ class MODEL_CTC(nn.Module):  # write by LG
         self.hardtanh = nn.Hardtanh(-50, 50, inplace=True)
         self.relu = nn.LeakyReLU()
         self.dropout = nn.Dropout(p=0.2)
-        self.layer_rnn = nn.RNN(input_size=cnn_input_size, hidden_size=liner_mid_size, num_layers=1, batch_first=True, )
-        self.layer_lstm = nn.LSTM(input_size=cnn_input_size, hidden_size=liner_mid_size, num_layers=1, batch_first=True, )
-        self.layer_gru = nn.GRU(input_size=cnn_input_size, hidden_size=liner_mid_size, num_layers=1, batch_first=True)
+        self.layer_rnn = nn.RNN(input_size=cnn_input_size, hidden_size=liner_mid_size//direction, num_layers=2, batch_first=True, bidirectional=bidirectional)
+        self.layer_lstm = nn.LSTM(input_size=cnn_input_size, hidden_size=liner_mid_size//direction, num_layers=2, batch_first=True, bidirectional=bidirectional)
+        self.layer_gru = nn.GRU(input_size=cnn_input_size, hidden_size=liner_mid_size//direction, num_layers=2, batch_first=True, bidirectional=bidirectional)
         self.rnn_Dict = {1: self.layer_rnn, 2: self.layer_lstm, 3: self.layer_gru}
         self.ctc_type = 2  # [0->cnn +fc+ctc , 1-> cnn + rnn +fc+ctc ;2->cnn+lstm+fc+ctc;3->cnn+gru+fc+ctc]
 
