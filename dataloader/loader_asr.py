@@ -5,9 +5,12 @@ import torch
 import scipy
 from scipy import signal
 import glob
-from python_speech_features import mfcc, delta
+from python_speech_features import mfcc, delta, sigproc
 import librosa
-# import multiprocessing as mp
+from util.util_vad import VAD
+from matplotlib import pyplot as plt
+from datetime import datetime
+from scipy import signal
 
 
 class DataLoader:
@@ -22,6 +25,11 @@ class DataLoader:
         self.one_name = cfg.TEST.ONE_NAME
         self.SymbolNum = 0
         self.list_symbol = self._GetSymbolList()
+        self.vad = VAD()
+        self.check_vad = True
+        self.print_wav_path = False
+        self.show_wav = False
+        self.save_vad_file = False
 
     def get_data_by_idx(self, idx_store, index_from, index_to, is_training):
         '''
@@ -52,9 +60,11 @@ class DataLoader:
         for i, name in enumerate(idx):  # read wav and lab
             # name = self.datalist[start_idx + i]
             wav_path = name[1]
-            # print(wav_path)
+            if self.print_wav_path: print(wav_path)
             wavsignal, fs = self._read_wav_data(wav_path)
             wavsignal = wavsignal[0]  # 取一个通道。
+            if self.check_vad:
+                wavsignal = self._vad_wav(wavsignal)
             wav_feature = self._get_wav_features(wavsignal, fs)
             ## test for __log_specgram()
             # out = self._log_specgram(wavsignal, fs)
@@ -107,7 +117,7 @@ class DataLoader:
         num_frame = wav.getnframes()  # 获取帧数
         num_channel = wav.getnchannels()  # 获取声道数
         framerate = wav.getframerate()  # 获取帧速率
-        num_sample_width = wav.getsampwidth()  # 获取实例的比特宽度，即每一帧的字节数
+        # num_sample_width = wav.getsampwidth()  # 获取实例的比特宽度，即每一帧的字节数
         str_data = wav.readframes(num_frame)  # 读取全部的帧
         wav.close()  # 关闭流
         wave_data = np.fromstring(str_data, dtype=np.short)  # 将声音文件数据转换为数组矩阵形式
@@ -115,41 +125,70 @@ class DataLoader:
         wave_data = wave_data.T  # 将矩阵转置
         return wave_data, framerate
 
+    def _vad_wav(self, wav_data):
+
+        # 高通濾波
+        frequence = 1600
+        HZ_L = 20
+        HZ_H = 600
+        l_ = 2 * HZ_L / frequence
+        h_ = 2 * HZ_H / frequence
+        b, a = signal.butter(8, [l_, h_], 'bandpass')
+        wav_data_f = signal.filtfilt(b, a, wav_data).astype(np.int16)  # data为要过滤的信号
+
+        vad_wav = np.asarray([0], dtype=np.int16)
+        status_wav = np.asarray([0], dtype=np.int16)
+        wav_window = self.vad._load_wav(wav_data_f)
+        max_en = wav_data.max()
+        for wav_one in wav_window:
+            # 0= 静音， 1= 可能开始 , 2=语音段, 3 =結束
+            status = self.vad.speech_status(wav_one, max_en)
+            status_data = np.ones_like(wav_one) * status * 3000
+            status_wav = np.concatenate((status_wav, status_data))
+            if status != 0:
+                vad_wav = np.concatenate((vad_wav, wav_one))
+
+        if self.show_wav:
+            x1 = np.linspace(0, len(wav_data) - 1, len(wav_data))
+            x2 = np.linspace(0, len(vad_wav) - 1, len(vad_wav))
+            plt.subplot(211)
+            plt.plot(x1, wav_data)
+            plt.plot(x1, status_wav[1:])
+            plt.subplot(212)
+            plt.plot(x2, vad_wav)
+            plt.show()
+        if self.save_vad_file:
+            self._save_wav_file(wav_data)
+            self._save_wav_file(wav_data_f)
+            self._save_wav_file(vad_wav)
+        # 預加重.
+        vad_wav = sigproc.preemphasis(vad_wav, coeff=0.9).astype(np.int16)
+
+        return vad_wav
+
     def _get_wav_features(self, wavsignal, fs):
         '''短时傅里叶变换'''
         if (16000 != fs):
-            raise ValueError(
-                '[Error] ASRT currently only supports wav audio files with a sampling rate of 16000 Hz, but this audio is ' + str(
-                    fs) + ' Hz. ')
+            raise ValueError('[Error] ASRT currently only supports wav audio files with a sampling rate of 16000 Hz, but this audio is ' + str(fs) + ' Hz. ')
+
         # wav波形 加时间窗以及时移10ms
         window_length = int(fs * self.cfg.TRAIN.CHUNK_DURATION_S)  # 计算窗长度的公式，目前全部为400固定值
         stride_length = int(fs * self.cfg.TRAIN.STRIDE_S)  # 160 步长帧数
         wav_arr = np.array(wavsignal, dtype=float)
         signal = np.squeeze(wav_arr)
+
         if signal.ndim != 1:
             raise TypeError("enframe input must be a 1-dimensional array.")
-
-        use_lg_function = 1
-        if use_lg_function:
-            n_frames = 1 + np.int(np.floor((len(signal) - window_length) / float(stride_length)))  # 778
-            signal_framed = np.zeros((n_frames, int(window_length / 2)))  # 200
-            for i in range(n_frames):
-                signal_divide = signal[i * stride_length: i * stride_length + window_length]
-                signal_win = signal_divide * np.hamming(window_length)
-                signal_fft = np.abs(np.fft.fft(signal_win)) / (window_length / 2)
-                signal_framed[i] = signal_fft[0:int(window_length / 2)]
-            data_input = np.log(signal_framed + (1e-10))
-
-        use_function = 0
-        if use_function:
-            n_fft = window_length
-            # STFT
-            D = librosa.stft(signal, n_fft=n_fft - 1, hop_length=stride_length, win_length=window_length - 1)
-            spect, phase = librosa.magphase(D)
-            # S = log(S+1)
-            data_input = np.log(spect)
-            data_input = np.transpose(data_input, (1, 0))
-
+        n_frames = 1 + np.int(np.floor((len(signal) - window_length) / float(stride_length)))  # 778
+        signal_framed = []
+        self.vad.__init__()
+        for i in range(n_frames):
+            signal_divide = signal[i * stride_length: i * stride_length + window_length]
+            signal_win = signal_divide * np.hamming(window_length)
+            signal_fft = np.abs(np.fft.fft(signal_win)) / (window_length / 2)
+            signal_framed.append(signal_fft[0:int(window_length / 2)])
+        signal_framed = np.asarray(signal_framed)
+        data_input = np.log(signal_framed + (1e-10))
         return data_input
 
     def _log_specgram(self, audio, sample_rate, window_size=25, step_size=10, eps=1e-10):
@@ -248,3 +287,25 @@ class DataLoader:
             # print(i)
             pingyin.append(self.list_symbol[i])
         return pingyin
+
+    def _save_wav_file(self, data, filename=None, sampwidth=2, channels=1, rate=16000):
+        """
+        保存数据流文件
+        """
+        if filename is None:
+            filename = datetime.now().strftime("%Y%m%d%H%M%S") + "_%s.wav"
+            flag = 0
+            while 1:
+                tmp = filename % flag
+                if os.path.isfile(tmp):
+                    flag += 1
+                else:
+                    filename = tmp
+                    break
+        write_file = wave.open(filename, 'wb')
+        write_file.setnchannels(channels)
+        write_file.setsampwidth(sampwidth)
+        write_file.setframerate(rate)
+        write_file.writeframes(data)
+        write_file.close()
+        return os.path.abspath(filename)

@@ -17,7 +17,7 @@ def _parse_arguments():
     parser.add_argument('--type', default='SR_DN', type=str, help='yml_path')
     parser.add_argument('--checkpoint', '--cp', default=0  #'tmp/checkpoint/now.pkl'  #
                         , help='Path to the checkpoint to be loaded to the model')
-    parser.add_argument('--batch_size', '--bz', default=8, type=int, help='batch size')
+    parser.add_argument('--batch_size', '--bz', default=1, type=int, help='batch size')
     parser.add_argument('--lr', default=0.001, type=float, help='Learning rate')
     parser.add_argument('--lr_continue', '--lr_c', default=0.0001, type=float, help='Learning rate')
     parser.add_argument('--epoch-continue', default=None, type=int, help='Epoch of continue training')

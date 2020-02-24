@@ -2,6 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+'''
+CBDNet 输入为输出是同一尺度图像。只用于去噪。
+'''
+
 
 class CBDNet(nn.Module):
     def __init__(self, cfg):
