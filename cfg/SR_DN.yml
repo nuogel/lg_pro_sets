@@ -44,9 +44,12 @@ TEST:
   SAVE_LABELS: TRUE
   SHOW_EVAL_TIME: 1
 
-  TEST_ONLY: FALSE
+  TEST_ONLY: 0
 
-  ONE_TEST: 0 #0 #
-  ONE_TEST_TRAIN_STEP: 500
+  ONE_TEST: 1
+
+  ONE_TEST_TRAIN_STEP: 100
   ONE_TEST_TEST_STEP: 1
-  ONE_NAME: ['x']#,
+  ONE_NAME: [
+  ['003219', 'E:/datasets/kitti/training/images/003219.png', 'E:/datasets/kitti/training/images\\003219.png']
+  ]#,

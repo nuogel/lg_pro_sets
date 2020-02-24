@@ -27,9 +27,9 @@ class DataLoader:
         self.list_symbol = self._GetSymbolList()
         self.vad = VAD()
         self.check_vad = True
-        self.show_wav = True
         self.print_wav_path = False
-        self.save_vad_file = True
+        self.show_wav = False
+        self.save_vad_file = False
 
     def get_data_by_idx(self, idx_store, index_from, index_to, is_training):
         '''
@@ -63,8 +63,9 @@ class DataLoader:
             if self.print_wav_path: print(wav_path)
             wavsignal, fs = self._read_wav_data(wav_path)
             wavsignal = wavsignal[0]  # 取一个通道。
-            wav_vad = self._vad_wav(wavsignal)
-            wav_feature = self._get_wav_features(wav_vad, fs)
+            if self.check_vad:
+                wavsignal = self._vad_wav(wavsignal)
+            wav_feature = self._get_wav_features(wavsignal, fs)
             ## test for __log_specgram()
             # out = self._log_specgram(wavsignal, fs)
             # wav_feature = self._get_mfcc_feature(wavsignal, fs)
@@ -134,8 +135,6 @@ class DataLoader:
         h_ = 2 * HZ_H / frequence
         b, a = signal.butter(8, [l_, h_], 'bandpass')
         wav_data_f = signal.filtfilt(b, a, wav_data).astype(np.int16)  # data为要过滤的信号
-        # 預加重 , 效果不好。
-        wav_data_f = sigproc.preemphasis(wav_data_f, coeff=0.9).astype(np.int16)
 
         vad_wav = np.asarray([0], dtype=np.int16)
         status_wav = np.asarray([0], dtype=np.int16)
@@ -162,6 +161,8 @@ class DataLoader:
             self._save_wav_file(wav_data)
             self._save_wav_file(wav_data_f)
             self._save_wav_file(vad_wav)
+        # 預加重.
+        vad_wav = sigproc.preemphasis(vad_wav, coeff=0.9).astype(np.int16)
 
         return vad_wav
 

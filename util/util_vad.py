@@ -95,7 +95,7 @@ class VAD:
                     status = 3
                     self.silence = 0
                     self.count = 0
-        print(status)
+        # print(status)
         self.cur_status = status
 
         return status

@@ -19,7 +19,7 @@ import numpy as np
 ->对于GRU出现nan, 在GRU后面加入batchnorm层就好了；当损失到58左右时出现nan ; 
 ->对于CNN加入batchnorm层，下降速度变慢；直接用两层fc速度快；
 ->对于GRU，在其后加入x = x.transpose(1, 2)；x = self.batchnorm1d(x)；x = x.transpose(1, 2)后，下降稳定，但其在loss=40左右时，又出现nan; 
-
+->无端点检测的decode_lg为[WRR]: 0.9513495792309238  [SRR]: 0.27320359281437123  [CRR]: 0.9701372321852586
 '''
 
 
