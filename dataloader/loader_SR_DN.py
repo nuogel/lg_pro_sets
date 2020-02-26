@@ -14,7 +14,9 @@ class DataLoader:
         self.one_name = cfg.TEST.ONE_NAME
         self.train_batch_num = 100
         self.test_batch_num = 1
-        self.resize_input2output = True
+        self.resize_input2output = False
+        if self.cfg.TRAIN.MODEL in ['cbdnet', 'srcnn', 'vdsr']:
+            self.resize_input2output = True
 
     def get_data_by_idx(self, idx_store, index_from, index_to, is_training):
         '''
@@ -57,8 +59,9 @@ class DataLoader:
                 raw_img = target
             input = cv2.resize(raw_img, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,
                                          self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR))
+            # cv2.imwrite('x_l.jpg', input)
             if self.resize_input2output:
-                input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
+                input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]), interpolation=cv2.INTER_CUBIC)  # INTER_CUBIC 3次样条插值
 
             input = torch.from_numpy(np.asarray((input - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(torch.FloatTensor)
             target = torch.from_numpy(np.asarray((target - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(torch.FloatTensor)

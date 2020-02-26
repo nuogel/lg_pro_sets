@@ -15,11 +15,11 @@ from util.util_yml_parse import parse_yaml
 def _parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('--type', default='SR_DN', type=str, help='yml_path')
-    parser.add_argument('--checkpoint', '--cp', default=0  #'tmp/checkpoint/now.pkl'  #
+    parser.add_argument('--checkpoint', '--cp', default='tmp/checkpoint/now.pkl'  #0  #
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--batch_size', '--bz', default=1, type=int, help='batch size')
     parser.add_argument('--lr', default=0.001, type=float, help='Learning rate')
-    parser.add_argument('--lr_continue', '--lr_c', default=0.0001, type=float, help='Learning rate')
+    parser.add_argument('--lr_continue', '--lr_c', default=0.00001, type=float, help='Learning rate')
     parser.add_argument('--epoch-continue', default=None, type=int, help='Epoch of continue training')
     parser.add_argument('--debug', '--d', action='store_true', default=False, help='Enable verbose info')
     parser.add_argument('--test_only', '--to', default=False, type=bool, help='test only')

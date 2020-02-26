@@ -14,8 +14,11 @@ class PSNR:
 
     def run_image(self, path_image1, path_image2):
         img1 = cv2.imread(path_image1).astype(np.float32) / 255.0
-        img2 = cv2.imread(path_image2).astype(np.float32) / 255.0
-        assert img1.shape == img2.shape, 'ERROR: shape is not the same.'
+        img2 = cv2.imread(path_image2)
+        if img1.shape != img2.shape:
+            img2 = cv2.resize(img2, (img1.shape[1], img1.shape[0]), interpolation=cv2.INTER_CUBIC)  # INTER_CUBIC 3次样条插值
+        img2 = img2.astype(np.float32) / 255.0
+
         if self.use_MSE:
             import torch
             self.mse = torch.nn.MSELoss()
@@ -44,19 +47,19 @@ class PSNR:
 
 
 if __name__ == '__main__':
-    path_1 = 'E:/datasets/kitti/training/images/000001.png'
-    path_2 = 'E:/datasets/kitti/training/images/000002.png'
-    video_path = 'F:/SR_video/blur-64/raw_video/000_x5.mp4'
-    images_raw_file = 'F:/SR_video/blur-64/raw_video/'
-    images_rec_file = 'F:/SR_video/blur-64/recover_video/'
+    # path_1 = 'E:/datasets/kitti/training/images/000001.png'
+    # path_2 = 'E:/datasets/kitti/training/images/000002.png'
+    video_path = 'F:/datasets/SR_video/youku_test/5/5.mp4'
+    images_raw_file = 'F:/datasets/SR_video/youku_test/5/'  # F:\datasets\SR_video\youku_test
+    images_rec_file = 'F:/datasets/SR_video/youku_test/4/'  # 28.6
+    images_low_file = 'F:/datasets/SR_video/youku_test/0/'  # 30.46
 
-    psnr = PSNR(use_torch_mse=True)
+    psnr = PSNR(use_torch_mse=False)
     # psnr.video2images(video_path)
     out = 0
     for i in range(100):
         image1 = os.path.join(images_raw_file, str(i) + '.jpg')
         image2 = os.path.join(images_rec_file, str(i) + '.jpg')
         out += psnr.run_image(image1, image2)
-
     out = out / 100
     print('all: ', out)

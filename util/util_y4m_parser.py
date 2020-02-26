@@ -30,7 +30,7 @@ http://tianchi-media.oss-cn-beijing.aliyuncs.com/231711_youku/round1/test/input/
 版权声明：本文为CSDN博主「三寸光阴___」的原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接及本声明。
 原文链接：https://blog.csdn.net/qq_38109843/article/details/93488207
 '''
-path = 'E:/datasets/SR/youku/youku_00000_00049_h_GT/'
+path = 'F:/datasets/SR/youku/youku_00150_00199_h_GT/'
 for p in Path(path).iterdir():  # 文件夹迭代器
     if p.suffix == '.y4m':  # 如果pp是y4m文件，则进行转换操作
         print(str(p))

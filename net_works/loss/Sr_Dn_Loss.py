@@ -11,15 +11,16 @@ class SR_DN_Loss:
 
     def Loss_Call(self, prediction, train_data, losstype='MSE'):
         low_img, high_img = train_data
-        PSNR=None
+        parse_Tensor_img(prediction, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, show_time=1)
         if losstype == 'MSE' or losstype == 'mse':
             loss = self.mseloss(prediction, high_img)
-            # PSNR = 10 * log10(1 / loss.item())
-            # print('PSNR: ', PSNR)
-            parse_Tensor_img(prediction, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, show_time=1)
-
+            mse = loss
         elif losstype == 'L1' or losstype == 'l1':
             loss = self.loss_l1loss(prediction, high_img)
+            mse = self.mseloss(prediction, high_img)
         else:
             loss = None
+
+        PSNR = 10 * log10(1 / mse.item())
+        print('PSNR: ', PSNR)
         return loss, None
