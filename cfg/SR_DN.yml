@@ -1,8 +1,8 @@
 BELONGS: SR_DN
 
 PATH:
-  INPUT_PATH: 'E:/datasets/kitti/training/images/'
-  LAB_PATH: 'E:/datasets/kitti/training/images/'
+  INPUT_PATH: '' #'E:/datasets/kitti/training/images/'
+  LAB_PATH: '' #'E:/datasets/kitti/training/images/'
   TMP_PATH: 'tmp/'
   PARAMETER_PATH: 'tmp//checkpoint//checkpoint.parameter'
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
@@ -51,6 +51,6 @@ TEST:
   ONE_TEST_TRAIN_STEP: 1000
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
-#  ['003219', 'E:/datasets/kitti/training/images/003219.png', 'E:/datasets/kitti/training/images\\003219.png']
+    #  ['003219', 'E:/datasets/kitti/training/images/003219.png', 'E:/datasets/kitti/training/images\\003219.png']
   ['Youku_00000_h_GT_001.png','F:/datasets/SR/youku/youku_00000_00149_l/Youku_00000_l/Youku_00000_l_001.png','F:/datasets/SR/youku/youku_00000_00149_h_GT/Youku_00000_h_GT/Youku_00000_h_GT_001.png']
   ]#
