@@ -1,14 +1,14 @@
 BELONGS: SR_DN
 
 PATH:
-  INPUT_PATH: 'E:/datasets/kitti/training/images/'
-  LAB_PATH: 'E:/datasets/kitti/training/images/'
+  INPUT_PATH: '' #'E:/datasets/kitti/training/images/'
+  LAB_PATH: '' #'E:/datasets/kitti/training/images/'
   TMP_PATH: 'tmp/'
   PARAMETER_PATH: 'tmp//checkpoint//checkpoint.parameter'
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
 
 TRAIN:
-  MODEL: cbdnet  #vdsr #espcn #fsrcnn #edsr #srcnn #dncnn #
+  MODEL: 'rdn' #edsr #vdsr #cbdnet  #srcnn #espcn #fsrcnn #dncnn #
   EPOCH_SIZE: 4000
   BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1   # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
@@ -16,16 +16,16 @@ TRAIN:
 
   # aug
   UPSCALE_FACTOR: 4
-  IMG_SIZE: [960, 384] #[512, 384]  #[W,H] #
+  IMG_SIZE: [1920, 1080] #[960, 384] #[512, 384]  #[W,H] #
   PIXCELS_NORM: [0., 255.]  # [mean, std] #must be float.
   # optimizer:
   OPTIMIZER: 'adam' #'sgd' #
   LR_START: 0.001
-  STEP_LR: 20
+  STEP_LR: 100
   LR_EXPONENTIAL_DECAY_RATE: 0.98
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 0
-  LOSSTYPE: 'MSE'  #'l1'  #
+  LOSSTYPE: 'l1'  #'MSE'  #
   #LR_CONTINUE: None # CONTINUE: change the parameters and continue this training
   EPOCH_CONTINUE: None
   SAVE_STEP: 100
@@ -48,8 +48,9 @@ TEST:
 
   ONE_TEST: 1
 
-  ONE_TEST_TRAIN_STEP: 100
+  ONE_TEST_TRAIN_STEP: 1000
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
-  ['003219', 'E:/datasets/kitti/training/images/003219.png', 'E:/datasets/kitti/training/images\\003219.png']
-  ]#,
+    #  ['003219', 'E:/datasets/kitti/training/images/003219.png', 'E:/datasets/kitti/training/images\\003219.png']
+  ['Youku_00000_h_GT_001.png','F:/datasets/SR/youku/youku_00000_00149_l/Youku_00000_l/Youku_00000_l_001.png','F:/datasets/SR/youku/youku_00000_00149_h_GT/Youku_00000_h_GT/Youku_00000_h_GT_001.png']
+  ]#

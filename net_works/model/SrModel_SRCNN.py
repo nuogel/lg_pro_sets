@@ -18,7 +18,6 @@ class SRCNN(nn.Module):
 
     def forward(self, **args):
         x = args['input_x']
-        x = torch.nn.functional.interpolate(x, scale_factor=self.cfg.TRAIN.UPSCALE_FACTOR, mode='bilinear')
         out = self.conv1(x)
         out = self.relu1(out)
         out = self.conv2(out)

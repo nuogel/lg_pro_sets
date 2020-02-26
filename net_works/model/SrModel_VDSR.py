@@ -19,7 +19,6 @@ class VDSR(nn.Module):
 
     def forward(self, **args):
         x = args['input_x']
-        x = torch.nn.functional.interpolate(x, scale_factor=self.cfg.TRAIN.UPSCALE_FACTOR, mode='bilinear')
         residual = x
         x = self.input_conv(x)
         x = self.residual_layers(x)
