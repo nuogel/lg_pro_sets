@@ -16,9 +16,9 @@ TRAIN:
 
   # aug
   UPSCALE_FACTOR: 4
-  IMG_SIZE: [960, 540] #[960, 384] #[512, 384]  #[W,H] #[480, 270]
+  IMG_SIZE: [1920, 1080] #[960, 384] #[512, 384]  #[W,H] #[480, 270]
   PIXCELS_NORM: [0., 255.]  # [mean, std] #must be float.
-  SHOW_INPUT: 0
+  SHOW_INPUT: 1
 
   # optimizer:
   OPTIMIZER: 'adam' #'sgd' #
