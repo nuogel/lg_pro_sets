@@ -1,4 +1,6 @@
 from torch import nn
+import math
+from collections import OrderedDict
 
 
 class ChannelAttention(nn.Module):
@@ -41,26 +43,32 @@ class RG(nn.Module):
         return x + self.module(x)
 
 
+def upsampler(scale, num_features):
+    upscale = []
+    if (scale & (scale - 1)) == 0:
+        for i in range(int(math.log(scale, 2))):
+            upscale.append(nn.Conv2d(num_features, num_features * 4, kernel_size=3, padding=1))
+            upscale.append(nn.PixelShuffle(2))
+    elif scale == 3:
+        upscale.append(nn.Conv2d(num_features, 9 * num_features, 3))
+        upscale.append(nn.PixelShuffle(3))
+    else:
+        raise NotImplementedError
+    return upscale
+
+
 class RCAN(nn.Module):
     def __init__(self, cfg):
         super(RCAN, self).__init__()
-        scale = 4  # args.scale
+        scale = cfg.TRAIN.UPSCALE_FACTOR
         num_features = 64  # args.num_features
         num_rg = 3  # 5  # args.num_rg
         num_rcab = 5  # 10  # args.num_rcab
         reduction = 16  # args.reduction
-
         self.sf = nn.Conv2d(3, num_features, kernel_size=3, padding=1)
         self.rgs = nn.Sequential(*[RG(num_features, num_rcab, reduction) for _ in range(num_rg)])
         self.conv1 = nn.Conv2d(num_features, num_features, kernel_size=3, padding=1)
-        self.upscale = nn.Sequential(
-            nn.Conv2d(num_features, num_features * (2 ** 2), kernel_size=3, padding=1),
-            nn.PixelShuffle(2)
-        )
-        self.upscale = nn.Sequential(
-            nn.Conv2d(num_features, num_features * (2 ** 2), kernel_size=3, padding=1),
-            nn.PixelShuffle(2)
-        )
+        self.upscale = nn.Sequential(*upsampler(scale, num_features))
         self.conv2 = nn.Conv2d(num_features, 3, kernel_size=3, padding=1)
 
     def forward(self, **args):
@@ -70,7 +78,6 @@ class RCAN(nn.Module):
         x = self.rgs(x)
         x = self.conv1(x)
         x += residual
-        x = self.upscale(x)
         x = self.upscale(x)
         x = self.conv2(x)
         x = x.permute(0, 2, 3, 1)
