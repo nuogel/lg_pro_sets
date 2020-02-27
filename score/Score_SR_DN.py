@@ -28,7 +28,7 @@ class SR_DN_SCORE:
             self.rate_batch += self.PSNR(predict[batch_i], target[batch_i])
         self.rate_all += self.rate_batch / predict.shape[0]
         if self.cfg.TEST.SHOW_EVAL_TIME:
-            input = torch.nn.functional.interpolate(input, size=(target.shape[1], target.shape[2]), mode='bilinear')
+            input = torch.nn.functional.interpolate(input, size=(target.shape[1], target.shape[2]))
             input = input.permute(0, 2, 3, 1)
             img_cat = torch.cat([input, predict, target], dim=1)
             save_path = 'saved/denoise/' + str(self.cfg.TRAIN.MODEL) + '_' + str(self.cfg.TRAIN.IMG_SIZE[0]) + 'x' + str(self.cfg.TRAIN.IMG_SIZE[1])\
