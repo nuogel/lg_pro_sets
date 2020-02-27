@@ -15,6 +15,7 @@ class DataLoader:
         self.train_batch_num = 100
         self.test_batch_num = 1
         self.resize_input2output = False
+        self.input_from_target = False
         if self.cfg.TRAIN.MODEL in ['cbdnet', 'srcnn', 'vdsr']:
             self.resize_input2output = True
 
@@ -52,16 +53,15 @@ class DataLoader:
         for id in idx:
             raw_lab = cv2.imread(id[2])  # no norse image or HR image
             target = cv2.resize(raw_lab, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
-
-            if self.cfg.TRAIN.UPSCALE_FACTOR == 1:
-                raw_img = cv2.imread(id[1])  # norse image or LR image
+            if self.input_from_target:
+                input = target
             else:
-                raw_img = target
-            input = cv2.resize(raw_img, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,
-                                         self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR))
+                input = cv2.imread(id[1])  # norse image or LR image
+            input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,
+                                       self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR))
             # cv2.imwrite('x_l.jpg', input)
             if self.resize_input2output:
-                input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]), interpolation=cv2.INTER_CUBIC)  # INTER_CUBIC 3次样条插值
+                input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
 
             input = torch.from_numpy(np.asarray((input - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(torch.FloatTensor)
             target = torch.from_numpy(np.asarray((target - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(torch.FloatTensor)

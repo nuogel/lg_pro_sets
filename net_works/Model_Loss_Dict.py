@@ -19,6 +19,7 @@ from net_works.model.SrModel_ESPCN import ESPCN
 from net_works.model.SrModel_VDSR import VDSR
 from net_works.model.SrModel_EDSR import EDSR
 from net_works.model.SrModel_RDN import RDN
+from net_works.model.SrModel_RCAN import RCAN
 
 from net_works.model.DeNoiseModel_CBDNet import CBDNet
 from net_works.model.DeNoiseModel_DNCNN import DnCNN
@@ -59,6 +60,7 @@ ModelDict = {
     'rdn': RDN,
     'cbdnet': CBDNet,
     'dncnn': DnCNN,
+    'rcan': RCAN,
 }
 
 LossDict = {
@@ -88,6 +90,7 @@ LossDict = {
     'vdsr': SR_DN_Loss,
     'rdn': SR_DN_Loss,
     'cbdnet': SR_DN_Loss,
-    'dncnn': SR_DN_Loss
+    'dncnn': SR_DN_Loss,
+    'rcan': SR_DN_Loss,
 
 }

@@ -80,7 +80,7 @@ class Solver:
             #  load the last data set
             train_set, test_set = _read_train_test_dataset(idx_stores_dir)
         else:
-            weights_init(self.Model)
+            weights_init(self.Model, self.cfg)
             # start a new train, delete the exist parameters
             self.save_parameter.clean_history_and_init_log()
             epoch = 0
@@ -133,9 +133,12 @@ class Solver:
         checkpoint_path_0 = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoint', '{}.pkl'.format(epoch))
         checkpoint_path_1 = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoint', 'now.pkl'.format(epoch))
         checkpoint_path_2 = os.path.join(self.cfg.PATH.TMP_PATH + '/tbx_log_' + self.cfg.TRAIN.MODEL, 'checkpoint.pkl')
-        for path_i in [checkpoint_path_0, checkpoint_path_1, checkpoint_path_2]:
+        if self.one_test:
+            path_list = [checkpoint_path_1]
+        else:
+            path_list = [checkpoint_path_0, checkpoint_path_1, checkpoint_path_2]
+        for path_i in path_list:
             os.makedirs(os.path.dirname(path_i), exist_ok=True)
-            torch.save(self.Model.state_dict(), path_i)
             torch.save(self.Model.state_dict(), path_i)
             LOGGER.info('Epoch: %s, checkpoint is saved to %s', epoch, path_i)
 
