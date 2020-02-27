@@ -11,7 +11,8 @@ class SR_DN_Loss:
 
     def Loss_Call(self, prediction, train_data, losstype='MSE'):
         low_img, high_img = train_data
-        parse_Tensor_img(prediction, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, show_time=1)
+        if self.cfg.TRAIN.SHOW_INPUT:
+            parse_Tensor_img(prediction, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, show_time=1)
         if losstype == 'MSE' or losstype == 'mse':
             loss = self.mseloss(prediction, high_img)
             mse = loss
