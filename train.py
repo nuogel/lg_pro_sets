@@ -8,13 +8,13 @@ import os
 # sys.path.append('/home/lg/new_disk/deep_learning/Lg_Pro_Set')
 import logging
 from argparse import ArgumentParser
-from net_works.train_solver import Solver
+from NetWorks.train_solver import Solver
 from util.util_yml_parse import parse_yaml
 
 
 def _parse_arguments():
     parser = ArgumentParser()
-    parser.add_argument('--type', default='SR_DN', type=str, help='yml_path')
+    parser.add_argument('--type', default='SRDN', type=str, help='yml_path')
     parser.add_argument('--checkpoint', '--cp', default=0  #'tmp/checkpoint/now.pkl'  #
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--batch_size', '--bz', default=1, type=int, help='batch size')
