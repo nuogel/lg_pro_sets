@@ -8,7 +8,7 @@ PATH:
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
 
 TRAIN:
-  MODEL: rcan #edsr # fsrcnn # rdn # vdsr #cbdnet  #srcnn #espcn #dncnn #
+  MODEL: rcan #rdn #edsr # fsrcnn #  vdsr #cbdnet  #srcnn #espcn #dncnn #
   EPOCH_SIZE: 4000
   BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1   # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
@@ -49,7 +49,7 @@ TEST:
 
   ONE_TEST: 1
 
-  ONE_TEST_TRAIN_STEP: 5
+  ONE_TEST_TRAIN_STEP: 50
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
     #  ['003219', 'E:/datasets/kitti/training/images/003219.png', 'E:/datasets/kitti/training/images\\003219.png']
