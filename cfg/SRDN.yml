@@ -21,7 +21,7 @@ TRAIN:
   TARGET_PREDEEL: 1 # pre dealing the target image.
   INPUT_PREDEEL: 1 # augmenting the input image. change it in the loader_xx.py
   INPUT_AUG: 1
-  SHOW_INPUT: 1000
+  SHOW_INPUT: 0
 
   # optimizer:
   OPTIMIZER: 'adam' #'sgd' #
@@ -48,7 +48,7 @@ TEST:
   SAVE_LABELS: TRUE
   SHOW_EVAL_TIME: 1
 
-  TEST_ONLY: 1
+  TEST_ONLY: 0
 
   ONE_TEST: 0
 

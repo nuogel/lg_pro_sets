@@ -58,7 +58,7 @@ class DataLoader:
             if self.cfg.TRAIN.TARGET_PREDEEL:
                 target = self._target_predeal(img=target, filename=id[0])
 
-            input = target #if id[1] in ['None', '', ' ', 'none'] else cv2.imread(id[1])
+            input = target if id[1] in ['None', '', ' ', 'none'] else cv2.imread(id[1])
             if self.cfg.TRAIN.INPUT_PREDEEL:
                 input = self._input_predeal(img=input, filename=id[0])
 
@@ -93,5 +93,10 @@ class DataLoader:
         filename = kwargs['filename']
         img = _crop_licience_plante(img, filename)
 
-        img = cv2.resize(img, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
+        try:
+            img = cv2.resize(img, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
+        except:
+            print(filename)
+        else:
+            pass
         return img
