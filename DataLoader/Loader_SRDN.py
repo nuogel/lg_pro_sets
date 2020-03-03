@@ -2,6 +2,8 @@ import os
 import torch
 import numpy as np
 import cv2
+from util.util_CCPD import _crop_licience_plante
+from util.util_data_aug import Dataaug
 
 
 # import multiprocessing as mp
@@ -15,11 +17,12 @@ class DataLoader:
         self.train_batch_num = 100
         self.test_batch_num = 1
         self.resize_input2output = False
-        self.input_from_target = False
+        if self.cfg.TRAIN.INPUT_AUG:
+            self.Data_aug = Dataaug(self.cfg)
         if self.cfg.TRAIN.MODEL in ['cbdnet', 'srcnn', 'vdsr']:
             self.resize_input2output = True
 
-    def get_data_by_idx(self, idx_store, index_from, index_to, is_training):
+    def get_data_by_idx(self, idx_store, index_from, index_to, is_training=True):
         '''
         :param idx_store:
         :param index_from:
@@ -40,28 +43,24 @@ class DataLoader:
         if idx:
             # processes = mp.Pool(4)
             # imgs, labels = processes.apply_async(self._prepare_data, (idx))
-            imgs, labels = self._prepare_data(idx)
+            imgs, labels = self._prepare_data(idx, is_training)
             imgs = imgs.permute([0, 3, 1, 2])
             imgs = imgs.to(self.cfg.TRAIN.DEVICE)
             labels = labels.to(self.cfg.TRAIN.DEVICE)
             data = (imgs, labels)  #
         return data
 
-    def _prepare_data(self, idx):
+    def _prepare_data(self, idx, is_training=False):
         input_imgs = []
         target_imgs = []
         for id in idx:
-            raw_lab = cv2.imread(id[2])  # no norse image or HR image
-            target = cv2.resize(raw_lab, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
-            if self.input_from_target:
-                input = target
-            else:
-                input = cv2.imread(id[1])  # norse image or LR image
-            input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,
-                                       self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR))
-            # cv2.imwrite('x_l.jpg', input)
-            if self.resize_input2output:
-                input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
+            target = cv2.imread(id[2])  # no norse image or HR image
+            if self.cfg.TRAIN.TARGET_PREDEEL:
+                target = self._target_predeal(img=target, filename=id[0])
+
+            input = target #if id[1] in ['None', '', ' ', 'none'] else cv2.imread(id[1])
+            if self.cfg.TRAIN.INPUT_PREDEEL:
+                input = self._input_predeal(img=input, filename=id[0])
 
             input = torch.from_numpy(np.asarray((input - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(torch.FloatTensor)
             target = torch.from_numpy(np.asarray((target - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(torch.FloatTensor)
@@ -73,4 +72,26 @@ class DataLoader:
 
         return input_imgs, target_imgs
 
-    # def _prepare_data_denoise(self, idx):
+    def _input_predeal(self, **kwargs):
+        img = kwargs['img']
+        # filename = kwargs['filename']
+        # img = cv2.resize(img, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,
+        #                        self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR))
+        # if self.resize_input2output:
+        #     img = cv2.resize(img, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
+        # add the augmentation ...
+
+        img, _ = self.Data_aug.augmentation(for_one_image=[img])
+        img = img[0]
+        if self.cfg.TRAIN.SHOW_INPUT:
+            cv2.imshow('img', img)
+            cv2.waitKey(self.cfg.TRAIN.SHOW_INPUT)
+        return img
+
+    def _target_predeal(self, **kwargs):
+        img = kwargs['img']
+        filename = kwargs['filename']
+        img = _crop_licience_plante(img, filename)
+
+        img = cv2.resize(img, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
+        return img

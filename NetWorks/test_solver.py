@@ -8,15 +8,15 @@ import os
 import torch
 import cv2
 import numpy as np
-from NetWorks.Model_Loss_Dict import ModelDict
+from NetWorks.NetworksConfigFactory import get_loss_class, get_model_class, get_score_class
 from DataLoader.DataLoaderDict import DataLoaderDict
 import glob
+from util.util_load_state_dict import load_state_dict
 from util.util_prepare_device import load_device
 from util.util_parse_prediction import ParsePredict
 from util.util_data_aug import Dataaug
 from util.util_show_img import _show_img
 from util.util_parse_SR_img import parse_Tensor_img
-from NetWorks.NetworksConfigFactory import Score
 from util.util_prepare_cfg import prepare_cfg
 
 
@@ -24,29 +24,31 @@ class Test_Base(object):
     def __init__(self, cfg, args):
         self.cfg = prepare_cfg(cfg, args)
         self.args = args
-        self.apolloclass2num = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
         self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)
-        self.Model = ModelDict[self.cfg.TRAIN.MODEL](self.cfg)
+        self.Model = get_model_class(self.cfg.BELONGS, self.cfg.TRAIN.MODEL)(self.cfg)
+        # self.LossFun = get_loss_class(self.cfg.BELONGS, self.cfg.TRAIN.MODEL)(self.cfg)
+        # self.Score = get_score_class(self.cfg.BELONGS)(self.cfg)
         if self.args.checkpoint:
             self.model_path = self.args.checkpoint
         else:
             self.model_path = self.cfg.PATH.TEST_WEIGHT_PATH
-        self.Model.load_state_dict(torch.load(self.model_path))
+        self.Model = load_state_dict(self.Model, self.args.checkpoint, self.cfg.TRAIN.DEVICE)
         self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
-        if len(self.device_ids) > 1:
-            self.Model = torch.nn.DataParallel(self.Model, device_ids=self.device_ids)
         self.Model.eval()
 
     def test_backbone(self, test_path):
         pass
 
-    def test_run(self, file_s):
+    def test_run(self, file_s=None):
         """
         Test images in the file_s.
 
         :param file_s:
         :return:
         """
+        if file_s is None:
+            file_s = 'tmp/idx_stores/test_set.txt'
+
         if os.path.isfile(file_s):
             if file_s.split('.')[1] == 'txt':  # .txt
                 lines = open(file_s, 'r').readlines()
@@ -80,8 +82,9 @@ class Test_OBD(Test_Base):
         super(Test_OBD, self).__init__(cfg, args)
         self.dataaug = Dataaug(cfg)
         self.parsepredict = ParsePredict(cfg)
+        self.apolloclass2num = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
         self.DataLoader = DataLoaderDict[cfg.BELONGS](cfg)
-        self.SCORE = Score[self.cfg.BELONGS](self.cfg)
+        self.SCORE = get_score_class(self.cfg.BELONGS)(self.cfg)
         self.SCORE.init_parameters()
 
     def test_backbone(self, test_picture_path):
@@ -140,19 +143,24 @@ class Test_ASR(Test_Base):
             print('pre:', k, self.DataLoader._number2pinying(v[:-1]))
 
 
-class Test_SR_DN(Test_Base):
+class Test_SRDN(Test_Base):
     def __init__(self, cfg, args):
-        super(Test_SR_DN, self).__init__(cfg, args)
+        super(Test_SRDN, self).__init__(cfg, args)
+        self.DataLoader = DataLoaderDict[cfg.BELONGS](cfg)
 
     def test_backbone(self, img_path):
         """Test."""
         # prepare paramertas
-        test_img = cv2.imread(img_path)
-        test_img = torch.from_numpy(np.asarray((test_img - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).unsqueeze(0).type(torch.FloatTensor)
-        test_img = test_img.to(self.cfg.TRAIN.DEVICE)
+        # if self.cfg.TRAIN.MODEL in ['cbdnet', 'srcnn', 'vdsr']:
+        #     test_img = cv2.resize(test_img, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
+
+        # test_img = torch.from_numpy(np.asarray((test_img - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).unsqueeze(0).type(torch.FloatTensor)
+        idx_made = [[os.path.basename(img_path), img_path, img_path]]
+        test_img = self.DataLoader._prepare_data(idx_made, is_training=False)
+        test_img = test_img.to(self.cfg.TRAIN.DEVICE).permute(0, 3, 1, 2)
         self.cfg.TRAIN.BATCH_SIZE = 1
-        predict = self.Model.forward(test_img, is_training=False)
-        if self.cfg.TEST.SAVE_LABELS == True:
+        predict = self.Model.forward(input_x=test_img, is_training=False)
+        if self.cfg.TEST.SAVE_LABELS is True:
             if not os.path.isdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH):
                 os.mkdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH)
             save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, os.path.basename(img_path).split('.')[0] + '.png')  # .format(self.cfg.TRAIN.UPSCALE_FACTOR))
@@ -163,5 +171,5 @@ class Test_SR_DN(Test_Base):
 
 Test = {'OBD': Test_OBD,
         'ASR': Test_ASR,
-        'SR_DN': Test_SR_DN,
+        'SRDN': Test_SRDN,
         }

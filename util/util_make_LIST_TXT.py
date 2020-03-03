@@ -5,12 +5,13 @@ import os
 def make_list(pathes):
     dir_list = []
     for path in pathes:
-        path_list = glob.glob(path + '/*/*.png')
+        path_list = glob.glob(path + '/*.jpg')
         for path in path_list:
             file_name = os.path.basename(path)
-            path_2 = path.replace('h_GT', 'l')
-            if os.path.isfile(path_2):
-                dir_list.append([file_name, path_2, path])
+            # path_2 = path.replace('h_GT', 'l')
+            # if not os.path.isfile(path_2):
+            #     continue
+            dir_list.append([file_name, 'None', path])
 
     return dir_list
 
@@ -25,7 +26,7 @@ def _wrte_dataset_txt(dataset, save_path):
 
 
 if __name__ == '__main__':
-    pathes = ['F:/datasets/SR/youku/youku_00150_00199_h_GT']
+    pathes = ['D:/datasets/CCPD2019/ccpd_base/']
     save_path = 'util_tmp/make_list.txt'
     datalist = make_list(pathes)
     _wrte_dataset_txt(datalist, save_path)

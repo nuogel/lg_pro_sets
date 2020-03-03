@@ -24,6 +24,8 @@ This is a PyTorch implementation of ASR / OBD / SR /DENORSE /TRACK
     ESPCN
     VDSR
     EDSR
+    RDN (Residual Dense Network)
+    RCAN
 #### DENORSE:
     DnCnn
     CBDNet
@@ -51,7 +53,9 @@ if python-Levenshtein failed，then try Pipy, python-Levenshtein-wheels.
 #### Training Dataset
 you can use any data sets in shape of [images, labels], labels can be **.xml or **.txt
 ```
-KITTI, VOC, COCO, SPEACH ...
+OBD:KITTI, VOC, COCO
+ASR: SPEECH
+SRDN: youku dataset
 ```
 
 #### Train The Model
@@ -98,20 +102,26 @@ score thresh|f1-score|AP|precision|recall
 
 ASR:
 
-networks | WER |weight size| PS
+networks | WRR |weight size| PS
  --- | --- | --- |  --- 
-CTC         |0.1|154 M|XXX
-Seq2Seq     |0.1|58.5 M|XXX
+CTC         |91.0|154 M|XXX
+Seq2Seq     |95.0|58.5 M|XXX
 Transformer |0.1|58.5 M|XXX
 
 ==================================================
-SR:
 
+SR: 
+
+dataset:youku
 
 networks | PSNR |weight size| PS
  --- | --- | --- |  --- 
-SRCNN|0.1|154 M|XXX
-FSRCNN|0.1|58.5 M|XXX
-VDSR |0.1|58.5 M|XXX
-EDSR |0.1|58.5 M|XXX
+SRCNN|X|X|XXX
+FSRCNN|X|X|XXX
+VDSR |33.66|X|XXX
+EDSR |30.97|X|XXX
+RCAN |35.73| XX|XXX 
+CBDNET |XX| XX|XXX 
+RDN |35.1| XX|XXX 
+
 
