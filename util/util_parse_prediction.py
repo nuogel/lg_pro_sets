@@ -4,7 +4,7 @@ import torch.nn as nn
 import numpy as np
 from util.util_nms import NMS
 import logging
-from net_works.loss.ObdLoss_RefineDet import Detect_RefineDet
+from NetWorks.loss.ObdLoss_REFINEDET import Detect_RefineDet
 from util.util_iou import xywh2xyxy, xyxy2xywh
 
 LOGGER = logging.getLogger(__name__)
