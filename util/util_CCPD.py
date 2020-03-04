@@ -44,7 +44,7 @@ def _show_ccpd(file):
 def _crop_licience_plante(img, filename):
     info = _read_CCPD_title(filename)
     x1, y1, x2, y2 = info[2]
-    img = img[y1 - 5:y2 + 5, x1 - 5:x2 + 5, :]
+    img = img[y1:y2, x1:x2, :]
     return img
 
 

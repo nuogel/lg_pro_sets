@@ -57,5 +57,7 @@ TEST:
   ONE_NAME: [
     #  ['003219', 'E:/datasets/kitti/training/images/003219.png', 'E:/datasets/kitti/training/images\\003219.png']
     #  ['0.jpg','E:/datasets/test_dataset/0.jpg', 'E:/datasets/test_dataset/0.jpg']
-  ['Youku_00099_l_050.png','F:/datasets/SR/youku/youku_00000_00149_l/Youku_00099_l/Youku_00099_l_050.png','F:/datasets/SR/youku/youku_00000_00149_h_GT/Youku_00099_h_GT/Youku_00099_h_GT_050.png']
+#     ['0029-1_4-360&569_440&600-440&598_363&600_360&571_437&569-0_0_3_21_30_28_24-88-4.jpg', 'None', 'D:/datasets/CCPD2019/ccpd_base\\0029-1_4-360&569_440&600-440&598_363&600_360&571_437&569-0_0_3_21_30_28_24-88-4.jpg'],
+    ['1583-5_15-0&423_618&637-618&637_16&578_0&423_591&482-0_0_19_9_27_24_27-86-450.jpg', 'none','D:/datasets/CCPD2019/ccpd_base\\1583-5_15-0&423_618&637-618&637_16&578_0&423_591&482-0_0_19_9_27_24_27-86-450.jpg']
+    #  ['Youku_00099_l_050.png','F:/datasets/SR/youku/youku_00000_00149_l/Youku_00099_l/Youku_00099_l_050.png','F:/datasets/SR/youku/youku_00000_00149_h_GT/Youku_00099_h_GT/Youku_00099_h_GT_050.png']
   ]
