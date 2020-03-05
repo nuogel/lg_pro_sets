@@ -25,8 +25,8 @@ def _read_CCPD_title(filename):
 def _show_ccpd(file):
     lines = open(file, 'r').readlines()
     for line in lines:
-        filename = line.split(';')[0]
-        img_path = line.split(';')[1]
+        filename = line.split(';')[0].strip()
+        img_path = line.split(';')[2].strip()
         img = cv2.imread(img_path)
         info = _read_CCPD_title(filename)
         x1 = info[2][0]
@@ -34,8 +34,8 @@ def _show_ccpd(file):
         x2 = info[2][2]
         y2 = info[2][3]
         img = cv2.rectangle(img, (x1, y1), (x2, y2), color=(0, 255, 0))
-
-        img = cv2.resize(img, (220, 100), interpolation=cv2.INTER_CUBIC)
+        # img = _crop_licience_plante(img, filename)
+        # img = cv2.resize(img, (220, 100), interpolation=cv2.INTER_CUBIC)
         cv2.imshow('img', img)
         cv2.waitKey()
         cv2.destroyAllWindows()
@@ -49,7 +49,7 @@ def _crop_licience_plante(img, filename):
 
 
 if __name__ == '__main__':
-    file = 'E:/LG/GitHub/lg_pro_sets/util/util_tmp/ccpd_base.txt'
+    file = 'E:/LG/GitHub/lg_pro_sets/util/util_tmp/make_list.txt'
     filename = '025-95_113-154&383_386&473-386&473_177&454_154&383_363&402-0_0_22_27_27_33_16-37-15.jpg'
     # bbx = _read_CCPD_title(filename)
     _show_ccpd(file)

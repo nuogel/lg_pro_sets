@@ -59,26 +59,26 @@ class Dataaug:
         # prepare the augmentation functions
 
         base_funs = [
-            iaa.Fliplr(.5),  # 增加原图的概率。
-            iaa.Fliplr(.5),  # 增加原图的概率。
-            iaa.Fliplr(.5),  # 增加原图的概率。
-            iaa.Fliplr(.5),  # 增加原图的概率。
-            iaa.Fliplr(.5),  # 增加原图的概率。
+            # iaa.Fliplr(.5),  # 增加原图的概率。
+            # iaa.Fliplr(.5),  # 增加原图的概率。
+            # iaa.Fliplr(.5),  # 增加原图的概率。
+            # iaa.Fliplr(.5),  # 增加原图的概率。
+            # iaa.Fliplr(.5),  # 增加原图的概率。
             # iaa.Grayscale(alpha=(0, 1)),
             # iaa.ChangeColorspace('BGR'),
             # iaa.Add((-50, 50)),
-            iaa.Dropout(0.02, per_channel=0.5),
-            # iaa.GammaContrast(gamma=(0.5, 1.5), per_channel=True),
+            iaa.Dropout(0.08, per_channel=0.5),
+            iaa.GammaContrast(gamma=(0.5, 1.5), per_channel=True),
 
             ## 设置 加 雨 的噪声 类型
-            iaa.Snowflakes(density=(0, 0.15), density_uniformity=0.08, flake_size=0.4, flake_size_uniformity=0.5, speed=0.1),
+            # iaa.Snowflakes(density=(0, 0.15), density_uniformity=0.08, flake_size=0.4, flake_size_uniformity=0.5, speed=0.1),
             # 加 雪花 的噪声 类型
             # iaa.Snowflakes(density=(0, 0.15), density_uniformity=0.5, flake_size=0.4, flake_size_uniformity=0.5, speed=0.001),
             # iaa.Snowflakes(flake_size=(0.2, 0.7), speed=(0.001, 0.03)),
             #### 运动模糊
             # iaa.MotionBlur(k=(3, 20), angle=[-45, 45]),
             # 高斯模糊
-            iaa.GaussianBlur((0, 7)),
+            iaa.GaussianBlur((0, 3)),
             # 高斯噪音
             iaa.AdditiveGaussianNoise(scale=(0, 0.15 * 255)),
             # 拉普拉斯
@@ -86,10 +86,10 @@ class Dataaug:
             # 泊松
             iaa.AdditivePoissonNoise(lam=(0.0, 60.0)),
             # SaltAndPepper
-            # iaa.Salt(0.05)
+            # iaa.Salt(0.1),
             # 椒盐
             iaa.SaltAndPepper((0.03, 0.1)),
-            iaa.Affine(scale=(0.9, 1.1), translate_percent=(-0.01, 0.01), rotate=(-3, 3))
+            # iaa.Affine(scale=(0.9, 1.1), translate_percent=(-0.01, 0.01), rotate=(-3, 3))
         ]
         # choose one weather augmentation
         weather_aug = [
