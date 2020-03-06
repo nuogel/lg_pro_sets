@@ -56,7 +56,7 @@ class Test_Base(object):
                 GTS = []
                 for line in lines:
                     tmp = line.split(";")
-                    FILES.append(tmp[1])
+                    FILES.append(tmp[2].strip())
                     if len(tmp) > 1:  # ground truth.
                         GTS.append(tmp[2].strip())
             else:  # xx.jpg
@@ -155,18 +155,26 @@ class Test_SRDN(Test_Base):
         #     test_img = cv2.resize(test_img, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
 
         # test_img = torch.from_numpy(np.asarray((test_img - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).unsqueeze(0).type(torch.FloatTensor)
-        idx_made = [[os.path.basename(img_path), img_path, img_path]]
-        test_img = self.DataLoader._prepare_data(idx_made, is_training=False)
-        test_img = test_img.to(self.cfg.TRAIN.DEVICE).permute(0, 3, 1, 2)
+        idx_made = [[os.path.basename(img_path), 'none', img_path]]
+        input, target = self.DataLoader._prepare_data(idx_made, is_training=False)
+        input = input.to(self.cfg.TRAIN.DEVICE).permute(0, 3, 1, 2)
+        target = target.to(self.cfg.TRAIN.DEVICE)
         self.cfg.TRAIN.BATCH_SIZE = 1
-        predict = self.Model.forward(input_x=test_img, is_training=False)
+        predict = self.Model.forward(input_x=input, is_training=False)
         if self.cfg.TEST.SAVE_LABELS is True:
             if not os.path.isdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH):
                 os.mkdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH)
-            save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, os.path.basename(img_path).split('.')[0] + '.png')  # .format(self.cfg.TRAIN.UPSCALE_FACTOR))
+            save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, self.cfg.TRAIN.MODEL+os.path.basename(img_path).split('.')[0] + '.png')  # .format(self.cfg.TRAIN.UPSCALE_FACTOR))
         else:
             save_path = None
-        parse_Tensor_img(predict, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=save_path, show_time=self.cfg.TEST.SHOW_EVAL_TIME)
+
+        _input = input.permute(0, 2, 3, 1)
+        parse_Tensor_img(_input, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=self.cfg.PATH.GENERATE_LABEL_SAVE_PATH+self.cfg.TRAIN.MODEL+'_input.png', show_time=0)
+        parse_Tensor_img(predict, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=self.cfg.PATH.GENERATE_LABEL_SAVE_PATH+self.cfg.TRAIN.MODEL+'_predict.png', show_time=0)
+        input = torch.nn.functional.interpolate(input, size=(predict.shape[1], predict.shape[2]))
+        input = input.permute(0, 2, 3, 1)
+        img_cat = torch.cat([input, predict], dim=1)
+        parse_Tensor_img(img_cat, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=save_path, show_time=0)
 
 
 Test = {'OBD': Test_OBD,

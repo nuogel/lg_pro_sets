@@ -30,7 +30,9 @@ def _parse_arguments():
 def main():
     """Run the script."""
     exit_code = 0
-    file_s = None
+    # file_s = None
+    # file_s = 'E:/LG/GitHub/lg_pro_sets/util/util_tmp/3.txt'
+    file_s = 'E:/LG/GitHub/lg_pro_sets/tmp/generated_labels/cbdnet_predict.png'
     score = False
     args = _parse_arguments()
     cfg = parse_yaml(args.yml_path)

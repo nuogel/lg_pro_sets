@@ -63,8 +63,10 @@ class BOW(object):
         length = 10
         # 合并特征数据  每个类从数据集中读取length张图片(length个狗,length个猫)，通过聚类创建视觉词汇
         for i in range(length):
-            bow_kmeans_trainer.add(self.sift_descriptor_extractor(self.path(pos, i)))
-            bow_kmeans_trainer.add(self.sift_descriptor_extractor(self.path(neg, i)))
+            pos_descriptor = self.sift_descriptor_extractor(self.path(pos, i))
+            neg_descriptor = self.sift_descriptor_extractor(self.path(neg, i))
+            bow_kmeans_trainer.add(pos_descriptor)
+            bow_kmeans_trainer.add(neg_descriptor)
 
         # 进行k-means聚类，返回词汇字典 也就是聚类中心
         voc = bow_kmeans_trainer.cluster()
@@ -79,7 +81,7 @@ class BOW(object):
         # 创建两个数组，分别对应训练数据和标签，并用BOWImgDescriptorExtractor产生的描述符填充
         # 按照下面的方法生成相应的正负样本图片的标签 1：正匹配  -1：负匹配
         traindata, trainlabels = [], []
-        for i in range(2000):  # 这里取200张图像做训练
+        for i in range(20):  # 这里取200张图像做训练
             traindata.extend(self.bow_descriptor_extractor(self.path(pos, i)))
             trainlabels.append(1)
             traindata.extend(self.bow_descriptor_extractor(self.path(neg, i)))
@@ -107,18 +109,21 @@ class BOW(object):
             return False
 
     def sift_descriptor_extractor(self, img_path):
-        '''
+        '''`
         特征提取：提取数据集中每幅图像的特征点，然后提取特征描述符，形成特征数据(如：SIFT或者SURF方法)；
         '''
         im = cv2.imread(img_path, 0)
-        return self.descriptor_extractor.compute(im, self.feature_detector.detect(im))[1]
+        im_shift = self.feature_detector.detect(im)
+        out = self.descriptor_extractor.compute(im, im_shift)[1]
+        return out
 
     def bow_descriptor_extractor(self, img_path):
         '''
         提取图像的BOW特征描述(即利用视觉词袋量化图像特征)
         '''
         im = cv2.imread(img_path, 0)
-        return self.bow_img_descriptor_extractor.compute(im, self.feature_detector.detect(im))
+        bow_descriptor = self.bow_img_descriptor_extractor.compute(im, self.feature_detector.detect(im))
+        return bow_descriptor
 
 
 if __name__ == '__main__':

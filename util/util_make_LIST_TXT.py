@@ -26,7 +26,7 @@ def _wrte_dataset_txt(dataset, save_path):
 
 
 if __name__ == '__main__':
-    pathes = ['D:/datasets/CCPD2019/ccpd_base/']
-    save_path = 'util_tmp/make_list.txt'
+    pathes = ['D:/datasets/CCPD2019/ccpd_challenge/']
+    save_path = 'util_tmp/ccpd_challenge.txt'
     datalist = make_list(pathes)
     _wrte_dataset_txt(datalist, save_path)

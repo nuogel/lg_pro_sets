@@ -8,7 +8,7 @@ PATH:
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
 
 TRAIN:
-  MODEL: rdn #cbdnet  #edsr #rcan #dbpn #vdsr # fsrcnn #  srcnn #espcn #dncnn #
+  MODEL: rcan #rdn #cbdnet  #edsr #vdsr #dbpn # fsrcnn #  srcnn #espcn #dncnn #
   EPOCH_SIZE: 4000
   BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1   # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
@@ -21,7 +21,7 @@ TRAIN:
   TARGET_PREDEEL: 1 # pre dealing the target image.
   INPUT_PREDEEL: 1 # augmenting the input image. change it in the loader_xx.py
   INPUT_AUG: 1
-  SHOW_INPUT: 5000
+  SHOW_INPUT: 0
 
   # optimizer:
   OPTIMIZER: 'adam' #'sgd' #
@@ -46,7 +46,7 @@ TEST:
   # NMS:
   SCORE_THRESH: 0.5
   SAVE_LABELS: TRUE
-  SHOW_EVAL_TIME: 1
+  SHOW_EVAL_TIME: 5000
 
   TEST_ONLY: 0
 
