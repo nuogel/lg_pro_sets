@@ -4,7 +4,7 @@ import torch.nn as nn
 import numpy as np
 from util.util_nms import NMS
 import logging
-from net_works.loss.ObdLoss_RefineDet import Detect_RefineDet
+from NetWorks.loss.ObdLoss_REFINEDET import Detect_RefineDet
 from util.util_iou import xywh2xyxy, xyxy2xywh
 
 LOGGER = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ class ParsePredict:
         labels_predict = []
         for batch_n in range(pre_cls_score.shape[0]):
             # TODO: make a matrix instead of for...
-            LOGGER.info('[NMS]')
+            # LOGGER.info('[NMS]')
             score = pre_cls_score[batch_n]
             loc = pre_loc[batch_n]
             labels = self.NMS.forward(score, loc, xywh2x1y1x2y2)

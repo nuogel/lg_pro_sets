@@ -1,9 +1,0 @@
-car,Car
-Car,Car
-truck,Car
-Truck,Car
-Van,Car
-Tram,Car
-Misc,Car
-bus,Car
-Bus,Car

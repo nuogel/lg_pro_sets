@@ -1,9 +1,10 @@
+# -*- coding: utf-8 -*-
 """A test file."""
 import cv2
 import torch
 import numpy as np
 from  PIL import Image
-
+import y4m
 def _test_1():
     pic_path = 'E:\LG\programs\lg_pro_sets\datasets//1.jpg'
     # img = cv2.imread(pic_path)
@@ -62,11 +63,11 @@ def _test_2():
     print(torch.numel(mask) / torch.numel(a))
 
     print(pow(0.995, 100))
-
-
-
-
-
+def _y4m():
+    f = 'E:/datasets/SR/youku/youku_00000_00049_l/Youku_00000_l.y4m'
+    img = y4m.Reader(f)
+    a = 0
 
 if __name__ =='__main__':
-    _test_1()
+    # _test_1()
+    _y4m()

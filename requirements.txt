@@ -6,8 +6,13 @@ numpy
 scipy
 scikit-image
 keras
+opencv
+opencv-contrib-python
 pyyaml
 tensorboardX
 scikit-learn
 shapely
 imgaug
+python-Levenshtein
+librosa
+lmdb

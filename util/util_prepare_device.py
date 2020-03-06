@@ -1,7 +1,8 @@
 import torch
 
 
-def load_device(device):
+def load_device(cfg):
+    device = cfg.TRAIN.GPU_NUM
     n_gpu_use = len(device)
     n_gpu = torch.cuda.device_count()
     if n_gpu_use > 0 and n_gpu == 0:
@@ -11,7 +12,7 @@ def load_device(device):
         print("Warning: The number of GPU\'s configured to use is {}, but only {} are available on this machine.".format(
             n_gpu_use, n_gpu))
         n_gpu_use = n_gpu
-    device_ids = device
+    device_ids = device[:n_gpu_use]
     device = torch.device('cuda:{}'.format(
         device[0]) if n_gpu_use > 0 else 'cpu')
 

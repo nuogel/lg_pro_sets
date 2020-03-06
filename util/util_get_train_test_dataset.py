@@ -16,7 +16,7 @@ def _get_train_test_dataset(x_dir, y_dir, idx_stores_dir, test_train_ratio, cfg)
         class_map = _get_class_names(cfg.PATH.CLASSES_PATH)
         for label_file in label_files:
             file_name = os.path.basename(label_file).split('.')[0]
-            img_file = os.path.join(cfg.PATH.IMG_PATH, file_name + '.' + x_extend_name)
+            img_file = os.path.join(cfg.PATH.INPUT_PATH, file_name + '.' + x_extend_name)
             if not os.path.isfile(img_file):
                 continue
             if y_extend_name == 'txt':
@@ -30,6 +30,7 @@ def _get_train_test_dataset(x_dir, y_dir, idx_stores_dir, test_train_ratio, cfg)
                         label_files_list.append([file_name, img_file, label_file])
                         break
             elif y_extend_name == 'xml':
+                print(label_file)
                 tree = ET.parse(label_file)
                 root = tree.getroot()
                 for object in root.findall('object'):
@@ -39,6 +40,22 @@ def _get_train_test_dataset(x_dir, y_dir, idx_stores_dir, test_train_ratio, cfg)
                     if class_map[cls] in cfg.TRAIN.CLASSES:
                         label_files_list.append([file_name, img_file, label_file])
                         break
+    elif cfg.BELONGS == 'SR_DN':
+        for label_file in label_files:
+            file_name = os.path.basename(label_file).split('.')[0]
+            x_file = os.path.join(cfg.PATH.INPUT_PATH, file_name + '.' + x_extend_name)
+            if not os.path.isfile(x_file):
+                continue
+            label_files_list.append([file_name, x_file, label_file])
+    elif cfg.BELONGS == 'ASR':
+        x_files = glob.glob('{}/*.wav'.format(x_dir))
+        for x_file in x_files:
+            y_file = x_file + '.trn'
+            if not os.path.isfile(y_file):
+                continue
+            file_name = os.path.basename(x_file).split('.')[0]
+            label_files_list.append([file_name, x_file, y_file])
+
     else:
         label_files_list = label_files
 

@@ -19,10 +19,8 @@ class Dataaug:
 
     def __init__(self, cfg):
         self.cfg = cfg
-        self.img_path = cfg.PATH.IMG_PATH
+        self.img_path = cfg.PATH.INPUT_PATH
         self.lab_path = cfg.PATH.LAB_PATH
-        self.area_ratio = cfg.TRAIN.AREAR_RATIO
-        self.min_area = cfg.TRAIN.MIN_AREAR
 
     def _parse_bbs(self, bbs_aug):
         """
@@ -44,50 +42,43 @@ class Dataaug:
             # calculate the ratio of area
             area_before = (_bb_x2 - _bb_x1) * (_bb_y2 - _bb_y1)
             area_after = (bb_x2 - bb_x1) * (bb_y2 - bb_y1)
-            if area_after / area_before < self.area_ratio or area_after < self.min_area:
+            if area_after / area_before < self.cfg.TRAIN.AREAR_RATIO or area_after < self.cfg.TRAIN.MIN_AREA:
                 continue
             # get the lab
             lab = [cls, bb_x1, bb_y1, bb_x2, bb_y2]
             labs.append(lab)
         return labs
 
-    def _augmenting(self, datas=None, image_for_aug=None):
+    def _augmenting(self, datas=None, for_one_image=None):
         """Create augmentation images from kitti.
 
-        :param idx:  the index of kitti images ,
-         index is in the shape of [1, 3, 555, 1033...]
-        :param do_aug: if do_aug is False , then do nothing about images,and labels.
-        :param relative: the relative location of bounding boxes
-        :param image_for_aug: if there is a single image,the augment it without labels
+        :param for_one_image: if there is a single image,the augment it without labels
         :return: return a np array of images, and return a list about
          labs are in the shape of [[class, left, top, button, right],..]
         """
-        # print(idx)
         # prepare the augmentation functions
-        images, labels = datas
-        labels = [[ia.BoundingBox(x1=labs[1], y1=labs[2], x2=labs[3], y2=labs[4], label=labs[0]) for labs in _labels] for _labels in labels]
+
         base_funs = [
-            iaa.Fliplr(.5),
+            # iaa.Fliplr(.5),  # 增加原图的概率。
+            # iaa.Fliplr(.5),  # 增加原图的概率。
+            # iaa.Fliplr(.5),  # 增加原图的概率。
+            # iaa.Fliplr(.5),  # 增加原图的概率。
+            # iaa.Fliplr(.5),  # 增加原图的概率。
             # iaa.Grayscale(alpha=(0, 1)),
             # iaa.ChangeColorspace('BGR'),
             # iaa.Add((-50, 50)),
-            iaa.Dropout(0.02, per_channel=0.5),
-            # iaa.GammaContrast(gamma=(0.5, 1.5), per_channel=True),
-            # 云
-            # iaa.Clouds(),
-            # 雾
-            # iaa.Fog(),
+            iaa.Dropout(0.08, per_channel=0.5),
+            iaa.GammaContrast(gamma=(0.5, 1.5), per_channel=True),
+
             ## 设置 加 雨 的噪声 类型
-            iaa.Snowflakes(density=(0, 0.15), density_uniformity=0.08, flake_size=0.4,
-                           flake_size_uniformity=0.5, speed=0.1),
+            # iaa.Snowflakes(density=(0, 0.15), density_uniformity=0.08, flake_size=0.4, flake_size_uniformity=0.5, speed=0.1),
             # 加 雪花 的噪声 类型
-            iaa.Snowflakes(density=(0, 0.15), density_uniformity=0.5, flake_size=0.4, flake_size_uniformity=0.5,
-                           speed=0.001),
+            # iaa.Snowflakes(density=(0, 0.15), density_uniformity=0.5, flake_size=0.4, flake_size_uniformity=0.5, speed=0.001),
             # iaa.Snowflakes(flake_size=(0.2, 0.7), speed=(0.001, 0.03)),
-            # 运动模糊
-            iaa.MotionBlur(k=(3, 20), angle=[-45, 45]),
+            #### 运动模糊
+            # iaa.MotionBlur(k=(3, 20), angle=[-45, 45]),
             # 高斯模糊
-            iaa.GaussianBlur((0, 7)),
+            iaa.GaussianBlur((0, 3)),
             # 高斯噪音
             iaa.AdditiveGaussianNoise(scale=(0, 0.15 * 255)),
             # 拉普拉斯
@@ -95,10 +86,10 @@ class Dataaug:
             # 泊松
             iaa.AdditivePoissonNoise(lam=(0.0, 60.0)),
             # SaltAndPepper
-            # iaa.Salt(0.05)
+            # iaa.Salt(0.1),
             # 椒盐
             iaa.SaltAndPepper((0.03, 0.1)),
-            iaa.Affine(scale=(0.9, 1.1), translate_percent=(-.01, 0.01), rotate=(-3, 3))
+            # iaa.Affine(scale=(0.9, 1.1), translate_percent=(-0.01, 0.01), rotate=(-3, 3))
         ]
         # choose one weather augmentation
         weather_aug = [
@@ -117,20 +108,32 @@ class Dataaug:
         # do the augmentation
         seq_det = iaa.Sequential(aug_funs)
         seq_det = seq_det.to_deterministic()
-        labels = [ia.BoundingBoxesOnImage(x, shape=images[i].shape) for i, x in enumerate(labels)]
+
+        if for_one_image is None:
+            images, labels = datas
+
+            labels = [[ia.BoundingBox(x1=labs[1], y1=labs[2], x2=labs[3], y2=labs[4], label=labs[0]) for labs in _labels] for _labels in labels]
+            labels = [ia.BoundingBoxesOnImage(x, shape=images[i].shape) for i, x in enumerate(labels)]
+            bbs_aug = seq_det.augment_bounding_boxes(labels)
+            labels = [self._parse_bbs(x) for x in bbs_aug]
+
+        else:
+            images = for_one_image
+            labels = None
         images = seq_det.augment_images(images)
-        bbs_aug = seq_det.augment_bounding_boxes(labels)
-        labels = [self._parse_bbs(x) for x in bbs_aug]
+
         return images, labels
 
     def augmentation(self, datas=None, for_one_image=None):
-        images, labels = self._augmenting(datas, image_for_aug=for_one_image)
+        images, labels = self._augmenting(datas, for_one_image=for_one_image)
 
         if labels is not None:  # if labels is not none ,then check the label in labels,whether the label is none.
             for i, label in enumerate(labels):
+                j = 1
                 while not label:  # check every label, whether there is a label is empty.
                     print('no label at NO.', i)
-                    label = labels[i - 1]
-                    labels[i] = labels[i - 1]
-                    images[i] = images[i - 1]
+                    label = labels[i - j]
+                    labels[i] = labels[i - j]
+                    images[i] = images[i - j]
+                    j += 1
         return images, labels
