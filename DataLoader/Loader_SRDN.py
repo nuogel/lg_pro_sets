@@ -83,8 +83,9 @@ class DataLoader:
         if self.resize_input2output:
             img = cv2.resize(img, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
         # add the augmentation ...
-        img, _ = self.Data_aug.augmentation(for_one_image=[img])
-        img = img[0]
+        if self.cfg.TRAIN.INPUT_AUG:
+            img, _ = self.Data_aug.augmentation(for_one_image=[img])
+            img = img[0]
 
         return img
 

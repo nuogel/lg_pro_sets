@@ -50,15 +50,15 @@ def detect_test():
 
     # 创建HOG描述符对象
     # 计算一个检测窗口特征向量维度：(64/8 - 1)*(128/8 - 1)*4*9 = 3780
-    '''
+
     winSize = (64,128)
     blockSize = (16,16)    
     blockStride = (8,8)
     cellSize = (8,8)
     nbins = 9    
     hog = cv2.HOGDescriptor(winSize,blockSize,blockStride,cellSize,nbins)  
-    '''
-    hog = cv2.HOGDescriptor()
+
+    # hog = cv2.HOGDescriptor()
     # hist = hog.compute(img[0:128,0:64])   计算一个检测窗口的维度
     # print(hist.shape)
     detector = cv2.HOGDescriptor_getDefaultPeopleDetector()

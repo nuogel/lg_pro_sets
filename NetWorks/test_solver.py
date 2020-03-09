@@ -164,13 +164,16 @@ class Test_SRDN(Test_Base):
         if self.cfg.TEST.SAVE_LABELS is True:
             if not os.path.isdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH):
                 os.mkdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH)
-            save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, self.cfg.TRAIN.MODEL+os.path.basename(img_path).split('.')[0] + '.png')  # .format(self.cfg.TRAIN.UPSCALE_FACTOR))
+            basename =  os.path.basename(img_path).split('.')[0]
+            save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, self.cfg.TRAIN.MODEL +basename + '.png')  # .format(self.cfg.TRAIN.UPSCALE_FACTOR))
         else:
             save_path = None
 
         _input = input.permute(0, 2, 3, 1)
-        parse_Tensor_img(_input, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=self.cfg.PATH.GENERATE_LABEL_SAVE_PATH+self.cfg.TRAIN.MODEL+'_input.png', show_time=0)
-        parse_Tensor_img(predict, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=self.cfg.PATH.GENERATE_LABEL_SAVE_PATH+self.cfg.TRAIN.MODEL+'_predict.png', show_time=0)
+        parse_Tensor_img(_input, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=self.cfg.PATH.GENERATE_LABEL_SAVE_PATH + basename + self.cfg.TRAIN.MODEL + '_input.png',
+                         show_time=0)
+        parse_Tensor_img(predict, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=self.cfg.PATH.GENERATE_LABEL_SAVE_PATH + basename + self.cfg.TRAIN.MODEL + '_predict.png',
+                         show_time=0)
         input = torch.nn.functional.interpolate(input, size=(predict.shape[1], predict.shape[2]))
         input = input.permute(0, 2, 3, 1)
         img_cat = torch.cat([input, predict], dim=1)
