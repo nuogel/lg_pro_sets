@@ -59,9 +59,12 @@ class DataLoader:
                 target = self._target_predeal(img=target, filename=id[0])
 
             input = target if id[1] in ['None', '', ' ', 'none'] else cv2.imread(id[1])
-            if self.cfg.TRAIN.INPUT_PREDEEL:
+            if self.cfg.TRAIN.INPUT_PREDEEL and is_training:
                 input = self._input_predeal(img=input, filename=id[0])
 
+            if self.cfg.TRAIN.SHOW_INPUT:
+                cv2.imshow('img', input)
+                cv2.waitKey(self.cfg.TRAIN.SHOW_INPUT)
             input = torch.from_numpy(np.asarray((input - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(torch.FloatTensor)
             target = torch.from_numpy(np.asarray((target - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(torch.FloatTensor)
             input_imgs.append(input)
@@ -74,24 +77,22 @@ class DataLoader:
 
     def _input_predeal(self, **kwargs):
         img = kwargs['img']
-        # filename = kwargs['filename']
-        # img = cv2.resize(img, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,
-        #                        self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR))
-        # if self.resize_input2output:
-        #     img = cv2.resize(img, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
+        filename = kwargs['filename']
+        img = cv2.resize(img, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,
+                               self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR))
+        if self.resize_input2output:
+            img = cv2.resize(img, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
         # add the augmentation ...
+        if self.cfg.TRAIN.INPUT_AUG:
+            img, _ = self.Data_aug.augmentation(for_one_image=[img])
+            img = img[0]
 
-        img, _ = self.Data_aug.augmentation(for_one_image=[img])
-        img = img[0]
-        if self.cfg.TRAIN.SHOW_INPUT:
-            cv2.imshow('img', img)
-            cv2.waitKey(self.cfg.TRAIN.SHOW_INPUT)
         return img
 
     def _target_predeal(self, **kwargs):
         img = kwargs['img']
         filename = kwargs['filename']
-        img = _crop_licience_plante(img, filename)
+        # img = _crop_licience_plante(img, filename)
 
         try:
             img = cv2.resize(img, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))

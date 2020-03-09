@@ -1,5 +1,5 @@
 """Train the model.
-
+writer:luogeng 2018.09
 Train.py is used for training the net to mark things with a box outside of
 them, and with a label of what it is, and with it's score at the left top of
 the box.
