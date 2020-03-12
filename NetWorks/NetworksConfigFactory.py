@@ -23,6 +23,14 @@ def get_model_class(belongs, modelname):
     return model_class
 
 
+# def get_model_class_exec(belongs, modelname):
+#     belongs_uper = str(belongs).upper()
+#     modelname_uper = str(modelname).upper()
+#     model_file = belongs_uper[0] + belongs_uper[1:].lower() + 'Model_' + modelname_uper
+#     model = exec('from NetWorks.model.' + model_file + ' import ' + modelname_uper)
+#     return model
+
+
 def get_loss_class(belongs, modelname):
     if modelname[:4] == 'yolo':
         from NetWorks.loss.ObdLoss_YOLO import YoloLoss

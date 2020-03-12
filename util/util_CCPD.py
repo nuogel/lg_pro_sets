@@ -22,23 +22,31 @@ def _read_CCPD_title(filename):
     return area, degree, bbox, corner, licensenumber, luminance, blur
 
 
-def _show_ccpd(file):
+def _show_ccpd(file, canny=False, crop_licience_plante=False):
+    from Traditional_CV.bianyuan import car_canny
     lines = open(file, 'r').readlines()
     for line in lines:
         filename = line.split(';')[0].strip()
         img_path = line.split(';')[2].strip()
         img = cv2.imread(img_path)
+        img_raw = img.copy()
         info = _read_CCPD_title(filename)
         x1 = info[2][0]
         y1 = info[2][1]
         x2 = info[2][2]
         y2 = info[2][3]
-        img = cv2.rectangle(img, (x1, y1), (x2, y2), color=(0, 255, 0))
-        # img = _crop_licience_plante(img, filename)
-        # img = cv2.resize(img, (220, 100), interpolation=cv2.INTER_CUBIC)
-        cv2.imshow('img', img)
+        # img = cv2.rectangle(img, (x1, y1), (x2, y2), color=(0, 255, 0))
+        if crop_licience_plante:
+            img = _crop_licience_plante(img, filename)
+            img = cv2.resize(img, (880, 400), interpolation=cv2.INTER_CUBIC)
+
+        if canny:
+            car_canny(img)
+        cv2.imshow('img', img_raw)
         cv2.waitKey()
         cv2.destroyAllWindows()
+
+
 
 
 def _crop_licience_plante(img, filename):
@@ -48,8 +56,9 @@ def _crop_licience_plante(img, filename):
     return img
 
 
+
 if __name__ == '__main__':
     file = 'E:/LG/GitHub/lg_pro_sets/util/util_tmp/make_list.txt'
     filename = '025-95_113-154&383_386&473-386&473_177&454_154&383_363&402-0_0_22_27_27_33_16-37-15.jpg'
     # bbx = _read_CCPD_title(filename)
-    _show_ccpd(file)
+    _show_ccpd(file, canny=True, crop_licience_plante=True)

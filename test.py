@@ -19,8 +19,8 @@ def _parse_arguments():
     # 'F:/test_results/tbx_log_rcan/checkpoint.pkl'
     # 'F:/test_results/tbx_log_cbdnet/checkpoint.pkl'
     # 'F:/test_results/tbx_log_edsr/checkpoint.pkl'
-    'F:/test_results/tbx_log_rdn/checkpoint.pkl'
-
+    # 'F:/test_results/tbx_log_rdn/checkpoint.pkl'
+    'E:/LG/GitHub/lg_pro_sets/tmp/tbx_log_rdn/checkpoint.pkl'
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--batch_size', '--bz', default=1, type=int, help='batch size')
 
@@ -31,10 +31,12 @@ def main():
     """Run the script."""
     exit_code = 0
     # file_s = None
-    file_s = 'E:/LG/GitHub/lg_pro_sets/util/util_tmp/3.txt'
-    file_s = 'E:/datasets/test_dataset/crop/5.png'
-    file_s = 'F:/datasets/SR/REDS4/train_sharp_part_x4/train_sharp_part_x4/000/00000000.png'
+    # file_s = 'E:/LG/GitHub/lg_pro_sets/util/util_tmp/3.txt'
+    # file_s = 'E:/datasets/test_dataset/crop/5.png'
+    # file_s = 'F:/datasets/SR/REDS4/train_sharp_part_x4/train_sharp_part_x4/000/00000000.png'
     # file_s = 'E:/LG/GitHub/lg_pro_sets/tmp/generated_labels/cbdnet_predict.png'
+    file_s = 'E:/LG/GitHub/lg_pro_sets/tmp/generated_labels/raw'
+    # file_s = 'F:/datasets/SR/REDS4/train_sharp_part_x4/000'
     score = False
     args = _parse_arguments()
     cfg = parse_yaml(args.yml_path)

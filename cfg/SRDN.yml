@@ -20,7 +20,7 @@ TRAIN:
   PIXCELS_NORM: [0., 255.]  # [mean, std] #must be float.
   TARGET_PREDEEL: 1 # pre dealing the target image.
   INPUT_PREDEEL: 1 # augmenting the input image. change it in the loader_xx.py
-  INPUT_AUG: 0
+  INPUT_AUG: 1
   SHOW_INPUT: 0
 
   # optimizer:
@@ -45,7 +45,7 @@ TEST:
   TEST_SET_RATIO: 0.1
   # NMS:
   SCORE_THRESH: 0.5
-  SAVE_LABELS: TRUE
+  SAVE_LABELS: 1
   SHOW_EVAL_TIME: 5000
 
   TEST_ONLY: 0
