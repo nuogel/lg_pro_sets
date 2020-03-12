@@ -22,7 +22,7 @@ from util.util_prepare_cfg import prepare_cfg
 
 class Test_Base(object):
     def __init__(self, cfg, args):
-        self.cfg = prepare_cfg(cfg, args)
+        self.cfg = prepare_cfg(cfg, args, is_training=False)
         self.args = args
         self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)
         self.Model = get_model_class(self.cfg.BELONGS, self.cfg.TRAIN.MODEL)(self.cfg)
@@ -161,7 +161,7 @@ class Test_SRDN(Test_Base):
         target = target.to(self.cfg.TRAIN.DEVICE)
         self.cfg.TRAIN.BATCH_SIZE = 1
         predict = self.Model.forward(input_x=input, is_training=False)
-        if self.cfg.TEST.SAVE_LABELS is True:
+        if self.cfg.TEST.SAVE_LABELS:
             if not os.path.isdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH):
                 os.mkdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH)
             basename =  os.path.basename(img_path).split('.')[0]
@@ -169,11 +169,11 @@ class Test_SRDN(Test_Base):
         else:
             save_path = None
 
-        _input = input.permute(0, 2, 3, 1)
-        parse_Tensor_img(_input, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=self.cfg.PATH.GENERATE_LABEL_SAVE_PATH + basename + self.cfg.TRAIN.MODEL + '_input.png',
-                         show_time=0)
-        parse_Tensor_img(predict, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=self.cfg.PATH.GENERATE_LABEL_SAVE_PATH + basename + self.cfg.TRAIN.MODEL + '_predict.png',
-                         show_time=0)
+        # _input = input.permute(0, 2, 3, 1)
+        # parse_Tensor_img(_input, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=self.cfg.PATH.GENERATE_LABEL_SAVE_PATH + basename + self.cfg.TRAIN.MODEL + '_input.png',
+        #                  show_time=0)
+        # parse_Tensor_img(predict, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=self.cfg.PATH.GENERATE_LABEL_SAVE_PATH + basename + self.cfg.TRAIN.MODEL + '_predict.png',
+        #                  show_time=0)
         input = torch.nn.functional.interpolate(input, size=(predict.shape[1], predict.shape[2]))
         input = input.permute(0, 2, 3, 1)
         img_cat = torch.cat([input, predict], dim=1)

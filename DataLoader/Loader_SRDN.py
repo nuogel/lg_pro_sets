@@ -2,8 +2,10 @@ import os
 import torch
 import numpy as np
 import cv2
+import random
 from util.util_CCPD import _crop_licience_plante
 from util.util_data_aug import Dataaug
+from util.util_JPEG_compression import Jpegcompress2
 
 
 # import multiprocessing as mp
@@ -59,8 +61,8 @@ class DataLoader:
                 target = self._target_predeal(img=target, filename=id[0])
 
             input = target if id[1] in ['None', '', ' ', 'none'] else cv2.imread(id[1])
-            if self.cfg.TRAIN.INPUT_PREDEEL and is_training:
-                input = self._input_predeal(img=input, filename=id[0])
+            if self.cfg.TRAIN.INPUT_PREDEEL:
+                input = self._input_predeal(img=input, filename=id[0], is_training=is_training)
 
             if self.cfg.TRAIN.SHOW_INPUT:
                 cv2.imshow('img', input)
@@ -78,15 +80,17 @@ class DataLoader:
     def _input_predeal(self, **kwargs):
         img = kwargs['img']
         filename = kwargs['filename']
+        is_training = kwargs['is_training']
         img = cv2.resize(img, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,
                                self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR))
         if self.resize_input2output:
             img = cv2.resize(img, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
         # add the augmentation ...
-        if self.cfg.TRAIN.INPUT_AUG:
-            img, _ = self.Data_aug.augmentation(for_one_image=[img])
-            img = img[0]
-
+        if self.cfg.TRAIN.INPUT_AUG and is_training:
+            # img, _ = self.Data_aug.augmentation(for_one_image=[img])
+            # img = img[0]
+            compress_level = random.randint(5, 20)
+            img = Jpegcompress2(img, compress_level)
         return img
 
     def _target_predeal(self, **kwargs):
