@@ -8,7 +8,7 @@ PATH:
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
 
 TRAIN:
-  MODEL: rdn #rcan #cbdnet  #edsr #vdsr #dbpn # fsrcnn #  srcnn #espcn #dncnn #
+  MODEL: cbdnet  #rdn #rcan #edsr #vdsr #dbpn # fsrcnn #  srcnn #espcn #dncnn #
   EPOCH_SIZE: 4000
   BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1   # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
@@ -21,7 +21,8 @@ TRAIN:
   TARGET_PREDEEL: 1 # pre dealing the target image.
   INPUT_PREDEEL: 1 # augmenting the input image. change it in the loader_xx.py
   INPUT_AUG: 1
-  SHOW_INPUT: 0
+  SHOW_INPUT: 1000  # showtime.
+  SHOW_PREDICT: 0
 
   # optimizer:
   OPTIMIZER: 'adam' #'sgd' #
@@ -50,7 +51,7 @@ TEST:
 
   TEST_ONLY: 0
 
-  ONE_TEST: 0
+  ONE_TEST: 1
 
   ONE_TEST_TRAIN_STEP: 50
   ONE_TEST_TEST_STEP: 1
@@ -58,6 +59,6 @@ TEST:
     #  ['003219', 'E:/datasets/kitti/training/images/003219.png', 'E:/datasets/kitti/training/images\\003219.png']
     #  ['0.jpg','E:/datasets/test_dataset/0.jpg', 'E:/datasets/test_dataset/0.jpg']
 #     ['0029-1_4-360&569_440&600-440&598_363&600_360&571_437&569-0_0_3_21_30_28_24-88-4.jpg', 'None', 'D:/datasets/CCPD2019/ccpd_base\\0029-1_4-360&569_440&600-440&598_363&600_360&571_437&569-0_0_3_21_30_28_24-88-4.jpg'],
-    ['1583-5_15-0&423_618&637-618&637_16&578_0&423_591&482-0_0_19_9_27_24_27-86-450.jpg', 'none','D:/datasets/CCPD2019/ccpd_base\\1583-5_15-0&423_618&637-618&637_16&578_0&423_591&482-0_0_19_9_27_24_27-86-450.jpg']
-    #  ['Youku_00099_l_050.png','F:/datasets/SR/youku/youku_00000_00149_l/Youku_00099_l/Youku_00099_l_050.png','F:/datasets/SR/youku/youku_00000_00149_h_GT/Youku_00099_h_GT/Youku_00099_h_GT_050.png']
+#    ['1583-5_15-0&423_618&637-618&637_16&578_0&423_591&482-0_0_19_9_27_24_27-86-450.jpg', 'none','D:/datasets/CCPD2019/ccpd_base\\1583-5_15-0&423_618&637-618&637_16&578_0&423_591&482-0_0_19_9_27_24_27-86-450.jpg']
+      ['Youku_00099_l_050.png','F:/datasets/SR/youku/youku_00000_00149_l/Youku_00099_l/Youku_00099_l_050.png','F:/datasets/SR/youku/youku_00000_00149_h_GT/Youku_00099_h_GT/Youku_00099_h_GT_050.png']
   ]
