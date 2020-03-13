@@ -26,10 +26,10 @@ img_thresh = np.vstack((img_thresh_up, img_thresh_down))
 # imgshow(cv2.resize(img_thresh, None, fx=0.4, fy=0.4))
 
 img_mask = img_thresh.copy()
-mask_inv = cv2.bitwise_not(img_mask)  # 取反
+img_mask = cv2.bitwise_not(img_mask)  # 取反
 # imgshow(mask_inv)
 
-imgRaw_copy[mask_inv == 0] = 255
+imgRaw_copy[img_mask == 0] = 255
 
 # imgshow(imgRaw_copy)
 cv2.imwrite(imgPath + 'tileRefImageRGBResult.png', imgRaw_copy)
