@@ -23,7 +23,7 @@ class FSRCNN(nn.Module):
         self.mid_part = torch.nn.Sequential(*self.layers)
 
         # Deconvolution
-        self.last_part = nn.ConvTranspose2d(in_channels=64, out_channels=3, kernel_size=9, stride=self.cfg.TRAIN.UPSCALE_FACTOR, padding=4, output_padding=1)
+        self.last_part = nn.ConvTranspose2d(in_channels=64, out_channels=3, kernel_size=9, stride=self.cfg.TRAIN.UPSCALE_FACTOR, padding=4, output_padding=3)
 
     def forward(self, **args):
         x = args['input_x']

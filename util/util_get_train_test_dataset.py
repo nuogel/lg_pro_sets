@@ -4,9 +4,15 @@ from sklearn.model_selection import train_test_split
 import torch
 from util.util_get_cls_names import _get_class_names
 import xml.etree.ElementTree as ET
+import sys
 
 
-def _get_train_test_dataset(x_dir, y_dir, idx_stores_dir, test_train_ratio, cfg):
+def _get_train_test_dataset(cfg):
+    x_dir = cfg.PATH.INPUT_PATH
+    y_dir = cfg.PATH.LAB_PATH
+    idx_stores_dir = 'DataLoader/datasets/tmp'
+    test_train_ratio = cfg.TEST.TEST_SET_RATIO
+
     label_files = glob.glob('{}/*'.format(y_dir))
     x_files = glob.glob('{}/*'.format(x_dir))
     label_files_list = []
@@ -87,11 +93,18 @@ def _wrte_dataset_txt(dataset, idx_stores_dir):
     f.close()
 
 
-def _read_train_test_dataset(idx_stores_dir):
-    print('reading train_set&test_set from %s' % idx_stores_dir)
-    f = open(os.path.join(idx_stores_dir, 'train_set.txt'), 'r')
+def _read_train_test_dataset(cfg):
+    system_type = sys.platform[0].replace('l', 'u')
+    train_idx = os.path.join('DataLoader/datasets/', cfg.BELONGS + '_idx_stores', cfg.TRAIN.TRAIN_DATA_FROM_FILE,
+                             cfg.TRAIN.TRAIN_DATA_FROM_FILE + '_train_set_' + system_type + '.txt')
+    test_idx = os.path.join('DataLoader/datasets/', cfg.BELONGS + '_idx_stores', cfg.TRAIN.TRAIN_DATA_FROM_FILE,
+                            cfg.TRAIN.TRAIN_DATA_FROM_FILE + '_test_set_' + system_type + '.txt')
+
+    print('USING DATASET: %s' % cfg.TRAIN.TRAIN_DATA_FROM_FILE)
+
+    f = open(train_idx, 'r')
     train_set = [line.strip().split(';') for line in f.readlines()]
-    f = open(os.path.join(idx_stores_dir, 'test_set.txt'), 'r')
+    f = open(test_idx, 'r')
     test_set = [line.strip().split(';') for line in f.readlines()]
     return train_set, test_set
 

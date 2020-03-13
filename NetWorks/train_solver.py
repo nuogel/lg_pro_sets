@@ -67,18 +67,8 @@ class Solver:
         Get the self.Model, learning_rate, epoch_last, train_set, test_set.
         :return: learning_rate, epoch_last, train_set, test_set.
         """
-        idx_stores_dir = os.path.join(self.cfg.PATH.TMP_PATH, 'idx_stores')
         # load the last train parameters
-        if self.args.checkpoint not in [0, '0', 'None', 'no', 'none', "''"]:
-            self.Model = load_state_dict(self.Model, self.args.checkpoint, self.cfg.TRAIN.DEVICE)
-            epoch_last, learning_rate_last = self.save_parameter.tbX_read()
-            epoch = self.args.epoch_continue if self.args.epoch_continue else epoch_last + 1
-            learning_rate = self.args.lr_continue if self.args.lr_continue else learning_rate_last
-            LOGGER.info('>' * 30 + 'Loading Last Checkpoint: %s, Last Learning Rate:%s, Last Epoch:%s',
-                        self.args.checkpoint, learning_rate, epoch)
-            #  load the last data set
-            train_set, test_set = _read_train_test_dataset(idx_stores_dir)
-        else:
+        if self.args.checkpoint in [0, '0', 'None', 'no', 'none', "''"]:
             weights_init(self.Model, self.cfg)
             # start a new train, delete the exist parameters
             self.save_parameter.clean_history_and_init_log()
@@ -86,16 +76,26 @@ class Solver:
             learning_rate = self.args.lr  # if self.args.lr else self.cfg.TRAIN.LR_CONTINUE
             # generate a new data set
             if self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
-                train_set, test_set = _read_train_test_dataset(idx_stores_dir)
+                train_set, test_set = _read_train_test_dataset(self.cfg)
             else:
-                train_set, test_set = _get_train_test_dataset(x_dir=self.cfg.PATH.INPUT_PATH, y_dir=self.cfg.PATH.LAB_PATH, idx_stores_dir=idx_stores_dir,
-                                                              test_train_ratio=self.cfg.TEST.TEST_SET_RATIO, cfg=self.cfg, )
+                train_set, test_set = _get_train_test_dataset(self.cfg)
+        else:
+            self.Model = load_state_dict(self.Model, self.args.checkpoint, self.cfg.TRAIN.DEVICE)
+            epoch_last, learning_rate_last = self.save_parameter.tbX_read()
+            epoch = self.args.epoch_continue if self.args.epoch_continue else epoch_last + 1
+            learning_rate = self.args.lr_continue if self.args.lr_continue else learning_rate_last
+            LOGGER.info('>' * 30 + 'Loading Last Checkpoint: %s, Last Learning Rate:%s, Last Epoch:%s',
+                        self.args.checkpoint, learning_rate, epoch)
+            #  load the last data set
+            train_set, test_set = _read_train_test_dataset(self.cfg)
+
         print('TRAIN SET:', train_set[:4], '\n', 'TEST SET:', test_set[:4])
+        LOGGER.info('>' * 30 + 'The Train Set is :{}, and The Test Set is :{}'.format(len(train_set), len(test_set)))
+
         self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
         if len(self.device_ids) > 1:
             self.Model = torch.nn.DataParallel(self.Model, device_ids=self.device_ids)
 
-        LOGGER.info('>' * 30 + 'The Train Set is :{}, and The Test Set is :{}'.format(len(train_set), len(test_set)))
         # _print_model_parm_nums(self.Model.to(self.cfg.TRAIN.DEVICE), self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1])
         return learning_rate, epoch, train_set, test_set
 
@@ -173,7 +173,7 @@ class Solver:
             if (step + 1) % self.cfg.TRAIN.SAVE_STEP == 0:
                 self._save_checkpoint(epoch)
             _timer.time_end()
-            LOGGER.info('[TRAIN] Epoch-Step:%3d-%4d/%4d, Step_LOSS: %10.4f, Batch_Average_LOSS: %10.4f, Time Step/Total-%s/%s',
+            LOGGER.info('[TRAIN] Model: %s Epoch-Step:%3d-%4d/%4d, Step_LOSS: %8.4f, Batch_Average_LOSS: %8.4f, Time Step/Total-%s/%s',self.cfg.TRAIN.MODEL,
                         epoch, step, batch_num, total_loss.item(), losses / (step + 1), _timer.diff, _timer.from_begin)
         self.save_parameter.tbX_write(epoch=epoch, learning_rate=optimizer.param_groups[0]['lr'], batch_average_loss=losses / batch_num, )
         LOGGER.info('[TRAIN] Summary: Epoch: %s, average total loss: %s', epoch, losses / batch_num)

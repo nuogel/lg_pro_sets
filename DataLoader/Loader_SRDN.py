@@ -18,12 +18,8 @@ class DataLoader:
         self.one_name = cfg.TEST.ONE_NAME
         self.train_batch_num = 100
         self.test_batch_num = 1
-        self.resize_input2output = False
-        self.downsamping = False
         if self.cfg.TRAIN.INPUT_AUG:
             self.Data_aug = Dataaug(self.cfg)
-        if self.cfg.TRAIN.MODEL in ['cbdnet', 'srcnn', 'vdsr']:
-            self.resize_input2output = True
 
     def get_data_by_idx(self, idx_store, index_from, index_to, is_training=True):
         '''
@@ -57,28 +53,17 @@ class DataLoader:
         input_imgs = []
         target_imgs = []
         for id in idx:
-            target = cv2.imread(id[2])  # no norse image or HR image
-            if self.cfg.TRAIN.TARGET_PREDEEL:
-                target = self._target_predeal(img=target, filename=id[0])
 
-            if id[1] in ['None', '', ' ', 'none']:
-                input = target
-                self.downsamping = True
-            else:
-                input = cv2.imread(id[1])
-                self.downsamping = False
-            if self.cfg.TRAIN.INPUT_PREDEEL:
-                input = self._input_predeal(img=input, filename=id[0], is_training=is_training)
+            target = self._target_prepare(filename=id)
+
+            input = self._input_prepare(target=target, filename=id, is_training=is_training)
 
             if self.cfg.TRAIN.SHOW_INPUT:
                 cv2.imshow('img', input)
                 cv2.waitKey(self.cfg.TRAIN.SHOW_INPUT)
-            input = torch.from_numpy(
-                np.asarray((input - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(
-                torch.FloatTensor)
-            target = torch.from_numpy(
-                np.asarray((target - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(
-                torch.FloatTensor)
+
+            input = torch.from_numpy(np.asarray((input - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(torch.FloatTensor)
+            target = torch.from_numpy(np.asarray((target - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(torch.FloatTensor)
             input_imgs.append(input)
             target_imgs.append(target)
 
@@ -87,32 +72,43 @@ class DataLoader:
 
         return input_imgs, target_imgs
 
-    def _input_predeal(self, **kwargs):
-        img = kwargs['img']
-        filename = kwargs['filename']
+    def _target_prepare(self, **kwargs):
+
+        id = kwargs['filename']
+        target = cv2.imread(id[2])  # no norse image or HR image
+        if target is None:
+            print(id, 'image is wrong!!')
+            exit()
+        if self.cfg.TRAIN.TARGET_PREDEAL:
+            # add the pre deal programs.
+            target = _crop_licience_plante(target, id[0])
+            pass
+
+        target = cv2.resize(target, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
+
+        return target
+
+    def _input_prepare(self, **kwargs):
+        target = kwargs['target']
+        id = kwargs['filename']
         is_training = kwargs['is_training']
-        if self.downsamping:
-            img = cv2.resize(img, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,
-                                   self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR))
-        if self.resize_input2output:
-            img = cv2.resize(img, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
-        # add the augmentation ...
+        if id[1] in ['None', '', ' ', 'none']:
+            input = target
+        else:
+            input = cv2.imread(id[1])
+
+        if self.cfg.TRAIN.MODEL not in ['cbdnet', 'dbpn', 'dncnn']:  # 不是去噪网络就不用缩小尺寸
+            input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,  # SR model 使用
+                                       self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR))
+
         if self.cfg.TRAIN.INPUT_AUG and is_training:
+            # add the augmentation ...
             # img, _ = self.Data_aug.augmentation(for_one_image=[img])
             # img = img[0]
             # compress_level = random.randint(5, 20)
-            img = Jpegcompress2(img, 10)
-        return img
+            input = Jpegcompress2(input, 10)
 
-    def _target_predeal(self, **kwargs):
-        img = kwargs['img']
-        filename = kwargs['filename']
-        # img = _crop_licience_plante(img, filename)
+        if self.cfg.TRAIN.MODEL in ['cbdnet', 'srcnn', 'vdsr']:
+            input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
 
-        try:
-            img = cv2.resize(img, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
-        except:
-            print(filename)
-        else:
-            pass
-        return img
+        return input

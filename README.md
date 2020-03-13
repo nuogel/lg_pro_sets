@@ -114,14 +114,14 @@ SR:
 
 dataset:youku
 
-networks | PSNR |weight size| PS
- --- | --- | --- |  --- 
-SRCNN|X|X|XXX
-FSRCNN|X|X|XXX
-VDSR |33.66|X|XXX
+networks | PSNR |weight size| one image time | ps
+ --- | --- | --- |  --- | ---
+SRCNN|X|X|0.4s|
+FSRCNN|X|X|0.3s
+VDSR |33.66|X|0.47s
 EDSR |30.97|X|XXX
+RDN |35.5| XX|0.8s 
 RCAN |35.73| XX|XXX 
 CBDNET |XX| XX|XXX 
-RDN |35.5| XX|XXX 
 
 
