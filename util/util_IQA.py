@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 
-class SameScore:
+class IQAScore:
     '''
     PSNR:XXXX
     '''

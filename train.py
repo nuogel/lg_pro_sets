@@ -15,7 +15,7 @@ from util.util_yml_parse import parse_yaml
 def _parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('--type', default='SRDN', type=str, help='yml_path')
-    parser.add_argument('--checkpoint', '--cp', default='tmp/checkpoint/now.pkl'  # 0  #
+    parser.add_argument('--checkpoint', '--cp', default=0  #'tmp/checkpoint/now.pkl'  #
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--batch_size', '--bz', default=1, type=int, help='batch size')
     parser.add_argument('--lr', default=0.0001, type=float, help='Learning rate')

@@ -5,7 +5,7 @@ writer: luogeng, 2020.03.10
 
 import cv2
 import os
-from util.util_PSNR import SameScore
+from util.util_IQA import SameScore
 
 object_car_path = 'E:/datasets/test_dataset/crop/car_track.png'
 file = 'F:/datasets/SR/REDS4/train_sharp_part/000'
