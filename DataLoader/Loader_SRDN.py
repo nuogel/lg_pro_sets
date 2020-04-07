@@ -34,17 +34,17 @@ class Loader(DataLoader):
             data_info = self.dataset_txt[0]
         else:
             data_info = self.dataset_txt[index]
-        img, lab = self._prepare_data(data_info)
+        img, label = self._prepare_data(data_info)
 
         img = np.asarray(img, dtype=np.float32)
-        lab = np.asarray(lab, dtype=np.float32)
-        img = torch.from_numpy(img)
-        label = torch.from_numpy(lab)
-        img = img.to(self.cfg.TRAIN.DEVICE)
-        label = label.to(self.cfg.TRAIN.DEVICE)
+        label = np.asarray(label, dtype=np.float32)
+        # img = torch.from_numpy(img)
+        # label = torch.from_numpy(lab)
+        # img = img.to(self.cfg.TRAIN.DEVICE)
+        # label = label.to(self.cfg.TRAIN.DEVICE)
         img = (img - self.cfg.TRAIN.PIXCELS_NORM[0]) / self.cfg.TRAIN.PIXCELS_NORM[1]
         label = (label - self.cfg.TRAIN.PIXCELS_NORM[0]) / self.cfg.TRAIN.PIXCELS_NORM[1]
-        img = img.permute([2, 0, 1])
+        img = img.transpose((2, 0, 1))
         return (img, label)  # only need the labels
 
     def _prepare_data(self, idx, is_training=False):

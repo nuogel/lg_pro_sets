@@ -9,7 +9,7 @@ import torch
 import cv2
 import numpy as np
 from NetWorks.NetworksConfigFactory import get_loss_class, get_model_class, get_score_class
-from DataLoader.DataLoaderDict import DataLoaderDict
+from DataLoader.DataLoaderFactory import DataLoaderDict
 import glob
 from util.util_load_state_dict import load_state_dict
 from util.util_prepare_device import load_device
