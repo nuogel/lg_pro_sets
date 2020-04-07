@@ -154,9 +154,12 @@ class Test_SRDN(Test_Base):
         # if self.cfg.TRAIN.MODEL in ['cbdnet', 'srcnn', 'vdsr']:
         #     test_img = cv2.resize(test_img, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
 
-        # test_img = torch.from_numpy(np.asarray((test_img - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).unsqueeze(0).type(torch.FloatTensor)
         idx_made = [[os.path.basename(img_path), 'none', img_path]]
         input, target = self.DataLoader._prepare_data(idx_made, is_training=False)
+        input, target = torch.from_numpy(input), torch.from_numpy(target)
+        input = torch.from_numpy(np.asarray((input - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(torch.FloatTensor)
+        target = torch.from_numpy(np.asarray((target - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(torch.FloatTensor)
+
         input = input.to(self.cfg.TRAIN.DEVICE).permute(0, 3, 1, 2)
         target = target.to(self.cfg.TRAIN.DEVICE)
         self.cfg.TRAIN.BATCH_SIZE = 1
@@ -164,8 +167,8 @@ class Test_SRDN(Test_Base):
         if self.cfg.TEST.SAVE_LABELS:
             if not os.path.isdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH):
                 os.mkdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH)
-            basename =  os.path.basename(img_path).split('.')[0]
-            save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, self.cfg.TRAIN.MODEL +basename + '.png')  # .format(self.cfg.TRAIN.UPSCALE_FACTOR))
+            basename = os.path.basename(img_path).split('.')[0]
+            save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, self.cfg.TRAIN.MODEL + basename + '.png')  # .format(self.cfg.TRAIN.UPSCALE_FACTOR))
         else:
             save_path = None
 

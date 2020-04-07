@@ -23,6 +23,7 @@ from util.util_prepare_device import load_device
 from util.util_load_state_dict import load_state_dict
 from util.util_prepare_cfg import prepare_cfg
 from DataLoader.DataLoaderDict import DataLoaderDict
+from torch.utils.data import DataLoader
 
 LOGGER = logging.getLogger(__name__)
 
@@ -33,7 +34,6 @@ class Solver:
         self.args = args
         self.one_test = self.cfg.TEST.ONE_TEST
         self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)
-        self.DataLoader = DataLoaderDict[self.cfg.BELONGS](self.cfg)
         self.save_parameter = TrainParame(self.cfg)
         self.Model = get_model_class(self.cfg.BELONGS, self.cfg.TRAIN.MODEL)(self.cfg)
         self.LossFun = get_loss_class(self.cfg.BELONGS, self.cfg.TRAIN.MODEL)(self.cfg)
@@ -95,6 +95,10 @@ class Solver:
         self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
         if len(self.device_ids) > 1:
             self.Model = torch.nn.DataParallel(self.Model, device_ids=self.device_ids)
+        traindata = DataLoaderDict[self.cfg.BELONGS](self.cfg, train_set)
+        testdata = DataLoaderDict[self.cfg.BELONGS](self.cfg, train_set)
+        self.trainDataset = DataLoader(dataset=traindata, batch_size=self.cfg.TRAIN.BATCH_SIZE, num_workers=self.args.number_works, shuffle=False)
+        self.testDataset = DataLoader(dataset=testdata, batch_size=self.cfg.TRAIN.BATCH_SIZE, num_workers=self.args.number_works, shuffle=False)
 
         # _print_model_parm_nums(self.Model.to(self.cfg.TRAIN.DEVICE), self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1])
         return learning_rate, epoch, train_set, test_set
@@ -156,7 +160,8 @@ class Solver:
         optimizer.zero_grad()
         for step in range(batch_num):
             _timer.time_start()
-            train_data = self.DataLoader.get_data_by_idx(train_set, step * batch_size, (step + 1) * batch_size, is_training=True)
+            train_data = next(iter(self.trainDataset))
+            # train_data = self.DataLoader.get_data_by_idx(train_set, step * batch_size, (step + 1) * batch_size, is_training=True)
             if train_data[1] is None:
                 LOGGER.warning('[TRAIN] NO gt_labels IN THIS BATCH. Epoch: %3d, step: %4d/%4d ', epoch, step, batch_num)
                 continue
@@ -173,7 +178,7 @@ class Solver:
             if (step + 1) % self.cfg.TRAIN.SAVE_STEP == 0:
                 self._save_checkpoint(epoch)
             _timer.time_end()
-            LOGGER.info('[TRAIN] Model: %s Epoch-Step:%3d-%4d/%4d, Step_LOSS: %8.4f, Batch_Average_LOSS: %8.4f, Time Step/Total-%s/%s',self.cfg.TRAIN.MODEL,
+            LOGGER.info('[TRAIN] Model: %s Epoch-Step:%3d-%4d/%4d, Step_LOSS: %8.4f, Batch_Average_LOSS: %8.4f, Time Step/Total-%s/%s', self.cfg.TRAIN.MODEL,
                         epoch, step, batch_num, total_loss.item(), losses / (step + 1), _timer.diff, _timer.from_begin)
         self.save_parameter.tbX_write(epoch=epoch, learning_rate=optimizer.param_groups[0]['lr'], batch_average_loss=losses / batch_num, )
         LOGGER.info('[TRAIN] Summary: Epoch: %s, average total loss: %s', epoch, losses / batch_num)
@@ -188,7 +193,8 @@ class Solver:
         self.Score.init_parameters()
         for step in range(batch_num):
             _timer.time_start()
-            test_data = self.DataLoader.get_data_by_idx(test_set, step * batch_size, (step + 1) * batch_size, is_training=False)
+            test_data = next(iter(self.trainDataset))
+            # test_data = self.DataLoader.get_data_by_idx(test_set, step * batch_size, (step + 1) * batch_size, is_training=False)
             if test_data[0] is None: continue
             predict = self.Model.forward(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)
             if self.cfg.BELONGS in ['OBD']: test_data = test_data[1]

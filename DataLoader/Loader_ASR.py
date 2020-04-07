@@ -13,7 +13,7 @@ from datetime import datetime
 from scipy import signal
 
 
-class DataLoader:
+class Loader:
     def __init__(self, cfg):
         self.cfg = cfg
         self.batchsize = cfg.TRAIN.BATCH_SIZE

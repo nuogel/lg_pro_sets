@@ -9,7 +9,7 @@ from util.util_get_cls_names import _get_class_names
 from util.util_show_img import _show_img
 
 
-class DataLoader:
+class Loader:
     def __init__(self, cfg):
         self.cfg = cfg
         self.dataaug = Dataaug(cfg)

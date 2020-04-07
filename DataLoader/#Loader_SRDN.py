@@ -1,5 +1,3 @@
-from torch.utils.data import DataLoader
-from util.util_read_label_xml import _read_label_voc
 import os
 import torch
 import numpy as np
@@ -10,51 +8,70 @@ from util.util_data_aug import Dataaug
 from util.util_JPEG_compression import Jpegcompress2
 
 
-class Loader(DataLoader):
-    """
-    Load data with DataLoader.
-    """
+# import multiprocessing as mp
 
-    def __init__(self, cfg, dataset_txt):
-        super(Loader, self).__init__(object)
+
+class Loader:
+    def __init__(self, cfg):
         self.cfg = cfg
         self.one_test = cfg.TEST.ONE_TEST
         self.one_name = cfg.TEST.ONE_NAME
         self.train_batch_num = 100
         self.test_batch_num = 1
         self.Data_aug = Dataaug(self.cfg)
-        self.targets = []
-        self.dataset_txt = dataset_txt
 
-    def __len__(self):
-        return len(self.dataset_txt)
-
-    def __getitem__(self, index):
+    def get_data_by_idx(self, idx_store, index_from, index_to, is_training=True):
+        '''
+        :param idx_store:
+        :param index_from:
+        :param index_to:
+        :return: imags: torch.Float32, relative labels:[[cls, x1, y1, x2, y2],[...],...]
+        '''
+        data = (None, None)
         if self.one_test:
-            data_info = self.dataset_txt[0]
+            if self.one_name:
+                idx = self.one_name
+            else:
+                idx = idx_store[1:2]
         else:
-            data_info = self.dataset_txt[index]
-        img, lab = self._prepare_data(data_info)
+            idx = idx_store[index_from: index_to]
+        if not idx:
+            print('error, no IDX in loader_img.py')
+            exit()
+        # processes = mp.Pool(4)
+        # imgs, labels = processes.apply_async(self._prepare_data, (idx))
+        imgs, labels = self._prepare_data(idx, is_training)
 
-        img = np.asarray(img, dtype=np.float32)
-        lab = np.asarray(lab, dtype=np.float32)
-        img = torch.from_numpy(img)
-        label = torch.from_numpy(lab)
-        img = img.to(self.cfg.TRAIN.DEVICE)
-        label = label.to(self.cfg.TRAIN.DEVICE)
-        img = (img - self.cfg.TRAIN.PIXCELS_NORM[0]) / self.cfg.TRAIN.PIXCELS_NORM[1]
-        label = (label - self.cfg.TRAIN.PIXCELS_NORM[0]) / self.cfg.TRAIN.PIXCELS_NORM[1]
-        img = img.permute([2, 0, 1])
-        return (img, label)  # only need the labels
+        imgs = torch.from_numpy(imgs)
+        labels = torch.from_numpy(labels)
+        imgs = imgs.to(self.cfg.TRAIN.DEVICE)
+        labels = labels.to(self.cfg.TRAIN.DEVICE)
+        imgs = (imgs - self.cfg.TRAIN.PIXCELS_NORM[0]) / self.cfg.TRAIN.PIXCELS_NORM[1]
+        labels = (labels - self.cfg.TRAIN.PIXCELS_NORM[0]) / self.cfg.TRAIN.PIXCELS_NORM[1]
+        imgs = imgs.permute([0, 3, 1, 2])
+        data = (imgs, labels)  #
+        return data
 
     def _prepare_data(self, idx, is_training=False):
-        target = self._target_prepare(filename=idx)
-        input = self._input_prepare(target=target, filename=idx, is_training=is_training)
+        input_imgs = []
+        target_imgs = []
+        for id in idx:
 
-        if self.cfg.TRAIN.SHOW_INPUT:
-            cv2.imshow('img', input)
-            cv2.waitKey(self.cfg.TRAIN.SHOW_INPUT)
-        return input, target
+            target = self._target_prepare(filename=id)
+
+            input = self._input_prepare(target=target, filename=id, is_training=is_training)
+
+            if self.cfg.TRAIN.SHOW_INPUT:
+                cv2.imshow('img', input)
+                cv2.waitKey(self.cfg.TRAIN.SHOW_INPUT)
+
+            input_imgs.append(input)
+            target_imgs.append(target)
+
+        input_imgs = np.asarray(input_imgs, dtype=np.float32)
+        target_imgs = np.asarray(target_imgs, dtype=np.float32)
+
+        return input_imgs, target_imgs
 
     def _target_prepare(self, **kwargs):
 

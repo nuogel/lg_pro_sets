@@ -20,6 +20,8 @@ def _parse_arguments():
     parser.add_argument('--batch_size', '--bz', default=1, type=int, help='batch size')
     parser.add_argument('--lr', default=0.0001, type=float, help='Learning rate')
     parser.add_argument('--lr_continue', '--lr_c', default=0.0001, type=float, help='Learning rate')
+    parser.add_argument('--number_works', '--n_w', default=0, type=int, help='number works of DataLoader')
+
     parser.add_argument('--epoch-continue', default=None, type=int, help='Epoch of continue training')
     parser.add_argument('--debug', '--d', action='store_true', default=False, help='Enable verbose info')
     parser.add_argument('--test_only', '--to', default=False, type=bool, help='test only')
