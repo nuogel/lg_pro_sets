@@ -8,10 +8,10 @@ def make_list(pathes):
         path_list = glob.glob(path + '*/*.png')
         for path in path_list:
             file_name = os.path.basename(path)
-            # path_2 = path.replace('h_GT', 'l')
-            # if not os.path.isfile(path_2):
-            #     continue
-            dir_list.append([file_name, 'None', path])
+            path_2 = path.replace('x1', 'x2')
+            if not os.path.isfile(path_2):
+                continue
+            dir_list.append([file_name,path, path_2])
 
     return dir_list
 
@@ -27,7 +27,8 @@ def _wrte_dataset_txt(dataset, save_path):
 
 if __name__ == '__main__':
     # pathes = ['D:/datasets/CCPD2019/ccpd_challenge/']
-    pathes = ['F:/datasets/SR/REDS4/train_sharp_part/']
-    save_path = 'util_tmp/REDS4.txt'
+    # pathes = ['F:/datasets/SR/REDS4/train_sharp_part/']
+    pathes = ['E:/datasets/SelfFilms/x1/']
+    save_path = 'util_tmp/SelfFilms.txt'
     datalist = make_list(pathes)
     _wrte_dataset_txt(datalist, save_path)

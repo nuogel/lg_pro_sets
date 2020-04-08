@@ -20,20 +20,20 @@ class dataloader_factory:
                                    num_workers=self.args.number_works,
                                    # collate_fn=self.collate_fun,
                                    shuffle=True)
-        trainDataloader = iter(train_Dataset)
 
         testdata = self.DataLoaderDict[self.cfg.BELONGS](self.cfg, testdataset)
         test_Dataset = DataLoader(dataset=testdata,
                                   batch_size=self.cfg.TRAIN.BATCH_SIZE,
                                   num_workers=self.args.number_works,
                                   shuffle=False)
-        testDataloader = iter(test_Dataset)
-        return trainDataloader, testDataloader
+        return train_Dataset, test_Dataset
+
+    def iter_loader(self, dataset):
+        dataloader = iter(dataset)
+        return dataloader
 
     def load_next(self, dataset):
         data = next(dataset)
-        for i in range(len(data)):
-            data[i] = data[i].to(self.cfg.TRAIN.DEVICE)
         return data
 
     def collate_fun(self, batch):

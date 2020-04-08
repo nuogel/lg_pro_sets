@@ -154,9 +154,10 @@ class Solver:
         # count the step time, total time...
         _timer = Time()
         optimizer.zero_grad()
+        loader = self.dataloader_factory.iter_loader(self.trainDataloader)
         for step in range(batch_num):
             _timer.time_start()
-            train_data = self.dataloader_factory.load_next(self.trainDataloader)
+            train_data = self.dataloader_factory.load_next(loader)
             # train_data = self.DataLoader.get_data_by_idx(train_set, step * batch_size, (step + 1) * batch_size, is_training=True)
             if train_data[1] is None:
                 LOGGER.warning('[TRAIN] NO gt_labels IN THIS BATCH. Epoch: %3d, step: %4d/%4d ', epoch, step, batch_num)
@@ -187,9 +188,10 @@ class Solver:
         batch_size = self.cfg.TRAIN.BATCH_SIZE
         batch_num = self.test_batch_num if self.one_test else len(test_set) // batch_size
         self.Score.init_parameters()
+        loader = self.dataloader_factory.iter_loader(self.testDataloader)
         for step in range(batch_num):
             _timer.time_start()
-            test_data = self.dataloader_factory.load_next(self.testDataloader)
+            test_data = self.dataloader_factory.load_next(loader)
             # test_data = self.DataLoader.get_data_by_idx(test_set, step * batch_size, (step + 1) * batch_size, is_training=False)
             if test_data[0] is None: continue
             predict = self.Model.forward(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)

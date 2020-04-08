@@ -8,15 +8,15 @@ PATH:
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
 
 TRAIN:
-  MODEL: rcan #rdn #vdsr #fsrcnn #srcnn #cbdnet  #edsr #dbpn #   espcn #dncnn #
+  MODEL: edsr #fsrcnn #rdn #srcnn #dbpn #rcan #vdsr #cbdnet  #  espcn #dncnn #
   EPOCH_SIZE: 4000
   BATCH_SIZE: 4
   BATCH_BACKWARD_SIZE: 1   # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
-  TRAIN_DATA_FROM_FILE: YOUKU   # [YOUKU, CCPD, RED4]
+  TRAIN_DATA_FROM_FILE: FILMS #YOUKU   # [YOUKU, CCPD, RED4]
 
   # aug
-  UPSCALE_FACTOR: 4
-  IMG_SIZE: [1920, 1080] #[1280, 720] #[200, 100] #[64, 64] #[512, 384]  #[960, 384] #[W,H] #
+  UPSCALE_FACTOR: 2
+  IMG_SIZE: [1216, 554] #[1920, 1080] #[1280, 720] #[200, 100] #[64, 64] #[512, 384]  #[960, 384] #[W,H] #
   PIXCELS_NORM: [0., 255.]  # [mean, std] #must be float.
   INPUT_AUG: 0
   TARGET_PREDEAL: 0 # pre dealing the target image.
@@ -44,7 +44,7 @@ TRAIN:
 TEST:
   TEST_SET_RATIO: 0.1
 
-  SAVE_LABELS: 1
+  SAVE_LABELS: 0
   SHOW_EVAL_TIME: 0
 
   TEST_ONLY: 0

@@ -38,13 +38,15 @@ class Loader(DataLoader):
 
         img = np.asarray(img, dtype=np.float32)
         label = np.asarray(label, dtype=np.float32)
-        # img = torch.from_numpy(img)
-        # label = torch.from_numpy(lab)
-        # img = img.to(self.cfg.TRAIN.DEVICE)
-        # label = label.to(self.cfg.TRAIN.DEVICE)
+        img = torch.from_numpy(img)
+        label = torch.from_numpy(label)
+        img = img.to(self.cfg.TRAIN.DEVICE)
+        label = label.to(self.cfg.TRAIN.DEVICE)
         img = (img - self.cfg.TRAIN.PIXCELS_NORM[0]) / self.cfg.TRAIN.PIXCELS_NORM[1]
         label = (label - self.cfg.TRAIN.PIXCELS_NORM[0]) / self.cfg.TRAIN.PIXCELS_NORM[1]
-        img = img.transpose((2, 0, 1))
+        # img = img.transpose((2, 0, 1))
+        img = img.permute((2, 0, 1))
+
         return (img, label)  # only need the labels
 
     def _prepare_data(self, idx, is_training=False):
