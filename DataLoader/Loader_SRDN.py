@@ -15,7 +15,7 @@ class Loader(DataLoader):
     Load data with DataLoader.
     """
 
-    def __init__(self, cfg, dataset_txt):
+    def __init__(self, cfg):
         super(Loader, self).__init__(object)
         self.cfg = cfg
         self.one_test = cfg.TEST.ONE_TEST
@@ -24,7 +24,6 @@ class Loader(DataLoader):
         self.test_batch_num = 1
         self.Data_aug = Dataaug(self.cfg)
         self.targets = []
-        self.dataset_txt = dataset_txt
 
     def __len__(self):
         return len(self.dataset_txt)
@@ -47,11 +46,11 @@ class Loader(DataLoader):
         # img = img.transpose((2, 0, 1))
         img = img.permute((2, 0, 1))
 
-        return (img, label)  # only need the labels
+        return (img, label, data_info)  # only need the labels
 
-    def _prepare_data(self, idx, is_training=False):
+    def _prepare_data(self, idx):
         target = self._target_prepare(filename=idx)
-        input = self._input_prepare(target=target, filename=idx, is_training=is_training)
+        input = self._input_prepare(target=target, filename=idx)
 
         if self.cfg.TRAIN.SHOW_INPUT:
             cv2.imshow('img', input)
@@ -63,8 +62,8 @@ class Loader(DataLoader):
         id = kwargs['filename']
         target = cv2.imread(id[2])  # no norse image or HR image
         if target is None:
-            print(id, 'image is wrong!!')
-            exit()
+            print(id, 'image is None!!')
+            return None
         if self.cfg.TRAIN.TARGET_PREDEAL:
             # add the pre deal programs.
             # target = _crop_licience_plante(target, id[0])
@@ -79,8 +78,7 @@ class Loader(DataLoader):
     def _input_prepare(self, **kwargs):
         target = kwargs['target']
         id = kwargs['filename']
-        is_training = kwargs['is_training']
-        input_is_target = True  # id[1] in ['None', '', ' ', 'none']
+        input_is_target = self.cfg.TRAIN.INPUT_FROM_TARGET
 
         if input_is_target:
             input = target
@@ -91,7 +89,7 @@ class Loader(DataLoader):
             input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,  # SR model 使用
                                        self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR))
 
-        if self.cfg.TRAIN.INPUT_AUG and is_training:
+        if self.cfg.TRAIN.INPUT_AUG and self.is_training:
             # add the augmentation ...
             # img, _ = self.Data_aug.augmentation(for_one_image=[img])
             # img = img[0]
@@ -102,3 +100,7 @@ class Loader(DataLoader):
             input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
 
         return input
+
+    def _load_dataset(self, dataset, is_training):
+        self.dataset_txt = dataset
+        self.is_training=is_training

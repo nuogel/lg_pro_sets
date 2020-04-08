@@ -13,20 +13,20 @@ class dataloader_factory:
                                "SRDN": Loader_SRDN.Loader,
                                }
 
-    def make_dataset(self, traindataset, testdataset):
-        traindata = self.DataLoaderDict[self.cfg.BELONGS](self.cfg, traindataset)
-        train_Dataset = DataLoader(dataset=traindata,
-                                   batch_size=self.cfg.TRAIN.BATCH_SIZE,
-                                   num_workers=self.args.number_works,
-                                   # collate_fn=self.collate_fun,
-                                   shuffle=True)
+    def make_dataset(self, datasets=[]):
+        DataSets = []
+        for dataset in datasets:
+            data = self.DataLoaderDict[self.cfg.BELONGS](self.cfg)
+            shuffle = False if len(datasets) == 1 else True
+            data._load_dataset(dataset, is_training=shuffle)
+            Dataset = DataLoader(dataset=data,
+                                 batch_size=self.cfg.TRAIN.BATCH_SIZE,
+                                 num_workers=self.args.number_works,
+                                 # collate_fn=self.collate_fun,
+                                 shuffle=shuffle)
+            DataSets.append(Dataset)
 
-        testdata = self.DataLoaderDict[self.cfg.BELONGS](self.cfg, testdataset)
-        test_Dataset = DataLoader(dataset=testdata,
-                                  batch_size=self.cfg.TRAIN.BATCH_SIZE,
-                                  num_workers=self.args.number_works,
-                                  shuffle=False)
-        return train_Dataset, test_Dataset
+        return DataSets
 
     def iter_loader(self, dataset):
         dataloader = iter(dataset)

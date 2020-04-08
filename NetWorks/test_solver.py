@@ -9,7 +9,7 @@ import torch
 import cv2
 import numpy as np
 from NetWorks.NetworksConfigFactory import get_loss_class, get_model_class, get_score_class
-from DataLoader.DataLoaderFactory import DataLoaderDict
+from DataLoader.DataLoaderFactory import dataloader_factory
 import glob
 from util.util_load_state_dict import load_state_dict
 from util.util_prepare_device import load_device
@@ -26,8 +26,7 @@ class Test_Base(object):
         self.args = args
         self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)
         self.Model = get_model_class(self.cfg.BELONGS, self.cfg.TRAIN.MODEL)(self.cfg)
-        # self.LossFun = get_loss_class(self.cfg.BELONGS, self.cfg.TRAIN.MODEL)(self.cfg)
-        # self.Score = get_score_class(self.cfg.BELONGS)(self.cfg)
+        self.dataloader_factory = dataloader_factory(self.cfg, args)
         if self.args.checkpoint:
             self.model_path = self.args.checkpoint
         else:
@@ -36,7 +35,7 @@ class Test_Base(object):
         self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
         self.Model.eval()
 
-    def test_backbone(self, test_path):
+    def test_backbone(self, DataSet):
         pass
 
     def test_run(self, file_s=None):
@@ -52,29 +51,22 @@ class Test_Base(object):
         if os.path.isfile(file_s):
             if file_s.split('.')[1] == 'txt':  # .txt
                 lines = open(file_s, 'r').readlines()
-                FILES = []
-                GTS = []
+                dataset = []
                 for line in lines:
-                    tmp = line.split(";")
-                    FILES.append(tmp[2].strip())
-                    if len(tmp) > 1:  # ground truth.
-                        GTS.append(tmp[2].strip())
+                    tmp = line.strip().split(";")
+                    dataset.append(tmp)
             else:  # xx.jpg
-                FILES = [file_s]
+                dataset = [file_s]
         else:
             if os.path.isdir(file_s):
-                FILES = glob.glob('{}/*.*'.format(file_s))
+                dataset = glob.glob('{}/*.*'.format(file_s))
 
             elif isinstance(list, file_s):
-                FILES = file_s
+                dataset = file_s
             else:
-                FILES = None
-
-        _len = len(FILES)
-        for i, file_path in enumerate(FILES):
-            # TODO: make a matrix instead of feed them one by one.
-            print('testing [{}/{}] {}'.format(i + 1, _len, file_path))
-            self.test_backbone(file_path)
+                dataset = None
+        DataSet = self.dataloader_factory.make_dataset([dataset])[0]
+        self.test_backbone(DataSet)
 
 
 class Test_OBD(Test_Base):
@@ -83,7 +75,7 @@ class Test_OBD(Test_Base):
         self.dataaug = Dataaug(cfg)
         self.parsepredict = ParsePredict(cfg)
         self.apolloclass2num = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
-        self.DataLoader = DataLoaderDict[cfg.BELONGS](cfg)
+        self.DataLoader = dataloader_factory.DataLoaderDict[cfg.BELONGS](cfg)
         self.SCORE = get_score_class(self.cfg.BELONGS)(self.cfg)
         self.SCORE.init_parameters()
 
@@ -131,7 +123,7 @@ class Test_OBD(Test_Base):
 class Test_ASR(Test_Base):
     def __init__(self, cfg, args):
         super(Test_ASR, self).__init__(cfg, args)
-        self.DataLoader = DataLoaderDict[cfg.BELONGS](cfg)
+        self.DataLoader = self.dataloader_factory.DataLoaderDict
 
     def test_backbone(self, wav_path):
         """Test."""
@@ -146,41 +138,31 @@ class Test_ASR(Test_Base):
 class Test_SRDN(Test_Base):
     def __init__(self, cfg, args):
         super(Test_SRDN, self).__init__(cfg, args)
-        self.DataLoader = DataLoaderDict[cfg.BELONGS](cfg)
+        self.DataLoader = self.dataloader_factory.DataLoaderDict[cfg.BELONGS](cfg)
 
-    def test_backbone(self, img_path):
+    def test_backbone(self, DataSet):
         """Test."""
-        # prepare paramertas
-        # if self.cfg.TRAIN.MODEL in ['cbdnet', 'srcnn', 'vdsr']:
-        #     test_img = cv2.resize(test_img, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
+        for i, (inputs, targets, data_infos) in enumerate(DataSet):
+            predicts = self.Model.forward(input_x=inputs, is_training=False)
+            batch = predicts.shape[0]
+            save_paths = []
+            if self.cfg.TEST.SAVE_LABELS:
+                for i in range(batch):
+                    data_info = data_infos[i]
+                    os.makedirs(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, exist_ok=True)
+                    os.makedirs(os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, self.cfg.TRAIN.MODEL), exist_ok=True)
+                    save_paths.append(os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, self.cfg.TRAIN.MODEL + '/' + data_info[0]))
 
-        idx_made = [[os.path.basename(img_path), 'none', img_path]]
-        input, target = self.DataLoader._prepare_data(idx_made, is_training=False)
-        input, target = torch.from_numpy(input), torch.from_numpy(target)
-        input = torch.from_numpy(np.asarray((input - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(torch.FloatTensor)
-        target = torch.from_numpy(np.asarray((target - self.cfg.TRAIN.PIXCELS_NORM[0]) * 1.0 / self.cfg.TRAIN.PIXCELS_NORM[1])).type(torch.FloatTensor)
-
-        input = input.to(self.cfg.TRAIN.DEVICE).permute(0, 3, 1, 2)
-        target = target.to(self.cfg.TRAIN.DEVICE)
-        self.cfg.TRAIN.BATCH_SIZE = 1
-        predict = self.Model.forward(input_x=input, is_training=False)
-        if self.cfg.TEST.SAVE_LABELS:
-            if not os.path.isdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH):
-                os.mkdir(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH)
-            basename = os.path.basename(img_path).split('.')[0]
-            save_path = os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, self.cfg.TRAIN.MODEL + basename + '.png')  # .format(self.cfg.TRAIN.UPSCALE_FACTOR))
-        else:
-            save_path = None
-
-        # _input = input.permute(0, 2, 3, 1)
-        # parse_Tensor_img(_input, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=self.cfg.PATH.GENERATE_LABEL_SAVE_PATH + basename + self.cfg.TRAIN.MODEL + '_input.png',
-        #                  show_time=0)
-        # parse_Tensor_img(predict, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=self.cfg.PATH.GENERATE_LABEL_SAVE_PATH + basename + self.cfg.TRAIN.MODEL + '_predict.png',
-        #                  show_time=0)
-        input = torch.nn.functional.interpolate(input, size=(predict.shape[1], predict.shape[2]))
-        input = input.permute(0, 2, 3, 1)
-        img_cat = torch.cat([input, predict], dim=1)
-        parse_Tensor_img(img_cat, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=save_path, show_time=0)
+            predict_size = (predicts.shape[1], predicts.shape[2])
+            inputs = torch.nn.functional.interpolate(inputs, size=predict_size)
+            inputs = inputs.permute(0, 2, 3, 1)
+            inputs_join_predicts = 0
+            if inputs_join_predicts:
+                img_cat = torch.cat([inputs, predicts], dim=1)
+            else:
+                img_cat = predicts
+            parse_Tensor_img(img_cat, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_paths=save_paths,
+                             show_time=self.cfg.TEST.SHOW_EVAL_TIME)
 
 
 Test = {'OBD': Test_OBD,

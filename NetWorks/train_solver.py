@@ -95,7 +95,7 @@ class Solver:
         self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
         if len(self.device_ids) > 1:
             self.Model = torch.nn.DataParallel(self.Model, device_ids=self.device_ids)
-        self.trainDataloader, self.testDataloader = self.dataloader_factory.make_dataset(train_set, test_set)
+        self.trainDataloader, self.testDataloader = self.dataloader_factory.make_dataset([train_set, test_set])
         # _print_model_parm_nums(self.Model.to(self.cfg.TRAIN.DEVICE), self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1])
         return learning_rate, epoch, train_set, test_set
 

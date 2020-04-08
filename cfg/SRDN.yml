@@ -18,6 +18,7 @@ TRAIN:
   UPSCALE_FACTOR: 2
   IMG_SIZE: [1216, 554] #[1920, 1080] #[1280, 720] #[200, 100] #[64, 64] #[512, 384]  #[960, 384] #[W,H] #
   PIXCELS_NORM: [0., 255.]  # [mean, std] #must be float.
+  INPUT_FROM_TARGET: 0
   INPUT_AUG: 0
   TARGET_PREDEAL: 0 # pre dealing the target image.
   SHOW_INPUT: 0  # showtime.
@@ -44,7 +45,7 @@ TRAIN:
 TEST:
   TEST_SET_RATIO: 0.1
 
-  SAVE_LABELS: 0
+  SAVE_LABELS: 1
   SHOW_EVAL_TIME: 0
 
   TEST_ONLY: 0

@@ -17,7 +17,7 @@ def _parse_arguments():
     parser.add_argument('--type', default='SRDN', type=str, help='yml_path')
     parser.add_argument('--checkpoint', '--cp', default='tmp/checkpoint/now.pkl'  #0  #
                         , help='Path to the checkpoint to be loaded to the model')
-    parser.add_argument('--batch_size', '--bz', default=2, type=int, help='batch size')
+    parser.add_argument('--batch_size', '--bz', default=8, type=int, help='batch size')
     parser.add_argument('--lr', default=0.0001, type=float, help='Learning rate')
     parser.add_argument('--lr_continue', '--lr_c', default=0.0001, type=float, help='Learning rate')
     parser.add_argument('--number_works', '--n_w', default=0, type=int, help='number works of DataLoader')
@@ -32,8 +32,6 @@ def main():
     """Main. entry of this script."""
     exit_code = 0
     args = _parse_arguments()
-    # real_path = os.path.realpath('')
-    # yml_type = os.path.join(real_path, args.type)
     cfg = parse_yaml(args.type)
 
     logging.getLogger().level = logging.DEBUG

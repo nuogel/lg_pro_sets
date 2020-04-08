@@ -11,9 +11,9 @@ class SRDNLOSS:
         self.mseloss = nn.MSELoss()  # size_average=False
 
     def Loss_Call(self, prediction, train_data, losstype='MSE'):
-        low_img, high_img = train_data
+        low_img, high_img, data_infos = train_data
         if self.cfg.TRAIN.SHOW_PREDICT:
-            parse_Tensor_img(prediction, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, show_time=1)
+            parse_Tensor_img(prediction, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, show_time=self.cfg.TRAIN.SHOW_PREDICT)
         if losstype == 'MSE' or losstype == 'mse':
             loss = self.mseloss(prediction, high_img)
             # mse = loss
