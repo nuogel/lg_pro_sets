@@ -156,9 +156,9 @@ class Test_SRDN(Test_Base):
             predict_size = (predicts.shape[1], predicts.shape[2])
             inputs = torch.nn.functional.interpolate(inputs, size=predict_size)
             inputs = inputs.permute(0, 2, 3, 1)
-            inputs_join_predicts = 0
+            inputs_join_predicts = 1
             if inputs_join_predicts:
-                img_cat = torch.cat([inputs, predicts], dim=1)
+                img_cat = torch.cat([inputs, predicts, targets], dim=1)
             else:
                 img_cat = predicts
             parse_Tensor_img(img_cat, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_paths=save_paths,

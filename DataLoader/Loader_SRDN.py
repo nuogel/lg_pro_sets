@@ -51,10 +51,6 @@ class Loader(DataLoader):
     def _prepare_data(self, idx):
         target = self._target_prepare(filename=idx)
         input = self._input_prepare(target=target, filename=idx)
-
-        if self.cfg.TRAIN.SHOW_INPUT:
-            cv2.imshow('img', input)
-            cv2.waitKey(self.cfg.TRAIN.SHOW_INPUT)
         return input, target
 
     def _target_prepare(self, **kwargs):
@@ -78,14 +74,13 @@ class Loader(DataLoader):
     def _input_prepare(self, **kwargs):
         target = kwargs['target']
         id = kwargs['filename']
-        input_is_target = self.cfg.TRAIN.INPUT_FROM_TARGET
 
-        if input_is_target:
+        if self.cfg.TRAIN.INPUT_FROM_TARGET:
             input = target
         else:
             input = cv2.imread(id[1])
 
-        if self.cfg.TRAIN.MODEL not in ['cbdnet', 'dbpn', 'dncnn']:  # 去噪网络就不用缩小尺寸
+        if self.cfg.TRAIN.MODEL not in ['cbdnet', 'dncnn']:  # 去噪网络就不用缩小尺寸
             input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,  # SR model 使用
                                        self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR))
 
@@ -96,7 +91,7 @@ class Loader(DataLoader):
             # compress_level = random.randint(5, 20)
             input = Jpegcompress2(input, 10)
 
-        if self.cfg.TRAIN.MODEL in ['cbdnet', 'srcnn', 'vdsr']:
+        if self.cfg.TRAIN.MODEL in ['cbdnet', 'srcnn', 'vdsr']: # 输入与输出一样大小
             input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
 
         return input

@@ -9,9 +9,9 @@ class DBPN(nn.Module):
         super(DBPN, self).__init__()
         self.cfg = cfg
         num_channels = 3
-        base_filter = 64
-        feat = 256
-        num_stages = 7  # 7 #10 #3
+        base_filter = 16
+        feat = 16
+        num_stages = 4  # 7 #10 #3
         scale_factor = self.cfg.TRAIN.UPSCALE_FACTOR
         if scale_factor == 2:
             kernel = 6
@@ -37,12 +37,12 @@ class DBPN(nn.Module):
         self.up3 = D_UpBlock(base_filter, kernel, stride, padding, 2)
         self.down3 = D_DownBlock(base_filter, kernel, stride, padding, 3)
         self.up4 = D_UpBlock(base_filter, kernel, stride, padding, 3)
-        self.down4 = D_DownBlock(base_filter, kernel, stride, padding, 4)
-        self.up5 = D_UpBlock(base_filter, kernel, stride, padding, 4)
-        self.down5 = D_DownBlock(base_filter, kernel, stride, padding, 5)
-        self.up6 = D_UpBlock(base_filter, kernel, stride, padding, 5)
-        self.down6 = D_DownBlock(base_filter, kernel, stride, padding, 6)
-        self.up7 = D_UpBlock(base_filter, kernel, stride, padding, 6)
+        # self.down4 = D_DownBlock(base_filter, kernel, stride, padding, 4)
+        # self.up5 = D_UpBlock(base_filter, kernel, stride, padding, 4)
+        # self.down5 = D_DownBlock(base_filter, kernel, stride, padding, 5)
+        # self.up6 = D_UpBlock(base_filter, kernel, stride, padding, 5)
+        # self.down6 = D_DownBlock(base_filter, kernel, stride, padding, 6)
+        # self.up7 = D_UpBlock(base_filter, kernel, stride, padding, 6)
         # Reconstruction
         self.output_conv = ConvBlock(num_stages * base_filter, num_channels, 3, 1, 1, activation=None, norm=None)
 
@@ -78,24 +78,24 @@ class DBPN(nn.Module):
 
         concat_l = torch.cat((l, concat_l), 1)
         h = self.up4(concat_l)
+        #
+        # concat_h = torch.cat((h, concat_h), 1)
+        # l = self.down4(concat_h)
+        #
+        # concat_l = torch.cat((l, concat_l), 1)
+        # h = self.up5(concat_l)
 
-        concat_h = torch.cat((h, concat_h), 1)
-        l = self.down4(concat_h)
-
-        concat_l = torch.cat((l, concat_l), 1)
-        h = self.up5(concat_l)
-
-        concat_h = torch.cat((h, concat_h), 1)
-        l = self.down5(concat_h)
-
-        concat_l = torch.cat((l, concat_l), 1)
-        h = self.up6(concat_l)
-
-        concat_h = torch.cat((h, concat_h), 1)
-        l = self.down6(concat_h)
-
-        concat_l = torch.cat((l, concat_l), 1)
-        h = self.up7(concat_l)
+        # concat_h = torch.cat((h, concat_h), 1)
+        # l = self.down5(concat_h)
+        #
+        # concat_l = torch.cat((l, concat_l), 1)
+        # h = self.up6(concat_l)
+        #
+        # concat_h = torch.cat((h, concat_h), 1)
+        # l = self.down6(concat_h)
+        #
+        # concat_l = torch.cat((l, concat_l), 1)
+        # h = self.up7(concat_l)
 
         concat_h = torch.cat((h, concat_h), 1)
         x = self.output_conv(concat_h)

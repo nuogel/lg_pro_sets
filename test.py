@@ -24,8 +24,6 @@ def _parse_arguments():
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--batch_size', '--bz', default=1, type=int, help='batch size')
     parser.add_argument('--number_works', '--n_w', default=0, type=int, help='number works of DataLoader')
-
-
     return parser.parse_args()
 
 
@@ -39,7 +37,7 @@ def main():
     # files = 'E:/LG/GitHub/lg_pro_sets/tmp/generated_labels/cbdnet_predict.png'
     # files = 'E:/LG/GitHub/lg_pro_sets/tmp/generated_labels/raw'
     # files = 'F:/datasets/SR/REDS4/train_sharp_part_x4/000'
-    files = 'DataLoader/datasets/SRDN_idx_stores/FILMS/FILMS_test_set_w.txt'
+    files = 'DataLoader/datasets/SRDN_idx_stores/FILMS/FILMS_test_w.txt'
 
     score = False
     args = _parse_arguments()

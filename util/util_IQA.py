@@ -84,7 +84,7 @@ if __name__ == '__main__':
     images_rec_file = 'F:/datasets/SR_video/youku_test/4/'  # 28.6
     images_low_file = 'F:/datasets/SR/youku/youku_00000_00149_l/Youku_00000_l'  # 30.46
 
-    psnr = PSNR(use_torch_mse=False)
+    psnr = IQAScore(use_torch_mse=False)
     # psnr.video2images(video_path)
     out = []
     from_txt = True

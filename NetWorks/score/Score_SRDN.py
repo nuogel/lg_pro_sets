@@ -19,7 +19,7 @@ class Score_SRDN:
         self.batches = 0.
 
     def cal_score(self, predict, dataset):
-        input, target = dataset
+        input, target, data_infos = dataset
         self.rate_batch = 0.
         print('batch NO:', self.batches)
         self.batches += 1
@@ -27,13 +27,13 @@ class Score_SRDN:
         for batch_i in range(predict.shape[0]):
             self.rate_batch += self.PSNR(predict[batch_i], target[batch_i])
         self.rate_all += self.rate_batch / predict.shape[0]
-        if self.cfg.TEST.SAVE_LABELS:
-            input = torch.nn.functional.interpolate(input, size=(target.shape[1], target.shape[2]))
-            input = input.permute(0, 2, 3, 1)
-            img_cat = torch.cat([input, predict, target], dim=1)
-            save_path = 'saved/denoise/' + str(self.cfg.TRAIN.MODEL) + '_' + str(self.cfg.TRAIN.IMG_SIZE[0]) + 'x' + str(self.cfg.TRAIN.IMG_SIZE[1])\
-                        + 'x' + str(self.cfg.TRAIN.UPSCALE_FACTOR) + '.png'
-            parse_Tensor_img(img_cat, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=save_path, show_time=self.cfg.TEST.SHOW_EVAL_TIME)
+        # if self.cfg.TEST.SAVE_LABELS:
+        #     input = torch.nn.functional.interpolate(input, size=(target.shape[1], target.shape[2]))
+        #     input = input.permute(0, 2, 3, 1)
+        #     img_cat = torch.cat([input, predict, target], dim=1)
+        #     save_path = 'saved/denoise/' + str(self.cfg.TRAIN.MODEL) + '_' + str(self.cfg.TRAIN.IMG_SIZE[0]) + 'x' + str(self.cfg.TRAIN.IMG_SIZE[1])\
+        #                 + 'x' + str(self.cfg.TRAIN.UPSCALE_FACTOR) + '.png'
+        #     parse_Tensor_img(img_cat, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_path=save_path, show_time=self.cfg.TEST.SHOW_EVAL_TIME)
 
     def score_out(self):
         score = self.rate_all / self.batches

@@ -120,8 +120,10 @@ SRCNN|X|X|0.4s|
 FSRCNN|X|X|0.3s
 VDSR |33.66|X|0.47s
 EDSR |30.97|X|XXX
+DBPN |X|X|X| 
 RDN |35.66| XX|0.8s 
 RCAN |35.73| XX|XXX 
 CBDNET |XX| XX|XXX 
 ESRGAN|X|X|X
 
+PS:DBPN set:max parameters for DBPN with 11GB. 4 layers(7 is not available);base_filter=28;
