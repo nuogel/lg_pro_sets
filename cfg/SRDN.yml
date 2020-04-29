@@ -8,7 +8,7 @@ PATH:
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
 
 TRAIN:
-  MODEL: rdn #srfbn #rcan #dbpn #edsr #fsrcnn #srcnn #vdsr #cbdnet  #  espcn #dncnn #
+  MODEL: cbdnet   #rdn # [ #srfbn #rcan #dbpn #edsr #fsrcnn #srcnn #vdsr] #[#cbdnet  #  espcn #dncnn #]
   EPOCH_SIZE: 4000
   BATCH_SIZE: 1
   BATCH_BACKWARD_SIZE: 16 # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.【!!That will cost GPU  to save parameters】
@@ -20,7 +20,7 @@ TRAIN:
   PIXCELS_NORM: [0., 255.]  # [mean, std] #must be float.
   INPUT_FROM_TARGET: 1
   TARGET_TRANSFORM: 1 # pre dealing the target image.
-  INPUT_TRANSFORM: 0
+  INPUT_TRANSFORM: 1
   SHOW_INPUT: 0 #10000  # showtime.
   SHOW_TARGET: 0 #10000 #
   SHOW_PREDICT: 0 #10000 #

@@ -21,11 +21,80 @@ class Dataaug:
         self.cfg = cfg
         self.img_path = cfg.PATH.INPUT_PATH
         self.lab_path = cfg.PATH.LAB_PATH
+        self.base_funs = {
+            ##############################################
+            ########     color augmentation   #############
+
+            3: iaa.Grayscale(alpha=(0, 1)),
+            4: iaa.ChangeColorspace('BGR'),
+            5: iaa.Add((-50, 50)),
+            6: iaa.Dropout(0.08, per_channel=0.5),
+            7: iaa.GammaContrast(gamma=(0.5, 1.5), per_channel=True),
+            ## 设置 加 雨 的噪声 类型
+            8: iaa.Snowflakes(density=(0, 0.15), density_uniformity=0.08, flake_size=0.4, flake_size_uniformity=0.5, speed=0.1),
+            # 加 雪花 的噪声 类型
+            9: iaa.Snowflakes(density=(0, 0.15), density_uniformity=0.5, flake_size=0.4, flake_size_uniformity=0.5, speed=0.001),
+            #### 运动模糊
+            # 10: iaa.MotionBlur(k=(3, 20), angle=[-45, 45]),
+            # 高斯模糊
+            11: iaa.GaussianBlur((0, 3)),
+            # 高斯噪音
+            12: iaa.AdditiveGaussianNoise(scale=(0, 0.15 * 255)),
+            # 拉普拉斯
+            13: iaa.AdditiveLaplaceNoise(scale=(0, 0.15 * 255)),
+            # 泊松
+            14: iaa.AdditivePoissonNoise(lam=(0.0, 60.0)),
+            # SaltAndPepper
+            15: iaa.Salt(0.1),
+            # 椒盐
+            16: iaa.SaltAndPepper((0.03, 0.1)),
+            17: iaa.Fog(),
+            18: iaa.Clouds(),
+            ####################
+            #####   shape aug  >20 ###
+
+            20: iaa.Fliplr(0.5),  # 增加原图的概率。
+            21: iaa.Fliplr(0.5),  # 增加原图的概率。
+            22: iaa.Affine(scale=(0.7, 1.3), translate_percent=(-0.01, 0.01), rotate=(-20, 20)),
+            23: iaa.Crop(),
+            24: iaa.CropAndPad(),
+            25: iaa.CropToFixedSize(width=self.cfg.TRAIN.IMG_SIZE[0], height=self.cfg.TRAIN.IMG_SIZE[1]),
+        }
+
+    def augmentation(self, aug_way_ids, datas):
+        images, labels = self._augmenting(aug_way_ids, datas)
+        images, labels = self._check_results(images, labels)
+        return images, labels
+
+    def _augmenting(self, aug_way_ids, datas):
+        """Create augmentation images from kitti.
+
+        :param for_one_image: if there is a single image,the augment it without labels
+        :return: return a np array of images, and return a list about
+         labs are in the shape of [[class, left, top, button, right],..]
+        """
+        base_funs = [self.base_funs.get(id) for id in aug_way_ids[0]]
+        must_funs = [self.base_funs.get(id) for id in aug_way_ids[1]]
+        aug_funs = [random.choice(base_funs)]+must_funs
+
+        # do the augmentation
+        seq_det = iaa.Sequential(aug_funs)
+        seq_det = seq_det.to_deterministic()
+
+        images, labels = datas
+        if labels not in [None, 0, 'None']:
+            labels = [[ia.BoundingBox(x1=labs[1], y1=labs[2], x2=labs[3], y2=labs[4], label=labs[0]) for labs in _labels] for _labels in labels]
+            labels = [ia.BoundingBoxesOnImage(x, shape=images[i].shape) for i, x in enumerate(labels)]
+            bbs_aug = seq_det.augment_bounding_boxes(labels)
+            labels = [self._parse_bbs(x) for x in bbs_aug]
+        images = seq_det.augment_images(images)
+
+        return images, labels
 
     def _parse_bbs(self, bbs_aug):
         """
         Parse the key points from augmentation.
-    
+
         :param bbs_aug: key points from augmentation.
         :param relative: the relative location of bounding boxes
         :return:labs are in the shape of [[class, left, top, button, right],..]
@@ -49,85 +118,11 @@ class Dataaug:
             labs.append(lab)
         return labs
 
-    def _augmenting(self, datas=None, for_one_image=None):
-        """Create augmentation images from kitti.
-
-        :param for_one_image: if there is a single image,the augment it without labels
-        :return: return a np array of images, and return a list about
-         labs are in the shape of [[class, left, top, button, right],..]
-        """
-        # prepare the augmentation functions
-
-        base_funs = [
-            iaa.Fliplr(0.5),  # 增加原图的概率。
-            # iaa.Fliplr(.5),  # 增加原图的概率。
-            # iaa.Fliplr(.5),  # 增加原图的概率。
-            # iaa.Fliplr(.5),  # 增加原图的概率。
-            # iaa.Fliplr(.5),  # 增加原图的概率。
-            # iaa.Grayscale(alpha=(0, 1)),
-            # iaa.ChangeColorspace('BGR'),
-            # iaa.Add((-50, 50)),
-            # iaa.Dropout(0.08, per_channel=0.5),
-            # iaa.GammaContrast(gamma=(0.5, 1.5), per_channel=True),
-            #
-            # ## 设置 加 雨 的噪声 类型
-            # # iaa.Snowflakes(density=(0, 0.15), density_uniformity=0.08, flake_size=0.4, flake_size_uniformity=0.5, speed=0.1),
-            # # 加 雪花 的噪声 类型
-            # # iaa.Snowflakes(density=(0, 0.15), density_uniformity=0.5, flake_size=0.4, flake_size_uniformity=0.5, speed=0.001),
-            # # iaa.Snowflakes(flake_size=(0.2, 0.7), speed=(0.001, 0.03)),
-            # #### 运动模糊
-            # # iaa.MotionBlur(k=(3, 20), angle=[-45, 45]),
-            # # 高斯模糊
-            # iaa.GaussianBlur((0, 3)),
-            # # 高斯噪音
-            # iaa.AdditiveGaussianNoise(scale=(0, 0.15 * 255)),
-            # # 拉普拉斯
-            # iaa.AdditiveLaplaceNoise(scale=(0, 0.15 * 255)),
-            # # 泊松
-            # iaa.AdditivePoissonNoise(lam=(0.0, 60.0)),
-            # # SaltAndPepper
-            # # iaa.Salt(0.1),
-            # # 椒盐
-            # iaa.SaltAndPepper((0.03, 0.1)),
-            iaa.Affine(scale=(0.7, 1.3), translate_percent=(-0.01, 0.01), rotate=(-8, 8))
-        ]
-        # choose one weather augmentation
-        weather_aug = [
-            # random.choice(
-            #     [
-            #         iaa.Snowflakes(flake_size=(0.4, 0.75), speed=(0.001, 0.03)),
-            #         iaa.Fog(),
-            #         iaa.Clouds(),
-            #     ])
-        ]
-        base_funs += weather_aug
-        random.shuffle(base_funs)
-        base_funs = [random.choice(base_funs)]
-        aug_funs = base_funs
-
-        # do the augmentation
-        seq_det = iaa.Sequential(aug_funs)
-        seq_det = seq_det.to_deterministic()
-
-        if for_one_image is None:
-            images, labels = datas
-
-            labels = [[ia.BoundingBox(x1=labs[1], y1=labs[2], x2=labs[3], y2=labs[4], label=labs[0]) for labs in _labels] for _labels in labels]
-            labels = [ia.BoundingBoxesOnImage(x, shape=images[i].shape) for i, x in enumerate(labels)]
-            bbs_aug = seq_det.augment_bounding_boxes(labels)
-            labels = [self._parse_bbs(x) for x in bbs_aug]
-
+    def _check_results(self, images, labels):
+        if labels in [None, 0, 'None']:
+            pass
         else:
-            images = for_one_image
-            labels = None
-        images = seq_det.augment_images(images)
-
-        return images, labels
-
-    def augmentation(self, datas=None, for_one_image=None):
-        images, labels = self._augmenting(datas, for_one_image=for_one_image)
-
-        if labels is not None:  # if labels is not none ,then check the label in labels,whether the label is none.
+            # if labels is not none ,then check the label in labels,whether the label is none.
             for i, label in enumerate(labels):
                 j = 1
                 while not label:  # check every label, whether there is a label is empty.

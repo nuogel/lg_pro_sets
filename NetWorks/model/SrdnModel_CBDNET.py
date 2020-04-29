@@ -7,26 +7,6 @@ CBDNet 输入为输出是同一尺度图像。只用于去噪。
 '''
 
 
-class CBDNET(nn.Module):
-    '''
-    Denoise model.
-    '''
-
-    def __init__(self, cfg):
-        super(CBDNET, self).__init__()
-        self.fcn = FCN()
-        self.unet = UNet()
-
-    def forward(self, **args):
-        x = args['input_x']
-        noise_level = self.fcn(x)
-        concat_img = torch.cat([x, noise_level], dim=1)
-        out = self.unet(concat_img) + x
-        # out = (noise_level, out)
-        out = out.permute([0, 2, 3, 1])
-        return out
-
-
 class FCN(nn.Module):
     def __init__(self):
         super(FCN, self).__init__()
@@ -151,3 +131,23 @@ class outconv(nn.Module):
     def forward(self, x):
         x = self.conv(x)
         return x
+
+
+class CBDNET(nn.Module):
+    '''
+    Denoise model.
+    '''
+
+    def __init__(self, cfg):
+        super(CBDNET, self).__init__()
+        self.fcn = FCN()
+        self.unet = UNet()
+
+    def forward(self, **args):
+        x = args['input_x']
+        noise_level = self.fcn(x)
+        concat_img = torch.cat([x, noise_level], dim=1)
+        out = self.unet(concat_img) + x
+        # out = (noise_level, out)
+        # out = out.permute([0, 2, 3, 1])
+        return out

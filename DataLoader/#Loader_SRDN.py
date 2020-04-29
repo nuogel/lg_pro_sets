@@ -106,12 +106,13 @@ class Loader:
             input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,  # SR model 使用
                                        self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR))
 
-        if self.cfg.TRAIN.INPUT_AUG and is_training:
+        if self.cfg.TRAIN.INPUT_AUG:# and is_training:
             # add the augmentation ...
-            # img, _ = self.Data_aug.augmentation(for_one_image=[img])
-            # img = img[0]
-            # compress_level = random.randint(5, 20)
-            input = Jpegcompress2(input, 10)
+            input = np.asarray(input)
+            input, _ = self.Data_aug.augmentation(for_one_image=[input])
+            input = input[0]
+            compress_level = random.randint(5, 20)
+            input = Jpegcompress2(input, compress_level)
 
         if self.cfg.TRAIN.MODEL in ['cbdnet', 'srcnn', 'vdsr']:
             input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))

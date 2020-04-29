@@ -11,6 +11,7 @@ from util.util_JPEG_compression import Jpegcompress2
 from torchvision import transforms as T
 from torch.utils.data._utils.collate import default_collate
 from prefetch_generator import BackgroundGenerator
+from util.util_data_aug import Dataaug
 
 
 class Loader(DataLoader):
@@ -27,7 +28,7 @@ class Loader(DataLoader):
         self.test_batch_num = 1
         self.targets = []
         self.transform_toTensor = T.ToTensor()
-
+        self.Data_aug = Dataaug(self.cfg)
         self.collate_fun = default_collate
 
     def __len__(self):
@@ -43,15 +44,18 @@ class Loader(DataLoader):
         else:
             data_info = self.dataset_txt[index]
 
-        target = self._target_prepare(filename=data_info)
-        img = self._input_prepare(target=target, filename=data_info)
+        labels = self._target_prepare(filename=data_info)
+        imgs = self._input_prepare(target=labels, filename=data_info)
 
-        img = self.transform_toTensor(img)
-        if target: target = self.transform_toTensor(target)
 
-        # img = img
-        # target = target
-        return img, target, data_info  # only need the labels
+
+        labels = np.asarray(labels, dtype=np.float32)
+        imgs = np.asarray(imgs, dtype=np.float32)
+        imgs = (imgs - self.cfg.TRAIN.PIXCELS_NORM[0]) / self.cfg.TRAIN.PIXCELS_NORM[1]
+        labels = (labels - self.cfg.TRAIN.PIXCELS_NORM[0]) / self.cfg.TRAIN.PIXCELS_NORM[1]
+        imgs = np.transpose(imgs, (2, 0, 1))
+        labels = np.transpose(labels, (2, 0, 1))
+        return imgs, labels, data_info  # only need the labels
 
     def __iter__(self):
         '''
@@ -70,47 +74,35 @@ class Loader(DataLoader):
         id = kwargs['filename']
         if id[2] in ["", ' ', "none", "None"]:
             return 0
-        # target = Image.open(id[2]).convert('RGB')  # no norse image or HR image
         target = cv2.imread(id[2])  # read faster than Image.open
-        target = Image.fromarray(target)
-        trans_list = []
 
         if target is None:
             print(id, 'image is None!!')
             return None
         if self.cfg.TRAIN.TARGET_TRANSFORM:  # and self.is_training
             # add the pre deal programs.
-            trans_list.append(T.RandomCrop((self.cfg.TRAIN.IMG_SIZE[1], self.cfg.TRAIN.IMG_SIZE[0])))
-            # trans_list.append(T.RandomVerticalFlip())
-            # trans_list.append(T.RandomRotation(180, resample=Image.BICUBIC))  # 90==（-90~90 degree)
-
-            # trans_list.append(T.RandomAffine(10)) # 图片的边缘发生变化了，不正常
-
-        # trans_list.append(T.Resize((self.cfg.TRAIN.IMG_SIZE[1], self.cfg.TRAIN.IMG_SIZE[0])))
-        transFun = T.Compose(trans_list)
-        target = transFun(target)
+            target, _ = self.Data_aug.augmentation(aug_way_ids=([20, 22], [25]), datas=([target], None))
+            target = target[0]
         return target
 
     def _input_prepare(self, **kwargs):
         target = kwargs['target']
         id = kwargs['filename']
-        trans_list = []
         if self.cfg.TRAIN.INPUT_FROM_TARGET or self.cfg.TRAIN.TARGET_TRANSFORM:
             input = target
             if self.cfg.TRAIN.MODEL not in ['cbdnet', 'dncnn']:  # 去噪网络'cbdnet', 'dncnn'就不用缩小尺寸
-                trans_list.append(T.Resize((self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR,  # SR model 使用
-                                            self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR)))
+                input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR,  # SR model 使用
+                                           self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR))
         else:
             input = cv2.imread(id[1])
-            input = Image.fromarray(input)
 
-        if self.cfg.TRAIN.INPUT_TRANSFORM and self.is_training and not self.cfg.TRAIN.TARGET_TRANSFORM:
+        if self.cfg.TRAIN.INPUT_TRANSFORM:  # and self.is_training and not self.cfg.TRAIN.TARGET_TRANSFORM:
             # add the augmentation ...
-            input = Jpegcompress2(input, 10)
+            input, _ = self.Data_aug.augmentation(aug_way_ids=([5, 6, 7, 11, 12, 13, 14,15, 16], []), datas=([input], None))
+            input = input[0]
+            compress_level = random.randint(5, 20)
+            input = Jpegcompress2(input, compress_level)
 
-        if self.cfg.TRAIN.MODEL in ['cbdnet', 'srcnn', 'vdsr']:  # 输入与输出一样大小
-            trans_list.append(T.Resize((self.cfg.TRAIN.IMG_SIZE[1], self.cfg.TRAIN.IMG_SIZE[0])))
-
-        transFun = T.Compose(trans_list)
-        input = transFun(input)
-        return input
+        if self.cfg.TRAIN.MODEL in ['cbdnet', 'srcnn', 'vdsr'] and input.shape != target.shape:  # 输入与输出一样大小
+            input = cv2.resize(input, target.shape)
+        return np.asarray(input, dtype=np.float32)

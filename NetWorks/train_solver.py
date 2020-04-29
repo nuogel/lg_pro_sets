@@ -155,10 +155,6 @@ class Solver:
         losses = 0
         # count the step time, total time...
         optimizer.zero_grad()
-        print('itering data...')
-        # loader = iter(self.trainDataloader)
-        print('finished itering data...')
-
         _timer = Time()
         # for step in range(batch_num):
         for step, train_data in enumerate(self.trainDataloader):
@@ -166,10 +162,6 @@ class Solver:
             if step >= len(self.trainDataloader):
                 break
             train_data = self.dataloader_factory.to_devce(train_data)
-            # train_data = self.DataLoader.get_data_by_idx(train_set, step * batch_size, (step + 1) * batch_size, is_training=True)
-            if train_data[1] is None:
-                self.LOGGER.warning('[TRAIN] NO gt_labels IN THIS BATCH. Epoch: %3d, step: %4d/%4d ', epoch, step, len(self.trainDataloader))
-                continue
             # forward process
             predict = self.Model.forward(input_x=train_data[0], input_y=train_data[1], input_data=train_data, is_training=True)
             # calculate the total loss
@@ -190,6 +182,7 @@ class Solver:
             _timer.time_end()
             self.LOGGER.info('[TRAIN] Model: %s Epoch-Step:%3d-%4d/%4d, Step_LOSS: %8.4f, Batch_Average_LOSS: %8.4f, Time Step/Total-%s/%s', self.cfg.TRAIN.MODEL,
                              epoch, step, len(self.trainDataloader), total_loss.item(), losses / (step + 1), _timer.diff, _timer.from_begin)
+
         self.save_parameter.tbX_write(epoch=epoch, learning_rate=optimizer.param_groups[0]['lr'], batch_average_loss=losses / len(self.trainDataloader), )
         self.LOGGER.info('[TRAIN] Summary: Epoch: %s, average total loss: %s', epoch, losses / len(self.trainDataloader))
 
