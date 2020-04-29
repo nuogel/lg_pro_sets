@@ -126,6 +126,6 @@ RCAN |35.73| XX|XXX
 RCAN |36.60|XX| xx|add data augmentation; 38.35 on youku200-250
 CBDNET |XX| XX|XXX 
 ESRGAN|X|X|X
-SRFBN|X|X|XXXXx
+SRFBN|X|X|XXXXxx
 
 PS:DBPN set:max parameters for DBPN with 11GB. 4 layers(7 is not available);base_filter=28;
