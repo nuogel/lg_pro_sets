@@ -8,22 +8,22 @@ PATH:
   GENERATE_LABEL_SAVE_PATH: 'tmp//generated_labels//'
 
 TRAIN:
-  MODEL: dbpn #rdn #edsr #fsrcnn #srcnn #rcan #vdsr #cbdnet  #  espcn #dncnn #
+  MODEL: rdn #srfbn #rcan #dbpn #edsr #fsrcnn #srcnn #vdsr #cbdnet  #  espcn #dncnn #
   EPOCH_SIZE: 4000
-  BATCH_SIZE: 4
-  BATCH_BACKWARD_SIZE: 2 # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.【!!That will cost GPU  to save parameters】
-  TRAIN_DATA_FROM_FILE: YOUKU   # [YOUKU, CCPD, RED4]FILMS #
+  BATCH_SIZE: 1
+  BATCH_BACKWARD_SIZE: 16 # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.【!!That will cost GPU  to save parameters】
+  TRAIN_DATA_FROM_FILE: [RED4, YOUKU]    # [, CCPD]FILMS #
 
   # aug
   UPSCALE_FACTOR: 4
-  IMG_SIZE: [1920, 1080] #[1280, 720] #[200, 100] #[64, 64] #[512, 384]  #[960, 384] #[W,H] # [1216, 554] #
+  IMG_SIZE: [512, 512] #[1920, 1080] ##[1280, 720] #[200, 100] #[64, 64] #[512, 384]  #[960, 384] #[W,H] # [1216, 554] #
   PIXCELS_NORM: [0., 255.]  # [mean, std] #must be float.
   INPUT_FROM_TARGET: 1
-  INPUT_AUG: 0
-  TARGET_PREDEAL: 0 # pre dealing the target image.
+  TARGET_TRANSFORM: 1 # pre dealing the target image.
+  INPUT_TRANSFORM: 0
   SHOW_INPUT: 0 #10000  # showtime.
-  SHOW_TARGET: 0 #10000
-  SHOW_PREDICT: 0 #10000
+  SHOW_TARGET: 0 #10000 #
+  SHOW_PREDICT: 0 #10000 #
 
   # optimizer:
   OPTIMIZER: 'adam' #'sgd' #
@@ -34,7 +34,7 @@ TRAIN:
   WEIGHT_DECAY: 0
   LOSSTYPE: 'MSE'  #'l1'  #
   EPOCH_CONTINUE: None
-  SAVE_STEP: 100
+  SAVE_STEP: 500
 
   # CUDA:
   GPU_NUM: [0] #[] # if is [] means use CPU.
@@ -47,7 +47,7 @@ TEST:
   TEST_SET_RATIO: 0.1
 
   SAVE_LABELS: 1
-  SHOW_EVAL_TIME: 0
+  SHOW_EVAL_TIME: 10000
 
   TEST_ONLY: 0
 
@@ -56,9 +56,5 @@ TEST:
   ONE_TEST_TRAIN_STEP: 50
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
-    #  ['003219', 'E:/datasets/kitti/training/images/003219.png', 'E:/datasets/kitti/training/images\\003219.png']
-    #  ['0.jpg','E:/datasets/test_dataset/0.jpg', 'E:/datasets/test_dataset/0.jpg']
-    #     ['0029-1_4-360&569_440&600-440&598_363&600_360&571_437&569-0_0_3_21_30_28_24-88-4.jpg', 'None', 'D:/datasets/CCPD2019/ccpd_base\\0029-1_4-360&569_440&600-440&598_363&600_360&571_437&569-0_0_3_21_30_28_24-88-4.jpg'],
-    #    ['1583-5_15-0&423_618&637-618&637_16&578_0&423_591&482-0_0_19_9_27_24_27-86-450.jpg', 'none','D:/datasets/CCPD2019/ccpd_base\\1583-5_15-0&423_618&637-618&637_16&578_0&423_591&482-0_0_19_9_27_24_27-86-450.jpg']
-  ['Youku_00099_l_050.png','F:/datasets/SR/youku/youku_00000_00149_l/Youku_00099_l/Youku_00099_l_050.png','F:/datasets/SR/youku/youku_00000_00149_h_GT/Youku_00099_h_GT/Youku_00099_h_GT_050.png']
+  ['Youku_00099_l_050.png','E:/datasets/SR/youku/youku_00000_00149_l/Youku_00099_l/Youku_00099_l_050.png','E:/datasets/SR/youku/youku_00000_00149_h_GT/Youku_00099_h_GT/Youku_00099_h_GT_050.png']
   ]

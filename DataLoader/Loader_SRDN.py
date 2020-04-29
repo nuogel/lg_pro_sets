@@ -4,10 +4,13 @@ import os
 import torch
 import numpy as np
 import cv2
+from PIL import Image
 import random
 from util.util_CCPD import _crop_licience_plante
-from util.util_data_aug import Dataaug
 from util.util_JPEG_compression import Jpegcompress2
+from torchvision import transforms as T
+from torch.utils.data._utils.collate import default_collate
+from prefetch_generator import BackgroundGenerator
 
 
 class Loader(DataLoader):
@@ -22,80 +25,92 @@ class Loader(DataLoader):
         self.one_name = cfg.TEST.ONE_NAME
         self.train_batch_num = 100
         self.test_batch_num = 1
-        self.Data_aug = Dataaug(self.cfg)
         self.targets = []
+        self.transform_toTensor = T.ToTensor()
+
+        self.collate_fun = default_collate
 
     def __len__(self):
-        return len(self.dataset_txt)
+        if self.one_test:
+            length = int(self.cfg.TEST.ONE_TEST_TRAIN_STEP)
+        else:
+            length = len(self.dataset_txt)
+        return length
 
     def __getitem__(self, index):
         if self.one_test:
             data_info = self.dataset_txt[0]
         else:
             data_info = self.dataset_txt[index]
-        img, label = self._prepare_data(data_info)
 
-        img = np.asarray(img, dtype=np.float32)
-        label = np.asarray(label, dtype=np.float32)
-        img = torch.from_numpy(img)
-        label = torch.from_numpy(label)
-        img = img.to(self.cfg.TRAIN.DEVICE)
-        label = label.to(self.cfg.TRAIN.DEVICE)
-        img = (img - self.cfg.TRAIN.PIXCELS_NORM[0]) / self.cfg.TRAIN.PIXCELS_NORM[1]
-        label = (label - self.cfg.TRAIN.PIXCELS_NORM[0]) / self.cfg.TRAIN.PIXCELS_NORM[1]
-        # img = img.transpose((2, 0, 1))
-        img = img.permute((2, 0, 1))
+        target = self._target_prepare(filename=data_info)
+        img = self._input_prepare(target=target, filename=data_info)
 
-        return (img, label, data_info)  # only need the labels
+        img = self.transform_toTensor(img)
+        if target: target = self.transform_toTensor(target)
 
-    def _prepare_data(self, idx):
-        target = self._target_prepare(filename=idx)
-        input = self._input_prepare(target=target, filename=idx)
-        return input, target
+        # img = img
+        # target = target
+        return img, target, data_info  # only need the labels
+
+    def __iter__(self):
+        '''
+        原本Pytorch默认的DataLoader会创建一些worker线程来预读取新的数据，但是除非这些线程的数据全部都被清空，这些线程才会读下一批数据。
+
+        使用prefetch_generator，我们可以保证线程不会等待，每个线程都总有至少一个数据在加载。
+        :return:
+        '''
+        return BackgroundGenerator(super().__iter__())
+
+    def _load_dataset(self, dataset, is_training):
+        self.dataset_txt = dataset
+        self.is_training = is_training
 
     def _target_prepare(self, **kwargs):
-
         id = kwargs['filename']
-        target = cv2.imread(id[2])  # no norse image or HR image
+        if id[2] in ["", ' ', "none", "None"]:
+            return 0
+        # target = Image.open(id[2]).convert('RGB')  # no norse image or HR image
+        target = cv2.imread(id[2])  # read faster than Image.open
+        target = Image.fromarray(target)
+        trans_list = []
+
         if target is None:
             print(id, 'image is None!!')
             return None
-        if self.cfg.TRAIN.TARGET_PREDEAL:
+        if self.cfg.TRAIN.TARGET_TRANSFORM:  # and self.is_training
             # add the pre deal programs.
-            # target = _crop_licience_plante(target, id[0])
-            target, _ = self.Data_aug.augmentation(for_one_image=[target])
-            target = target[0]
-            pass
+            trans_list.append(T.RandomCrop((self.cfg.TRAIN.IMG_SIZE[1], self.cfg.TRAIN.IMG_SIZE[0])))
+            # trans_list.append(T.RandomVerticalFlip())
+            # trans_list.append(T.RandomRotation(180, resample=Image.BICUBIC))  # 90==（-90~90 degree)
 
-        target = cv2.resize(target, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
+            # trans_list.append(T.RandomAffine(10)) # 图片的边缘发生变化了，不正常
 
+        # trans_list.append(T.Resize((self.cfg.TRAIN.IMG_SIZE[1], self.cfg.TRAIN.IMG_SIZE[0])))
+        transFun = T.Compose(trans_list)
+        target = transFun(target)
         return target
 
     def _input_prepare(self, **kwargs):
         target = kwargs['target']
         id = kwargs['filename']
-
-        if self.cfg.TRAIN.INPUT_FROM_TARGET:
+        trans_list = []
+        if self.cfg.TRAIN.INPUT_FROM_TARGET or self.cfg.TRAIN.TARGET_TRANSFORM:
             input = target
+            if self.cfg.TRAIN.MODEL not in ['cbdnet', 'dncnn']:  # 去噪网络'cbdnet', 'dncnn'就不用缩小尺寸
+                trans_list.append(T.Resize((self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR,  # SR model 使用
+                                            self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR)))
         else:
             input = cv2.imread(id[1])
+            input = Image.fromarray(input)
 
-        if self.cfg.TRAIN.MODEL not in ['cbdnet', 'dncnn']:  # 去噪网络就不用缩小尺寸
-            input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR,  # SR model 使用
-                                       self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR))
-
-        if self.cfg.TRAIN.INPUT_AUG and self.is_training:
+        if self.cfg.TRAIN.INPUT_TRANSFORM and self.is_training and not self.cfg.TRAIN.TARGET_TRANSFORM:
             # add the augmentation ...
-            # img, _ = self.Data_aug.augmentation(for_one_image=[img])
-            # img = img[0]
-            # compress_level = random.randint(5, 20)
             input = Jpegcompress2(input, 10)
 
-        if self.cfg.TRAIN.MODEL in ['cbdnet', 'srcnn', 'vdsr']: # 输入与输出一样大小
-            input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1]))
+        if self.cfg.TRAIN.MODEL in ['cbdnet', 'srcnn', 'vdsr']:  # 输入与输出一样大小
+            trans_list.append(T.Resize((self.cfg.TRAIN.IMG_SIZE[1], self.cfg.TRAIN.IMG_SIZE[0])))
 
+        transFun = T.Compose(trans_list)
+        input = transFun(input)
         return input
-
-    def _load_dataset(self, dataset, is_training):
-        self.dataset_txt = dataset
-        self.is_training=is_training

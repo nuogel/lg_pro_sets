@@ -7,10 +7,12 @@ import numpy as np
 import xml.etree.ElementTree as ET
 from util.util_get_cls_names import _get_class_names
 from util.util_show_img import _show_img
+from torch.utils.data import DataLoader
 
 
-class Loader:
+class Loader(DataLoader):
     def __init__(self, cfg):
+        super(Loader, self).__init__(object)
         self.cfg = cfg
         self.dataaug = Dataaug(cfg)
         self.one_test = cfg.TEST.ONE_TEST
@@ -22,64 +24,79 @@ class Loader:
         self.cls2idx = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
         self.a = 0
 
-    def get_data_by_idx(self, idx_store, index_from, index_to, is_training):
-        '''
-        :param idx_store:
-        :param index_from:
-        :param index_to:
-        :return: imags: torch.Float32, relative labels:[[cls, x1, y1, x2, y2],[...],...]
-        '''
-        data = (None, None)
+    def __len__(self):
         if self.one_test:
-            if self.one_name:
-                idx = self.one_name
-            else:
-                idx = idx_store[1:2]
+            length = int(self.cfg.TEST.ONE_TEST_TRAIN_STEP)
         else:
-            idx = idx_store[index_from: index_to]
-        if not idx:
-            print('error, no IDX in loader_img.py')
-            exit()
-        imgs, labels = self._read_datas(idx)
-        do_aug = self.cfg.TRAIN.DO_AUG if is_training else self.cfg.TEST.DO_AUG
-        if do_aug:
-            imgs, labels = self.dataaug.augmentation((imgs, labels))
+            length = len(self.dataset_txt)
+        return length
+
+    def __getitem__(self, index):
+        if self.one_test:
+            data_info = self.dataset_txt[0]
+        else:
+            data_info = self.dataset_txt[index]
+
+        img, label = self._read_datas(data_info)
+        if self.cfg.TRAIN.DO_AUG and self.is_training:
+            imgs, labels = self.dataaug.augmentation(([img], [label]))
+            img = imgs[0]
+            label = labels[0]
         if self.cfg.TRAIN.RESIZE:
             size = random.choice(self.cfg.TRAIN.MULTI_SIZE_RATIO) * self.cfg.TRAIN.IMG_SIZE
-            resized_imgs = []
-            resized_labels = []
-            for i, img_i in enumerate(imgs):
-                img_i_size = img_i.shape
-                resized_imgs.append(cv2.resize(img_i, (size[1], size[0])))
-                labs_i = labels[i]
-                if self.cfg.TRAIN.RELATIVE_LABELS:
-                    label_i = [[lab[0],
+            img_i_size = img.shape
+            img = cv2.resize(img, (size[1], size[0]))
+            if self.cfg.TRAIN.RELATIVE_LABELS:
+                label_after = [[lab[0],
                                 lab[1] / img_i_size[1],
                                 lab[2] / img_i_size[0],
                                 lab[3] / img_i_size[1],
                                 lab[4] / img_i_size[0]
-                                ] for lab in labs_i]
-                else:
-                    label_i = [[lab[0],
+                                ] for lab in label]
+            else:
+                label_after = [[lab[0],
                                 lab[1] / img_i_size[1] * size[1],
                                 lab[2] / img_i_size[0] * size[0],
                                 lab[3] / img_i_size[1] * size[1],
                                 lab[4] / img_i_size[0] * size[0]
-                                ] for lab in labs_i]
-                resized_labels.append(label_i)
-            imgs = resized_imgs
-            labels = resized_labels
+                                ] for lab in label]
+        else:
+            label_after = label
+        if self.cfg.TRAIN.SHOW_INPUT:
+            _show_img(img, label_after, show_img=True, cfg=self.cfg, show_time=self.cfg.TRAIN.SHOW_INPUT)
+        img = np.asarray(img, dtype=np.float32)
+        img = np.transpose(img, (2, 0, 1))
+        img = img / 127.5 - 1.
+        return img, label_after, data_info  # only need the labels
 
-            if self.cfg.TRAIN.SHOW_INPUT:
-                _show_img(imgs, labels, show_img=True, cfg=self.cfg)
+    def _load_dataset(self, dataset, is_training):
+        self.dataset_txt = dataset
+        self.is_training = is_training
 
-            imgs = torch.Tensor(np.array(imgs))
-            imgs = imgs.permute([0, 3, 1, 2, ])
-            imgs = imgs / 127.5 - 1.
+    def _read_datas(self, id):
+        '''
+        Read images and labels depend on the idx.
+        :param image: if there is a image ,the just return the image.
+        :return: images, labels, image_size
+        '''
+        if self.print_path:
+            print(id[1], '<--->', id[2])
+        if not (os.path.isfile(id[1]) and os.path.isfile(id[2])):
+            print('ERROR, NO SUCH A FILE.', id[1], '<--->', id[2])
+            exit()
+        # labels come first.
+        label = self._read_line(id[2])
+        # then add the images.
+        img = cv2.imread(id[1])
+        return img, label
 
-            imgs = imgs.to(self.cfg.TRAIN.DEVICE)
-            data = (imgs, labels)  #
-        return data
+    def _is_finedata(self, xyxy):
+        x1, y1, x2, y2 = xyxy
+        for point in xyxy:
+            if point < 0: return False
+        if x2 - x1 <= 0: return False
+        if y2 - y1 <= 0: return False
+        return True
 
     def _read_line(self, path, predicted_line=False, pass_obj=['DontCare', ]):
         """
@@ -131,49 +148,14 @@ class Loader:
                 bbs.append([float(tmp[1]), self.cls2idx[self.class_name[cls_name]], [float(tmp[2]), float(tmp[3]), float(tmp[4]), float(tmp[5])]])
         return bbs
 
-    def _read_datas(self, idx, image=None):
+    def collate_fun(self, batch):
         '''
-        Read images and labels depend on the idx.
-        :param image: if there is a image ,the just return the image.
-        :return: images, labels, image_size
+        collate_fn：如何取样本的，我们可以定义自己的函数来准确地实现想要的功能
+        其中default_collate会将labels分割合并转换成tensor。
+        !!!***if not use my own collect_fun ,the labels will be wrong orders.***
+        :param batch:
+        :return:
         '''
-        images = []
-        labels = []
-        if image is None:
-            idx_remove = idx.copy()
-            for id in idx:
-                if self.print_path:
-                    print(id[1], '<--->', id[2])
-                if not (os.path.isfile(id[1]) and os.path.isfile(id[2])):
-                    print('ERROR, NO SUCH A FILE.', id[1], '<--->', id[2])
-                    exit()
-                # labels come first.
-                label = self._read_line(id[2])
-                while not label:  # whether the label is empty?
-                    if id in idx_remove:  # if img_idx has been removed then label is empty
-                        idx_remove.remove(id)
-                    if not idx_remove: break
-                    id = random.choice(idx_remove)
-                    print('warning: no label...instead it of ', id[1])
-                    label = self._read_line(id[2])
-                labels.append(label)
-                # then add the images.
-                img = cv2.imread(id[1])
-                if img is not None:
-                    images.append(img)
-                else:
-                    print('imread img is NONE.')
-        else:
-            images.append(image)
-
-        if labels == [[]]:
-            labels = None
-        return images, labels
-
-    def _is_finedata(self, xyxy):
-        x1, y1, x2, y2 = xyxy
-        for point in xyxy:
-            if point < 0: return False
-        if x2 - x1 <= 0: return False
-        if y2 - y1 <= 0: return False
-        return True
+        imgs, labels, infos = zip(*batch)
+        imgs = torch.from_numpy(np.asarray(imgs))
+        return imgs, list(labels), list(infos)

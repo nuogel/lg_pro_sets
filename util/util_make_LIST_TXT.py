@@ -8,10 +8,13 @@ def make_list(pathes):
         path_list = glob.glob(path + '*/*.png')
         for path in path_list:
             file_name = os.path.basename(path)
-            path_2 = path.replace('x1', 'x2')
+            path_2 = path.replace('h_GT', 'l')
+            # path_2 = path_2.replace('png', 'txt')
+            # path_2 = path_2.replace('img', 'gt_img')
+
             if not os.path.isfile(path_2):
                 continue
-            dir_list.append([file_name,path, path_2])
+            dir_list.append([file_name, path_2, path])
 
     return dir_list
 
@@ -19,7 +22,7 @@ def make_list(pathes):
 def _wrte_dataset_txt(dataset, save_path):
     data_set_txt = ''
     for i in dataset:
-        data_set_txt += str(i[0]) + ';' + str(i[1]) + ';' + str(i[2]) + '\n'
+        data_set_txt += str(i[0]) + ' ' + str(i[1]) + ' ' + str(i[2]) + '\n'  # '\n'  # +
     f = open(save_path, 'w')
     f.write(data_set_txt)
     f.close()
@@ -28,7 +31,8 @@ def _wrte_dataset_txt(dataset, save_path):
 if __name__ == '__main__':
     # pathes = ['D:/datasets/CCPD2019/ccpd_challenge/']
     # pathes = ['F:/datasets/SR/REDS4/train_sharp_part/']
-    pathes = ['E:/datasets/SelfFilms/x1/']
-    save_path = 'util_tmp/SelfFilms.txt'
+    # pathes = ['F:/LG/OCR/PAN.pytorch-master/dadaset/wxf_ocr_data/']
+    pathes = ['E:/datasets/youku/youku_00200_00249_h_GT/']
+    save_path = 'util_tmp/make_list.txt'
     datalist = make_list(pathes)
     _wrte_dataset_txt(datalist, save_path)

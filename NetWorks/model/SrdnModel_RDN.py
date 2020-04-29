@@ -85,6 +85,6 @@ class RDN(nn.Module):
         out = self.GFF(out)
         out = f__1 + out
         out = self.up_net(out)
-        out = out.permute(0, 2, 3, 1)
+        # out = out.permute(0, 2, 3, 1)
 
         return out

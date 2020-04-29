@@ -94,18 +94,25 @@ def _wrte_dataset_txt(dataset, idx_stores_dir):
 
 
 def _read_train_test_dataset(cfg):
-    system_type = sys.platform[0].replace('l', 'u')
-    train_idx = os.path.join('DataLoader/datasets/', cfg.BELONGS + '_idx_stores', cfg.TRAIN.TRAIN_DATA_FROM_FILE,
-                             cfg.TRAIN.TRAIN_DATA_FROM_FILE + '_train_set_' + system_type + '.txt')
-    test_idx = os.path.join('DataLoader/datasets/', cfg.BELONGS + '_idx_stores', cfg.TRAIN.TRAIN_DATA_FROM_FILE,
-                            cfg.TRAIN.TRAIN_DATA_FROM_FILE + '_test_set_' + system_type + '.txt')
+    if cfg.TEST.ONE_TEST:
+        train_set = cfg.TEST.ONE_NAME
+        test_set = train_set
+    else:
+        train_set = []
+        test_set = []
+        for FILE_TXT in cfg.TRAIN.TRAIN_DATA_FROM_FILE:
+            system_type = sys.platform[0].replace('l', 'u')
+            train_idx = os.path.join('DataLoader/datasets/', cfg.BELONGS + '_idx_stores', FILE_TXT,
+                                     FILE_TXT + '_train_set_' + system_type + '.txt')
+            test_idx = os.path.join('DataLoader/datasets/', cfg.BELONGS + '_idx_stores', FILE_TXT,
+                                    FILE_TXT + '_test_set_' + system_type + '.txt')
 
-    print('USING DATASET: %s' % cfg.TRAIN.TRAIN_DATA_FROM_FILE)
+            print('USING DATASET: %s' % FILE_TXT)
 
-    f = open(train_idx, 'r')
-    train_set = [line.strip().split(';') for line in f.readlines()]
-    f = open(test_idx, 'r')
-    test_set = [line.strip().split(';') for line in f.readlines()]
+            f = open(train_idx, 'r')
+            train_set.extend([line.strip().split(';') for line in f.readlines()])
+            f = open(test_idx, 'r')
+            test_set.extend([line.strip().split(';') for line in f.readlines()])
     return train_set, test_set
 
 

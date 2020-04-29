@@ -80,5 +80,5 @@ class RCAN(nn.Module):
         x += residual
         x = self.upscale(x)
         x = self.conv2(x)
-        x = x.permute(0, 2, 3, 1)
+        # x = x.permute(0, 2, 3, 1)
         return x

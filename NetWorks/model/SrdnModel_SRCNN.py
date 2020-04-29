@@ -23,6 +23,6 @@ class SRCNN(nn.Module):
         out = self.conv2(out)
         out = self.relu2(out)
         out = self.conv3(out)
-        out = out.permute(0, 2, 3, 1)
+        # out = out.permute(0, 2, 3, 1)
 
         return out

@@ -15,27 +15,24 @@ class dataloader_factory:
 
     def make_dataset(self, datasets=[]):
         DataSets = []
-        for dataset in datasets:
+        for i, dataset in enumerate(datasets):
             data = self.DataLoaderDict[self.cfg.BELONGS](self.cfg)
-            shuffle = False if len(datasets) == 1 else True
+            shuffle = False if i == 1 or len(datasets) == 1 else True
             data._load_dataset(dataset, is_training=shuffle)
             Dataset = DataLoader(dataset=data,
                                  batch_size=self.cfg.TRAIN.BATCH_SIZE,
                                  num_workers=self.args.number_works,
-                                 # collate_fn=self.collate_fun,
+                                 collate_fn=data.collate_fun,
                                  shuffle=shuffle)
             DataSets.append(Dataset)
 
         return DataSets
 
-    def iter_loader(self, dataset):
-        dataloader = iter(dataset)
-        return dataloader
-
-    def load_next(self, dataset):
-        data = next(dataset)
-        return data
-
-    def collate_fun(self, batch):
-        imgs, labels = zip(*batch)
-        return torch.from_numpy(np.asarray(imgs)), list(labels)
+    def to_devce(self, data):
+        datas = []
+        for i, da in enumerate(data):
+            try:
+                datas.append(da.to(self.cfg.TRAIN.DEVICE, non_blocking=True))
+            except:
+                datas.append(da)
+        return datas

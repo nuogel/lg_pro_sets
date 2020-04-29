@@ -239,7 +239,7 @@ class YoloLoss:
         return noobj_loss, obj_loss, cls_loss, loc_loss
 
     def Loss_Call(self, f_maps, dataset, losstype=None):
-        images, labels = dataset
+        images, labels, datainfos = dataset
         noobj_loss, obj_loss, cls_loss, loc_loss = 0.0, 0.0, 0.0, 0.0
         for f_id, f_map in enumerate(f_maps):
             _noobj_loss, _obj_loss, _cls_loss, _loc_loss = self._loss_cal_one_Fmap(f_map, f_id, labels, losstype)

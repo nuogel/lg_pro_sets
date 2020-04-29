@@ -33,7 +33,7 @@ class Test_Base(object):
             self.model_path = self.cfg.PATH.TEST_WEIGHT_PATH
         self.Model = load_state_dict(self.Model, self.args.checkpoint, self.cfg.TRAIN.DEVICE)
         self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
-        self.Model.eval()
+        # self.Model.eval()
 
     def test_backbone(self, DataSet):
         pass
@@ -47,24 +47,28 @@ class Test_Base(object):
         """
         if file_s is None:
             file_s = 'tmp/idx_stores/test_set.txt'
+        dataset = []
 
         if os.path.isfile(file_s):
             if file_s.split('.')[1] == 'txt':  # .txt
                 lines = open(file_s, 'r').readlines()
-                dataset = []
                 for line in lines:
                     tmp = line.strip().split(";")
                     dataset.append(tmp)
             else:  # xx.jpg
-                dataset = [file_s]
-        else:
-            if os.path.isdir(file_s):
-                dataset = glob.glob('{}/*.*'.format(file_s))
+                dataset.append([os.path.basename(file_s), file_s, file_s])
 
-            elif isinstance(list, file_s):
-                dataset = file_s
-            else:
-                dataset = None
+        elif os.path.isdir(file_s):
+            files = glob.glob('{}/*.*'.format(file_s))
+            for i, path in enumerate(files):
+                # img = cv2.imread(path)
+                name = os.path.basename(path)
+                dataset.append([name, path, path])
+
+        elif isinstance(list, file_s):
+            dataset = file_s
+        else:
+            dataset = None
         DataSet = self.dataloader_factory.make_dataset([dataset])[0]
         self.test_backbone(DataSet)
 
@@ -142,8 +146,13 @@ class Test_SRDN(Test_Base):
 
     def test_backbone(self, DataSet):
         """Test."""
-        for i, (inputs, targets, data_infos) in enumerate(DataSet):
+        loader = self.dataloader_factory.iter_loader(DataSet)
+
+        for i in range(DataSet.__len__()):
+            inputs, targets, data_infos = self.dataloader_factory.load_next(loader)
             predicts = self.Model.forward(input_x=inputs, is_training=False)
+            predicts = predicts.permute(0, 2, 3, 1)
+
             batch = predicts.shape[0]
             save_paths = []
             if self.cfg.TEST.SAVE_LABELS:
@@ -156,11 +165,16 @@ class Test_SRDN(Test_Base):
             predict_size = (predicts.shape[1], predicts.shape[2])
             inputs = torch.nn.functional.interpolate(inputs, size=predict_size)
             inputs = inputs.permute(0, 2, 3, 1)
+            targets = targets.permute(0, 2, 3, 1)
             inputs_join_predicts = 1
             if inputs_join_predicts:
-                img_cat = torch.cat([inputs, predicts, targets], dim=1)
+                try:
+                    img_cat = torch.cat([inputs, predicts, targets], dim=1)
+                except:
+                    img_cat = torch.cat([inputs, predicts], dim=1)
             else:
                 img_cat = predicts
+
             parse_Tensor_img(img_cat, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_paths=save_paths,
                              show_time=self.cfg.TEST.SHOW_EVAL_TIME)
 

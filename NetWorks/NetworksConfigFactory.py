@@ -46,6 +46,7 @@ def get_loss_class(belongs, modelname):
         from NetWorks.loss.AsrLoss_CTC import RnnLoss
         from NetWorks.loss.AsrLoss_SEQ2SEQ import SEQ2SEQLOSS
         from NetWorks.loss.ObdLoss_REFINEDET import REFINEDETLOSS
+        from NetWorks.loss.OcrLoss_PAN import PANLoss
         loss_dict = {
             'fcos': FCOSLOSS,
             'refinedet': REFINEDETLOSS,
@@ -54,6 +55,7 @@ def get_loss_class(belongs, modelname):
             'rnn': RnnLoss,
             'ctc': RnnLoss,
             'seq2seq': SEQ2SEQLOSS,
+            'PAN': PANLoss,
         }
         return loss_dict[modelname]
 
