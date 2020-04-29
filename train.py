@@ -6,7 +6,6 @@ import os
 
 # print(sys.path)
 # sys.path.append('/home/lg/new_disk/deep_learning/Lg_Pro_Set')
-import logging
 from argparse import ArgumentParser
 from NetWorks.train_solver import Solver
 from util.util_yml_parse import parse_yaml
@@ -15,16 +14,18 @@ from util.util_yml_parse import parse_yaml
 def _parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('--type', default='SRDN', type=str, help='yml_path')
-    parser.add_argument('--checkpoint', '--cp', default=0  #'tmp/checkpoint/now.pkl'  #
+    parser.add_argument('--checkpoint', '--cp', default= 'tmp/checkpoint/90.pkl'  #0  #
                         , help='Path to the checkpoint to be loaded to the model')
-    parser.add_argument('--batch_size', '--bz', default=1, type=int, help='batch size')
+    parser.add_argument('--batch_size', '--bz', default=8, type=int, help='batch size')
     parser.add_argument('--lr', default=0.0001, type=float, help='Learning rate')
     parser.add_argument('--lr_continue', '--lr_c', default=0.0001, type=float, help='Learning rate')
-    parser.add_argument('--number_works', '--n_w', default=0, type=int, help='number works of DataLoader')
+    parser.add_argument('--number_works', '--n_w', default=8, type=int, help='number works of DataLoader')
+    parser.add_argument('--amp', '--amp', default='O0', type=str, help='apex-amp')
 
     parser.add_argument('--epoch-continue', default=None, type=int, help='Epoch of continue training')
     parser.add_argument('--debug', '--d', action='store_true', default=False, help='Enable verbose info')
     parser.add_argument('--test_only', '--to', default=False, type=bool, help='test only')
+    parser.add_argument('--log_file_path', default='saved/log.txt', help='log_file_path')
     return parser.parse_args()
 
 
@@ -32,13 +33,7 @@ def main():
     """Main. entry of this script."""
     exit_code = 0
     args = _parse_arguments()
-    cfg = parse_yaml(args.type)
-
-    logging.getLogger().level = logging.DEBUG
-    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
-                        # filename='tmp/log.txt',  # 是否保存为文件。
-                        format=cfg.TRAIN.LOG_FORMAT)
-
+    cfg = parse_yaml(args)
     solver = Solver(cfg, args)
     solver.train()
     return exit_code

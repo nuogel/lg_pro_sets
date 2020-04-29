@@ -22,7 +22,7 @@ class AttrDict(dict):
             self[name] = value
 
 
-def parse_yaml(ymlfilename):
+def parse_yaml(agrs):
     """
     Convert the dict to be [cfg.Name...]
     :param ymlfilename:
@@ -30,7 +30,7 @@ def parse_yaml(ymlfilename):
     e.g :
         yaml_cfg['PATH']['TMP_DIR']
     """
-    with open('cfg/{}.yml'.format(ymlfilename), 'r', encoding='UTF-8') as f:
+    with open('cfg/{}.yml'.format(agrs.type), 'r', encoding='UTF-8') as f:
         yaml_cfg = yaml.load(f, Loader=yaml.FullLoader)
         cfg = AttrDict(yaml_cfg)
         cfg.PATH = AttrDict(cfg.PATH)

@@ -15,12 +15,11 @@ class SRDNLOSS:
         low_img, high_img, data_infos = train_data
 
         if self.cfg.TRAIN.SHOW_INPUT:
-            low_img = low_img.permute(0, 2, 3, 1)
-            parse_Tensor_img(low_img, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, show_time=self.cfg.TRAIN.SHOW_INPUT)
+            parse_Tensor_img(low_img.permute(0, 2, 3, 1), pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, show_time=self.cfg.TRAIN.SHOW_INPUT)
         if self.cfg.TRAIN.SHOW_TARGET:
-            parse_Tensor_img(high_img, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, show_time=self.cfg.TRAIN.SHOW_TARGET)
+            parse_Tensor_img(high_img.permute(0, 2, 3, 1), pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, show_time=self.cfg.TRAIN.SHOW_TARGET)
         if self.cfg.TRAIN.SHOW_PREDICT:
-            parse_Tensor_img(prediction, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, show_time=self.cfg.TRAIN.SHOW_PREDICT)
+            parse_Tensor_img(prediction.permute(0, 2, 3, 1), pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, show_time=self.cfg.TRAIN.SHOW_PREDICT)
 
         if losstype == 'MSE' or losstype == 'mse':
             loss = self.mseloss(prediction, high_img)

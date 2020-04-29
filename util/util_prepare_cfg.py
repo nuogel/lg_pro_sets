@@ -2,8 +2,13 @@ def prepare_cfg(cfg, arg, is_training=True):
     if not is_training:
         cfg.TRAIN.TARGET_PREDEEL = 0
         cfg.TRAIN.INPUT_PREDEEL = 0
+
     if arg.batch_size != 0:
         cfg.TRAIN.BATCH_SIZE = arg.batch_size
+
+    if cfg.TEST.ONE_TEST:
+        arg.number_works = 0
+
     anchor_yolov2_apollo = [[0.0772422, 0.0632077],
                             [0.0332185, 0.0699152],
                             [0.3039470, 0.7423017],

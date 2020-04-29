@@ -10,6 +10,9 @@ def parse_Tensor_img(tensor_imgs, pixcels_norm=[177.0, 1.], save_paths=None, sho
     for i in range(tensor_imgs.shape[0]):
         img = tensor_imgs[i]
         img = img.mul(pixcels_norm[1]).add(pixcels_norm[0]).clamp(0, 255).round().to('cpu', torch.uint8).numpy()
+        img_cat_copy = img.copy()
+        img[..., 0] = img_cat_copy[..., 2]
+        img[..., 2] = img_cat_copy[..., 0]
         if save_paths:
             cv2.imwrite(save_paths[i], img)
             print('     ---->', save_paths[i])

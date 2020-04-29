@@ -1,7 +1,7 @@
 import torch
 from torch.nn import CTCLoss
 from util.util_to_onehot import to_onehot
-from DataLoader.Loader_ASR import DataLoader
+from DataLoader.Loader_ASR import Loader
 
 
 class RnnLoss:
@@ -9,7 +9,7 @@ class RnnLoss:
         self.cfg = cfg
         self.loss_ctc = CTCLoss(reduction='sum', blank=0)
         self.loss_mse = torch.nn.MSELoss(reduction='sum')
-        self.data = DataLoader(cfg)
+        self.data = Loader(cfg)
 
     def Loss_Call(self, input, train_data, losstype='mse'):
         _, target, input_lengths, target_lengths = train_data

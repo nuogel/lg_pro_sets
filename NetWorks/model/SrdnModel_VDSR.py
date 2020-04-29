@@ -24,6 +24,6 @@ class VDSR(nn.Module):
         x = self.residual_layers(x)
         x = self.output_conv(x)
         x = torch.add(x, residual)
-        x = x.permute(0, 2, 3, 1)
+        # x = x.permute(0, 2, 3, 1)
 
         return x

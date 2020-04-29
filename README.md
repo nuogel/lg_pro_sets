@@ -112,7 +112,7 @@ Transformer |0.1|58.5 M|XXX
 
 SR: 
 
-dataset:youku
+dataset:youku (1920X1080)
 
 networks | PSNR |weight size| one image time | ps
  --- | --- | --- |  --- | ---
@@ -121,8 +121,9 @@ FSRCNN|X|X|0.3s
 VDSR |33.66|X|0.47s
 EDSR |30.97|X|XXX
 DBPN |X|X|X| 
-RDN |35.66| XX|0.8s 
+RDN |35.66| XX|0.8s |add data augmentation; 38.5 on youku200-250; with out data aug fells more comfortable.
 RCAN |35.73| XX|XXX 
+RCAN |36.60|XX| xx|add data augmentation; 38.35 on youku200-250
 CBDNET |XX| XX|XXX 
 ESRGAN|X|X|X
 
