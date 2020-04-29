@@ -1,9 +1,10 @@
 import logging
 from colorlog import ColoredFormatter
-
+import datetime
 
 def load_logger(args):
-    logging.basicConfig(filename=args.log_file_path,
+    log_path = args.log_file_path+str(datetime.date.today())+'.txt'
+    logging.basicConfig(filename=log_path,
                         level=logging.DEBUG if args.debug else logging.INFO,
                         format='%(asctime)s %(levelname)-8s %(filename)s[line:%(lineno)d]: %(message)s',
                         # 定义输出log的格式

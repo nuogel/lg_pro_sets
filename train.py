@@ -25,7 +25,7 @@ def _parse_arguments():
     parser.add_argument('--epoch-continue', default=None, type=int, help='Epoch of continue training')
     parser.add_argument('--debug', '--d', action='store_true', default=False, help='Enable verbose info')
     parser.add_argument('--test_only', '--to', default=False, type=bool, help='test only')
-    parser.add_argument('--log_file_path', default='saved/log.txt', help='log_file_path')
+    parser.add_argument('--log_file_path', default='tmp/log/', help='log_file_path')
     return parser.parse_args()
 
 
