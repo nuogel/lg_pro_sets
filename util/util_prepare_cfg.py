@@ -6,7 +6,7 @@ def prepare_cfg(cfg, arg, is_training=True):
     if arg.batch_size != 0:
         cfg.TRAIN.BATCH_SIZE = arg.batch_size
 
-    if cfg.TEST.ONE_TEST:
+    if cfg.TEST.ONE_TEST or cfg.TRAIN.SHOW_INPUT or cfg.TRAIN.SHOW_TARGET or cfg.TRAIN.SHOW_PREDICT:
         arg.number_works = 0
 
     anchor_yolov2_apollo = [[0.0772422, 0.0632077],
@@ -32,6 +32,7 @@ def prepare_cfg(cfg, arg, is_training=True):
                      [0.3245192, 0.4062500],
                      [0.8269231, 0.7668269]]  # yolov3_tiny
     # yolov3 writer's anchors: [10,13,  16,30,  33,23,  30,61,  62,45,  59,119,  116,90,  156,198,  373,326]
+    cfg.TRAIN.ANCHORS = anchor_yolov3
     if cfg.TEST.ONE_TEST:
         cfg.TRAIN.BATCH_SIZE = len(cfg.TEST.ONE_NAME)
         cfg.TRAIN.BATCH_BACKWARD_SIZE = 1
@@ -45,4 +46,5 @@ def prepare_cfg(cfg, arg, is_training=True):
     elif 'yolov2' in cfg.TRAIN.MODEL:
         cfg.TRAIN.FMAP_ANCHOR_NUM = 6
         cfg.TRAIN.ANCHORS = anchor_yolov2_apollo
+
     return cfg

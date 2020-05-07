@@ -203,7 +203,7 @@ class BiFPNModule(nn.Module):
         return pathtd
 
 
-class EfficientDet(nn.Module):
+class EFFICIENTDET(nn.Module):
     def __init__(self, cfg):
         num_classes = len(cfg.TRAIN.CLASSES)
         network = 'efficientdet-d0'
@@ -212,7 +212,7 @@ class EfficientDet(nn.Module):
         pyramid_levels = [3, 4, 5, 6, 7]
         scales = np.array([1, 1.25, 1.5])
         self.cfg = cfg
-        super(EfficientDet, self).__init__()
+        super(EFFICIENTDET, self).__init__()
         self.backbone = EfficientNet.from_pretrained(MODEL_MAP[network])
         # self.backbone = EfficientNet()
 

@@ -26,7 +26,10 @@ class Loader(DataLoader):
 
     def __len__(self):
         if self.one_test:
-            length = int(self.cfg.TEST.ONE_TEST_TRAIN_STEP)
+            if self.is_training:
+                length = int(self.cfg.TEST.ONE_TEST_TRAIN_STEP)
+            else:
+                length = len(self.cfg.TEST.ONE_NAME)
         else:
             length = len(self.dataset_txt)
         return length
@@ -111,17 +114,26 @@ class Loader(DataLoader):
         if os.path.basename(path).split('.')[-1] == 'txt' and not predicted_line:
             file_open = open(path, 'r')
             for line in file_open.readlines():
-                tmps = line.strip().split(' ')
-                if tmps[0] not in self.class_name:
-                    continue
-                if self.class_name[tmps[0]] in pass_obj:
-                    continue
-                box_x1 = float(tmps[4])
-                box_y1 = float(tmps[5])
-                box_x2 = float(tmps[6])
-                box_y2 = float(tmps[7])
-                if not self._is_finedata([box_x1, box_y1, box_x2, box_y2]): continue
-                bbs.append([self.cls2idx[self.class_name[tmps[0]]], box_x1, box_y1, box_x2, box_y2])
+                if 'UCAS_AOD' in self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
+                    tmps = line.strip().split('\t')
+                    box_x1 = float(tmps[9])
+                    box_y1 = float(tmps[10])
+                    box_x2 = box_x1 + float(tmps[11])
+                    box_y2 = box_y1 + float(tmps[12])
+                    if not self._is_finedata([box_x1, box_y1, box_x2, box_y2]): continue
+                    bbs.append([1, box_x1, box_y1, box_x2, box_y2])
+                else:
+                    tmps = line.strip().split(' ')
+                    if tmps[0] not in self.class_name:
+                        continue
+                    if self.class_name[tmps[0]] in pass_obj:
+                        continue
+                    box_x1 = float(tmps[4])
+                    box_y1 = float(tmps[5])
+                    box_x2 = float(tmps[6])
+                    box_y2 = float(tmps[7])
+                    if not self._is_finedata([box_x1, box_y1, box_x2, box_y2]): continue
+                    bbs.append([self.cls2idx[self.class_name[tmps[0]]], box_x1, box_y1, box_x2, box_y2])
         elif os.path.basename(path).split('.')[-1] == 'xml' and not predicted_line:
             tree = ET.parse(path)
             root = tree.getroot()

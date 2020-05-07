@@ -38,18 +38,23 @@ class Test_Base(object):
     def test_backbone(self, DataSet):
         pass
 
-    def test_run(self, file_s=None):
+    def test_run(self, dataset):
         """
         Test images in the file_s.
 
         :param file_s:
         :return:
         """
-        if file_s is None:
-            file_s = 'tmp/idx_stores/test_set.txt'
-        dataset = []
 
-        if os.path.isfile(file_s):
+        DataSet = self.dataloader_factory.make_dataset([dataset])[0]
+        self.test_backbone(DataSet)
+
+    def prase_file(self, file_s):
+        dataset = []
+        if file_s is None:
+            dataset = self.cfg.TEST.ONE_NAME
+
+        elif os.path.isfile(file_s):
             if file_s.split('.')[1] == 'txt':  # .txt
                 lines = open(file_s, 'r').readlines()
                 for line in lines:
@@ -67,10 +72,11 @@ class Test_Base(object):
 
         elif isinstance(list, file_s):
             dataset = file_s
+
         else:
             dataset = None
-        DataSet = self.dataloader_factory.make_dataset([dataset])[0]
-        self.test_backbone(DataSet)
+
+        return dataset
 
 
 class Test_OBD(Test_Base):
@@ -79,31 +85,42 @@ class Test_OBD(Test_Base):
         self.dataaug = Dataaug(cfg)
         self.parsepredict = ParsePredict(cfg)
         self.apolloclass2num = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
-        self.DataLoader = dataloader_factory.DataLoaderDict[cfg.BELONGS](cfg)
+        self.DataLoader = self.dataloader_factory.DataLoaderDict[cfg.BELONGS](cfg)
         self.SCORE = get_score_class(self.cfg.BELONGS)(self.cfg)
         self.SCORE.init_parameters()
 
-    def test_backbone(self, test_picture_path):
+    def test_backbone(self, DataSet):
         """Test."""
-        # prepare paramertas
+        # # prepare paramertas
+        #         #
+        #         # img_raw = cv2.imread(test_picture_path)
+        #         # if img_raw is None:
+        #         #     print('ERROR：no such a image')
+        #         # if self.cfg.TEST.DO_AUG:
+        #         #     img_aug, _ = self.dataaug.augmentation(for_one_image=img_raw)
+        #         #     img_aug = img_aug[0]
+        #         # elif self.cfg.TEST.RESIZE:
+        #         #     img_aug = cv2.resize(img_raw, (int(self.cfg.TRAIN.IMG_SIZE[1]), int(self.cfg.TRAIN.IMG_SIZE[0])))
+        #         # else:
+        #         #     img_aug = img_raw
+        #         # img_in = torch.from_numpy(img_aug).unsqueeze(0).type(torch.FloatTensor).to(self.cfg.TRAIN.DEVICE)
+        #         # img_raw = torch.from_numpy(img_raw).unsqueeze(0).type(torch.FloatTensor)
+        #         # img_in = img_in.permute([0, 3, 1, 2, ])
+        #         # img_in = img_in / 127.5 - 1.
 
-        img_raw = cv2.imread(test_picture_path)
-        if img_raw is None:
-            print('ERROR：no such a image')
-        if self.cfg.TEST.DO_AUG:
-            img_aug, _ = self.dataaug.augmentation(for_one_image=img_raw)
-            img_aug = img_aug[0]
-        elif self.cfg.TEST.RESIZE:
-            img_aug = cv2.resize(img_raw, (int(self.cfg.TRAIN.IMG_SIZE[1]), int(self.cfg.TRAIN.IMG_SIZE[0])))
-        else:
-            img_aug = img_raw
-        img_in = torch.from_numpy(img_aug).unsqueeze(0).type(torch.FloatTensor).to(self.cfg.TRAIN.DEVICE)
-        img_raw = torch.from_numpy(img_raw).unsqueeze(0).type(torch.FloatTensor)
-        img_in = img_in.permute([0, 3, 1, 2, ])
-        img_in = img_in / 127.5 - 1.
-        predict = self.Model.forward(input_x=img_in, is_training=False)
-        labels_pre = self.parsepredict._parse_predict(predict)
-        return _show_img(img_raw, labels_pre, img_in=img_in[0], pic_path=test_picture_path, cfg=self.cfg)
+        loader = iter(DataSet)
+        for i in range(DataSet.__len__()):
+            test_data = next(loader)
+            test_data = self.dataloader_factory.to_devce(test_data)
+            inputs, targets, data_infos = test_data
+            predicts = self.Model.forward(input_x=inputs, is_training=False)
+            labels_pre = self.parsepredict._parse_predict(predicts)
+            batches = inputs.shape[0]
+
+            for i in range(batches):
+                img_raw = [cv2.imread(data_infos[i][1])]
+                img_in = inputs[i]
+                _show_img(img_raw, labels_pre, img_in=img_in, pic_path=data_infos[i][1], cfg=self.cfg)
 
     def score(self, txt_info, pre_path):
         pre_path_list = glob.glob(pre_path + '/*.*')
@@ -146,17 +163,19 @@ class Test_SRDN(Test_Base):
 
     def test_backbone(self, DataSet):
         """Test."""
-        loader = self.dataloader_factory.iter_loader(DataSet)
+        loader = iter(DataSet)
 
         for i in range(DataSet.__len__()):
-            inputs, targets, data_infos = self.dataloader_factory.load_next(loader)
+            test_data = next(loader)
+            test_data = self.dataloader_factory.to_devce(test_data)
+            inputs, targets, data_infos = test_data
             predicts = self.Model.forward(input_x=inputs, is_training=False)
             predicts = predicts.permute(0, 2, 3, 1)
 
-            batch = predicts.shape[0]
+            batches = inputs.shape[0]
             save_paths = []
             if self.cfg.TEST.SAVE_LABELS:
-                for i in range(batch):
+                for i in range(batches):
                     data_info = data_infos[i]
                     os.makedirs(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, exist_ok=True)
                     os.makedirs(os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, self.cfg.TRAIN.MODEL), exist_ok=True)

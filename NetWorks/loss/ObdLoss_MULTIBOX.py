@@ -31,7 +31,7 @@ class MULTIBOXLOSS():
         """
         confidence, predicted_locations, anchors_xywh = predictions
         batchsize = predicted_locations.shape[0]
-        gt_images, gt_labels = targets
+        gt_images, gt_labels, infos = targets
 
         encode_target, labels = [], []
         for i in range(batchsize):

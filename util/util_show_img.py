@@ -28,10 +28,10 @@ def _show_img(imgs, labels_out, img_in=None,
 
     assert imgs.shape[0] == len(labels_out), 'error:util_show_img->image and label shape is not the same'
 
-    # if cfg:
-    #     save_labels = cfg.TEST.SAVE_LABELS
-    #     show_img = cfg.TEST.SHOW_IMAGES
-    #     show_time = cfg.TEST.SHOW_TIMES
+    if cfg:
+        save_labels = cfg.TEST.SAVE_LABELS
+        show_img = cfg.TEST.SHOW_IMAGES
+        show_time = cfg.TEST.SHOW_TIMES
 
     if pic_path == None:
         save_labels = False

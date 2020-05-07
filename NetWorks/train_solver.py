@@ -42,8 +42,8 @@ class Solver:
         self.Score = get_score_class(self.cfg.BELONGS)(self.cfg)
         self.test_batch_num = self.cfg.TEST.ONE_TEST_TEST_STEP
         self.LOGGER = load_logger(args)
-        print('torch version: ',torch.__version__)
-        print('torch.version.cuda: ',torch.version.cuda)
+        print('torch version: ', torch.__version__)
+        print('torch.version.cuda: ', torch.version.cuda)
 
     def train(self):
         """Train the network.
@@ -61,7 +61,7 @@ class Solver:
         # Prepare optimizer
         optimizer, scheduler = self._get_optimizer(learning_rate, optimizer=self.cfg.TRAIN.OPTIMIZER)
         if self.args.amp in ['O1', 'O2', 'O3']:
-            self.Model, optimizer = amp.initialize(self.Model, optimizer, opt_level=self.args.amp)
+            self.Model, optimizer = amp.initialize(self.Model, optimizer, opt_level=self.args.amp, loss_scale="dynamic")
         for epoch in range(epoch_last, self.cfg.TRAIN.EPOCH_SIZE):
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch, optimizer, scheduler)
@@ -73,6 +73,7 @@ class Solver:
         Get the self.Model, learning_rate, epoch_last, train_set, test_set.
         :return: learning_rate, epoch_last, train_set, test_set.
         """
+        torch.backends.cudnn.benchmark = True
         # load the last train parameters
         if self.args.checkpoint in [0, '0', 'None', 'no', 'none', "''"]:
             weights_init(self.Model, self.cfg)
@@ -158,7 +159,6 @@ class Solver:
         _timer = Time()
         # for step in range(batch_num):
         for step, train_data in enumerate(self.trainDataloader):
-            _timer.time_start()
             if step >= len(self.trainDataloader):
                 break
             train_data = self.dataloader_factory.to_devce(train_data)
@@ -182,7 +182,7 @@ class Solver:
             _timer.time_end()
             self.LOGGER.info('[TRAIN] Model: %s Epoch-Step:%3d-%4d/%4d, Step_LOSS: %8.4f, Batch_Average_LOSS: %8.4f, Time Step/Total-%s/%s', self.cfg.TRAIN.MODEL,
                              epoch, step, len(self.trainDataloader), total_loss.item(), losses / (step + 1), _timer.diff, _timer.from_begin)
-
+            _timer.time_start()
         self.save_parameter.tbX_write(epoch=epoch, learning_rate=optimizer.param_groups[0]['lr'], batch_average_loss=losses / len(self.trainDataloader), )
         self.LOGGER.info('[TRAIN] Summary: Epoch: %s, average total loss: %s', epoch, losses / len(self.trainDataloader))
 
@@ -203,7 +203,7 @@ class Solver:
             if self.cfg.BELONGS in ['OBD']: test_data = test_data[1]
             self.Score.cal_score(predict, test_data)
             _timer.time_end()
-            self.LOGGER.info('[EVALUATE] Epoch-Step:%3d-%4d/%4d, Time Step/Total-%s/%s', epoch, step, len(self.trainDataloader), _timer.diff, _timer.from_begin)
+            self.LOGGER.info('[EVALUATE] Epoch-Step:%3d-%4d/%4d, Time Step/Total-%s/%s', epoch, step, len(self.testDataloader), _timer.diff, _timer.from_begin)
         score_out, precision, recall = self.Score.score_out()
         self.save_parameter.tbX_write(epoch=epoch, score_out=score_out, precision=precision, recall=recall, )
         self.LOGGER.info('[EVALUATE] Summary: Epoch: %s, Score0: %s, Score1: %s, Score2: %s', epoch, score_out, precision, recall)

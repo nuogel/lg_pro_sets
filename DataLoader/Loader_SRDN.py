@@ -33,7 +33,11 @@ class Loader(DataLoader):
 
     def __len__(self):
         if self.one_test:
-            length = int(self.cfg.TEST.ONE_TEST_TRAIN_STEP)
+            if self.is_training:
+                length = int(self.cfg.TEST.ONE_TEST_TRAIN_STEP)
+            else:
+                length = len(self.cfg.TEST.ONE_NAME)
+
         else:
             length = len(self.dataset_txt)
         return length
@@ -46,8 +50,6 @@ class Loader(DataLoader):
 
         labels = self._target_prepare(filename=data_info)
         imgs = self._input_prepare(target=labels, filename=data_info)
-
-
 
         labels = np.asarray(labels, dtype=np.float32)
         imgs = np.asarray(imgs, dtype=np.float32)
@@ -98,10 +100,11 @@ class Loader(DataLoader):
 
         if self.cfg.TRAIN.INPUT_TRANSFORM:  # and self.is_training and not self.cfg.TRAIN.TARGET_TRANSFORM:
             # add the augmentation ...
-            input, _ = self.Data_aug.augmentation(aug_way_ids=([5, 6, 7, 11, 12, 13, 14,15, 16], []), datas=([input], None))
+            input, _ = self.Data_aug.augmentation(aug_way_ids=([5, 6, 7, 11, 12, 13, 14, 15, 16], []), datas=([input], None))
             input = input[0]
-            compress_level = random.randint(5, 20)
-            input = Jpegcompress2(input, compress_level)
+            if random.random() < 0.5:
+                compress_level = random.randint(5, 10)
+                input = Jpegcompress2(input, compress_level)
 
         if self.cfg.TRAIN.MODEL in ['cbdnet', 'srcnn', 'vdsr'] and input.shape != target.shape:  # 输入与输出一样大小
             input = cv2.resize(input, target.shape)

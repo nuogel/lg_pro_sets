@@ -10,23 +10,26 @@ PATH:
 
 
 TRAIN:
-  MODEL: yolov3_tiny #yolov3_tiny_shufflenet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #ssd #efficientdet #refinedet #yolov3 #yolov3 #   fcos #
+  MODEL: efficientdet #yolov3_tiny #yolov3_tiny_shufflenet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #ssd #refinedet #yolov3 #yolov3 #   fcos #
   EPOCH_SIZE: 4000
   BATCH_SIZE: ''
-  BATCH_BACKWARD_SIZE: 8  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
-  TRAIN_DATA_FROM_FILE: 'KITTI' #
+  BATCH_BACKWARD_SIZE: 4  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
+  TRAIN_DATA_FROM_FILE: [UCAS_AOD] #
   CLASSES: ['Background','Car','Others1', 'Others2'] #['Car', 'Cyclist', 'Pedestrian', 'Others']#
 
   # data aug:
-  DO_AUG: 1 #TRUE #
-  SHOW_INPUT: 0 #TRUE #
-  SHOW_TRAIN_NAMES: FALSE #TRUE #
-  RESIZE: TRUE
-  RELATIVE_LABELS: TRUE  #FALSE # generate a relative labels to 0-1
+  DO_AUG: 0 #TRUE #
+  RESIZE: 1
+  RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0 #0.1
   MIN_AREA: 0 #100 #400
-  IMG_SIZE:  [384, 960] #[512,768] #[512, 768] #[H,W] #[256, 256] # [512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
+  IMG_SIZE:  [512,768] #[384, 960] #[512, 768] #[H,W] #[256, 256] # [512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
   MULTI_SIZE_RATIO: [1] # [1, 0.9, 0.8...]
+
+  SHOW_TRAIN_NAMES: FALSE #TRUE #
+  SHOW_INPUT: 0 #10000  # showtime.
+  SHOW_TARGET: 0 #10000 #
+  SHOW_PREDICT: 0 #10000 #
 
   # optimizer:
   OPTIMIZER: 'adam' #'SGD' #
@@ -61,8 +64,8 @@ TEST:
 
   DO_AUG: FALSE #TRUE  #
   RESIZE: TRUE  #FALSE #
-  SAVE_LABELS: TRUE
-  SHOW_IMAGES: FALSE #TRUE #
+  SAVE_LABELS: 0
+  SHOW_IMAGES: 1 #TRUE #
   SHOW_TIMES: 20000
 
   TEST_ONLY: 0 #FALSE #
@@ -70,4 +73,4 @@ TEST:
   ONE_TEST: 0  #
   ONE_TEST_TRAIN_STEP: 50
   ONE_TEST_TEST_STEP: 1
-  ONE_NAME: [['006609', 'E://datasets//kitti//training//images//006609.png', 'E://datasets//kitti//training//labels\\006609.xml']]
+  ONE_NAME: [['P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.txt']]
