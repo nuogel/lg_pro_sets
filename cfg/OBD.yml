@@ -10,12 +10,12 @@ PATH:
 
 
 TRAIN:
-  MODEL: efficientdet #yolov3_tiny #yolov3_tiny_shufflenet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #ssd #refinedet #yolov3 #yolov3 #   fcos #
+  MODEL: yolov3_tiny #efficientdet #yolov3_tiny_shufflenet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #ssd #refinedet #yolov3 #yolov3 #   fcos #
   EPOCH_SIZE: 4000
   BATCH_SIZE: ''
   BATCH_BACKWARD_SIZE: 4  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
-  TRAIN_DATA_FROM_FILE: [UCAS_AOD] #
-  CLASSES: ['Background','Car','Others1', 'Others2'] #['Car', 'Cyclist', 'Pedestrian', 'Others']#
+  TRAIN_DATA_FROM_FILE: [VISDRONE] #UCAS_AOD
+  CLASSES: ['others', 'car', 'person', 'cycle'] #['Background','Car','Others1', 'Others2']  #['Car', 'Cyclist', 'Pedestrian', 'Others']#
 
   # data aug:
   DO_AUG: 0 #TRUE #
@@ -28,8 +28,8 @@ TRAIN:
 
   SHOW_TRAIN_NAMES: FALSE #TRUE #
   SHOW_INPUT: 0 #10000  # showtime.
-  SHOW_TARGET: 0 #10000 #
-  SHOW_PREDICT: 0 #10000 #
+  SHOW_TARGET: None #10000 #
+  SHOW_PREDICT: None #10000 #
 
   # optimizer:
   OPTIMIZER: 'adam' #'SGD' #
@@ -40,7 +40,7 @@ TRAIN:
   WEIGHT_DECAY: 0
   LOSSTYPE: 'focalloss' #'mse' #
   EPOCH_CONTINUE: None
-  SAVE_STEP: 100
+  SAVE_STEP: 50
 
   # CUDA:
   GPU_NUM: [0] #[] # if is [] means use CPU.
@@ -73,4 +73,7 @@ TEST:
   ONE_TEST: 0  #
   ONE_TEST_TRAIN_STEP: 50
   ONE_TEST_TEST_STEP: 1
-  ONE_NAME: [['P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.txt']]
+  ONE_NAME: [['0000002_00005_d_0000014.jpg', 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/images/0000002_00005_d_0000014.jpg', 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/annotations/0000002_00005_d_0000014.txt']
+
+#  ['P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.txt']
+  ]

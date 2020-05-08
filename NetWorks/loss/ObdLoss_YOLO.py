@@ -57,9 +57,11 @@ class YoloLoss:
                 box_center = (box_xy * torch.Tensor([shape[1], shape[0]]).to(self.cfg.TRAIN.DEVICE)).long()
                 anc = torch.cat([torch.zeros_like(anchors), anchors], 1)
                 box_iou = torch.cat([torch.Tensor([0, 0]).to(self.cfg.TRAIN.DEVICE), box_wh])
+                # TODO: there might be WRONG, when choice a anchor which is not fit for this box in the certain feature map.
                 iou = iou_xywh(anc.to(self.cfg.TRAIN.DEVICE), box_iou.to(self.cfg.TRAIN.DEVICE), type='N21')
                 iou_max = torch.max(iou, 0)
                 anc_idx = iou_max[1].item()
+                # print('the anchor idx is:', anc_idx)
                 lab_boxes.append(boxes)
                 # print(box_center, boxes)
 
@@ -160,11 +162,9 @@ class YoloLoss:
     def _loss_cal_one_Fmap(self, f_map, f_id, labels, losstype=None):
         """Calculate the loss."""
 
-        pre_obj, pre_cls, pre_relative_box, pre_loc_xy, pre_loc_wh, grid_xy, shape = \
-            self.parsepredict._parse_yolo_predict_fmap(f_map, f_id)
+        pre_obj, pre_cls, pre_relative_box, pre_loc_xy, pre_loc_wh, grid_xy, shape = self.parsepredict._parse_yolo_predict_fmap(f_map, f_id)
 
-        lab_obj, lab_cls, lab_loc_xy, lab_loc_wh, lab_boxes, area_scal = \
-            self._reshape_labels(labels, grid_xy, shape, f_id)
+        lab_obj, lab_cls, lab_loc_xy, lab_loc_wh, lab_boxes, area_scal = self._reshape_labels(labels, grid_xy, shape, f_id)
 
         # '''to be a mask:'''
         # '''

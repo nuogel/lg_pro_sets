@@ -96,9 +96,9 @@ class Loader(DataLoader):
     def _is_finedata(self, xyxy):
         x1, y1, x2, y2 = xyxy
         for point in xyxy:
-            if point < 0: return False
-        if x2 - x1 <= 0: return False
-        if y2 - y1 <= 0: return False
+            if point <= 0.: return False
+        if x2 - x1 <= 0.: return False
+        if y2 - y1 <= 0.: return False
         return True
 
     def _read_line(self, path, predicted_line=False, pass_obj=['DontCare', ]):
@@ -122,6 +122,24 @@ class Loader(DataLoader):
                     box_y2 = box_y1 + float(tmps[12])
                     if not self._is_finedata([box_x1, box_y1, box_x2, box_y2]): continue
                     bbs.append([1, box_x1, box_y1, box_x2, box_y2])
+                elif 'VISDRONE' in self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
+                    name_dict = {'0': 'ignored regions', '1': 'pedestrian', '2': 'people',
+                                 '3': 'bicycle', '4': 'car', '5': 'van', '6': 'truck',
+                                 '7': 'tricycle', '8': 'awning-tricycle', '9': 'bus',
+                                 '10': 'motor', '11': 'others'}
+                    tmps = line.strip().split(',')
+                    realname = name_dict[tmps[5]]
+                    if realname not in self.class_name:
+                        continue
+                    if realname in pass_obj:
+                        continue
+                    box_x1 = float(tmps[0])
+                    box_y1 = float(tmps[1])
+                    box_x2 = box_x1 +float(tmps[2])
+                    box_y2 = box_y1 +float(tmps[3])
+
+                    if not self._is_finedata([box_x1, box_y1, box_x2, box_y2]): continue
+                    bbs.append([self.cls2idx[self.class_name[realname]], box_x1, box_y1, box_x2, box_y2])
                 else:
                     tmps = line.strip().split(' ')
                     if tmps[0] not in self.class_name:

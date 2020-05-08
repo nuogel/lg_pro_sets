@@ -84,7 +84,7 @@ def kmeans(boxes, k, dist=np.median):
 
 if __name__ == '__main__':
 
-    def load_dataset(path):
+    def load_dataset_xml(path):
         dataset = []
         for xml_file in glob.glob("{}/*xml".format(path)):
             tree = ET.parse(xml_file)
@@ -103,10 +103,28 @@ if __name__ == '__main__':
         return np.array(dataset)
 
 
-    ANNOTATIONS_PATH = 'E:/datasets/Car/VOC_Car/labels/'
-    CLUSTERS = 9
+    def load_dataset_txt(path):
+        dataset = []
+        for txt_file in glob.glob("{}/*.txt".format(path)):
+            height = 1  # int(tree.findtext("./size/height"))
+            width = 1  # int(tree.findtext("./size/width"))
+            lines = open(txt_file, 'r').readlines()
+            for line in lines:
+                tmps = line.split(',')
+                w = float(tmps[2])
+                h = float(tmps[3])
+                if w==0.or h==0.:
+                    print('bad bbox:', txt_file)
+                    continue
+                dataset.append([w, h])
+        return np.array(dataset)
 
-    data = load_dataset(ANNOTATIONS_PATH)
+
+    ANNOTATIONS_PATH = 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/annotations/'
+    CLUSTERS = 6
+
+    # data = load_dataset_xml(ANNOTATIONS_PATH)
+    data = load_dataset_txt(ANNOTATIONS_PATH)
     out = kmeans(data, k=CLUSTERS)
     print("Accuracy: {:.2f}%".format(avg_iou(data, out) * 100))
     print("Boxes:\n {}".format(out))

@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-img = cv2.imread('person.png') * 0 + 255
+# img = cv2.imread('person.png') * 0 + 255
 
 anchors16 = [[4.9, 12.533333333333333],  # the average iou is:0.7764558498530564
              [10.15, 8.703703703703702],
@@ -60,12 +60,20 @@ apollo_anchors_2_vga = [[4.9434993, 1.516986], [2.1259836, 1.6779645], [19.45260
                         [4.0958478, 9.108235], [0.5070438, 1.26041], [10.0207692, 6.877788],
                         [1.9708173, 4.677844]]
 
-img = cv2.resize(img, (1672, 876))
+# img = cv2.resize(img, (1672, 876))
 
 tiny_yolo_anchors = [[10, 14], [23, 27], [37, 58], [81, 82], [135, 169], [344, 319]]
 
-for i in range(len(tiny_yolo_anchors)):
-    img = cv2.rectangle(img, (800, 5), (800 + int(tiny_yolo_anchors[i][0]), 5 + int(tiny_yolo_anchors[i][1])), (255, 0, 0))
+visdrone_anchors = [[8., 11.],
+                    [15., 23.],
+                    [31., 20.],
+                    [27., 43.],
+                    [57., 41.],
+                    [104., 92.],
+                    ]
+
+# for i in range(len(tiny_yolo_anchors)):
+#     img = cv2.rectangle(img, (800, 5), (800 + int(tiny_yolo_anchors[i][0]), 5 + int(tiny_yolo_anchors[i][1])), (255, 0, 0))
 #
 #
 #
@@ -99,8 +107,14 @@ for i in range(16):
 print('tiny_yolo_anchors')
 for i in range(len(tiny_yolo_anchors)):
     print('[', '%.7f' % (tiny_yolo_anchors[i][0] / 416), ',', '%.7f' % (tiny_yolo_anchors[i][1] / 416), '],')
-cv2.imshow('img', img)
-cv2.waitKey()
+
+print('visdrone_anchors')
+for i in range(len(visdrone_anchors)):
+    print('[', '%.7f' % (visdrone_anchors[i][0] / 1360), ',', '%.7f' % (visdrone_anchors[i][1] / 765), '],')
+
+
+# cv2.imshow('img', img)
+# cv2.waitKey()
 
 ##########################################
 # anchors16

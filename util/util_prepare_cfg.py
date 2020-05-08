@@ -8,6 +8,7 @@ def prepare_cfg(cfg, arg, is_training=True):
 
     if cfg.TEST.ONE_TEST or cfg.TRAIN.SHOW_INPUT or cfg.TRAIN.SHOW_TARGET or cfg.TRAIN.SHOW_PREDICT:
         arg.number_works = 0
+        cfg.TRAIN.SAVE_STEP = 50
 
     anchor_yolov2_apollo = [[0.0772422, 0.0632077],
                             [0.0332185, 0.0699152],
@@ -32,17 +33,29 @@ def prepare_cfg(cfg, arg, is_training=True):
                      [0.3245192, 0.4062500],
                      [0.8269231, 0.7668269]]  # yolov3_tiny
     # yolov3 writer's anchors: [10,13,  16,30,  33,23,  30,61,  62,45,  59,119,  116,90,  156,198,  373,326]
+
+    VISDRONE_anchors = [[0.0058824, 0.0143791],
+                        [0.0110294, 0.0300654],
+                        [0.0227941, 0.0261438],
+                        [0.0198529, 0.0562092],
+                        [0.0419118, 0.0535948],
+                        [0.0764706, 0.1202614]]
     cfg.TRAIN.ANCHORS = anchor_yolov3
     if cfg.TEST.ONE_TEST:
         cfg.TRAIN.BATCH_SIZE = len(cfg.TEST.ONE_NAME)
         cfg.TRAIN.BATCH_BACKWARD_SIZE = 1
 
-    if 'yolov3_tiny' in cfg.TRAIN.MODEL:
+    if 'yolov3_tiny' in cfg.TRAIN.MODEL and ('KITTI' in cfg.TRAIN.TRAIN_DATA_FROM_FILE):
         cfg.TRAIN.FMAP_ANCHOR_NUM = 3
         cfg.TRAIN.ANCHORS = anchor_yolov3
+    elif 'yolov3_tiny' == cfg.TRAIN.MODEL and ('VISDRONE' in cfg.TRAIN.TRAIN_DATA_FROM_FILE):
+        cfg.TRAIN.FMAP_ANCHOR_NUM = 3
+        cfg.TRAIN.ANCHORS = VISDRONE_anchors
+
     elif 'yolov3' == cfg.TRAIN.MODEL:
         cfg.TRAIN.FMAP_ANCHOR_NUM = 2
         cfg.TRAIN.ANCHORS = anchor_yolov3
+
     elif 'yolov2' in cfg.TRAIN.MODEL:
         cfg.TRAIN.FMAP_ANCHOR_NUM = 6
         cfg.TRAIN.ANCHORS = anchor_yolov2_apollo

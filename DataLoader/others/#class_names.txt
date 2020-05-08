@@ -66,3 +66,19 @@ moter,
 car,
 train,
 rider
+
+name_dict = {'0': 'ignored regions', '1': 'pedestrian', '2': 'people',
+             '3': 'bicycle', '4': 'car', '5': 'van', '6': 'truck',
+             '7': 'tricycle', '8': 'awning-tricycle', '9': 'bus',
+             '10': 'motor', '11': 'others'}
+pedestrian,person
+people,person
+bicycle,cycle
+tricycle,cycle
+awning-tricycle,cycle
+motor,cycle
+car,car
+van,car
+truck,car
+bus,car
+others,others
