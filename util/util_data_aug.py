@@ -55,10 +55,10 @@ class Dataaug:
 
             20: iaa.Fliplr(0.5),  # 增加原图的概率。
             21: iaa.Fliplr(0.5),  # 增加原图的概率。
-            22: iaa.Affine(scale=(0.7, 1.3), translate_percent=(-0.01, 0.01), rotate=(-20, 20)),
+            22: iaa.Affine(scale=(0.8, 1.1), translate_percent=(-0.01, 0.01), rotate=(-5, 5)),
             23: iaa.Crop(),
             24: iaa.CropAndPad(),
-            25: iaa.CropToFixedSize(width=self.cfg.TRAIN.IMG_SIZE[0], height=self.cfg.TRAIN.IMG_SIZE[1]),
+            25: iaa.CropToFixedSize(width=self.cfg.TRAIN.IMG_SIZE[1], height=self.cfg.TRAIN.IMG_SIZE[0]),
         }
 
     def augmentation(self, aug_way_ids, datas):
@@ -126,9 +126,12 @@ class Dataaug:
             for i, label in enumerate(labels):
                 j = 1
                 while not label:  # check every label, whether there is a label is empty.
-                    print('no label at NO.', i)
-                    label = labels[i - j]
-                    labels[i] = labels[i - j]
-                    images[i] = images[i - j]
-                    j += 1
+                    print('When trying augmentation, no label at NO.', i)
+                    try:
+                        label = labels[i - j]
+                        labels[i] = labels[i - j]
+                        images[i] = images[i - j]
+                        j += 1
+                    except:
+                        return images, 'None'
         return images, labels

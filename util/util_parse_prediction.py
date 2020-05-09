@@ -30,7 +30,7 @@ class ParsePredict:
             'fcos': self._parse_fcos_predict,
             'refinedet': self._parse_refinedet_predict,
             'efficientdet': self._parse_ssd_predict,
-            'ssd': self._parse_ssd_predict,
+            'ssdvgg': self._parse_ssd_predict,
         }
         labels_predict = PARSEDICT[self.cfg.TRAIN.MODEL](f_maps)
         return labels_predict

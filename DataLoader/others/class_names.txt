@@ -1,11 +1,6 @@
 pedestrian,person
 people,person
-bicycle,cycle
-tricycle,cycle
-awning-tricycle,cycle
-motor,cycle
 car,car
 van,car
 truck,car
 bus,car
-others,others

@@ -35,7 +35,7 @@ def get_loss_class(belongs, modelname):
     if modelname[:4] == 'yolo':
         from NetWorks.loss.ObdLoss_YOLO import YoloLoss
         return YoloLoss
-    elif modelname in ['ssd', 'efficientdet']:
+    elif modelname in ['ssdvgg', 'efficientdet']:
         from NetWorks.loss.ObdLoss_MULTIBOX import MULTIBOXLOSS
         return MULTIBOXLOSS
     elif belongs == 'SRDN':

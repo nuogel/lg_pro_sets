@@ -194,9 +194,9 @@ class YoloLoss:
         # obj_mask = torch.eq(lab_obj, 1).type(torch.cuda.FloatTensor)
         obj_mask = lab_obj
         # ignore_mask:[N,self.cfg.BOX_HEIGHT,self.cfg.BOX_WIDTH,self.anc_num,1]
-        ignore_mask = self._ignore(pre_relative_box, lab_boxes)
-        ignore_mask = ignore_mask.unsqueeze(-1).type(torch.FloatTensor).to(self.cfg.TRAIN.DEVICE)
-        ignore_mask = (1. - obj_mask) * ignore_mask
+        # ignore_mask = self._ignore(pre_relative_box, lab_boxes)
+        # ignore_mask = ignore_mask.unsqueeze(-1).type(torch.FloatTensor).to(self.cfg.TRAIN.DEVICE)
+        ignore_mask = (1. - obj_mask) #* ignore_mask
         # print(ignore_mask.sum())
 
         obj_mask_2 = obj_mask.expand_as(pre_loc_xy)

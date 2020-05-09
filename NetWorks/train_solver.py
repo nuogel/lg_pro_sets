@@ -188,7 +188,7 @@ class Solver:
 
     def _test_an_epoch(self, epoch):
         # if epoch < 5: pass
-        self.Model.eval()
+        if not self.one_test: self.Model.eval()
         self.LOGGER.info('[EVALUATE] Model:%s, Evaluating ...', self.cfg.TRAIN.MODEL)
         _timer = Time()
         self.Score.init_parameters()

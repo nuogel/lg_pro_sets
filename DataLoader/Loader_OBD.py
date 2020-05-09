@@ -35,14 +35,20 @@ class Loader(DataLoader):
         return length
 
     def __getitem__(self, index):
-        if self.one_test:
-            data_info = self.dataset_txt[0]
-        else:
-            data_info = self.dataset_txt[index]
+        img = None
+        label = None
+        while img is None or label is None:  # if there is no data in img or label
+            if self.one_test:
+                data_info = self.dataset_txt[0]
+            else:
+                data_info = self.dataset_txt[index]
+            img, label = self._read_datas(data_info)
+            index += 1
 
-        img, label = self._read_datas(data_info)
         if self.cfg.TRAIN.DO_AUG and self.is_training:
-            imgs, labels = self.dataaug.augmentation(([img], [label]))
+            labels = 'None'
+            while labels is 'None':
+                imgs, labels = self.dataaug.augmentation(aug_way_ids=([20, 22], [25]), datas=([img], [label]))
             img = imgs[0]
             label = labels[0]
         if self.cfg.TRAIN.RESIZE:
@@ -89,6 +95,8 @@ class Loader(DataLoader):
             exit()
         # labels come first.
         label = self._read_line(id[2])
+        if label == [[]]:
+            return [None, None]
         # then add the images.
         img = cv2.imread(id[1])
         return img, label
@@ -135,8 +143,8 @@ class Loader(DataLoader):
                         continue
                     box_x1 = float(tmps[0])
                     box_y1 = float(tmps[1])
-                    box_x2 = box_x1 +float(tmps[2])
-                    box_y2 = box_y1 +float(tmps[3])
+                    box_x2 = box_x1 + float(tmps[2])
+                    box_y2 = box_y1 + float(tmps[3])
 
                     if not self._is_finedata([box_x1, box_y1, box_x2, box_y2]): continue
                     bbs.append([self.cls2idx[self.class_name[realname]], box_x1, box_y1, box_x2, box_y2])

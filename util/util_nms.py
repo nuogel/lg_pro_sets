@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from util.util_iou import iou_xywh,iou_xyxy
+from util.util_iou import iou_xywh, iou_xyxy
 from torchvision.ops import nms
 
 
@@ -10,7 +10,7 @@ class NMS:
         self.score_thresh = cfg.TEST.SCORE_THRESH
         self.theta = cfg.TEST.SOFNMS_THETA
         self.iou_thresh = cfg.TEST.IOU_THRESH
-        if self.cfg.TRAIN.MODEL in ['refinedet', 'ssd', 'efficientdet']:
+        if self.cfg.TRAIN.MODEL in ['refinedet', 'ssdvgg', 'efficientdet']:
             self.class_range = range(1, len(cfg.TRAIN.CLASSES) + 1)
         else:
             self.class_range = range(len(cfg.TRAIN.CLASSES))
@@ -48,7 +48,7 @@ class NMS:
                 box_out = [boxx1, boxy1, boxx2, boxy2]
             pre_score_out = pre_score[keep_idx].item()
             class_out = pre_class[keep_idx].item()
-            if self.cfg.TRAIN.MODEL == 'refinedet':
+            if self.cfg.TRAIN.MODEL in ['refinedet']:
                 class_out = class_out - 1
             labels_out.append([pre_score_out, class_out, box_out])
         return labels_out
@@ -102,6 +102,7 @@ class NMS:
 
         for i in self.class_range:  # with different classess.
             a = pre_class[score_idx] == i
+            bboxes = torch.sum(a)
             order_index = score_idx[a]
             while order_index.shape[0] > 0:
                 max_one = order_index[0].item()

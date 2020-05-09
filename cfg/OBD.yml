@@ -10,24 +10,25 @@ PATH:
 
 
 TRAIN:
-  MODEL: yolov3_tiny #efficientdet #yolov3_tiny_shufflenet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #ssd #refinedet #yolov3 #yolov3 #   fcos #
+  MODEL: ssdvgg #yolov3_tiny #efficientdet #yolov3_tiny_shufflenet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #refinedet #yolov3 #yolov3 #   fcos #
   EPOCH_SIZE: 4000
   BATCH_SIZE: ''
-  BATCH_BACKWARD_SIZE: 4  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
+  BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   TRAIN_DATA_FROM_FILE: [VISDRONE] #UCAS_AOD
   CLASSES: ['others', 'car', 'person', 'cycle'] #['Background','Car','Others1', 'Others2']  #['Car', 'Cyclist', 'Pedestrian', 'Others']#
 
   # data aug:
-  DO_AUG: 0 #TRUE #
+  DO_AUG: 1 #TRUE #
   RESIZE: 1
   RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
-  AREAR_RATIO: 0 #0.1
-  MIN_AREA: 0 #100 #400
+  AREAR_RATIO: 0.1 #0 #
+  MIN_AREA: 10 #0 #100 #400 #
   IMG_SIZE:  [512,768] #[384, 960] #[512, 768] #[H,W] #[256, 256] # [512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
   MULTI_SIZE_RATIO: [1] # [1, 0.9, 0.8...]
 
   SHOW_TRAIN_NAMES: FALSE #TRUE #
-  SHOW_INPUT: 0 #10000  # showtime.
+  # showtime.
+  SHOW_INPUT: 0 #10000 #
   SHOW_TARGET: None #10000 #
   SHOW_PREDICT: None #10000 #
 

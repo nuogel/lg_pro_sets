@@ -33,7 +33,7 @@ class Test_Base(object):
             self.model_path = self.cfg.PATH.TEST_WEIGHT_PATH
         self.Model = load_state_dict(self.Model, self.args.checkpoint, self.cfg.TRAIN.DEVICE)
         self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
-        # self.Model.eval()
+        self.Model.eval()
 
     def test_backbone(self, DataSet):
         pass
