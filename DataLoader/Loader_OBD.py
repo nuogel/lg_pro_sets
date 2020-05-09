@@ -47,8 +47,13 @@ class Loader(DataLoader):
 
         if self.cfg.TRAIN.DO_AUG and self.is_training:
             labels = 'None'
+            try_tims = 0
             while labels is 'None':
-                imgs, labels = self.dataaug.augmentation(aug_way_ids=([20, 22], [25]), datas=([img], [label]))
+                imgs, labels = self.dataaug.augmentation(aug_way_ids=([11, 12, 20, 22], [25]), datas=([img], [label]))
+                try_tims+=1
+                if try_tims>100:
+                    print('trying 100 times when data augmentation at file:', str(data_info[2]))
+                    exit()
             img = imgs[0]
             label = labels[0]
         if self.cfg.TRAIN.RESIZE:

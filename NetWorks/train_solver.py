@@ -66,7 +66,8 @@ class Solver:
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch, optimizer, scheduler)
                 self._save_checkpoint(epoch)
-            self._test_an_epoch(epoch)
+            if epoch > 40:
+                self._test_an_epoch(epoch)
 
     def _prepare_parameters(self):
         """
@@ -187,7 +188,6 @@ class Solver:
         self.LOGGER.info('[TRAIN] Summary: Epoch: %s, average total loss: %s', epoch, losses / len(self.trainDataloader))
 
     def _test_an_epoch(self, epoch):
-        # if epoch < 5: pass
         if not self.one_test: self.Model.eval()
         self.LOGGER.info('[EVALUATE] Model:%s, Evaluating ...', self.cfg.TRAIN.MODEL)
         _timer = Time()

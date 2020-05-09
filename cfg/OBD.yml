@@ -35,13 +35,13 @@ TRAIN:
   # optimizer:
   OPTIMIZER: 'adam' #'SGD' #
   LR_START: 0.001
-  STEP_LR: 100
+  STEP_LR: 40
   LR_EXPONENTIAL_DECAY_RATE: 0.98 #lr_scheduler.ExponentialLR
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 0
   LOSSTYPE: 'focalloss' #'mse' #
   EPOCH_CONTINUE: None
-  SAVE_STEP: 50
+  SAVE_STEP: 200
 
   # CUDA:
   GPU_NUM: [0] #[] # if is [] means use CPU.
