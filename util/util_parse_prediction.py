@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from util.util_nms import NMS
+from util.util_NMS import NMS
 import logging
 from NetWorks.loss.ObdLoss_REFINEDET import Detect_RefineDet
 from util.util_iou import xywh2xyxy, xyxy2xywh

@@ -18,6 +18,7 @@ from util.util_data_aug import Dataaug
 from util.util_show_img import _show_img
 from util.util_parse_SR_img import parse_Tensor_img
 from util.util_prepare_cfg import prepare_cfg
+from util.util_img_block import img_cut
 
 
 class Test_Base(object):
@@ -75,7 +76,6 @@ class Test_Base(object):
 
         else:
             dataset = None
-
         return dataset
 
 
@@ -91,36 +91,54 @@ class Test_OBD(Test_Base):
 
     def test_backbone(self, DataSet):
         """Test."""
-        # # prepare paramertas
-        #         #
-        #         # img_raw = cv2.imread(test_picture_path)
-        #         # if img_raw is None:
-        #         #     print('ERROR：no such a image')
-        #         # if self.cfg.TEST.DO_AUG:
-        #         #     img_aug, _ = self.dataaug.augmentation(for_one_image=img_raw)
-        #         #     img_aug = img_aug[0]
-        #         # elif self.cfg.TEST.RESIZE:
-        #         #     img_aug = cv2.resize(img_raw, (int(self.cfg.TRAIN.IMG_SIZE[1]), int(self.cfg.TRAIN.IMG_SIZE[0])))
-        #         # else:
-        #         #     img_aug = img_raw
-        #         # img_in = torch.from_numpy(img_aug).unsqueeze(0).type(torch.FloatTensor).to(self.cfg.TRAIN.DEVICE)
-        #         # img_raw = torch.from_numpy(img_raw).unsqueeze(0).type(torch.FloatTensor)
-        #         # img_in = img_in.permute([0, 3, 1, 2, ])
-        #         # img_in = img_in / 127.5 - 1.
-
         loader = iter(DataSet)
         for i in range(DataSet.__len__()):
             test_data = next(loader)
             test_data = self.dataloader_factory.to_devce(test_data)
             inputs, targets, data_infos = test_data
-            predicts = self.Model.forward(input_x=inputs, is_training=False)
-            labels_pre = self.parsepredict._parse_predict(predicts)
+            if self.cfg.TEST.IMG_BLOCK:
+                raw_inputs = inputs.clone()
+                [n, c, h, w] = raw_inputs.shape
+                target_size = (512, 768)
+                img_cuts_pixcel = img_cut(h, w, gap=200, target_size=target_size)
+                labels_pres = [[]]
+                for bbox in img_cuts_pixcel:
+                    input = raw_inputs[:, :, bbox[1]:bbox[3], bbox[0]:bbox[2]]
+                    predict = self.Model.forward(input_x=input, is_training=False)
+                    labels_pre = self.parsepredict._parse_predict(predict)
+                    for i, pre in enumerate(labels_pre[0]):
+                        if self.cfg.TRAIN.RELATIVE_LABELS:
+                            pre[2][0] *= target_size[1]
+                            pre[2][1] *= target_size[0]
+                            pre[2][2] *= target_size[1]
+                            pre[2][3] *= target_size[0]
+
+                            pre[2][0] += bbox[0]
+                            pre[2][1] += bbox[1]
+                            pre[2][2] += bbox[0]
+                            pre[2][3] += bbox[1]
+
+                            pre[2][0] /= w
+                            pre[2][1] /= h
+                            pre[2][2] /= w
+                            pre[2][3] /= h
+                        else:
+                            pre[2][0] += bbox[0]
+                            pre[2][1] += bbox[1]
+                            pre[2][2] += bbox[0]
+                            pre[2][3] += bbox[1]
+                        labels_pres[0].append(pre)
+                # TODO:nms for labels
+
+            else:
+                predicts = self.Model.forward(input_x=inputs, is_training=False)
+                labels_pres = self.parsepredict._parse_predict(predicts)
             batches = inputs.shape[0]
 
             for i in range(batches):
                 img_raw = [cv2.imread(data_infos[i][1])]
                 img_in = inputs[i]
-                _show_img(img_raw, labels_pre, img_in=img_in, pic_path=data_infos[i][1], cfg=self.cfg)
+                _show_img(img_raw, labels_pres, img_in=img_in, pic_path=data_infos[i][1], cfg=self.cfg)
 
     def score(self, txt_info, pre_path):
         pre_path_list = glob.glob(pre_path + '/*.*')

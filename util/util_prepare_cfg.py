@@ -5,7 +5,8 @@ def prepare_cfg(cfg, arg, is_training=True):
 
     if arg.batch_size != 0:
         cfg.TRAIN.BATCH_SIZE = arg.batch_size
-
+    if cfg.TEST.ONE_TEST:
+        cfg.TRAIN.DO_AUG = 0
     if cfg.TEST.ONE_TEST or cfg.TRAIN.SHOW_INPUT or cfg.TRAIN.SHOW_TARGET or cfg.TRAIN.SHOW_PREDICT:
         arg.number_works = 0
         cfg.TRAIN.SAVE_STEP = 50

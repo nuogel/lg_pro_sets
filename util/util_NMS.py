@@ -307,3 +307,5 @@ class NMS:
             class_out = pre_class[keep_idx].item()
             labels_out.append([pre_score_out, class_out, box_out])
         return labels_out
+
+

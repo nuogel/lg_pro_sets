@@ -67,7 +67,7 @@ def _get_train_test_dataset(cfg):
 
     assert len(label_files_list) >= 1, 'No data found!'
 
-    train_set, test_set = train_test_split(label_files_list, test_size=test_train_ratio, random_state=1)
+    train_set, test_set = train_test_split(label_files_list, test_size=test_train_ratio) #, random_state=1
     os.makedirs(idx_stores_dir, exist_ok=True)
     _wrte_dataset_txt((train_set, test_set), idx_stores_dir)
     # torch.save(train_set, os.path.join(idx_stores_dir, 'train_set'))

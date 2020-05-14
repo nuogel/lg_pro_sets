@@ -10,7 +10,7 @@ PATH:
 
 
 TRAIN:
-  MODEL: ssdvgg #yolov3_tiny #efficientdet #yolov3_tiny_shufflenet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #refinedet #yolov3 #yolov3 #   fcos #
+  MODEL: ssdvgg #efficientdet #yolov3_tiny #yolov3_tiny_shufflenet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #refinedet #yolov3 #yolov3 #   fcos #
   EPOCH_SIZE: 4000
   BATCH_SIZE: ''
   BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
@@ -21,9 +21,9 @@ TRAIN:
   DO_AUG: 1 #TRUE #
   RESIZE: 1
   RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
-  AREAR_RATIO: 0.1 #0 #
-  MIN_AREA: 10 #0 #100 #400 #
-  IMG_SIZE:  [512,768] #[384, 960] #[512, 768] #[H,W] #[256, 256] # [512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
+  AREAR_RATIO: 0.01 #0 #
+  MIN_AREA: 1 #0 #100 #400 #
+  IMG_SIZE:  [512, 768] #[1080,1920] #[720,1280] #[384, 960] #[H,W] #[256, 256] # [512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
   MULTI_SIZE_RATIO: [1] # [1, 0.9, 0.8...]
 
   SHOW_TRAIN_NAMES: FALSE #TRUE #
@@ -33,9 +33,9 @@ TRAIN:
   SHOW_PREDICT: None #10000 #
 
   # optimizer:
-  OPTIMIZER: 'adam' #'SGD' #
+  OPTIMIZER: 'SGD' #'adam' #'
   LR_START: 0.001
-  STEP_LR: 40
+  STEP_LR: 8000
   LR_EXPONENTIAL_DECAY_RATE: 0.98 #lr_scheduler.ExponentialLR
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 0
@@ -59,13 +59,14 @@ TEST:
   SCORE_TYPE: 'mAP' # 'f' #
   # NMS:
   NMS_TYPE: 'SOFT_NMS'#'NMS'#
-  SCORE_THRESH: 0.7
+  SCORE_THRESH: 0.6
   IOU_THRESH: 0.5
   SOFNMS_THETA: 0.5
 
-  DO_AUG: FALSE #TRUE  #
-  RESIZE: TRUE  #FALSE #
-  SAVE_LABELS: 0
+  DO_AUG: 0 #TRUE  #
+  RESIZE: 1  #FALSE #
+  IMG_BLOCK: 1
+  SAVE_LABELS: 1
   SHOW_IMAGES: 1 #TRUE #
   SHOW_TIMES: 20000
 

@@ -112,8 +112,14 @@ def _show_img(imgs, labels_out, img_in=None,
             label_file.close()
 
         if show_img:
+            print('showing pic:', pic_path)
+            if img_now.shape[1] > 1920:
+                img_now = cv2.resize(img_now, None, fx=0.5, fy=0.5)
             cv2.imshow('img', img_now)
             cv2.waitKey(show_time)
+
+            # cv2.destroyAllWindows()
+
     return img_now
 
 

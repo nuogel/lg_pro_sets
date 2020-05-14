@@ -23,7 +23,7 @@ class PriorBox(object):
         if self.scales is None:
             self.scales = [2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)]  # [1, 1.25, 1.5]
         self.feature_maps = [(self.image_shape + 2 ** x - 1) // (2 ** x) for x in self.pyramid_levels]
-
+        # self.feature_maps[-1] = self.feature_maps[-2] # add by LG
         # self.image_size = 512
         # number of priors for feature map location (either 4 or 6)
         # self.feature_maps = [64, 32, 16, 8]
@@ -36,8 +36,8 @@ class PriorBox(object):
         mean = []
         for k, f in enumerate(self.feature_maps):
             iddd = product(range(f[0]), range(f[1]))
+            f_k = self.image_shape / self.strides[k]
             for i, j in iddd:
-                f_k = self.image_shape / self.strides[k]
                 # unit center x,y
                 cx = (j + 0.5) / f_k[1]
                 cy = (i + 0.5) / f_k[0]

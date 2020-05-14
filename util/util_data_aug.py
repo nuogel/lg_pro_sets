@@ -1,15 +1,10 @@
 """Collection of data augumentation functions."""
-import os
 import random
-import logging
 
 import cv2
-import torch
 import imgaug as ia
 from imgaug import augmenters as iaa
 import xml.etree.ElementTree as ET
-
-LOG = logging.getLogger(__name__)
 
 
 class Dataaug:
@@ -17,11 +12,26 @@ class Dataaug:
     Data augmentation.
     '''
 
-    def __init__(self, cfg):
+    def __init__(self, cfg=None):
         self.cfg = cfg
-        self.img_path = cfg.PATH.INPUT_PATH
-        self.lab_path = cfg.PATH.LAB_PATH
-        self.base_funs = {
+
+    def augmentation(self, aug_way_ids, datas):
+        images, labels = self._augmenting(aug_way_ids, datas)
+        images, labels = self._check_results(images, labels)
+        return images, labels
+
+    def _augmenting(self, aug_way_ids, datas):
+        """Create augmentation images from kitti.
+
+        :param for_one_image: if there is a single image,the augment it without labels
+        :return: return a np array of images, and return a list about
+         labs are in the shape of [[class, left, top, button, right],..]
+        """
+        if self.cfg:
+            crop_size = self.cfg.TRAIN.IMG_SIZE
+        else:
+            crop_size = (512, 512)
+        base_funs = {
             ##############################################
             ########     color augmentation   #############
 
@@ -35,7 +45,7 @@ class Dataaug:
             # 加 雪花 的噪声 类型
             9: iaa.Snowflakes(density=(0, 0.15), density_uniformity=0.5, flake_size=0.4, flake_size_uniformity=0.5, speed=0.001),
             #### 运动模糊
-            # 10: iaa.MotionBlur(k=(3, 20), angle=[-45, 45]),
+            # 10: iaa.MotionBlur(k=(10, 20), angle=[-45, 45]),
             # 高斯模糊
             11: iaa.GaussianBlur((0, 3)),
             # 高斯噪音
@@ -55,27 +65,16 @@ class Dataaug:
 
             20: iaa.Fliplr(0.5),  # 增加原图的概率。
             21: iaa.Fliplr(0.5),  # 增加原图的概率。
-            22: iaa.Affine(scale=(0.8, 1.1), translate_percent=(-0.01, 0.01), rotate=(-5, 5)),
+            22: iaa.Affine(scale=(0.8, 1.2), translate_percent=(-0.01, 0.01), rotate=(-3, 3)),
             23: iaa.Crop(),
             24: iaa.CropAndPad(),
-            25: iaa.CropToFixedSize(width=self.cfg.TRAIN.IMG_SIZE[1], height=self.cfg.TRAIN.IMG_SIZE[0]),
+            25: iaa.CropToFixedSize(width=crop_size[1], height=crop_size[0], ),
+            26: iaa.Resize(crop_size)
         }
 
-    def augmentation(self, aug_way_ids, datas):
-        images, labels = self._augmenting(aug_way_ids, datas)
-        images, labels = self._check_results(images, labels)
-        return images, labels
-
-    def _augmenting(self, aug_way_ids, datas):
-        """Create augmentation images from kitti.
-
-        :param for_one_image: if there is a single image,the augment it without labels
-        :return: return a np array of images, and return a list about
-         labs are in the shape of [[class, left, top, button, right],..]
-        """
-        base_funs = [self.base_funs.get(id) for id in aug_way_ids[0]]
-        must_funs = [self.base_funs.get(id) for id in aug_way_ids[1]]
-        aug_funs = [random.choice(base_funs)]+must_funs
+        _base_funs = [base_funs.get(id) for id in aug_way_ids[0]]
+        must_funs = [base_funs.get(id) for id in aug_way_ids[1]]
+        aug_funs = [random.choice(_base_funs)]+[random.choice(must_funs)]
 
         # do the augmentation
         seq_det = iaa.Sequential(aug_funs)
@@ -135,3 +134,12 @@ class Dataaug:
                     except:
                         return images, 'None'
         return images, labels
+
+if __name__ == '__main__':
+    aug = Dataaug()
+    img_path = 'E:/datasets/kitti/training/images/000076.png'
+    img = cv2.imread(img_path)
+    imgs, lables = aug.augmentation(aug_way_ids=[[8], []], datas=([img], None))
+    cv2.imwrite('aug.png', imgs[0])
+    cv2.imshow('img', imgs[0])
+    cv2.waitKey()

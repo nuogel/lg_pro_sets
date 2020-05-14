@@ -49,33 +49,34 @@ class Loader(DataLoader):
             labels = 'None'
             try_tims = 0
             while labels is 'None':
-                imgs, labels = self.dataaug.augmentation(aug_way_ids=([11, 12, 20, 22], [25]), datas=([img], [label]))
-                try_tims+=1
-                if try_tims>100:
+                imgs, labels = self.dataaug.augmentation(aug_way_ids=([11, 12, 20, 22], [25, 26]), datas=([img], [label]))
+                try_tims += 1
+                if try_tims > 100:
                     print('trying 100 times when data augmentation at file:', str(data_info[2]))
                     exit()
             img = imgs[0]
             label = labels[0]
-        if self.cfg.TRAIN.RESIZE:
+        img_i_size = img.shape
+        size = img_i_size
+
+        if (self.cfg.TRAIN.RESIZE and self.is_training) or (self.cfg.TEST.RESIZE and not self.is_training and not self.cfg.TEST.IMG_BLOCK):
             size = random.choice(self.cfg.TRAIN.MULTI_SIZE_RATIO) * self.cfg.TRAIN.IMG_SIZE
-            img_i_size = img.shape
             img = cv2.resize(img, (size[1], size[0]))
-            if self.cfg.TRAIN.RELATIVE_LABELS:
-                label_after = [[lab[0],
-                                lab[1] / img_i_size[1],
-                                lab[2] / img_i_size[0],
-                                lab[3] / img_i_size[1],
-                                lab[4] / img_i_size[0]
-                                ] for lab in label]
-            else:
-                label_after = [[lab[0],
-                                lab[1] / img_i_size[1] * size[1],
-                                lab[2] / img_i_size[0] * size[0],
-                                lab[3] / img_i_size[1] * size[1],
-                                lab[4] / img_i_size[0] * size[0]
-                                ] for lab in label]
+        if self.cfg.TRAIN.RELATIVE_LABELS:
+            label_after = [[lab[0],
+                            lab[1] / img_i_size[1],
+                            lab[2] / img_i_size[0],
+                            lab[3] / img_i_size[1],
+                            lab[4] / img_i_size[0]
+                            ] for lab in label]
         else:
-            label_after = label
+            label_after = [[lab[0],
+                            lab[1] / img_i_size[1] * size[1],
+                            lab[2] / img_i_size[0] * size[0],
+                            lab[3] / img_i_size[1] * size[1],
+                            lab[4] / img_i_size[0] * size[0]
+                            ] for lab in label]
+
         if self.cfg.TRAIN.SHOW_INPUT:
             _show_img(img, label_after, show_img=True, cfg=self.cfg, show_time=self.cfg.TRAIN.SHOW_INPUT)
         img = np.asarray(img, dtype=np.float32)
