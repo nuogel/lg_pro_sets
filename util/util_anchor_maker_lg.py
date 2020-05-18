@@ -19,7 +19,7 @@ class PriorBox(object):
         if self.strides is None:
             self.strides = [2 ** x for x in self.pyramid_levels]
         if self.sizes is None:
-            self.min_sizes = [2 ** (x + 2) for x in self.pyramid_levels]
+            self.min_sizes = [2 ** x for x in self.pyramid_levels]  # lg:(x + 2)->x for small target.
         if self.scales is None:
             self.scales = [2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)]  # [1, 1.25, 1.5]
         self.feature_maps = [(self.image_shape + 2 ** x - 1) // (2 ** x) for x in self.pyramid_levels]

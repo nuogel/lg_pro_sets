@@ -5,16 +5,20 @@ import os
 def make_list(pathes):
     dir_list = []
     for path in pathes:
-        path_list = glob.glob(path + '*/*.jpg')
+        path_list = glob.glob(path + '20191217_153659_10/*' + expand_name)
         for path in path_list:
             file_name = os.path.basename(path)
-            path_2 = path.replace('images', 'annotations')
-            path_2 = path_2.replace('jpg', 'txt')
+            path_2 = path.replace('20191217_153659_10', '20191217_153659_10_predicted_labels_block_refine2')
+            path_2 = path_2.replace(expand_name, '.txt')
             # path_2 = path_2.replace('img', 'gt_img')
 
             if not os.path.isfile(path_2):
                 continue
+            lines = open(path_2).readlines()
+            if lines == []:
+                continue
             dir_list.append([file_name, path, path_2])
+            print('adding:', dir_list[-1])
 
     return dir_list
 
@@ -33,7 +37,9 @@ if __name__ == '__main__':
     # pathes = ['F:/datasets/SR/REDS4/train_sharp_part/']
     # pathes = ['F:/LG/OCR/PAN.pytorch-master/dadaset/wxf_ocr_data/']
     # pathes = ['E:/datasets/youku/youku_00200_00249_h_GT/']
-    pathes = ['E:/datasets/VisDrone2019/VisDrone2019-DET-train/']
+    # pathes = ['E:/datasets/VisDrone2019/VisDrone2019-DET-train/']
+    pathes = ['F:/Projects/auto_Airplane/TS02/']
+    expand_name = '.png'
     save_path = 'util_tmp/make_list.txt'
     datalist = make_list(pathes)
     _wrte_dataset_txt(datalist, save_path)

@@ -10,35 +10,35 @@ PATH:
 
 
 TRAIN:
-  MODEL: ssdvgg #efficientdet #yolov3_tiny #yolov3_tiny_shufflenet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #refinedet #yolov3 #yolov3 #   fcos #
+  MODEL: ssdvgg #refinedet #efficientdet #yolov3_tiny #yolov3_tiny_shufflenet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #yolov3 #yolov3 #   fcos #
   EPOCH_SIZE: 4000
   BATCH_SIZE: ''
-  BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
-  TRAIN_DATA_FROM_FILE: [VISDRONE] #UCAS_AOD
+  BATCH_BACKWARD_SIZE: 4  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
+  TRAIN_DATA_FROM_FILE: [AUTOAIR] #[VISDRONE] #UCAS_AOD
   CLASSES: ['others', 'car', 'person', 'cycle'] #['Background','Car','Others1', 'Others2']  #['Car', 'Cyclist', 'Pedestrian', 'Others']#
 
   # data aug:
   DO_AUG: 1 #TRUE #
   RESIZE: 1
   RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
-  AREAR_RATIO: 0.01 #0 #
-  MIN_AREA: 1 #0 #100 #400 #
-  IMG_SIZE:  [512, 768] #[1080,1920] #[720,1280] #[384, 960] #[H,W] #[256, 256] # [512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
+  AREAR_RATIO: 0.1 #0 #
+  MIN_AREA: 10 #0 #100 #400 #
+  IMG_SIZE:  [512, 768] #[720,1280] #[1080,1920] #[384, 960] #[H,W] #[256, 256] # [512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
   MULTI_SIZE_RATIO: [1] # [1, 0.9, 0.8...]
 
-  SHOW_TRAIN_NAMES: FALSE #TRUE #
+  SHOW_TRAIN_NAMES: 0 #TRUE #
   # showtime.
   SHOW_INPUT: 0 #10000 #
   SHOW_TARGET: None #10000 #
   SHOW_PREDICT: None #10000 #
 
   # optimizer:
-  OPTIMIZER: 'SGD' #'adam' #'
+  OPTIMIZER: 'adam' #'SGD' #
   LR_START: 0.001
-  STEP_LR: 8000
+  STEP_LR: 80
   LR_EXPONENTIAL_DECAY_RATE: 0.98 #lr_scheduler.ExponentialLR
   BETAS_ADAM: 0.9
-  WEIGHT_DECAY: 0
+  WEIGHT_DECAY: 4e-5
   LOSSTYPE: 'focalloss' #'mse' #
   EPOCH_CONTINUE: None
   SAVE_STEP: 200
@@ -59,15 +59,15 @@ TEST:
   SCORE_TYPE: 'mAP' # 'f' #
   # NMS:
   NMS_TYPE: 'SOFT_NMS'#'NMS'#
-  SCORE_THRESH: 0.6
+  SCORE_THRESH: 0.5
   IOU_THRESH: 0.5
   SOFNMS_THETA: 0.5
 
   DO_AUG: 0 #TRUE  #
   RESIZE: 1  #FALSE #
   IMG_BLOCK: 1
-  SAVE_LABELS: 1
-  SHOW_IMAGES: 1 #TRUE #
+  SAVE_LABELS: 0
+  SHOW_IMAGES: 1000 #TRUE #
   SHOW_TIMES: 20000
 
   TEST_ONLY: 0 #FALSE #
@@ -75,7 +75,10 @@ TEST:
   ONE_TEST: 0  #
   ONE_TEST_TRAIN_STEP: 50
   ONE_TEST_TEST_STEP: 1
-  ONE_NAME: [['0000002_00005_d_0000014.jpg', 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/images/0000002_00005_d_0000014.jpg', 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/annotations/0000002_00005_d_0000014.txt']
+  ONE_NAME: [
 
-#  ['P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.txt']
+  ['000830.png', 'F:/Projects/auto_Airplane/TS02/20191217_153659_10\\000830.png', 'F:/Projects/auto_Airplane/TS02/20191217_153659_10_predicted_labels_block_refine\\000830.txt']
+    #  ['0000002_00005_d_0000014.jpg', 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/images/0000002_00005_d_0000014.jpg', 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/annotations/0000002_00005_d_0000014.txt']
+
+    #  ['P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.txt']
   ]

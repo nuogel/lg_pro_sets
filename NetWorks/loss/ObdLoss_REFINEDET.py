@@ -79,8 +79,9 @@ class RefineDetMultiBoxLoss(nn.Module):
         See: https://arxiv.org/pdf/1512.02325.pdf for more details.
     """
 
-    def __init__(self, num_classes, use_ARM=False):
+    def __init__(self, cfg, num_classes, use_ARM=False):
         super(RefineDetMultiBoxLoss, self).__init__()
+        self.cfg = cfg
         self.use_gpu = True
         self.num_classes = num_classes
         self.threshold = 0.5
@@ -198,14 +199,14 @@ class RefineDetMultiBoxLoss(nn.Module):
         loss_l /= N
         loss_c /= N
         # print(N, loss_l, loss_c)
-        return loss_l, loss_c
+        return 5*loss_l, loss_c
 
 
 class REFINEDETLOSS:
     def __init__(self, cfg):
         self.cls_num = len(cfg.TRAIN.CLASSES)
-        self.arm_criterion = RefineDetMultiBoxLoss(2, use_ARM=False)
-        self.odm_criterion = RefineDetMultiBoxLoss(self.cls_num, use_ARM=True)
+        self.arm_criterion = RefineDetMultiBoxLoss(cfg, 2, use_ARM=False)
+        self.odm_criterion = RefineDetMultiBoxLoss(cfg, self.cls_num, use_ARM=True)
 
     def Loss_Call(self, predict, dataset, losstype):
         targets = dataset[1]

@@ -65,7 +65,7 @@ class Dataaug:
 
             20: iaa.Fliplr(0.5),  # 增加原图的概率。
             21: iaa.Fliplr(0.5),  # 增加原图的概率。
-            22: iaa.Affine(scale=(0.8, 1.2), translate_percent=(-0.01, 0.01), rotate=(-3, 3)),
+            22: iaa.Affine(scale=(0.7, 1.3), translate_percent=(-0.02, 0.02), rotate=(-5, 5)),
             23: iaa.Crop(),
             24: iaa.CropAndPad(),
             25: iaa.CropToFixedSize(width=crop_size[1], height=crop_size[0], ),
@@ -125,7 +125,7 @@ class Dataaug:
             for i, label in enumerate(labels):
                 j = 1
                 while not label:  # check every label, whether there is a label is empty.
-                    print('When trying augmentation, no label at NO.', i)
+                    # print('When trying augmentation, no label at NO.', i)
                     try:
                         label = labels[i - j]
                         labels[i] = labels[i - j]

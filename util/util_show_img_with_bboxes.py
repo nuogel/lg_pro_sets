@@ -40,10 +40,14 @@ def _read_line(path):
                 box_x2 = float(tmps[3])
                 box_y2 = float(tmps[4])
             else:
-                box_x1 = float(tmps[4])
-                box_y1 = float(tmps[5])
-                box_x2 = float(tmps[6])
-                box_y2 = float(tmps[7])
+                # box_x1 = float(tmps[4])
+                # box_y1 = float(tmps[5])
+                # box_x2 = float(tmps[6])
+                # box_y2 = float(tmps[7])
+                box_x1 = float(tmps[2])
+                box_y1 = float(tmps[3])
+                box_x2 = float(tmps[4])
+                box_y2 = float(tmps[5])
             # if name in CLASS:
             objs.append([name, str(box_x1), str(box_y1), str(box_x2), str(box_y2)])
     elif os.path.basename(path).split('.')[-1] == 'xml':
@@ -155,7 +159,7 @@ def _show_img(images, labels, show_img=True, show_time=30000, save_img=False):
             # text = class_out+"||"+ " ".join([str(i) for i in box])
             text = class_out
             cv2.rectangle(images, (xmin, ymin), (xmax, ymax), (255, 0, 0))
-            cv2.putText(images, text, (xmin, ymin), 1, 1, (0, 0, 255))
+            cv2.putText(images, text, (xmin, ymin), 1, 1, (0, 255, 255))
 
     if show_img:
         cv2.imshow('img', images)
@@ -173,23 +177,27 @@ def main():
     # im_file = os.path.join(path, "images", "1478019971185917857.jpg")
     # label_file = os.path.join(path, "labels", "1478019971185917857.xml")
     # img, label = _read_datas(im_file, label_file)
+    img_folds = 'F:/Projects/auto_Airplane/TS02/20191217_153659_10/'
+    label_folds = 'F:/Projects/auto_Airplane/TS02/20191217_153659_10__predicted_labels'
 
     # _show_img(img, label)
-    local_xml_files = get_ALL_File(path, ".xml")
+    local_txt_files = get_ALL_File(label_folds, ".txt")
+    local_xml_files = get_ALL_File(label_folds, ".xml")
 
-    img_files = get_ALL_File(path, ".jpg")
+    img_files = get_ALL_File(img_folds, ".jpg")
     # print(len(local_img_files))
-    png_files = get_ALL_File(path, ".png")
+    png_files = get_ALL_File(img_folds, ".png")
     # print(len(png_files))
     local_img_files = img_files + png_files
+    local_label_files = local_txt_files + local_xml_files
     local_img_files.sort()
-    local_xml_files.sort()
-    lab_num = len(local_xml_files)
+    local_label_files.sort()
+    lab_num = len(local_label_files)
     img_num = len(local_img_files)
     print(lab_num, img_num)
 
     for index in range(min(img_num, lab_num)):
-        label_file = local_xml_files[index]
+        label_file = local_label_files[index]
         im_file = local_img_files[index]
         if print_path:
             print(im_file, '==>>>', label_file)

@@ -66,7 +66,7 @@ class Solver:
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch, optimizer, scheduler)
                 self._save_checkpoint(epoch)
-            if epoch > 20 or  self.one_test:
+            if epoch > 200 or self.one_test:
                 self._test_an_epoch(epoch)
 
     def _prepare_parameters(self):
@@ -109,9 +109,9 @@ class Solver:
 
     def _get_optimizer(self, learning_rate, optimizer='adam'):
         if optimizer == 'adam' or optimizer == 'Adam':
-            optimizer = torch.optim.Adam(self.Model.parameters(), lr=learning_rate, betas=(self.cfg.TRAIN.BETAS_ADAM, 0.999), weight_decay=self.cfg.TRAIN.WEIGHT_DECAY)
+            optimizer = torch.optim.Adam(self.Model.parameters(), lr=learning_rate, betas=(self.cfg.TRAIN.BETAS_ADAM, 0.999), weight_decay=float(self.cfg.TRAIN.WEIGHT_DECAY))
         elif optimizer == 'sgd' or optimizer == 'SGD':
-            optimizer = torch.optim.SGD(self.Model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
+            optimizer = torch.optim.SGD(self.Model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=self.cfg.TRAIN.WEIGHT_DECAY)
         else:
             self.LOGGER.error('NO such a optimizer: ' + str(optimizer))
         # scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=self.cfg.LR_EXPONENTIAL_DECAY_RATE)

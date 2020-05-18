@@ -37,48 +37,54 @@ class Loader(DataLoader):
     def __getitem__(self, index):
         img = None
         label = None
-        while img is None or label is None:  # if there is no data in img or label
-            if self.one_test:
-                data_info = self.dataset_txt[0]
+
+        if self.is_training:
+            while img is None or label is None:  # if there is no data in img or label
+                if self.one_test:
+                    data_info = self.dataset_txt[0]
+                else:
+                    data_info = self.dataset_txt[index]
+                img, label = self._read_datas(data_info)
+                index += 1
+
+            if self.cfg.TRAIN.DO_AUG and self.is_training:
+                labels = 'None'
+                try_tims = 0
+                while labels is 'None':
+                    imgs, labels = self.dataaug.augmentation(aug_way_ids=([20, 22], [25]), datas=([img], [label]))
+                    try_tims += 1
+                    if try_tims > 100:
+                        print('trying', try_tims, ' times when data augmentation at file:', str(data_info[2]))
+                img = imgs[0]
+                label = labels[0]
+            img_i_size = img.shape
+            size = img_i_size
+
+            if (self.cfg.TRAIN.RESIZE and self.is_training) or (self.cfg.TEST.RESIZE and not self.is_training and not self.cfg.TEST.IMG_BLOCK):
+                size = random.choice(self.cfg.TRAIN.MULTI_SIZE_RATIO) * self.cfg.TRAIN.IMG_SIZE
+                img = cv2.resize(img, (size[1], size[0]))
+            if self.cfg.TRAIN.RELATIVE_LABELS:
+                label_after = [[lab[0],
+                                lab[1] / img_i_size[1],
+                                lab[2] / img_i_size[0],
+                                lab[3] / img_i_size[1],
+                                lab[4] / img_i_size[0]
+                                ] for lab in label]
             else:
-                data_info = self.dataset_txt[index]
-            img, label = self._read_datas(data_info)
-            index += 1
-
-        if self.cfg.TRAIN.DO_AUG and self.is_training:
-            labels = 'None'
-            try_tims = 0
-            while labels is 'None':
-                imgs, labels = self.dataaug.augmentation(aug_way_ids=([11, 12, 20, 22], [25, 26]), datas=([img], [label]))
-                try_tims += 1
-                if try_tims > 100:
-                    print('trying 100 times when data augmentation at file:', str(data_info[2]))
-                    exit()
-            img = imgs[0]
-            label = labels[0]
-        img_i_size = img.shape
-        size = img_i_size
-
-        if (self.cfg.TRAIN.RESIZE and self.is_training) or (self.cfg.TEST.RESIZE and not self.is_training and not self.cfg.TEST.IMG_BLOCK):
-            size = random.choice(self.cfg.TRAIN.MULTI_SIZE_RATIO) * self.cfg.TRAIN.IMG_SIZE
-            img = cv2.resize(img, (size[1], size[0]))
-        if self.cfg.TRAIN.RELATIVE_LABELS:
-            label_after = [[lab[0],
-                            lab[1] / img_i_size[1],
-                            lab[2] / img_i_size[0],
-                            lab[3] / img_i_size[1],
-                            lab[4] / img_i_size[0]
-                            ] for lab in label]
+                label_after = [[lab[0],
+                                lab[1] / img_i_size[1] * size[1],
+                                lab[2] / img_i_size[0] * size[0],
+                                lab[3] / img_i_size[1] * size[1],
+                                lab[4] / img_i_size[0] * size[0]
+                                ] for lab in label]
         else:
-            label_after = [[lab[0],
-                            lab[1] / img_i_size[1] * size[1],
-                            lab[2] / img_i_size[0] * size[0],
-                            lab[3] / img_i_size[1] * size[1],
-                            lab[4] / img_i_size[0] * size[0]
-                            ] for lab in label]
-
+            data_info = self.dataset_txt[index]
+            img, label = self._read_datas(data_info)
+            label_after = [[]]
         if self.cfg.TRAIN.SHOW_INPUT:
-            _show_img(img, label_after, show_img=True, cfg=self.cfg, show_time=self.cfg.TRAIN.SHOW_INPUT)
+            _show_img(img, label_after, show_img=True, cfg=self.cfg, show_time=self.cfg.TRAIN.SHOW_INPUT, pic_path=data_info[2])
+
+
         img = np.asarray(img, dtype=np.float32)
         img = np.transpose(img, (2, 0, 1))
         img = img / 127.5 - 1.
@@ -101,8 +107,9 @@ class Loader(DataLoader):
             exit()
         # labels come first.
         label = self._read_line(id[2])
-        if label == [[]]:
-            return [None, None]
+        if label == [[]] or label == []:
+            print('none label at:', id[2])
+            label = None
         # then add the images.
         img = cv2.imread(id[1])
         return img, label
@@ -151,6 +158,27 @@ class Loader(DataLoader):
                     box_y1 = float(tmps[1])
                     box_x2 = box_x1 + float(tmps[2])
                     box_y2 = box_y1 + float(tmps[3])
+
+                    if not self._is_finedata([box_x1, box_y1, box_x2, box_y2]): continue
+                    bbs.append([self.cls2idx[self.class_name[realname]], box_x1, box_y1, box_x2, box_y2])
+                elif 'AUTOAIR' in self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
+                    tmps = line.strip().split(' ')
+                    realname = 'car'
+                    if realname not in self.class_name:
+                        continue
+                    if realname in pass_obj:
+                        continue
+                    img_w = 1920
+                    img_h = 1080
+                    x = float(tmps[1]) * img_w
+                    y = float(tmps[2]) * img_h
+                    w = float(tmps[3]) * img_w
+                    h = float(tmps[4]) * img_h
+
+                    box_x1 = x - w / 2.
+                    box_y1 = y - h / 2.
+                    box_x2 = x + w / 2.
+                    box_y2 = y + h / 2.
 
                     if not self._is_finedata([box_x1, box_y1, box_x2, box_y2]): continue
                     bbs.append([self.cls2idx[self.class_name[realname]], box_x1, box_y1, box_x2, box_y2])

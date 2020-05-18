@@ -19,7 +19,7 @@ from util.util_show_img import _show_img
 from util.util_parse_SR_img import parse_Tensor_img
 from util.util_prepare_cfg import prepare_cfg
 from util.util_img_block import img_cut
-
+from util.util_nms_for_img_block import NMS_block
 
 class Test_Base(object):
     def __init__(self, cfg, args):
@@ -100,7 +100,7 @@ class Test_OBD(Test_Base):
                 raw_inputs = inputs.clone()
                 [n, c, h, w] = raw_inputs.shape
                 target_size = (512, 768)
-                img_cuts_pixcel = img_cut(h, w, gap=200, target_size=target_size)
+                img_cuts_pixcel = img_cut(h, w, gap=300, target_size=target_size)
                 labels_pres = [[]]
                 for bbox in img_cuts_pixcel:
                     input = raw_inputs[:, :, bbox[1]:bbox[3], bbox[0]:bbox[2]]
@@ -129,6 +129,7 @@ class Test_OBD(Test_Base):
                             pre[2][3] += bbox[1]
                         labels_pres[0].append(pre)
                 # TODO:nms for labels
+                labels_pres = NMS_block(labels_pres, self.cfg)
 
             else:
                 predicts = self.Model.forward(input_x=inputs, is_training=False)

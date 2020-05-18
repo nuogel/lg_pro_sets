@@ -9,10 +9,10 @@ from util.util_anchor_maker_lg import PriorBox
 import numpy as np
 
 
-class RefineDet(nn.Module):
+class REFINEDET(nn.Module):
 
     def __init__(self, cfg):
-        super(RefineDet, self).__init__()
+        super(REFINEDET, self).__init__()
         self.cfg = cfg
         size = self.cfg.TRAIN.IMG_SIZE[0]
         self.num_classes = len(cfg.TRAIN.CLASSES)
