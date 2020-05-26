@@ -25,8 +25,7 @@ from util.util_load_state_dict import load_state_dict
 from util.util_prepare_cfg import prepare_cfg
 from util.util_logger import load_logger
 from DataLoader.DataLoaderFactory import dataloader_factory
-
-
+from util.util_quantization.util_quantization import util_quantize_model
 # self.LOGGER = logging.getLogger(__name__)
 
 class Solver:
@@ -60,13 +59,13 @@ class Solver:
         learning_rate, epoch_last = self._prepare_parameters()
         # Prepare optimizer
         optimizer, scheduler = self._get_optimizer(learning_rate, optimizer=self.cfg.TRAIN.OPTIMIZER)
-        if self.args.amp in ['O1', 'O2', 'O3']:
-            self.Model, optimizer = amp.initialize(self.Model, optimizer, opt_level=self.args.amp, loss_scale="dynamic")
+        if self.args.tensor_core in ['O1', 'O2', 'O3']:
+            self.Model, optimizer = amp.initialize(self.Model, optimizer, opt_level=self.args.tensor_core, loss_scale="dynamic")
         for epoch in range(epoch_last, self.cfg.TRAIN.EPOCH_SIZE):
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch, optimizer, scheduler)
                 self._save_checkpoint(epoch)
-            if epoch > 200 or self.one_test:
+            if epoch > 2000 or self.one_test:
                 self._test_an_epoch(epoch)
 
     def _prepare_parameters(self):
@@ -99,12 +98,16 @@ class Solver:
 
         print('TRAIN SET:', train_set[:4], '\n', 'TEST SET:', test_set[:4])
         self.LOGGER.info('>' * 30 + 'The Train Set is :{}, and The Test Set is :{}'.format(len(train_set), len(test_set)))
+        self.trainDataloader, self.testDataloader = self.dataloader_factory.make_dataset([train_set, test_set])
 
         self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
         if len(self.device_ids) > 1:
             self.Model = torch.nn.DataParallel(self.Model, device_ids=self.device_ids)
-        self.trainDataloader, self.testDataloader = self.dataloader_factory.make_dataset([train_set, test_set])
         # _print_model_parm_nums(self.Model.to(self.cfg.TRAIN.DEVICE), self.cfg.TRAIN.IMG_SIZE[0], self.cfg.TRAIN.IMG_SIZE[1])
+        quantization = 0
+        if quantization:
+            self.Model = util_quantize_model(self.Model)
+
         return learning_rate, epoch
 
     def _get_optimizer(self, learning_rate, optimizer='adam'):
@@ -169,7 +172,7 @@ class Solver:
             total_loss = self._calculate_loss(predict, train_data, losstype=self.cfg.TRAIN.LOSSTYPE)
             losses += total_loss.item()
             # backward process
-            if self.args.amp in ['O1', 'O2', 'O3']:
+            if self.args.tensor_core in ['O1', 'O2', 'O3']:
                 with amp.scale_loss(total_loss, optimizer) as scaled_loss:
                     scaled_loss.backward()
             else:

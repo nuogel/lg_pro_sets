@@ -9,11 +9,11 @@ import os
 import xml.etree.ElementTree as ET
 
 
-def get_ALL_File(dir_path, seq='.png'):
+def get_ALL_File(dir_path, seq=['.png']):
     file_list = []
     for root, dirs, files in os.walk(dir_path):
         for file in files:
-            if file.endswith(seq):
+            if file.endswith(seq[0]) or file.endswith(seq[1]):
                 filename = os.path.join(root, file)
                 file_list.append(filename)
 
@@ -34,22 +34,43 @@ def _read_line(path):
             # print(len(tmps))
             # print(tmps)
             name = tmps[0]
+            score = 1.0
             if len(tmps) == 5:
                 box_x1 = float(tmps[1])
                 box_y1 = float(tmps[2])
                 box_x2 = float(tmps[3])
                 box_y2 = float(tmps[4])
+
+                if box_x1 < 1 and box_y1 < 1 and box_x2 < 1 and box_y2 < 1:
+                    print('use yolo bboxes type')
+
+                    img_w = 1920
+                    img_h = 1080
+
+                    x = box_x1 * img_w
+                    y = box_y1 * img_h
+                    w = box_x2 * img_w
+                    h = box_y2 * img_h
+
+                    box_x1 = x - w / 2.
+                    box_y1 = y - h / 2.
+                    box_x2 = x + w / 2.
+                    box_y2 = y + h / 2.
+
+
             else:
                 # box_x1 = float(tmps[4])
                 # box_y1 = float(tmps[5])
                 # box_x2 = float(tmps[6])
                 # box_y2 = float(tmps[7])
+                score = float(tmps[1])
+
                 box_x1 = float(tmps[2])
                 box_y1 = float(tmps[3])
                 box_x2 = float(tmps[4])
                 box_y2 = float(tmps[5])
             # if name in CLASS:
-            objs.append([name, str(box_x1), str(box_y1), str(box_x2), str(box_y2)])
+            objs.append([name + ': ' + '%.3f' % score, str(box_x1), str(box_y1), str(box_x2), str(box_y2)])
     elif os.path.basename(path).split('.')[-1] == 'xml':
 
         tree = ET.parse(path)
@@ -140,7 +161,7 @@ def _read_datas(im_file, lab_file):
     return img, label
 
 
-def _show_img(images, labels, show_img=True, show_time=30000, save_img=False):
+def _show_img(images, labels, show_img=True, show_time=30000, save_img=False, save_video=0, video_writer=None):
     if labels:
         for _, label in enumerate(labels):
             if len(label) == 5:  # in shape of [class, x1, y1, x2, y2]
@@ -158,14 +179,19 @@ def _show_img(images, labels, show_img=True, show_time=30000, save_img=False):
             ymax = int(float(box[3]))
             # text = class_out+"||"+ " ".join([str(i) for i in box])
             text = class_out
-            cv2.rectangle(images, (xmin, ymin), (xmax, ymax), (255, 0, 0))
+            cv2.rectangle(images, (xmin, ymin), (xmax, ymax), (0, 0, 255))
             cv2.putText(images, text, (xmin, ymin), 1, 1, (0, 255, 255))
 
-    if show_img:
-        cv2.imshow('img', images)
-        cv2.waitKey(show_time)
+    cv2.putText(images, 'The Number of Cars is : %d' % len(labels), (600, 220), 1, 2, (0, 0, 255), thickness=2)
+    cv2.putText(images, 'Made by AI Team of Chengdu Fourier Electronic', (600, 250), 1, 2, (0, 0, 255), thickness=2)
+
+    # if show_img:
+    #     cv2.imshow('img', images)
+    #     cv2.waitKey(show_time)
     if save_img:
         cv2.imwrite("show.png", images)
+    if save_video:
+        video_writer.write(images)
 
 
 def main():
@@ -177,32 +203,40 @@ def main():
     # im_file = os.path.join(path, "images", "1478019971185917857.jpg")
     # label_file = os.path.join(path, "labels", "1478019971185917857.xml")
     # img, label = _read_datas(im_file, label_file)
-    img_folds = 'F:/Projects/auto_Airplane/TS02/20191217_153659_10/'
-    label_folds = 'F:/Projects/auto_Airplane/TS02/20191217_153659_10__predicted_labels'
+    img_folds = 'F:/Projects/auto_Airplane/TS02/20191217_153659/'
+    label_folds = 'F:\Projects\\auto_Airplane\TS02\\20191217_153659_predicted_labels'
+    # label_folds = 'F:\LG\GitHub\lg_pro_sets\\tmp\predicted_labels'
 
     # _show_img(img, label)
-    local_txt_files = get_ALL_File(label_folds, ".txt")
-    local_xml_files = get_ALL_File(label_folds, ".xml")
+    local_label_files = get_ALL_File(label_folds, [".txt", ".xml"])
+    local_img_files = get_ALL_File(img_folds, [".jpg", '.png'])
 
-    img_files = get_ALL_File(img_folds, ".jpg")
-    # print(len(local_img_files))
-    png_files = get_ALL_File(img_folds, ".png")
-    # print(len(png_files))
-    local_img_files = img_files + png_files
-    local_label_files = local_txt_files + local_xml_files
     local_img_files.sort()
     local_label_files.sort()
     lab_num = len(local_label_files)
     img_num = len(local_img_files)
     print(lab_num, img_num)
-
+    video_dir = 'F:/Projects/auto_Airplane/TS02/saved_video.avi'
+    fps = 12
+    img_size = (1920, 1080)
+    fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
+    video_writer = cv2.VideoWriter(video_dir, fourcc, fps, img_size)
+    save_video = 1
     for index in range(min(img_num, lab_num)):
+        if index <= 6330-500: continue
         label_file = local_label_files[index]
         im_file = local_img_files[index]
         if print_path:
             print(im_file, '==>>>', label_file)
         img, label = _read_datas(im_file, label_file)
-        _show_img(img, label)
+
+        try:
+            _show_img(img, label, show_img=True, show_time=1, save_video=save_video, video_writer=video_writer)
+        except:
+            if save_video:video_writer.release()
+        if index >= 9750 - 500: break
+    if save_video:video_writer.release()
+    print('finish')
 
 
 if __name__ == '__main__':

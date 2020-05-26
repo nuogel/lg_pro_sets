@@ -9,13 +9,13 @@ import torch
 import torch.nn as nn
 
 
-class YoloV2(torch.nn.Module):
+class YOLOV2(torch.nn.Module):
     """
     apollo yolo 2d
     """
 
     def __init__(self, cfg):
-        super(YoloV2, self).__init__()
+        super(YOLOV2, self).__init__()
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
         self.cls_num = len(cfg.TRAIN.CLASSES)
         self.power = torch.pow

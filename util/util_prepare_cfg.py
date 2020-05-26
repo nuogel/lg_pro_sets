@@ -5,9 +5,9 @@ def prepare_cfg(cfg, arg, is_training=True):
 
     if arg.batch_size != 0:
         cfg.TRAIN.BATCH_SIZE = arg.batch_size
-    # if cfg.TEST.ONE_TEST:
-    #     cfg.TRAIN.DO_AUG = 0
-    if cfg.TEST.ONE_TEST or cfg.TRAIN.SHOW_INPUT or cfg.TRAIN.SHOW_TARGET or cfg.TRAIN.SHOW_PREDICT:
+    if cfg.TEST.ONE_TEST:
+        cfg.TRAIN.DO_AUG = 0
+    if cfg.TEST.ONE_TEST or cfg.TRAIN.SHOW_INPUT:
         arg.number_works = 0
         cfg.TRAIN.SAVE_STEP = 50
 
@@ -27,20 +27,50 @@ def prepare_cfg(cfg, arg, is_training=True):
                             [0.0079226, 0.0525171],
                             [0.1565745, 0.2865745],
                             [0.0307940, 0.1949102], ]  # apollo_anchors 16
-    anchor_yolov3 = [[0.0240385, 0.0336538],
-                     [0.0552885, 0.0649038],
-                     [0.0889423, 0.1394231],
-                     [0.1947115, 0.1971154],
-                     [0.3245192, 0.4062500],
-                     [0.8269231, 0.7668269]]  # yolov3_tiny
+
+    anchor_yolov2 = [[10, 13],
+                            [16, 30],
+                            [33, 23],
+                            [30, 61],
+                            [62, 45],
+                            [59, 119],
+                            [116, 90],
+                            [156, 198],
+                            [373, 326]]
+
+    anchor_yolov3_tiny = [[0.0240385, 0.0336538],
+                          [0.0552885, 0.0649038],
+                          [0.0889423, 0.1394231],
+                          [0.1947115, 0.1971154],
+                          [0.3245192, 0.4062500],
+                          [0.8269231, 0.7668269]]  # yolov3_tiny
+
+    anchor_yolov3 = [[10, 13],
+                     [16, 30],
+                     [33, 23],
+                     [30, 61],
+                     [62, 45],
+                     [59, 119],
+                     [116, 90],
+                     [156, 198],
+                     [373, 326]]  # yolov3_tiny yolov3 writer's anchors
+
     # yolov3 writer's anchors: [10,13,  16,30,  33,23,  30,61,  62,45,  59,119,  116,90,  156,198,  373,326]
 
-    VISDRONE_anchors = [[0.0058824, 0.0143791],
-                        [0.0110294, 0.0300654],
-                        [0.0227941, 0.0261438],
-                        [0.0198529, 0.0562092],
-                        [0.0419118, 0.0535948],
-                        [0.0764706, 0.1202614]]
+    # VISDRONE_anchors = [[0.0058824, 0.0143791],
+    #                     [0.0110294, 0.0300654],
+    #                     [0.0227941, 0.0261438],
+    #                     [0.0198529, 0.0562092],
+    #                     [0.0419118, 0.0535948],
+    #                     [0.0764706, 0.1202614]]
+
+    VISDRONE_anchors = [[8., 11.],
+                        [15., 23.],
+                        [31., 20.],
+                        [27., 43.],
+                        [57., 41.],
+                        [104., 92.], ]
+
     cfg.TRAIN.ANCHORS = anchor_yolov3
     if cfg.TEST.ONE_TEST:
         cfg.TRAIN.BATCH_SIZE = len(cfg.TEST.ONE_NAME)
@@ -48,8 +78,8 @@ def prepare_cfg(cfg, arg, is_training=True):
 
     if 'yolov3_tiny' in cfg.TRAIN.MODEL and ('KITTI' in cfg.TRAIN.TRAIN_DATA_FROM_FILE):
         cfg.TRAIN.FMAP_ANCHOR_NUM = 3
-        cfg.TRAIN.ANCHORS = anchor_yolov3
-    elif 'yolov3_tiny' == cfg.TRAIN.MODEL and ('VISDRONE' in cfg.TRAIN.TRAIN_DATA_FROM_FILE):
+        cfg.TRAIN.ANCHORS = anchor_yolov3_tiny
+    elif 'yolov3_tiny' in cfg.TRAIN.MODEL and (cfg.TRAIN.TRAIN_DATA_FROM_FILE[0] in ['VISDRONE', 'AUTOAIR']):
         cfg.TRAIN.FMAP_ANCHOR_NUM = 3
         cfg.TRAIN.ANCHORS = VISDRONE_anchors
 
@@ -58,7 +88,7 @@ def prepare_cfg(cfg, arg, is_training=True):
         cfg.TRAIN.ANCHORS = anchor_yolov3
 
     elif 'yolov2' in cfg.TRAIN.MODEL:
-        cfg.TRAIN.FMAP_ANCHOR_NUM = 6
-        cfg.TRAIN.ANCHORS = anchor_yolov2_apollo
+        cfg.TRAIN.FMAP_ANCHOR_NUM = len(anchor_yolov2)
+        cfg.TRAIN.ANCHORS = anchor_yolov2
 
     return cfg

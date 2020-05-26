@@ -11,7 +11,7 @@ def video2images(file_path, output_path):
         rec, img = cap.read()
         # cv2.imshow('img', img)
         # cv2.waitKey(0)
-        if i % 10 == 0:
+        if i % 1 == 0:
             save_path = output_path + '%06d.png' % i
             cv2.imwrite(save_path, img)
             print('saving: ', save_path)
@@ -19,6 +19,6 @@ def video2images(file_path, output_path):
 
 
 if __name__ == '__main__':
-    file_path = 'F:/Projects/auto_Airplane/TS02/20191217_171002.mp4'
-    output_path = 'F:/Projects/auto_Airplane/TS02/20191217_171002_10/'
+    file_path = 'F:/Projects/auto_Airplane/TS02/20191217_153659.mp4'
+    output_path = 'F:/Projects/auto_Airplane/TS02/20191217_153659/'
     video2images(file_path, output_path)

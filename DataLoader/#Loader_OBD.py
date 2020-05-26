@@ -71,7 +71,7 @@ class Loader:
             labels = resized_labels
 
             if self.cfg.TRAIN.SHOW_INPUT:
-                _show_img(imgs, labels, show_img=True, cfg=self.cfg)
+                _show_img(imgs, labels, show_time=self.cfg.TRAIN.SHOW_INPUT, cfg=self.cfg)
 
             imgs = torch.Tensor(np.array(imgs))
             imgs = imgs.permute([0, 3, 1, 2, ])

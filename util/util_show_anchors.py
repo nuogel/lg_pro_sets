@@ -110,7 +110,7 @@ for i in range(len(tiny_yolo_anchors)):
 
 print('visdrone_anchors')
 for i in range(len(visdrone_anchors)):
-    print('[', '%.7f' % (visdrone_anchors[i][0] / 1360), ',', '%.7f' % (visdrone_anchors[i][1] / 765), '],')
+    print('[', '%.7f' % (visdrone_anchors[i][0] / 1920), ',', '%.7f' % (visdrone_anchors[i][1] / 1080), '],')
 
 
 # cv2.imshow('img', img)

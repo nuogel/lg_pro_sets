@@ -12,7 +12,7 @@ def _parse_arguments():
     parser.add_argument('--type', default='OBD'  # OBD SR_DN
                         , type=str, help='yml_path')
     parser.add_argument('--checkpoint', default=
-    'tmp/checkpoint/ssd_4.6_124.pkl'
+    'tmp/checkpoint/now.pkl'
                         # 'F:/saved_weight/saved_tbx_log_yolov3_tiny_clean/checkpoint.pkl',
                         # 'F:/saved_weight/tbx_log_ssd_coco/checkpoint.pkl'
                         # 'F:/saved_weight/tbx_log_vdsr/checkpoint.pkl'
@@ -43,7 +43,7 @@ def main():
     # files = 'DataLoader/datasets/SRDN_idx_stores/FILMS/FILMS_test_w.txt'
     # files = 'E:/datasets/SR/youku/youku_00150_00199_l/Youku_00150_l/Youku_00150_l_001.png'
     # files = 'E:/datasets/youku/youku_00200_00249_l/Youku_00203_l/Youku_00203_l_001.png'
-    files = 'F:/Projects/auto_Airplane/TS02/20191217_153659_10/'
+    # files = 'F:/Projects/auto_Airplane/TS02/20191217_153659/'
     # files = 'E:/datasets/VisDrone2019/VisDrone2019-VID-val/sequences/uav0000182_00000_v/'
     # files = 'F:/LG/GitHub/lg_pro_sets/DataLoader/datasets/OBD_idx_stores/KITTI/KITTI_train_set_w.txt'
     # files = 'F:/LG/GitHub/lg_pro_sets/DataLoader/datasets/OBD_idx_stores/VISDRONE/VISDRONE_test_set_w.txt'

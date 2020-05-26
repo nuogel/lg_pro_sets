@@ -20,6 +20,7 @@ from util.util_parse_SR_img import parse_Tensor_img
 from util.util_prepare_cfg import prepare_cfg
 from util.util_img_block import img_cut
 from util.util_nms_for_img_block import NMS_block
+from util.util_time_stamp import Time
 
 class Test_Base(object):
     def __init__(self, cfg, args):
@@ -92,8 +93,11 @@ class Test_OBD(Test_Base):
     def test_backbone(self, DataSet):
         """Test."""
         loader = iter(DataSet)
+        timer = Time()
+
         for i in range(DataSet.__len__()):
             test_data = next(loader)
+            timer.time_start()
             test_data = self.dataloader_factory.to_devce(test_data)
             inputs, targets, data_infos = test_data
             if self.cfg.TEST.IMG_BLOCK:
@@ -135,11 +139,12 @@ class Test_OBD(Test_Base):
                 predicts = self.Model.forward(input_x=inputs, is_training=False)
                 labels_pres = self.parsepredict._parse_predict(predicts)
             batches = inputs.shape[0]
-
+            timer.time_end()
+            print('a batch time is', timer.diff)
             for i in range(batches):
                 img_raw = [cv2.imread(data_infos[i][1])]
                 img_in = inputs[i]
-                _show_img(img_raw, labels_pres, img_in=img_in, pic_path=data_infos[i][1], cfg=self.cfg)
+                _show_img(img_raw, labels_pres, img_in=img_in, pic_path=data_infos[i][1], cfg=self.cfg, is_training=False)
 
     def score(self, txt_info, pre_path):
         pre_path_list = glob.glob(pre_path + '/*.*')

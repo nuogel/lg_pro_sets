@@ -45,7 +45,7 @@ class Dataaug:
             # 加 雪花 的噪声 类型
             9: iaa.Snowflakes(density=(0, 0.15), density_uniformity=0.5, flake_size=0.4, flake_size_uniformity=0.5, speed=0.001),
             #### 运动模糊
-            # 10: iaa.MotionBlur(k=(10, 20), angle=[-45, 45]),
+            10: iaa.MotionBlur(k=(3, 11), angle=[-45, 45]),
             # 高斯模糊
             11: iaa.GaussianBlur((0, 3)),
             # 高斯噪音
@@ -65,7 +65,7 @@ class Dataaug:
 
             20: iaa.Fliplr(0.5),  # 增加原图的概率。
             21: iaa.Fliplr(0.5),  # 增加原图的概率。
-            22: iaa.Affine(scale=(0.7, 1.3), translate_percent=(-0.02, 0.02), rotate=(-5, 5)),
+            22: iaa.Affine(scale=(0.5, 1.5), translate_percent=(-0.01, 0.01), rotate=(-10, 10)),
             23: iaa.Crop(),
             24: iaa.CropAndPad(),
             25: iaa.CropToFixedSize(width=crop_size[1], height=crop_size[0], ),

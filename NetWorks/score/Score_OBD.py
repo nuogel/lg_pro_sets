@@ -46,7 +46,7 @@ class Score_OBD:
             pre_labels = self.parsepredict._parse_predict(pre_labels)
         if pre_labels != [[]]:
             for i, pre_label in enumerate(pre_labels):  # calculate every image
-                self._cal_per_image(pre_label, gt_labels[i], self.cfg.TEST.IOU_THRESH)
+                self._cal_per_image(pre_label, gt_labels[gt_labels[..., 0] == i], self.cfg.TEST.IOU_THRESH)
         else:
             print('predicted labels is None.')
 
@@ -63,15 +63,17 @@ class Score_OBD:
 
         for cls in range(self.cls_num):
             for one_pre_box in pre_label:
-                if one_pre_box[1] is not cls:
+                if one_pre_box[1] != cls:
                     continue
                 max_iou = -1
                 _id = None
                 for i, lab in enumerate(gt_label):
-                    if lab[0] is not cls:
+                    lab = lab[1:]
+                    cls_gt = int(lab[0].cpu())
+                    if cls_gt != cls:
                         continue
                     pre_box = torch.Tensor(one_pre_box[2]).unsqueeze(0).to(self.cfg.TRAIN.DEVICE)
-                    gt_box = torch.Tensor(lab[1:5]).to(pre_box.device).unsqueeze(0)
+                    gt_box = lab[1:5].unsqueeze(0)
                     iou = iou_xyxy(pre_box, gt_box)[0][0]  # to(anchors.device))
                     if iou > max_iou:
                         max_iou = iou
@@ -85,7 +87,7 @@ class Score_OBD:
                     self.false_positive[cls].append(1)
                 self.pre_scores[cls].append(one_pre_box[0])
         for lab in gt_label:
-            self.gt_obj_num[int(lab[0])] += 1
+            self.gt_obj_num[int(lab[1])] += 1
 
     def score_out(self):
         if self.cfg.TEST.SCORE_TYPE.lower() == 'map':

@@ -4,10 +4,7 @@ import os
 import torch
 
 
-def _show_img(imgs, labels_out, img_in=None,
-              save_labels=False, pic_path=None,
-              show_img=True, show_time=3000,
-              cfg=None, ):
+def _show_img(imgs, labels_out, img_in=None, save_labels=False, pic_path=None, show_time=3000, cfg=None, is_training=True):
     """
     Show the bounding boxes of images.
 
@@ -28,9 +25,10 @@ def _show_img(imgs, labels_out, img_in=None,
 
     assert imgs.shape[0] == len(labels_out), 'error:util_show_img->image and label shape is not the same'
 
-    if cfg:
+    if is_training:
+        show_time = cfg.TRAIN.SHOW_INPUT
+    else:
         save_labels = cfg.TEST.SAVE_LABELS
-        show_img = cfg.TEST.SHOW_IMAGES
         show_time = cfg.TEST.SHOW_TIMES
 
     if pic_path == None:
@@ -44,6 +42,9 @@ def _show_img(imgs, labels_out, img_in=None,
             for _, label in enumerate(labels):
                 if len(label) == 5:  # in shape of [class, x1, y1, x2, y2]
                     class_out, box = label[0], label[1:5]
+                    score_out = 1.0
+                elif len(label) == 6:  # in shape of [batch, class, x1, y1, x2, y2]
+                    class_out, box = label[1], label[2:6]
                     score_out = 1.0
                 elif len(label) == 2:  # [class, bbox[x1,y1,x2,y2]]
                     class_out = label[0]
@@ -112,7 +113,7 @@ def _show_img(imgs, labels_out, img_in=None,
             label_file.close()
             print('saved labels to :', label_path)
 
-        if show_img:
+        if show_time:
             print('showing pic:', pic_path)
             if img_now.shape[1] > 1800:
                 img_now = cv2.resize(img_now, None, fx=0.8, fy=0.8)
