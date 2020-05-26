@@ -10,7 +10,7 @@ PATH:
 
 
 TRAIN:
-  MODEL: yolov3_tiny_shufflenet #yolov2 # yolov3_tiny #ssdvgg #refinedet #efficientdet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #yolov3 #  fcos #
+  MODEL: yolov3_tiny_shufflenet #yolov3_tiny #yolov2 # ssdvgg #refinedet #efficientdet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #yolov3 #  fcos #
   EPOCH_SIZE: 4000
   BATCH_SIZE: ''
   BATCH_BACKWARD_SIZE: 4  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
@@ -74,8 +74,8 @@ TEST:
   ONE_TEST_TRAIN_STEP: 50
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
-#['000000', 'E://datasets//kitti//training//images//000000.png', 'E://datasets//kitti//training//labels\\000000.xml']
-      ['0000002_00005_d_0000014.jpg', 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/images/0000002_00005_d_0000014.jpg', 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/annotations/0000002_00005_d_0000014.txt']
+['000000', 'E://datasets//kitti//training//images//000000.png', 'E://datasets//kitti//training//labels\\000000.xml']
+#      ['0000002_00005_d_0000014.jpg', 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/images/0000002_00005_d_0000014.jpg', 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/annotations/0000002_00005_d_0000014.txt']
 
     #  ['P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.txt']
   ]

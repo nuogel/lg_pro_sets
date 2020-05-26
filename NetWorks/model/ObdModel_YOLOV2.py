@@ -1,9 +1,7 @@
 """Definition of the apollo yolo network."""
-from collections import OrderedDict
-import torch
 
 """
-Definition of the apollo yolo network,
+Definition of the yolo v2 network,
 """
 import torch
 import torch.nn as nn
@@ -18,86 +16,92 @@ class YOLOV2(torch.nn.Module):
         super(YOLOV2, self).__init__()
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
         self.cls_num = len(cfg.TRAIN.CLASSES)
-        self.power = torch.pow
-        self.conv1 = torch.nn.Conv2d(3, 16, 3, 1, 1, 1, bias=True)
-        self.conv1_relu = torch.nn.ReLU(1)
-        self.pool1 = torch.nn.MaxPool2d(2, 2, 0)
-        self.conv2 = torch.nn.Conv2d(16, 32, 3, 1, 1, 1, bias=True)
-        self.conv2_relu = torch.nn.ReLU(1)
-        self.pool2 = torch.nn.MaxPool2d(2, 2, 0)
-        self.conv3_1 = torch.nn.Conv2d(32, 64, 3, 1, 1, 1, bias=True)
-        self.conv3_1_relu = torch.nn.ReLU(1)
-        self.conv3_2 = torch.nn.Conv2d(64, 32, 1, 1, 0, 1, bias=True)
-        self.conv3_2_relu = torch.nn.ReLU(1)
-        self.conv3_3 = torch.nn.Conv2d(32, 64, 3, 1, 1, 1, bias=True)
-        self.conv3_3_relu = torch.nn.ReLU(1)
-        self.pool3 = torch.nn.MaxPool2d(2, 2, 0)
-        self.conv4_1 = torch.nn.Conv2d(64, 128, 3, 1, 1, 1, bias=True)
-        self.conv4_1_relu = torch.nn.ReLU(1)
-        self.conv4_2 = torch.nn.Conv2d(128, 64, 1, 1, 0, 1, bias=True)
-        self.conv4_2_relu = torch.nn.ReLU(1)
-        self.conv4_3 = torch.nn.Conv2d(64, 128, 3, 1, 1, 1, bias=True)
-        self.conv4_3_relu = torch.nn.ReLU(1)
-        self.pool4 = torch.nn.MaxPool2d(2, 2, 0)
-        self.conv5_1 = torch.nn.Conv2d(128, 256, 3, 1, 1, 1, bias=True)
-        self.conv5_1_relu = torch.nn.ReLU(1)
-        self.conv5_2 = torch.nn.Conv2d(256, 128, 1, 1, 0, 1, bias=True)
-        self.conv5_2_relu = torch.nn.ReLU(1)
-        self.conv5_3 = torch.nn.Conv2d(128, 256, 3, 1, 1, 1, bias=True)
-        self.conv5_3_relu = torch.nn.ReLU(1)
-        self.conv5_4 = torch.nn.Conv2d(256, 128, 1, 1, 0, 1, bias=True)
-        self.conv5_4_relu = torch.nn.ReLU(1)
-        self.conv5_5 = torch.nn.Conv2d(128, 256, 3, 1, 1, 1, bias=True)
-        self.conv5_5_relu = torch.nn.ReLU(1)
-        self.pool5 = torch.nn.MaxPool2d(3, 1, 1)
-        self.conv6_1_nodilate = torch.nn.Conv2d(256, 512, 5, 1, 2, 1, bias=True)
-        self.conv6_1_relu = torch.nn.ReLU(1)
-        self.conv6_2 = torch.nn.Conv2d(512, 256, 1, 1, 0, 1, bias=True)
-        self.conv6_2_relu = torch.nn.ReLU(1)
-        self.conv6_3 = torch.nn.Conv2d(256, 512, 3, 1, 1, 1, bias=True)
-        self.conv6_3_relu = torch.nn.ReLU(1)
-        self.conv6_4 = torch.nn.Conv2d(512, 256, 1, 1, 0, 1, bias=True)
-        self.conv6_4_relu = torch.nn.ReLU(1)
-        self.conv6_5 = torch.nn.Conv2d(256, 512, 3, 1, 1, 1, bias=True)
-        self.conv6_5_relu = torch.nn.ReLU(1)
-        self.conv7_1 = torch.nn.Conv2d(512, 512, 3, 1, 1, 1, bias=True)
-        self.conv7_1_relu = torch.nn.ReLU(1)
-        self.conv7_2 = torch.nn.Conv2d(512, 512, 3, 1, 1, 1, bias=True)
-        self.conv7_2_relu = torch.nn.ReLU(1)
-        self.concat8 = torch.cat
-        self.conv9 = torch.nn.Conv2d(768, 512, 3, 1, 1, 1, bias=True)
-        self.conv9_relu = torch.nn.ReLU(1)
-        self.conv_final = torch.nn.Conv2d(512, self.anc_num * (4 + 1 + self.cls_num), 1, 1, 0, bias=True)
+
+        self.stage1_conv1 = nn.Sequential(nn.Conv2d(3, 32, 3, 1, 1, bias=False), nn.BatchNorm2d(32),
+                                          nn.LeakyReLU(0.1, inplace=True), nn.MaxPool2d(2, 2))
+        self.stage1_conv2 = nn.Sequential(nn.Conv2d(32, 64, 3, 1, 1, bias=False), nn.BatchNorm2d(64),
+                                          nn.LeakyReLU(0.1, inplace=True), nn.MaxPool2d(2, 2))
+        self.stage1_conv3 = nn.Sequential(nn.Conv2d(64, 128, 3, 1, 1, bias=False), nn.BatchNorm2d(128),
+                                          nn.LeakyReLU(0.1, inplace=True))
+        self.stage1_conv4 = nn.Sequential(nn.Conv2d(128, 64, 1, 1, 0, bias=False), nn.BatchNorm2d(64),
+                                          nn.LeakyReLU(0.1, inplace=True))
+        self.stage1_conv5 = nn.Sequential(nn.Conv2d(64, 128, 3, 1, 1, bias=False), nn.BatchNorm2d(128),
+                                          nn.LeakyReLU(0.1, inplace=True), nn.MaxPool2d(2, 2))
+        self.stage1_conv6 = nn.Sequential(nn.Conv2d(128, 256, 3, 1, 1, bias=False), nn.BatchNorm2d(256),
+                                          nn.LeakyReLU(0.1, inplace=True))
+        self.stage1_conv7 = nn.Sequential(nn.Conv2d(256, 128, 1, 1, 0, bias=False), nn.BatchNorm2d(128),
+                                          nn.LeakyReLU(0.1, inplace=True))
+        self.stage1_conv8 = nn.Sequential(nn.Conv2d(128, 256, 3, 1, 1, bias=False), nn.BatchNorm2d(256),
+                                          nn.LeakyReLU(0.1, inplace=True), nn.MaxPool2d(2, 2))
+        self.stage1_conv9 = nn.Sequential(nn.Conv2d(256, 512, 3, 1, 1, bias=False), nn.BatchNorm2d(512),
+                                          nn.LeakyReLU(0.1, inplace=True))
+        self.stage1_conv10 = nn.Sequential(nn.Conv2d(512, 256, 1, 1, 0, bias=False), nn.BatchNorm2d(256),
+                                           nn.LeakyReLU(0.1, inplace=True))
+        self.stage1_conv11 = nn.Sequential(nn.Conv2d(256, 512, 3, 1, 1, bias=False), nn.BatchNorm2d(512),
+                                           nn.LeakyReLU(0.1, inplace=True))
+        self.stage1_conv12 = nn.Sequential(nn.Conv2d(512, 256, 1, 1, 0, bias=False), nn.BatchNorm2d(256),
+                                           nn.LeakyReLU(0.1, inplace=True))
+        self.stage1_conv13 = nn.Sequential(nn.Conv2d(256, 512, 3, 1, 1, bias=False), nn.BatchNorm2d(512),
+                                           nn.LeakyReLU(0.1, inplace=True))
+
+        self.stage2_a_maxpl = nn.MaxPool2d(2, 2)
+        self.stage2_a_conv1 = nn.Sequential(nn.Conv2d(512, 1024, 3, 1, 1, bias=False),
+                                            nn.BatchNorm2d(1024), nn.LeakyReLU(0.1, inplace=True))
+        self.stage2_a_conv2 = nn.Sequential(nn.Conv2d(1024, 512, 1, 1, 0, bias=False), nn.BatchNorm2d(512),
+                                            nn.LeakyReLU(0.1, inplace=True))
+        self.stage2_a_conv3 = nn.Sequential(nn.Conv2d(512, 1024, 3, 1, 1, bias=False), nn.BatchNorm2d(1024),
+                                            nn.LeakyReLU(0.1, inplace=True))
+        self.stage2_a_conv4 = nn.Sequential(nn.Conv2d(1024, 512, 1, 1, 0, bias=False), nn.BatchNorm2d(512),
+                                            nn.LeakyReLU(0.1, inplace=True))
+        self.stage2_a_conv5 = nn.Sequential(nn.Conv2d(512, 1024, 3, 1, 1, bias=False), nn.BatchNorm2d(1024),
+                                            nn.LeakyReLU(0.1, inplace=True))
+        self.stage2_a_conv6 = nn.Sequential(nn.Conv2d(1024, 1024, 3, 1, 1, bias=False), nn.BatchNorm2d(1024),
+                                            nn.LeakyReLU(0.1, inplace=True))
+        self.stage2_a_conv7 = nn.Sequential(nn.Conv2d(1024, 1024, 3, 1, 1, bias=False), nn.BatchNorm2d(1024),
+                                            nn.LeakyReLU(0.1, inplace=True))
+
+        self.stage2_b_conv = nn.Sequential(nn.Conv2d(512, 64, 1, 1, 0, bias=False), nn.BatchNorm2d(64),
+                                           nn.LeakyReLU(0.1, inplace=True))
+
+        self.stage3_conv1 = nn.Sequential(nn.Conv2d(256 + 1024, 1024, 3, 1, 1, bias=False), nn.BatchNorm2d(1024),
+                                          nn.LeakyReLU(0.1, inplace=True))
+        self.stage3_conv2 = nn.Conv2d(1024, self.anc_num * (5 + self.cls_num), 1, 1, 0, bias=False)
 
     def forward(self, **args):
         x = args['input_x']
-        x = self.conv1_relu(self.conv1(x))
-        x = self.pool1(x)
-        x = self.conv2_relu(self.conv2(x))
-        x = self.pool2(x)
-        x = self.conv3_1_relu(self.conv3_1(x))
-        x = self.conv3_2_relu(self.conv3_2(x))
-        x = self.conv3_3_relu(self.conv3_3(x))
-        x = self.pool3(x)
-        x = self.conv4_1_relu(self.conv4_1(x))
-        x = self.conv4_2_relu(self.conv4_2(x))
-        x = self.conv4_3_relu(self.conv4_3(x))
-        x = self.pool4(x)
-        x = self.conv5_1_relu(self.conv5_1(x))
-        x = self.conv5_2_relu(self.conv5_2(x))
-        x = self.conv5_3_relu(self.conv5_3(x))
-        x = self.conv5_4_relu(self.conv5_4(x))
-        cat = self.conv5_5_relu(self.conv5_5(x))
-        x = self.pool5(cat)
-        x = self.conv6_1_relu(self.conv6_1_nodilate(x))
-        x = self.conv6_2_relu(self.conv6_2(x))
-        x = self.conv6_3_relu(self.conv6_3(x))
-        x = self.conv6_4_relu(self.conv6_4(x))
-        x = self.conv6_5_relu(self.conv6_5(x))
-        x = self.conv7_1_relu(self.conv7_1(x))
-        x = self.conv7_2_relu(self.conv7_2(x))
-        x = self.concat8((cat, x), 1)
-        x = self.conv9_relu(self.conv9(x))
-        x = self.conv_final(x)
-        net_final = x.permute([0, 2, 3, 1])
+        output = self.stage1_conv1(x)
+        output = self.stage1_conv2(output)
+        output = self.stage1_conv3(output)
+        output = self.stage1_conv4(output)
+        output = self.stage1_conv5(output)
+        output = self.stage1_conv6(output)
+        output = self.stage1_conv7(output)
+        output = self.stage1_conv8(output)
+        output = self.stage1_conv9(output)
+        output = self.stage1_conv10(output)
+        output = self.stage1_conv11(output)
+        output = self.stage1_conv12(output)
+        output = self.stage1_conv13(output)
+
+        residual = output
+
+        output_1 = self.stage2_a_maxpl(output)
+        output_1 = self.stage2_a_conv1(output_1)
+        output_1 = self.stage2_a_conv2(output_1)
+        output_1 = self.stage2_a_conv3(output_1)
+        output_1 = self.stage2_a_conv4(output_1)
+        output_1 = self.stage2_a_conv5(output_1)
+        output_1 = self.stage2_a_conv6(output_1)
+        output_1 = self.stage2_a_conv7(output_1)
+
+        output_2 = self.stage2_b_conv(residual)
+        batch_size, num_channel, height, width = output_2.data.size()
+        output_2 = output_2.view(batch_size, int(num_channel / 4), height, 2, width, 2).contiguous()
+        output_2 = output_2.permute(0, 3, 5, 1, 2, 4).contiguous()
+        output_2 = output_2.view(batch_size, -1, int(height / 2), int(width / 2))
+
+        output = torch.cat((output_1, output_2), 1)
+        output = self.stage3_conv1(output)
+        output = self.stage3_conv2(output)
+        net_final = output.permute([0, 2, 3, 1])
         return [net_final, ]
