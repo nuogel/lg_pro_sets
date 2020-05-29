@@ -41,6 +41,8 @@ class Solver:
         self.Score = get_score_class(self.cfg.BELONGS)(self.cfg)
         self.test_batch_num = self.cfg.TEST.ONE_TEST_TEST_STEP
         self.LOGGER = load_logger(args)
+
+        torch.backends.cudnn.benchmark = True
         print('torch version: ', torch.__version__)
         print('torch.version.cuda: ', torch.version.cuda)
 
@@ -98,7 +100,7 @@ class Solver:
 
         print('TRAIN SET:', train_set[:4], '\n', 'TEST SET:', test_set[:4])
         self.LOGGER.info('>' * 30 + 'The Train Set is :{}, and The Test Set is :{}'.format(len(train_set), len(test_set)))
-        self.trainDataloader, self.testDataloader = self.dataloader_factory.make_dataset([train_set, test_set])
+        self.trainDataloader, self.testDataloader = self.dataloader_factory.make_dataset(train_set, test_set)
 
         self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
         if len(self.device_ids) > 1:
@@ -111,10 +113,11 @@ class Solver:
         return learning_rate, epoch
 
     def _get_optimizer(self, learning_rate, optimizer='adam'):
+        model_parameters = filter(lambda p: p.requires_grad, self.Model.parameters())
         if optimizer == 'adam' or optimizer == 'Adam':
-            optimizer = torch.optim.Adam(self.Model.parameters(), lr=learning_rate, betas=(self.cfg.TRAIN.BETAS_ADAM, 0.999), weight_decay=float(self.cfg.TRAIN.WEIGHT_DECAY))
+            optimizer = torch.optim.Adam(model_parameters, lr=learning_rate, betas=(self.cfg.TRAIN.BETAS_ADAM, 0.999), weight_decay=float(self.cfg.TRAIN.WEIGHT_DECAY))
         elif optimizer == 'sgd' or optimizer == 'SGD':
-            optimizer = torch.optim.SGD(self.Model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=self.cfg.TRAIN.WEIGHT_DECAY)
+            optimizer = torch.optim.SGD(model_parameters, lr=learning_rate, momentum=0.9, weight_decay=float(self.cfg.TRAIN.WEIGHT_DECAY))
         else:
             self.LOGGER.error('NO such a optimizer: ' + str(optimizer))
         # scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=self.cfg.LR_EXPONENTIAL_DECAY_RATE)
@@ -124,7 +127,7 @@ class Solver:
     def _calculate_loss(self, predict, dataset, losstype=None):
         total_loss = 0.
         losses = self.LossFun.Loss_Call(predict, dataset, losstype=losstype)
-        if self.cfg.BELONGS == 'OBD':
+        if self.cfg.BELONGS in ['OBD', 'VID']:
             loss_names = ['[obj_loss]', '[noobj_loss]', '[cls_loss]', '[loc_loss]']  # obj_loss, noobj_loss, cls_loss, loc_loss
             for i in range(len(losses)):
                 total_loss += losses[i]
@@ -155,7 +158,6 @@ class Solver:
     def _train_an_epoch(self, epoch, optimizer, scheduler):
         # pylint: disable=too-many-arguments
         self.Model.train()
-        scheduler.step()
         self.LOGGER.info('>' * 30 + '[TRAIN] Model:%s,   Epoch: %s,   Learning Rate: %s', self.cfg.TRAIN.MODEL, epoch, optimizer.param_groups[0]['lr'])
         losses = 0
         # count the step time, total time...
@@ -187,6 +189,7 @@ class Solver:
             self.LOGGER.info('[TRAIN] Model: %s Epoch-Step:%3d-%4d/%4d, Step_LOSS: %8.4f, Batch_Average_LOSS: %8.4f, Time Step/Total-%s/%s', self.cfg.TRAIN.MODEL,
                              epoch, step, len(self.trainDataloader), total_loss.item(), losses / (step + 1), _timer.diff, _timer.from_begin)
             _timer.time_start()
+        scheduler.step()
         self.save_parameter.tbX_write(epoch=epoch, learning_rate=optimizer.param_groups[0]['lr'], batch_average_loss=losses / len(self.trainDataloader), )
         self.LOGGER.info('[TRAIN] Summary: Epoch: %s, average total loss: %s', epoch, losses / len(self.trainDataloader))
 

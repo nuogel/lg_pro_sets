@@ -41,8 +41,8 @@ class YoloLoss:
         mask = np.arange(self.anc_num) + self.anc_num * f_id
         anchors = self.anchors[mask] / torch.Tensor([self.cfg.TRAIN.IMG_SIZE[1], self.cfg.TRAIN.IMG_SIZE[0]])  # * torch.Tensor([W, H])
         anchors = anchors.to(self.cfg.TRAIN.DEVICE)
-        obj_mask = torch.ByteTensor(B, H, W, self.anc_num).fill_(0).to(self.cfg.TRAIN.DEVICE)
-        noobj_mask = torch.ByteTensor(B, H, W, self.anc_num).fill_(1).to(self.cfg.TRAIN.DEVICE)
+        obj_mask = torch.BoolTensor(B, H, W, self.anc_num).fill_(0).to(self.cfg.TRAIN.DEVICE)
+        noobj_mask = torch.BoolTensor(B, H, W, self.anc_num).fill_(1).to(self.cfg.TRAIN.DEVICE)
         labels_loc_xy = torch.zeros([B, H, W, self.anc_num, 2]).to(self.cfg.TRAIN.DEVICE)
         labels_loc_wh = torch.zeros([B, H, W, self.anc_num, 2]).to(self.cfg.TRAIN.DEVICE)
         labels_cls = torch.zeros([B, H, W, self.anc_num, self.cls_num]).to(self.cfg.TRAIN.DEVICE)
@@ -177,6 +177,7 @@ class YoloLoss:
 
         pre_obj, pre_cls, pre_loc_xy, pre_loc_wh = self.parsepredict._parse_yolo_predict_fmap(f_map, f_id)
         obj_mask, noobj_mask, labels_cls, labels_loc_xy, labels_loc_wh, area_scale = self._reshape_labels(pre_obj, labels, f_id)
+
         labels_obj = obj_mask.float()
 
         '''

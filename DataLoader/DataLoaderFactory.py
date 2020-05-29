@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from DataLoader import Loader_ASR, Loader_OBD, Loader_SRDN
+from DataLoader import Loader_ASR, Loader_OBD, Loader_SRDN, Loader_VID
 from torch.utils.data import DataLoader
 
 
@@ -11,22 +11,35 @@ class dataloader_factory:
         self.DataLoaderDict = {"OBD": Loader_OBD.Loader,
                                "ASR": Loader_ASR.Loader,
                                "SRDN": Loader_SRDN.Loader,
+                               "VID": Loader_VID.Loader,
+
                                }
 
-    def make_dataset(self, datasets=[]):
-        DataSets = []
-        for i, dataset in enumerate(datasets):
-            data = self.DataLoaderDict[self.cfg.BELONGS](self.cfg)
-            shuffle = False if i == 1 or len(datasets) == 1 else True
-            data._load_dataset(dataset, is_training=shuffle)
-            Dataset = DataLoader(dataset=data,
-                                 batch_size=self.cfg.TRAIN.BATCH_SIZE,
-                                 num_workers=self.args.number_works,
-                                 collate_fn=data.collate_fun,
-                                 shuffle=shuffle)
-            DataSets.append(Dataset)
+    def make_dataset(self, train_dataset=None, test_dataset=None):
+        if self.cfg.BELONGS == 'VID':
+            shuffle = False
+        else:
+            shuffle = True
+        TrainDataset, TestDataset = None, None
+        if train_dataset is not None:
+            train_data = self.DataLoaderDict[self.cfg.BELONGS](self.cfg)
+            train_data._load_dataset(train_dataset, is_training=True)
+            TrainDataset = DataLoader(dataset=train_data,
+                                      batch_size=self.cfg.TRAIN.BATCH_SIZE,
+                                      num_workers=self.args.number_works,
+                                      collate_fn=train_data.collate_fun,
+                                      shuffle=shuffle)
 
-        return DataSets
+        if test_dataset is not None:
+            test_data = self.DataLoaderDict[self.cfg.BELONGS](self.cfg)
+            test_data._load_dataset(test_dataset, is_training=False)
+            TestDataset = DataLoader(dataset=test_data,
+                                     batch_size=self.cfg.TRAIN.BATCH_SIZE,
+                                     num_workers=self.args.number_works,
+                                     collate_fn=test_data.collate_fun,
+                                     shuffle=False)
+
+        return TrainDataset, TestDataset
 
     def to_devce(self, data):
         datas = []

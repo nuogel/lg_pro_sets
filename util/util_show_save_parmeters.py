@@ -1,5 +1,6 @@
 """Saving the parameters while training, and drawing."""
 import os
+import sys
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,6 +9,7 @@ from tensorboardX import SummaryWriter
 from tensorboard.backend.event_processing import event_accumulator
 import shutil
 import logging
+from argparse import ArgumentParser
 
 LOGGER = logging.getLogger(__name__)
 
@@ -15,7 +17,7 @@ LOGGER = logging.getLogger(__name__)
 class TrainParame:
     def __init__(self, cfg=None):
         self.cfg = cfg
-        self.file = cfg.PATH.PARAMETER_PATH
+        self.file = cfg.PATH.PARAMETER_PATH.format(self.cfg.TRAIN.MODEL)
         self.folder = cfg.PATH.TMP_PATH + '/tbx_log_' + cfg.TRAIN.MODEL
 
     def clean_history_and_init_log(self):
@@ -42,6 +44,7 @@ class TrainParame:
                 self.tbX_writer.add_scalars('data/' + k, v, epoch)
             else:
                 self.tbX_writer.add_scalar('data/' + k, v, epoch)
+
         self.tbX_writer.close()
 
     def tbX_read(self):
@@ -61,6 +64,22 @@ class TrainParame:
         self._write_txt(epoch=epoch)
         return epoch, learning_rate
 
+    def tbX_show_parameters(self):
+        try:
+            ea = event_accumulator.EventAccumulator(self.folder)
+            ea.Reload()
+            print(ea.scalars.Keys())
+        except:
+            print('error: no learning_rate in tbX,SET :', self.cfg.TRAIN.LR_START)
+            epoch = 0
+            learning_rate = self.cfg.TRAIN.LR_START
+        else:
+            learning_rate = ea.scalars.Items('data/learning_rate')
+            batch_average_loss = ea.scalars.Items('data/batch_average_loss')
+            lr = [l_r.value for l_r in learning_rate]
+            loss = [l_s.value for l_s in batch_average_loss]
+            self._draw_img([lr, loss])
+
     def _write_txt(self, epoch=0):
         try:
             f = open(self.cfg.PATH.CLASSES_PATH)
@@ -74,9 +93,7 @@ class TrainParame:
         config_lines = open(config_path, encoding='utf-8').read().replace('\n', '\n\n')
         self.tbX_writer.add_text('config', config_lines, epoch)
 
-    def save_parameters(self, epoch,
-                        learning_rate=None, batch_average_loss=None,
-                        f1_score=None, precision=None, recall=None):
+    def save_parameters(self, epoch, learning_rate=None, batch_average_loss=None, f1_score=None, precision=None, recall=None):
         # pylint: disable=too-many-arguments
         """Save the parameters."""
         # check self.file
@@ -143,7 +160,7 @@ class TrainParame:
         linestyles = ['-', '-.', '--', ':', '-', '-.', '--', ':', '-', '-.', '--', ':', ]
 
         labels = ['+', 'o', '*', '.', 'x', 'p', 'H', 'h', '^', '>', '<', '1', '2', '3', '4']
-        line_illustration = ['learning_rate', 'batch_average_loss', 'f1_score', 'precision', 'recall']
+        line_illustration = ['learning_rate', 'batch_average_loss', 'score', 'precision', 'recall']
 
         for i, data in enumerate(datas):
             if data is []:  # if there is no data then continue
@@ -176,7 +193,16 @@ class TrainParame:
 
 if __name__ == "__main__":
     """Test show_parameters."""
-    cfg = parse_yaml('../cfg/SR_DN.yml')
-    cfg.PATH.PARAMETER_PATH = os.path.join('..', cfg.PATH.PARAMETER_PATH)
+
+
+    def _parse_arguments():
+        parser = ArgumentParser()
+        parser.add_argument('--type', default='OBD', type=str, help='yml_path')
+        return parser.parse_args()
+
+
+    args = _parse_arguments()
+    cfg = parse_yaml(args)
+    cfg.PATH.TMP_PATH = os.path.join('..', cfg.PATH.TMP_PATH)
     para = TrainParame(cfg)
-    para.show_parameters(1, )
+    para.tbX_show_parameters()

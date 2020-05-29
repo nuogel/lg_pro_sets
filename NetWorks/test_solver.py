@@ -22,6 +22,7 @@ from util.util_img_block import img_cut
 from util.util_nms_for_img_block import NMS_block
 from util.util_time_stamp import Time
 
+
 class Test_Base(object):
     def __init__(self, cfg, args):
         self.cfg = prepare_cfg(cfg, args, is_training=False)
@@ -48,7 +49,7 @@ class Test_Base(object):
         :return:
         """
 
-        DataSet = self.dataloader_factory.make_dataset([dataset])[0]
+        DataSet = self.dataloader_factory.make_dataset(None, dataset)[1]
         self.test_backbone(DataSet)
 
     def prase_file(self, file_s):
@@ -138,7 +139,7 @@ class Test_OBD(Test_Base):
             else:
                 predicts = self.Model.forward(input_x=inputs, is_training=False)
                 labels_pres = self.parsepredict._parse_predict(predicts)
-            batches = inputs.shape[0]
+            batches = 1
             timer.time_end()
             print('a batch time is', timer.diff)
             for i in range(batches):
@@ -225,4 +226,5 @@ class Test_SRDN(Test_Base):
 Test = {'OBD': Test_OBD,
         'ASR': Test_ASR,
         'SRDN': Test_SRDN,
+        'VID': Test_OBD,
         }

@@ -30,12 +30,13 @@ def parse_yaml(agrs):
     e.g :
         yaml_cfg['PATH']['TMP_DIR']
     """
-    with open('cfg/{}.yml'.format(agrs.type), 'r', encoding='UTF-8') as f:
-        yaml_cfg = yaml.load(f, Loader=yaml.FullLoader)
-        cfg = AttrDict(yaml_cfg)
-        cfg.PATH = AttrDict(cfg.PATH)
-        cfg.TRAIN = AttrDict(cfg.TRAIN)
-        cfg.TEST = AttrDict(cfg.TEST)
+    yml_path = os.path.join(os.path.dirname(__file__), '..//cfg/{}.yml'.format(agrs.type))
+    f = open(yml_path, 'r', encoding='UTF-8')
+    yaml_cfg = yaml.load(f, Loader=yaml.FullLoader)
+    cfg = AttrDict(yaml_cfg)
+    cfg.PATH = AttrDict(cfg.PATH)
+    cfg.TRAIN = AttrDict(cfg.TRAIN)
+    cfg.TEST = AttrDict(cfg.TEST)
     return cfg
 
 # global cfg

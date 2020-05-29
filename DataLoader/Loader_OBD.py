@@ -89,7 +89,7 @@ class Loader(DataLoader):
         img = np.asarray(img, dtype=np.float32)
         img = np.transpose(img, (2, 0, 1))
         img = img / 127.5 - 1.
-        label_after = torch.Tensor(label_after)
+        if label_after:label_after = torch.Tensor(label_after)
         return img, label_after, data_info  # only need the labels
 
     def _load_dataset(self, dataset, is_training):
@@ -232,7 +232,8 @@ class Loader(DataLoader):
         '''
         imgs, labels, infos = zip(*batch)
         imgs = torch.from_numpy(np.asarray(imgs))
-        for i, label in enumerate(labels):
-            label[:, 0] = i
-        labels = torch.cat(labels, 0)
+        if isinstance(labels[0], torch.Tensor):
+            for i, label in enumerate(labels):
+                label[:, 0] = i
+            labels = torch.cat(labels, 0)
         return imgs, labels, list(infos)

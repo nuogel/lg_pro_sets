@@ -27,11 +27,14 @@ class ParsePredict:
             'yolov3_tiny_mobilenet': self._parse_yolo_predict,
             'yolov3_tiny_squeezenet': self._parse_yolo_predict,
             'yolov3_tiny_shufflenet': self._parse_yolo_predict,
+            'yolov2_fgfa':self._parse_yolo_predict,
             'fcos': self._parse_fcos_predict,
             'refinedet': self._parse_refinedet_predict,
             'efficientdet': self._parse_ssd_predict,
             'ssdvgg': self._parse_ssd_predict,
         }
+
+
         labels_predict = PARSEDICT[self.cfg.TRAIN.MODEL](f_maps)
         return labels_predict
 

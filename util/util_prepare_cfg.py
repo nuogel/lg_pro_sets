@@ -7,7 +7,7 @@ def prepare_cfg(cfg, arg, is_training=True):
         cfg.TRAIN.BATCH_SIZE = arg.batch_size
     if cfg.TEST.ONE_TEST:
         cfg.TRAIN.DO_AUG = 0
-    if cfg.TEST.ONE_TEST or cfg.TRAIN.SHOW_INPUT:
+    if cfg.TEST.ONE_TEST or cfg.TRAIN.SHOW_INPUT or cfg.BELONGS =='VID':
         arg.number_works = 0
         cfg.TRAIN.SAVE_STEP = 50
 

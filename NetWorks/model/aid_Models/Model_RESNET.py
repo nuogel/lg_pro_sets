@@ -3,26 +3,42 @@ import torch
 import math
 
 
-def resnet50(pretrained=False, **kwargs):
-    """Constructs a ResNet-50 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = RESNET([3, 4, 6, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(torch.load(model.modelPath))
-    return model
+class Bottleneck(nn.Module):
+    expansion = 4
 
+    def __init__(self, inplanes, planes, stride=1, downsample=None):
+        super(Bottleneck, self).__init__()
+        self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
+        self.bn3 = nn.BatchNorm2d(planes * 4)
+        self.relu = nn.ReLU(inplace=True)
+        self.downsample = downsample
+        self.stride = stride
 
-def resnet101(pretrained=False, **kwargs):
-    """Constructs a ResNet-101 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = RESNET([3, 4, 23, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(torch.load(model.modelPath))
-    return model
+    def forward(self, x):
+        residual = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.relu(out)
+
+        out = self.conv3(out)
+        out = self.bn3(out)
+
+        if self.downsample is not None:
+            residual = self.downsample(x)
+
+        out += residual
+        out = self.relu(out)
+
+        return out
 
 
 class RESNET(nn.Module):
@@ -34,8 +50,7 @@ class RESNET(nn.Module):
         super(RESNET, self).__init__()
         self.inplanes = 64
         self.modelPath = model_path
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
-                               bias=False)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
@@ -89,55 +104,39 @@ class RESNET(nn.Module):
         x = self.stack1(x)  # [N ,256, 96, 240]200 256
         x = self.stack2(x)  # [N ,512, 48, 120]100 128
         x = self.stack3(x)  # [N ,1024, 24, 60]50 64
-        x = self.stack4(x)  # [N ,2048, 12, 30]25 32
+        # x = self.stack4(x)  # [N ,2048, 12, 30]25 32
 
-        x = self.avgpool(x)  # [N ,2048, 6, 24]19 26
-        x = x.view(x.size(0), -1)
-        x = self.fc(x)
+        # x = self.avgpool(x)  # [N ,2048, 6, 24]19 26
+        # x = x.view(x.size(0), -1)
+        # x = self.fc(x)
 
         return x
 
 
-class Bottleneck(nn.Module):
-    expansion = 4
+def resnet50(pretrained=False, **kwargs):
+    """Constructs a ResNet-50 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = RESNET([3, 4, 6, 3], **kwargs)
+    if pretrained:
+        model.load_state_dict(torch.load(model.modelPath))
+    return model
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
-        super(Bottleneck, self).__init__()
-        self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
-        self.bn3 = nn.BatchNorm2d(planes * 4)
-        self.relu = nn.ReLU(inplace=True)
-        self.downsample = downsample
-        self.stride = stride
 
-    def forward(self, x):
-        residual = x
-
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-
-        out = self.conv2(out)
-        out = self.bn2(out)
-        out = self.relu(out)
-
-        out = self.conv3(out)
-        out = self.bn3(out)
-
-        if self.downsample is not None:
-            residual = self.downsample(x)
-
-        out += residual
-        out = self.relu(out)
-
-        return out
+def resnet101(pretrained=False, **kwargs):
+    """Constructs a ResNet-101 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = RESNET([3, 4, 23, 3], **kwargs)
+    if pretrained:
+        model.load_state_dict(torch.load(model.modelPath))
+    return model
 
 
 if __name__ == "__main__":
-    img = torch.rand((2, 3, 800, 1024))
+    img = torch.rand((2, 3, 512, 512))
     model = resnet50()
     out = model.forward(img)
     print(out.shape)

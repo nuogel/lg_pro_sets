@@ -9,6 +9,7 @@
 
 
 def get_score_class(belongs):
+    if belongs == 'VID': belongs = 'OBD'
     class_name = 'Score_' + str(belongs).upper()
     model_file = __import__('NetWorks.score.' + class_name, fromlist=[class_name])
     model_class = _get_sub_model(model_file, class_name)
