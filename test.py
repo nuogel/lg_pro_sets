@@ -12,7 +12,7 @@ def _parse_arguments():
     parser.add_argument('--type', default='VID'  # OBD SR_DN
                         , type=str, help='yml_path')
     parser.add_argument('--checkpoint', default=
-    'tmp/checkpoint/now.pkl'
+    'tmp/checkpoint/31.pkl'
                         # 'F:/saved_weight/saved_tbx_log_yolov3_tiny_clean/checkpoint.pkl',
                         # 'F:/saved_weight/tbx_log_ssd_coco/checkpoint.pkl'
                         # 'F:/saved_weight/tbx_log_vdsr/checkpoint.pkl'
@@ -47,7 +47,7 @@ def main():
     # files = 'E:/datasets/VisDrone2019/VisDrone2019-VID-val/sequences/uav0000182_00000_v/'
     # files = 'F:/LG/GitHub/lg_pro_sets/DataLoader/datasets/OBD_idx_stores/KITTI/KITTI_train_set_w.txt'
     # files = 'F:/LG/GitHub/lg_pro_sets/DataLoader/datasets/OBD_idx_stores/VISDRONE/VISDRONE_test_set_w.txt'
-    files='F:\LG\GitHub\lg_pro_sets\DataLoader\datasets\VID_idx_stores\VISDRONE\VISDRONE_train_set_w.txt'
+    files = 'F:\LG\GitHub\lg_pro_sets\DataLoader\datasets\VID_idx_stores\VISDRONE\VISDRONE_train_set_w.txt'
     score = False
     args = _parse_arguments()
     cfg = parse_yaml(args)

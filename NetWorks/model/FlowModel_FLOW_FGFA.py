@@ -9,9 +9,9 @@ def crop_like(input, target):
         return input[:, :, 1:target.size(2) + 1, 1:target.size(3) + 1]
 
 
-class FlowNet_FGFA(nn.Module):
-    def __init__(self):
-        super(FlowNet_FGFA, self).__init__()
+class FLOW_FGFA(nn.Module):
+    def __init__(self, cfg=None):
+        super(FLOW_FGFA, self).__init__()
 
         self.flow_conv1 = nn.Conv2d(6, 64, kernel_size=7, stride=2, padding=3)
         self.conv2 = nn.Conv2d(64, 128, kernel_size=5, stride=2, padding=2)
@@ -44,7 +44,8 @@ class FlowNet_FGFA(nn.Module):
 
         self.avgpool = nn.AvgPool2d(2, stride=2, ceil_mode=True)
 
-    def forward(self, x):
+    def forward(self, **args):
+        x = args['input_x']
         x = self.avgpool(x)
         conv1 = self.flow_conv1(x)
         relu1 = self.relu(conv1)
@@ -103,3 +104,10 @@ class FlowNet_FGFA(nn.Module):
         Convolution5 = self.Convolution5(concat5)
 
         return Convolution5 * 2.5
+
+
+if __name__ == '__main__':
+    x = torch.rand((3, 6, 512, 512))
+    f_model = FLOW_FGFA()
+    y = f_model(x)
+    a = 0

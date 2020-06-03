@@ -9,13 +9,11 @@ I found that the mistake is the weights initiation. ——LuoGeng 2020.02.27.
 
 
 def weights_init(Modle, cfg):
-    if cfg.TRAIN.MODEL in ['obd', 'OBD']:
+    if cfg.TRAIN.MODEL in ['SRDN', 'srdn']:
+        torch.manual_seed(123)
+    else:
         for m in Modle.modules():
             if isinstance(m, torch.nn.Conv2d):
-                # n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                # m.weight.data.normal_(0, math.sqrt(2. / n))
-                # if m.bias is not None:
-                #     m.bias.data.zero_()
                 weight = m.weight
                 torch.nn.init.kaiming_normal_(weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
                 if m.bias is not None:
@@ -38,5 +36,3 @@ def weights_init(Modle, cfg):
                 torch.nn.init.kaiming_normal_(m.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
                 if m.bias is not None:
                     m.bias.data.zero_()
-    else:
-        torch.manual_seed(123)

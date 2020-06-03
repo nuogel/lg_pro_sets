@@ -4,7 +4,7 @@ import Levenshtein as Lev
 import numpy as np
 
 
-class Score_ASR:  # WER（字错误率）/CER（字符错误率）和SER（句错误率）
+class Score:  # WER（字错误率）/CER（字符错误率）和SER（句错误率）
     def __init__(self, cfg):
         self.cfg = cfg
         self.dataloader = DataLoader(cfg)

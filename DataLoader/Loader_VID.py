@@ -24,7 +24,7 @@ class Loader(DataLoader):
         self.a = 0
         self.vid_sequeece = None
         self.vid_data = None
-        self.refnum = 4  # [-4, +4]
+        self.refnum = 2  # [-4, +4]
 
     def __len__(self):
         if self.one_test:
@@ -39,7 +39,7 @@ class Loader(DataLoader):
     def __getitem__(self, index):
         img = None
         label = None
-        if self.is_training:index = 4
+        # if self.is_training:index = 4
 
         while img is None or label is None:  # if there is no data in img or label
             if self.one_test:

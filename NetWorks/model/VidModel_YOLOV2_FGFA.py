@@ -2,9 +2,8 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 from util.util_wap_FLOW import warp
-from NetWorks.model.aid_Models.FLOWNET import FlowNet_FGFA
+from NetWorks.model.FlowModel_FLOW_FGFA import FLOW_FGFA
 from NetWorks.model.aid_Models.Model_YOLOV2_backbone import YOLOV2_backbone
-
 
 
 class EmbedNet(nn.Module):
@@ -22,17 +21,19 @@ class EmbedNet(nn.Module):
 
 
 class FGFA(nn.Module):
-    def __init__(self):
+    def __init__(self, cfg=None):
         super(FGFA, self).__init__()
         self.backbone = YOLOV2_backbone()
-        for param in self.backbone.parameters():
-            param.requires_grad = True
+        # for param in self.backbone.parameters():
+        #     param.requires_grad = True
         self.embednet = EmbedNet()
-        # self.checkpoint = torch.load('flownet.ckpt')
-        self.flownet = FlowNet_FGFA()
-        # self.flownet.load_state_dict(self.checkpoint['state_dict'])
+        self.flownet = FLOW_FGFA()
+
         for param in self.flownet.parameters():
-            param.requires_grad = True
+            param.requires_grad = False
+        checkpoint = 0
+        if checkpoint == 0:
+            self.loaded = 0
 
     def compute_weight(self, embed_flow, embed_conv_feat):
         def l2normalization(tensor):
@@ -59,8 +60,12 @@ class FGFA(nn.Module):
         # img_cur, imgs_ref = torch.split(concat_imgs, (1, num_refs), dim=0)
         img_cur_copies = ref_images.repeat(num_refs, 1, 1, 1)
         concat_imgs_pair = torch.cat([img_cur_copies, guide_images], dim=1)
+        if self.loaded == 0:
+            self.checkpoint = torch.load('tmp/checkpoint/FGFA.pkl')
+            self.flownet.load_state_dict(self.checkpoint)
+            self.loaded = 1
 
-        flow = self.flownet(concat_imgs_pair)
+        flow = self.flownet(input_x=concat_imgs_pair)
 
         feats_cur, feats_refs = torch.split(concat_feats, (1, num_refs), dim=0)
         warped_feats_refs = warp(feats_refs, flow)
@@ -74,14 +79,14 @@ class FGFA(nn.Module):
 
         feats = torch.sum(weights * warped_feats_refs, dim=0, keepdim=True)
         # print(feats.shape)
-        return feats #feats_cur #
+        return feats  # feats_cur #
 
 
 class YOLOV2_FGFA(nn.Module):
     def __init__(self, cfg=None):
         super(YOLOV2_FGFA, self).__init__()
         self.cfg = cfg
-        self.head = FGFA()
+        self.head = FGFA(self.cfg)
         if cfg is None:
             self.anc_num = 6
             self.cls_num = 4

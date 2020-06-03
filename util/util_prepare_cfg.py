@@ -7,7 +7,7 @@ def prepare_cfg(cfg, arg, is_training=True):
         cfg.TRAIN.BATCH_SIZE = arg.batch_size
     if cfg.TEST.ONE_TEST:
         cfg.TRAIN.DO_AUG = 0
-    if cfg.TEST.ONE_TEST or cfg.TRAIN.SHOW_INPUT or cfg.BELONGS =='VID':
+    if cfg.TEST.ONE_TEST or cfg.TRAIN.SHOW_INPUT or cfg.BELONGS == 'VID':
         arg.number_works = 0
         cfg.TRAIN.SAVE_STEP = 50
 
@@ -29,14 +29,14 @@ def prepare_cfg(cfg, arg, is_training=True):
                             [0.0307940, 0.1949102], ]  # apollo_anchors 16
 
     anchor_yolov2 = [[10, 13],
-                            [16, 30],
-                            [33, 23],
-                            [30, 61],
-                            [62, 45],
-                            [59, 119],
-                            [116, 90],
-                            [156, 198],
-                            [373, 326]]
+                     [16, 30],
+                     [33, 23],
+                     [30, 61],
+                     [62, 45],
+                     [59, 119],
+                     [116, 90],
+                     [156, 198],
+                     [373, 326]]
 
     anchor_yolov3_tiny = [[0.0240385, 0.0336538],
                           [0.0552885, 0.0649038],
@@ -73,7 +73,10 @@ def prepare_cfg(cfg, arg, is_training=True):
 
     cfg.TRAIN.ANCHORS = anchor_yolov3
     if cfg.TEST.ONE_TEST:
-        cfg.TRAIN.BATCH_SIZE = len(cfg.TEST.ONE_NAME)
+        if cfg.TEST.ONE_NAME != []:
+            cfg.TRAIN.BATCH_SIZE = len(cfg.TEST.ONE_NAME)
+        else:
+            cfg.TRAIN.BATCH_SIZE = 1
         cfg.TRAIN.BATCH_BACKWARD_SIZE = 1
 
     if 'yolov3_tiny' in cfg.TRAIN.MODEL and ('KITTI' in cfg.TRAIN.TRAIN_DATA_FROM_FILE):
@@ -91,4 +94,4 @@ def prepare_cfg(cfg, arg, is_training=True):
         cfg.TRAIN.FMAP_ANCHOR_NUM = len(anchor_yolov2)
         cfg.TRAIN.ANCHORS = anchor_yolov2
 
-    return cfg
+    return cfg, arg

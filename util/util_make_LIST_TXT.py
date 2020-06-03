@@ -2,6 +2,17 @@ import glob
 import os
 
 
+def _make_list_by_hand(path):
+    list = []
+    for i in range(22872):
+        img1 = os.path.join(path, '%05d_img1.ppm' % i)
+        img2 = os.path.join(path, '%05d_img2.ppm' % i)
+        flow = os.path.join(path, '%05d_flow.flo' % i)
+        if os.path.isfile(img1) and os.path.isfile(img1) and os.path.isfile(img1):
+            list.append([img1, img2, flow])
+    return list
+
+
 def make_list(img_path, lab_path):
     dir_list = []
     path_list = []
@@ -30,15 +41,15 @@ def limit_fun(path, path_2):
     if lines == []:
         return False
     else:
-    # for line in lines:
-    #     name_dict = {'0': 'ignored regions', '1': 'pedestrian', '2': 'people',
-    #                  '3': 'bicycle', '4': 'car', '5': 'van', '6': 'truck',
-    #                  '7': 'tricycle', '8': 'awning-tricycle', '9': 'bus',
-    #                  '10': 'motor', '11': 'others'}
-    #     tmps = line.strip().split(',')
-    #     realname = name_dict[tmps[5]]
-    #     if realname in ['car', 'van', 'truck', 'bus']:
-    #         return True
+        # for line in lines:
+        #     name_dict = {'0': 'ignored regions', '1': 'pedestrian', '2': 'people',
+        #                  '3': 'bicycle', '4': 'car', '5': 'van', '6': 'truck',
+        #                  '7': 'tricycle', '8': 'awning-tricycle', '9': 'bus',
+        #                  '10': 'motor', '11': 'others'}
+        #     tmps = line.strip().split(',')
+        #     realname = name_dict[tmps[5]]
+        #     if realname in ['car', 'van', 'truck', 'bus']:
+        #         return True
         return True
     return False
 
@@ -62,9 +73,19 @@ if __name__ == '__main__':
     # lab_path = 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/annotations'
     # img_path = ['F:\Projects\\auto_Airplane\TS02\\20191220_1526019_20/']
     # lab_path = 'F:\Projects\\auto_Airplane\TS02\\20191220_1526019_20_refined/'
+
+
     img_path = ['E:/datasets/VisDrone2019/VisDrone2019-VID-train/sequences/uav0000013_00000_v']
     lab_path = 'E:\datasets\VisDrone2019\VisDrone2019-VID-train\\annotations/uav0000013_00000_v.txt'
+
+    path = 'E:\datasets\FlyingChairs\data'
+    
     expand_name = ['.jpg', '.png']
+
     save_path = 'util_tmp/make_list.txt'
-    datalist = make_list(img_path, lab_path)
+
+    # datalist = make_list(img_path, lab_path)
+
+    datalist =_make_list_by_hand(path)
+
     _wrte_dataset_txt(datalist, save_path)

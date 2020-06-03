@@ -67,7 +67,7 @@ def _get_train_test_dataset(cfg):
 
     assert len(label_files_list) >= 1, 'No data found!'
 
-    train_set, test_set = train_test_split(label_files_list, test_size=test_train_ratio) #, random_state=1
+    train_set, test_set = train_test_split(label_files_list, test_size=test_train_ratio)  # , random_state=1
     os.makedirs(idx_stores_dir, exist_ok=True)
     _wrte_dataset_txt((train_set, test_set), idx_stores_dir)
     # torch.save(train_set, os.path.join(idx_stores_dir, 'train_set'))
@@ -94,10 +94,7 @@ def _wrte_dataset_txt(dataset, idx_stores_dir):
 
 
 def _read_train_test_dataset(cfg):
-    if cfg.TEST.ONE_TEST:
-        train_set = cfg.TEST.ONE_NAME
-        test_set = train_set
-    else:
+    def _load_from_file():
         train_set = []
         test_set = []
         for FILE_TXT in cfg.TRAIN.TRAIN_DATA_FROM_FILE:
@@ -113,6 +110,16 @@ def _read_train_test_dataset(cfg):
             train_set.extend([line.strip().split(';') for line in f.readlines()])
             f = open(test_idx, 'r')
             test_set.extend([line.strip().split(';') for line in f.readlines()])
+        return train_set, test_set
+
+    if cfg.TEST.ONE_TEST:
+        train_set = cfg.TEST.ONE_NAME
+        if train_set == []:
+            train_set, _ = _load_from_file()
+            train_set = train_set[:1]
+        test_set = train_set
+    else:
+        train_set, test_set = _load_from_file()
     return train_set, test_set
 
 

@@ -1,4 +1,4 @@
-BELONGS: VID
+BELONGS: FLOW
 
 PATH:
   INPUT_PATH: '' #'E:/datasets/UdacitySelfDriving/images/'
@@ -10,11 +10,11 @@ PATH:
 
 
 TRAIN:
-  MODEL: yolov2_fgfa
+  MODEL: flow_fgfa
   EPOCH_SIZE: 4000
   BATCH_SIZE: ''
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
-  TRAIN_DATA_FROM_FILE: ['VISDRONE']
+  TRAIN_DATA_FROM_FILE: ['FLYING_CHAIRS']
   CLASSES: ['Others', 'Car', 'Person', 'Cycle'] #['Background','Car','Others1', 'Others2']  #['Car', 'Cyclist', 'Pedestrian', 'Others']#
 
   # data aug:
@@ -28,7 +28,7 @@ TRAIN:
 
   SHOW_TRAIN_NAMES: 0 #TRUE #
   SHOW_INPUT:  0 #10000 #
-
+  SHOW_PREDICTED: 0
 
 
   # optimizer:
@@ -66,7 +66,7 @@ TEST:
   RESIZE: 1  #FALSE #
   IMG_BLOCK: 0
   SAVE_LABELS: 0
-  SHOW_TIMES: 1
+  SHOW_TIMES: 10000
 
   TEST_ONLY: 0 #FALSE #
 
@@ -74,7 +74,7 @@ TEST:
   ONE_TEST_TRAIN_STEP: 50
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
-  ['000000', 'E://datasets//kitti//training//images//000000.png', 'E://datasets//kitti//training//labels\\000000.xml']
+    #  ['000000', 'E://datasets//kitti//training//images//000000.png', 'E://datasets//kitti//training//labels\\000000.xml']
     #      ['0000002_00005_d_0000014.jpg', 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/images/0000002_00005_d_0000014.jpg', 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/annotations/0000002_00005_d_0000014.txt']
 
     #  ['P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.txt']

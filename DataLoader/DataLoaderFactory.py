@@ -2,18 +2,14 @@ import torch
 import numpy as np
 from DataLoader import Loader_ASR, Loader_OBD, Loader_SRDN, Loader_VID
 from torch.utils.data import DataLoader
+from util.util_ConfigFactory_Classes import get_loader_class
 
 
 class dataloader_factory:
     def __init__(self, cfg, args):
         self.cfg = cfg
         self.args = args
-        self.DataLoaderDict = {"OBD": Loader_OBD.Loader,
-                               "ASR": Loader_ASR.Loader,
-                               "SRDN": Loader_SRDN.Loader,
-                               "VID": Loader_VID.Loader,
 
-                               }
 
     def make_dataset(self, train_dataset=None, test_dataset=None):
         if self.cfg.BELONGS == 'VID':
@@ -22,7 +18,8 @@ class dataloader_factory:
             shuffle = True
         TrainDataset, TestDataset = None, None
         if train_dataset is not None:
-            train_data = self.DataLoaderDict[self.cfg.BELONGS](self.cfg)
+            train_data = get_loader_class(self.cfg.BELONGS)(self.cfg)
+
             train_data._load_dataset(train_dataset, is_training=True)
             TrainDataset = DataLoader(dataset=train_data,
                                       batch_size=self.cfg.TRAIN.BATCH_SIZE,
@@ -31,7 +28,7 @@ class dataloader_factory:
                                       shuffle=shuffle)
 
         if test_dataset is not None:
-            test_data = self.DataLoaderDict[self.cfg.BELONGS](self.cfg)
+            test_data = get_loader_class(self.cfg.BELONGS)(self.cfg)
             test_data._load_dataset(test_dataset, is_training=False)
             TestDataset = DataLoader(dataset=test_data,
                                      batch_size=self.cfg.TRAIN.BATCH_SIZE,

@@ -7,8 +7,7 @@ and with it's score at the left top of the box.
 import os
 import torch
 import cv2
-import numpy as np
-from NetWorks.NetworksConfigFactory import get_loss_class, get_model_class, get_score_class
+from util.util_ConfigFactory_Classes import get_model_class, get_score_class, get_loader_class
 from DataLoader.DataLoaderFactory import dataloader_factory
 import glob
 from util.util_load_state_dict import load_state_dict
@@ -21,15 +20,15 @@ from util.util_prepare_cfg import prepare_cfg
 from util.util_img_block import img_cut
 from util.util_nms_for_img_block import NMS_block
 from util.util_time_stamp import Time
+from DataLoader.DataLoaderFactory import dataloader_factory
 
 
 class Test_Base(object):
     def __init__(self, cfg, args):
-        self.cfg = prepare_cfg(cfg, args, is_training=False)
-        self.args = args
+        self.cfg, self.args = prepare_cfg(cfg, args, is_training=False)
         self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)
         self.Model = get_model_class(self.cfg.BELONGS, self.cfg.TRAIN.MODEL)(self.cfg)
-        self.dataloader_factory = dataloader_factory(self.cfg, args)
+        self.dataloader_factory = dataloader_factory(self.cfg, self.args)
         if self.args.checkpoint:
             self.model_path = self.args.checkpoint
         else:
@@ -87,7 +86,7 @@ class Test_OBD(Test_Base):
         self.dataaug = Dataaug(cfg)
         self.parsepredict = ParsePredict(cfg)
         self.apolloclass2num = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
-        self.DataLoader = self.dataloader_factory.DataLoaderDict[cfg.BELONGS](cfg)
+        self.DataLoader = get_loader_class(cfg.BELONGS)(self.cfg)
         self.SCORE = get_score_class(self.cfg.BELONGS)(self.cfg)
         self.SCORE.init_parameters()
 
@@ -221,6 +220,7 @@ class Test_SRDN(Test_Base):
 
             parse_Tensor_img(img_cat, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_paths=save_paths,
                              show_time=self.cfg.TEST.SHOW_EVAL_TIME)
+
 
 
 Test = {'OBD': Test_OBD,

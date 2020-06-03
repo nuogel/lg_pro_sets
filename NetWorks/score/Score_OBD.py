@@ -8,7 +8,7 @@ from util.util_get_cls_names import _get_class_names
 from util.util_iou import iou_xyxy
 
 
-class Score_OBD:
+class Score:
     """Calculate the F1 score."""
 
     def __init__(self, cfg):

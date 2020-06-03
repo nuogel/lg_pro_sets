@@ -8,15 +8,13 @@ At the end, we will get the weight file of the net.
 
 """
 import os
-import logging
 
-import numpy as np
 import torch
 import torch.nn
 from torch.optim import lr_scheduler
 from apex import amp
 from util.util_show_save_parmeters import TrainParame
-from NetWorks.NetworksConfigFactory import get_loss_class, get_model_class, get_score_class
+from util.util_ConfigFactory_Classes import get_loss_class, get_model_class, get_score_class
 from util.util_time_stamp import Time
 from util.util_weights_init import weights_init
 from util.util_get_train_test_dataset import _get_train_test_dataset, _read_train_test_dataset
@@ -30,17 +28,16 @@ from util.util_quantization.util_quantization import util_quantize_model
 
 class Solver:
     def __init__(self, cfg, args):
-        self.cfg = prepare_cfg(cfg, args)
-        self.args = args
+        self.cfg, self.args = prepare_cfg(cfg, args)
         self.one_test = self.cfg.TEST.ONE_TEST
         self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)
-        self.dataloader_factory = dataloader_factory(self.cfg, args)
+        self.dataloader_factory = dataloader_factory(self.cfg, self.args)
         self.save_parameter = TrainParame(self.cfg)
         self.Model = get_model_class(self.cfg.BELONGS, self.cfg.TRAIN.MODEL)(self.cfg)
         self.LossFun = get_loss_class(self.cfg.BELONGS, self.cfg.TRAIN.MODEL)(self.cfg)
         self.Score = get_score_class(self.cfg.BELONGS)(self.cfg)
         self.test_batch_num = self.cfg.TEST.ONE_TEST_TEST_STEP
-        self.LOGGER = load_logger(args)
+        self.LOGGER = load_logger(self.args)
 
         torch.backends.cudnn.benchmark = True
         print('torch version: ', torch.__version__)

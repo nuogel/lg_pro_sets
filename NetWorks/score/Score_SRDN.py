@@ -1,11 +1,7 @@
 import torch
-import cv2
 import math
-import numpy as np
-from util.util_parse_SR_img import parse_Tensor_img
 
-
-class Score_SRDN:
+class Score:
     def __init__(self, cfg):
         self.cfg = cfg
         self.rate_all = 0.

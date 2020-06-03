@@ -32,7 +32,7 @@ def warp(x, flo):
 
     vgrid = vgrid.permute(0, 2, 3, 1)
     output = nn.functional.grid_sample(x, vgrid, padding_mode='border')
-    mask = torch.autograd.Variable(torch.ones(x.size()))
+    mask = torch.autograd.Variable(torch.ones(x.size())).cuda()
     mask = nn.functional.grid_sample(mask, vgrid, padding_mode='border')
 
     mask[mask < 0.9999] = 0

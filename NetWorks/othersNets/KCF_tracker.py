@@ -309,7 +309,7 @@ if __name__ == '__main__':
 
         # Create file to record the result
         tracker_bb = []
-        result_file = os.path.join(save_directory, title + '_' + 'result.txt')
+        result_file = os.path.join(save_directory, title + '_' + 'result_KCF.txt')
         file = open(result_file, 'w')
         start_time = time.time()
 
@@ -318,7 +318,7 @@ if __name__ == '__main__':
             img = cv2.imread(img_lst[i])
             if i == 0:
                 # Initialize trakcer, img 3 channel, pos(x1,y1,x2,y2)
-                kcftracker = Kcftracker(img, pos, padding)
+                kcftracker = Kcftracker(img, pos, padding, HOG_flag=0)
             else:
                 # Update position and traking
                 pos = kcftracker.updateTracker(img)
@@ -349,7 +349,7 @@ if __name__ == '__main__':
         parser = ArgumentParser()
         parser.add_argument('--dataset_descriptor', type=str, default='E:/datasets/TRACK/OTB100/BlurCar1/',
                             help='The directory of video and groundturth file')
-        parser.add_argument('--save_directory', type=str, default='dataset',
+        parser.add_argument('--save_directory', type=str, default='../../saved',
                             help='The directory of result file')
         parser.add_argument('--show_result', type=int,
                             help='Show result or not', default=1)
