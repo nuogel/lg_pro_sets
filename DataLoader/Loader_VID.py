@@ -24,7 +24,7 @@ class Loader(DataLoader):
         self.a = 0
         self.vid_sequeece = None
         self.vid_data = None
-        self.refnum = 2  # [-4, +4]
+        self.refnum = 4  # [-4, +4]
 
     def __len__(self):
         if self.one_test:

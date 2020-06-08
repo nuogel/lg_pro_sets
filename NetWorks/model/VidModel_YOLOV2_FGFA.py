@@ -24,16 +24,13 @@ class FGFA(nn.Module):
     def __init__(self, cfg=None):
         super(FGFA, self).__init__()
         self.backbone = YOLOV2_backbone()
-        # for param in self.backbone.parameters():
-        #     param.requires_grad = True
         self.embednet = EmbedNet()
         self.flownet = FLOW_FGFA()
 
         for param in self.flownet.parameters():
             param.requires_grad = False
-        checkpoint = 0
-        if checkpoint == 0:
-            self.loaded = 0
+
+        self.loaded = 0
 
     def compute_weight(self, embed_flow, embed_conv_feat):
         def l2normalization(tensor):

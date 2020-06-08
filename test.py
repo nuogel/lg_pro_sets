@@ -12,7 +12,7 @@ def _parse_arguments():
     parser.add_argument('--type', default='VID'  # OBD SR_DN
                         , type=str, help='yml_path')
     parser.add_argument('--checkpoint', default=
-    'tmp/checkpoint/31.pkl'
+    'tmp/checkpoint/39.pkl'
                         # 'F:/saved_weight/saved_tbx_log_yolov3_tiny_clean/checkpoint.pkl',
                         # 'F:/saved_weight/tbx_log_ssd_coco/checkpoint.pkl'
                         # 'F:/saved_weight/tbx_log_vdsr/checkpoint.pkl'
