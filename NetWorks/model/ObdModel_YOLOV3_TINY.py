@@ -48,10 +48,14 @@ class BackBone(nn.Module):
 
 
 class YOLOV3_TINY(nn.Module):
-    def __init__(self, cfg):
+    def __init__(self, cfg=None):
         super(YOLOV3_TINY, self).__init__()
-        self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
-        self.cls_num = len(cfg.TRAIN.CLASSES)
+        if cfg:
+            self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
+            self.cls_num = len(cfg.TRAIN.CLASSES)
+        else:
+            self.anc_num = 3
+            self.cls_num = 4
         out_ch = self.anc_num * (1 + 4 + self.cls_num)
         self.ch_1 = [1024, 256, 512, out_ch]
         self.ch_2 = [256, 128, 384, 256, out_ch]

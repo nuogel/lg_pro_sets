@@ -13,7 +13,7 @@ import torch
 import torch.nn
 from torch.optim import lr_scheduler
 from apex import amp
-from util.util_show_save_parmeters import TrainParame
+from util.util_Save_Parmeters import TrainParame
 from util.util_ConfigFactory_Classes import get_loss_class, get_model_class, get_score_class
 from util.util_time_stamp import Time
 from util.util_weights_init import weights_init
@@ -23,7 +23,7 @@ from util.util_load_state_dict import load_state_dict
 from util.util_prepare_cfg import prepare_cfg
 from util.util_logger import load_logger
 from DataLoader.DataLoaderFactory import dataloader_factory
-from util.util_quantization.util_quantization import util_quantize_model
+from OtherNets.Quantization.pq_quantization.util_quantization import util_quantize_model
 # self.LOGGER = logging.getLogger(__name__)
 
 class Solver:

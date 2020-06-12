@@ -1,7 +1,7 @@
 import cv2
 import glob
 import os
-from NetWorks.othersNets.deep_sort.deep_sort import DeepSort
+from OtherNets.deep_sort.deep_sort import DeepSort
 import numpy as np
 import matplotlib.pyplot as plt
 import random
@@ -88,6 +88,6 @@ if __name__ == '__main__':
     bbox_palette = [cmap(i)[:3] for i in np.linspace(0, 1, 1000)]
     random.shuffle(bbox_palette)
 
-    model_path = 'F:\LG\GitHub\lg_pro_sets\\tmp\checkpoint\sort\ckpt.t7'
+    model_path = '/tmp/checkpoint/sort/ckpt.t7'
     deep_sort = DeepSort(model_path=model_path, )
     run_deep_sort_VISDRONE()

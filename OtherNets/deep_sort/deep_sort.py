@@ -1,11 +1,11 @@
 import numpy as np
 import torch
 
-from NetWorks.othersNets.deep_sort.deep.feature_extractor import Extractor
-from NetWorks.othersNets.deep_sort.sort.nn_matching import NearestNeighborDistanceMetric
-from NetWorks.othersNets.deep_sort.sort.preprocessing import non_max_suppression
-from NetWorks.othersNets.deep_sort.sort.detection import Detection
-from NetWorks.othersNets.deep_sort.sort.tracker import Tracker
+from OtherNets import Extractor
+from OtherNets.deep_sort.sort import NearestNeighborDistanceMetric
+from OtherNets.deep_sort.sort import non_max_suppression
+from OtherNets.deep_sort.sort.detection import Detection
+from OtherNets.deep_sort.sort.tracker import Tracker
 
 __all__ = ['DeepSort']
 

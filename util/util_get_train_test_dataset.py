@@ -99,9 +99,9 @@ def _read_train_test_dataset(cfg):
         test_set = []
         for FILE_TXT in cfg.TRAIN.TRAIN_DATA_FROM_FILE:
             system_type = sys.platform[0].replace('l', 'u')
-            train_idx = os.path.join('DataLoader/datasets/', cfg.BELONGS + '_idx_stores', FILE_TXT,
+            train_idx = os.path.join('F:\LG\GitHub\lg_pro_sets\DataLoader/datasets/', cfg.BELONGS + '_idx_stores', FILE_TXT,
                                      FILE_TXT + '_train_set_' + system_type + '.txt')
-            test_idx = os.path.join('DataLoader/datasets/', cfg.BELONGS + '_idx_stores', FILE_TXT,
+            test_idx = os.path.join('F:\LG\GitHub\lg_pro_sets\DataLoader/datasets/', cfg.BELONGS + '_idx_stores', FILE_TXT,
                                     FILE_TXT + '_test_set_' + system_type + '.txt')
 
             print('USING DATASET: %s' % FILE_TXT)

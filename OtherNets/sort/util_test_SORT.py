@@ -1,7 +1,7 @@
 import cv2
 import glob
 import os
-from NetWorks.othersNets.sort.SORT import SORT
+from OtherNets import SORT
 import numpy as np
 import matplotlib.pyplot as plt
 import random

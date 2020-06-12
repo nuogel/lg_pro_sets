@@ -15,6 +15,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TrainParame:
+    # TODO: save the weight to parameters.
     def __init__(self, cfg=None):
         self.cfg = cfg
         self.file = cfg.PATH.PARAMETER_PATH.format(self.cfg.TRAIN.MODEL)

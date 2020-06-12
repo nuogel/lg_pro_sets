@@ -8,7 +8,7 @@ from argparse import ArgumentParser
 
 
 class Kcftracker(object):
-    def __init__(self, img, start_pos, padding=2, HOG_flag=0, dataformat=1, resize=0):
+    def __init__(self, img, start_pos, padding=2, HOG_flag=0, dataformat=0, resize=0):
 
         self.HOG_flag = HOG_flag
         self.padding = padding
@@ -39,10 +39,10 @@ class Kcftracker(object):
             self.sigma = 0.2
             self.f = 0.02
         output_sigma_factor = 1 / float(8)
-
-        output_sigma = np.sqrt(np.prod(self.target_size)) * output_sigma_factor  # # 用output_sigma_factor，cell_sz和跟踪框尺寸计算高斯标签的带宽output_sigma
-        self.cos_window = np.outer(np.hanning(self.target_size[0]), np.hanning(
-            self.target_size[1]))  ## 生成汉宁窗cos_window，尺寸与yf相同，即floor(window_sz / cell_size)，检测范围window_sz中cell的个数。对信号进行傅里叶变换时，为了减少频谱泄漏，通常在采样后对信号加窗。
+        # # 用output_sigma_factor，cell_sz和跟踪框尺寸计算高斯标签的带宽output_sigma
+        output_sigma = np.sqrt(np.prod(self.target_size)) * output_sigma_factor
+        ## 生成汉宁窗cos_window，尺寸与yf相同，即floor(window_sz / cell_size)，检测范围window_sz中cell的个数。对信号进行傅里叶变换时，为了减少频谱泄漏，通常在采样后对信号加窗。
+        self.cos_window = np.outer(np.hanning(self.target_size[0]), np.hanning(self.target_size[1]))
         self.y = self.generate_gaussian(self.target_size, output_sigma)
         x = self.get_window(img, self.pos, self.padding)
         x = self.getFeature(x, self.cos_window, self.HOG_flag)
@@ -53,11 +53,11 @@ class Kcftracker(object):
         if self.resize:
             img = cv2.resize(img, self.img_size[::-1])
         x = self.get_window(img, self.pos, self.padding, 1, self.target_size)
-        x = self.getFeature(x, self.cos_window, HOG_flag=0)
+        x = self.getFeature(x, self.cos_window, HOG_flag=self.HOG_flag)
         response = self.detect(self.alpha, x, self.z, self.sigma)
-        new_pos = self.update_tracker(response, self.img_size, self.pos, HOG_flag=0, scale_factor=1)
+        new_pos = self.update_tracker(response, self.img_size, self.pos, HOG_flag=self.HOG_flag, scale_factor=1)
         x = self.get_window(img, new_pos, self.padding, 1, self.target_size)
-        x = self.getFeature(x, self.cos_window, HOG_flag=0)
+        x = self.getFeature(x, self.cos_window, HOG_flag=self.HOG_flag)
         new_alpha = self.train(x, self.y, self.sigma, self.l)
         self.alpha = self.f * new_alpha + (1 - self.f) * self.alpha
         new_z = x
@@ -235,7 +235,7 @@ class Kcftracker(object):
         :return:
         '''
         if HOG_flag:
-            x = HOG.hog(x)
+            x = HOG(x)
         else:
             x = x.astype('float64')
             x = self.prewhiten(x)
@@ -252,14 +252,14 @@ if __name__ == '__main__':
 
     def visual(img, bbox):
         (x, y, w, h) = bbox
-        x = int(x)
-        y = int(y)
+        x1 = int(x)
+        y1 = int(y)
         w = int(w)
         h = int(h)
-        pt1, pt2 = (x, y), (x + w, y + h)
+        pt1, pt2 = (x1, y1), (x1 + w, y1 + h)
         img_rec = cv2.rectangle(img, pt1, pt2, (0, 255, 255), 2)
         cv2.imshow('window', img_rec)
-        cv2.waitKey(1)
+        cv2.waitKey()
 
 
     def load_bbox(ground_file, resize, dataformat=0):
@@ -300,8 +300,8 @@ if __name__ == '__main__':
         title = dataset.split('/')
         title = [t for t in title if t][-1]
         img_lst = load_imglst(dataset + '/img/')
-        bbox_lst = load_bbox(os.path.join(dataset + '/groundtruth_rect.txt'), 0, 1)
-        py1, px1, py2, px2 = bbox_lst[0]
+        bbox_lst = load_bbox(os.path.join(dataset + '/groundtruth_rect.txt'), 0, dataformat=0)
+        px1, py1, px2, py2 = bbox_lst[0]
         pos = (px1, py1, px2, py2)
         frames = len(img_lst)
         # Attention: the original data format is (y,x,h,w), so the  code above translate
@@ -318,13 +318,13 @@ if __name__ == '__main__':
             img = cv2.imread(img_lst[i])
             if i == 0:
                 # Initialize trakcer, img 3 channel, pos(x1,y1,x2,y2)
-                kcftracker = Kcftracker(img, pos, padding, HOG_flag=0)
+                kcftracker = Kcftracker(img, pos, padding, HOG_flag=1, dataformat=0)
             else:
                 # Update position and traking
                 pos = kcftracker.updateTracker(img)
 
             # Write the position
-            out_pos = [pos[1], pos[0], pos[3] - pos[1], pos[2] - pos[0]]
+            out_pos = pos  # [pos[1], pos[0], pos[3] - pos[1], pos[2] - pos[0]]
             win_string = [str(p) for p in out_pos]
             win_string = ",".join(win_string)
             tracker_bb.append(win_string)
@@ -347,9 +347,9 @@ if __name__ == '__main__':
 
     def parse_arguments():
         parser = ArgumentParser()
-        parser.add_argument('--dataset_descriptor', type=str, default='E:/datasets/TRACK/OTB100/BlurCar1/',
+        parser.add_argument('--dataset_descriptor', type=str, default='E:/datasets/TRACK/OTB100/BlurCar2/',
                             help='The directory of video and groundturth file')
-        parser.add_argument('--save_directory', type=str, default='../../saved',
+        parser.add_argument('--save_directory', type=str, default='./',
                             help='The directory of result file')
         parser.add_argument('--show_result', type=int,
                             help='Show result or not', default=1)
