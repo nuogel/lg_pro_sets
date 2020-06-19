@@ -29,13 +29,16 @@ class Test_Base(object):
         self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)
         self.Model = get_model_class(self.cfg.BELONGS, self.cfg.TRAIN.MODEL)(self.cfg)
         self.dataloader_factory = dataloader_factory(self.cfg, self.args)
+        self.DataLoader = get_loader_class(cfg.BELONGS)(self.cfg)
+        self.SCORE = get_score_class(self.cfg.BELONGS)(self.cfg)
+        self.SCORE.init_parameters()
         if self.args.checkpoint:
             self.model_path = self.args.checkpoint
         else:
             self.model_path = self.cfg.PATH.TEST_WEIGHT_PATH
         self.Model = load_state_dict(self.Model, self.args.checkpoint, self.cfg.TRAIN.DEVICE)
         self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
-        self.Model.eval()
+        # self.Model.eval()
 
     def test_backbone(self, DataSet):
         pass
@@ -86,9 +89,6 @@ class Test_OBD(Test_Base):
         self.dataaug = Dataaug(cfg)
         self.parsepredict = ParsePredict(cfg)
         self.apolloclass2num = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
-        self.DataLoader = get_loader_class(cfg.BELONGS)(self.cfg)
-        self.SCORE = get_score_class(self.cfg.BELONGS)(self.cfg)
-        self.SCORE.init_parameters()
 
     def test_backbone(self, DataSet):
         """Test."""
@@ -168,7 +168,7 @@ class Test_OBD(Test_Base):
 class Test_ASR(Test_Base):
     def __init__(self, cfg, args):
         super(Test_ASR, self).__init__(cfg, args)
-        self.DataLoader = self.dataloader_factory.DataLoaderDict
+        # self.DataLoader = self.dataloader_factory.DataLoaderDict
 
     def test_backbone(self, wav_path):
         """Test."""
@@ -183,7 +183,7 @@ class Test_ASR(Test_Base):
 class Test_SRDN(Test_Base):
     def __init__(self, cfg, args):
         super(Test_SRDN, self).__init__(cfg, args)
-        self.DataLoader = self.dataloader_factory.DataLoaderDict[cfg.BELONGS](cfg)
+        # self.DataLoader = self.dataloader_factory.DataLoaderDict[cfg.BELONGS](cfg)
 
     def test_backbone(self, DataSet):
         """Test."""
@@ -220,7 +220,6 @@ class Test_SRDN(Test_Base):
 
             parse_Tensor_img(img_cat, pixcels_norm=self.cfg.TRAIN.PIXCELS_NORM, save_paths=save_paths,
                              show_time=self.cfg.TEST.SHOW_EVAL_TIME)
-
 
 
 Test = {'OBD': Test_OBD,

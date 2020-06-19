@@ -56,13 +56,16 @@ class Tracker():
 
     def get_feature(self, image, roi):
         cx, cy, w, h = roi
-        w = int(w * self.padding) // 2 * 2
-        h = int(h * self.padding) // 2 * 2
-        x = int(cx - w // 2)
-        y = int(cy - h // 2)
+        w = max(1, int(w * self.padding) // 2 * 2)
+        h = max(1, int(h * self.padding) // 2 * 2)
+        x = max(0, int(cx - w // 2))
+        y = max(0, int(cy - h // 2))
 
         sub_image = image[y:y + h, x:x + w, :]
-        resized_image = cv2.resize(sub_image, (self.pw, self.ph))
+        try:
+            resized_image = cv2.resize(sub_image, (self.pw, self.ph))
+        except:
+            print('error')
 
         if self.gray_feature:
             feature = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
@@ -100,7 +103,7 @@ class Tracker():
 
     def detect(self, alphaf, x, z, sigma):
         k = self.kernel_correlation(x, z, sigma)
-        return real(ifft2(self.alphaf * fft2(k)))
+        return real(ifft2(alphaf * fft2(k)))
 
     def kernel_correlation(self, x1, x2, sigma):
         c = ifft2(np.sum(conj(fft2(x1)) * fft2(x2), axis=0))
@@ -126,10 +129,10 @@ class Tracker():
         self.x = x
         self.roi = roi
 
-    def update(self, image):
+    def update(self, image, scales=[0.9, 1.0, 1.1]):
         cx, cy, w, h = self.roi
         max_response = -1
-        for scale in [0.95, 1.0, 1.05]:
+        for scale in scales:  # [1.0]:  # 检测范围，可扩大。
             roi = map(int, (cx, cy, w * scale, h * scale))
             z = self.get_feature(image, roi)
             responses = self.detect(self.alphaf, self.x, z, self.sigma)
@@ -146,7 +149,14 @@ class Tracker():
                 best_w = int(w * scale)
                 best_h = int(h * scale)
                 best_z = z
-        self.roi = (cx + dx, cy + dy, best_w, best_h)
+        # print('max response', max_response)
+
+        img_h, img_w, c = image.shape
+
+        new_x = min(max(0, cx + dx), img_w)
+        new_y = min(max(0, cy + dy), img_h)
+        self.roi = (new_x, new_y, best_w, best_h)
+
         # update template
         self.x = self.x * (1 - self.update_rate) + best_z * self.update_rate
         y = self.gaussian_peak(best_z.shape[2], best_z.shape[1])
@@ -154,4 +164,7 @@ class Tracker():
         self.alphaf = self.alphaf * (1 - self.update_rate) + new_alphaf * self.update_rate
 
         cx, cy, w, h = self.roi
-        return (cx - w // 2, cy - h // 2, w, h)  # cx,cy,wh->x1y1wh
+        return (cx - w // 2, cy - h // 2, w, h), max_response  # cx,cy,wh->x1y1wh
+
+    def update_roi(self, roi):
+        self.roi = roi

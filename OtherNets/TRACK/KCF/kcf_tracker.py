@@ -1,4 +1,4 @@
-from OtherNets.KCF import tracker
+from OtherNets.TRACK.KCF import tracker
 import numpy as np
 import cv2
 
@@ -50,6 +50,7 @@ class Kcftracker(object):
         x = tracker.get_window(img, self.pos, self.padding, 1, self.target_size)
         x = tracker.getFeature(x, self.cos_window, HOG_flag=0)
         response = tracker.detect(self.alpha, x, self.z, self.sigma)
+        print('repsponse:', response)
         new_pos = tracker.update_tracker(response, self.img_size, self.pos, HOG_flag=0, scale_factor=1)
         x = tracker.get_window(img, new_pos, self.padding, 1, self.target_size)
         x = tracker.getFeature(x, self.cos_window, HOG_flag=0)

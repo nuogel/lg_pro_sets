@@ -3,7 +3,7 @@ import cv2
 import os
 import time
 from argparse import ArgumentParser
-from OtherNets.KCF.kcf_tracker import Kcftracker
+from OtherNets.TRACK.KCF.kcf_tracker import Kcftracker
 
 
 def display_tracker_lg(img, bbox):

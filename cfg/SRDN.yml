@@ -18,12 +18,12 @@ TRAIN:
   UPSCALE_FACTOR: 4
   IMG_SIZE: [512, 512] #[1920, 1080] ##[1280, 720] #[200, 100] #[64, 64] #[512, 384]  #[960, 384] #[W,H] # [1216, 554] #
   PIXCELS_NORM: [0., 255.]  # [mean, std] #must be float.
-  INPUT_FROM_TARGET: 1
-  TARGET_TRANSFORM: 1 # pre dealing the target image.
-  INPUT_TRANSFORM: 1
-  SHOW_INPUT: 0 #10000  # showtime.
-  SHOW_TARGET: 0 #10000 #
-  SHOW_PREDICT: 0 #10000 #
+  INPUT_FROM_TARGET: 0
+  TARGET_TRANSFORM: 0 # pre dealing the target image.
+  INPUT_TRANSFORM: 0
+  SHOW_INPUT: 0 #10000  #
+  SHOW_TARGET: 0 # 10000 #
+  SHOW_PREDICT: 1 #10000 #
 
   # optimizer:
   OPTIMIZER: 'adam' #'sgd' #
@@ -51,10 +51,10 @@ TEST:
 
   TEST_ONLY: 0
 
-  ONE_TEST: 0
-
+  ONE_TEST: 1
   ONE_TEST_TRAIN_STEP: 50
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
-  ['Youku_00099_l_050.png','E:/datasets/SR/youku/youku_00000_00149_l/Youku_00099_l/Youku_00099_l_050.png','E:/datasets/SR/youku/youku_00000_00149_h_GT/Youku_00099_h_GT/Youku_00099_h_GT_050.png']
+              ['1.bmp', 'F:/LG/WXF/dataset2016/handwritten_GR/1.bmp','F:/LG/WXF/dataset2016/handwritten_GT/1.bmp']
+#  ['Youku_00099_l_050.png','E:/datasets/SR/youku/youku_00000_00149_l/Youku_00099_l/Youku_00099_l_050.png','E:/datasets/SR/youku/youku_00000_00149_h_GT/Youku_00099_h_GT/Youku_00099_h_GT_050.png']
   ]

@@ -7,9 +7,12 @@ def get_camera_image():
 
     while True:
         ret, frame = cap.read()
+        print('reading')
+        cv2.imshow('img', frame)
+        cv2.waitKey()
 
-        # cv2.imshow('img', frame)
-        # cv2.waitKey()
+    # return frame
 
-    return frame
 
+if __name__ == '__main__':
+    get_camera_image()

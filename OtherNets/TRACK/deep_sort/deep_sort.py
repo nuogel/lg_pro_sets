@@ -2,10 +2,10 @@ import numpy as np
 import torch
 
 from OtherNets import Extractor
-from OtherNets.deep_sort.sort import NearestNeighborDistanceMetric
-from OtherNets.deep_sort.sort import non_max_suppression
-from OtherNets.deep_sort.sort.detection import Detection
-from OtherNets.deep_sort.sort.tracker import Tracker
+from OtherNets.TRACK.deep_sort import NearestNeighborDistanceMetric
+from OtherNets.TRACK.deep_sort import non_max_suppression
+from OtherNets.TRACK.deep_sort import Detection
+from OtherNets.TRACK.deep_sort.sort.tracker import Tracker
 
 __all__ = ['DeepSort']
 

@@ -9,7 +9,7 @@ from NetWorks.test_solver import Test
 
 def _parse_arguments():
     parser = ArgumentParser()
-    parser.add_argument('--type', default='OBD'  # OBD SR_DN
+    parser.add_argument('--type', default='SRDN'  # OBD SR_DN
                         , type=str, help='yml_path')
     parser.add_argument('--checkpoint', default=
     'tmp/checkpoint/now.pkl'

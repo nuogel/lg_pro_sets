@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 """
     SORT: A Simple, Online and Realtime Tracker
     Copyright (C) 2016 Alex Bewley alex@dynamicdetection.com
@@ -14,11 +16,10 @@
 """
 
 '''
-跟踪算法，采用卡尔曼滤波和匈牙利算法。适合小位移的跟踪，若位移较大将丢失信息。
+多目标跟踪算法，利用目标检测后的结果时行目标跟踪，采用卡尔曼滤波和匈牙利算法。适合小位移的跟踪，若位移较大将丢失信息。
 '''
 
 
-from __future__ import print_function
 
 import argparse
 import glob

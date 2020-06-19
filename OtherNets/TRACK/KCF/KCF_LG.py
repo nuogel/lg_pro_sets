@@ -137,6 +137,7 @@ class Kcftracker(object):
         start_w, start_h = response.shape
         w, h = img_size
         px, py, ww, wh = pos
+        print('repsponse:', response.max())
         res_pos = np.unravel_index(response.argmax(), response.shape)  # 找出最大值的索引
         scale_w = 1.0 * scale_factor * (ww * 2) / start_w
         scale_h = 1.0 * scale_factor * (wh * 2) / start_h
@@ -347,7 +348,7 @@ if __name__ == '__main__':
 
     def parse_arguments():
         parser = ArgumentParser()
-        parser.add_argument('--dataset_descriptor', type=str, default='E:/datasets/TRACK/OTB100/BlurCar2/',
+        parser.add_argument('--dataset_descriptor', type=str, default='E:/datasets/TRACK/OTB100/BlurCar1/',
                             help='The directory of video and groundturth file')
         parser.add_argument('--save_directory', type=str, default='./',
                             help='The directory of result file')
