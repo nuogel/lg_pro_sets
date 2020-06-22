@@ -22,10 +22,10 @@ def make_list(img_path, lab_path):
 
         for path in path_list:
             file_name = os.path.basename(path)
-            # path_2 = os.path.join(lab_path, file_name)
-            # front = path_2.split('.')[0]
-            # path_2 = front + '.txt'
-            path_2 = lab_path
+            path_2 = os.path.join(lab_path, file_name)
+            front = path_2.split('.')[0]
+            path_2 = front + '.txt'
+            # path_2 = lab_path
 
             if limit_fun(path, path_2):
                 dir_list.append([file_name, path, path_2])
@@ -75,17 +75,20 @@ if __name__ == '__main__':
     # lab_path = 'F:\Projects\\auto_Airplane\TS02\\20191220_1526019_20_refined/'
 
 
-    img_path = ['E:/datasets/VisDrone2019/VisDrone2019-VID-train/sequences/uav0000013_00000_v']
-    lab_path = 'E:\datasets\VisDrone2019\VisDrone2019-VID-train\\annotations/uav0000013_00000_v.txt'
+    # img_path = ['E:/datasets/VisDrone2019/VisDrone2019-VID-train/sequences/uav0000013_00000_v']
+    # lab_path = 'E:\datasets\VisDrone2019\VisDrone2019-VID-train\\annotations/uav0000013_00000_v.txt'
+    img_path = ['E:\datasets\PASCAL_VOC\VOCdevkit\VOC2007\\test\JPEGImages']
+    lab_path = 'E:\datasets\PASCAL_VOC\VOCdevkit\VOC2007\\test\labels'
 
-    path = 'E:\datasets\FlyingChairs\data'
+    # path = 'E:\datasets\FlyingChairs\data'
     
     expand_name = ['.jpg', '.png']
 
     save_path = 'util_tmp/make_list.txt'
 
-    # datalist = make_list(img_path, lab_path)
+    # datalist =_make_list_by_hand(path)
 
-    datalist =_make_list_by_hand(path)
+    datalist = make_list(img_path, lab_path)
+
 
     _wrte_dataset_txt(datalist, save_path)

@@ -63,7 +63,8 @@ class Score:
 
         for cls in range(self.cls_num):
             for one_pre_box in pre_label:
-                if one_pre_box[1] != cls:
+                pre_cls = one_pre_box[1]
+                if pre_cls != cls:
                     continue
                 max_iou = -1
                 _id = None

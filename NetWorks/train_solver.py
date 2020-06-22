@@ -64,7 +64,7 @@ class Solver:
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch, optimizer, scheduler)
                 self._save_checkpoint(epoch)
-            if epoch > 2000 or self.one_test:
+            if epoch > 2 or self.one_test:
                 self._test_an_epoch(epoch)
 
     def _prepare_parameters(self):

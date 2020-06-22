@@ -21,12 +21,13 @@ class Dataaug:
         return images, labels
 
     def _augmenting(self, aug_way_ids, datas):
-        """Create augmentation images from kitti.
+        '''
 
-        :param for_one_image: if there is a single image,the augment it without labels
-        :return: return a np array of images, and return a list about
-         labs are in the shape of [[class, left, top, button, right],..]
-        """
+        :param aug_way_ids: [[random ids], [must ids]]
+        :param datas:
+        :return:
+        '''
+
         if self.cfg:
             crop_size = self.cfg.TRAIN.IMG_SIZE
         else:
@@ -65,7 +66,7 @@ class Dataaug:
 
             20: iaa.Fliplr(0.5),  # 增加原图的概率。
             21: iaa.Fliplr(0.5),  # 增加原图的概率。
-            22: iaa.Affine(scale=(0.5, 1.5), translate_percent=(-0.01, 0.01), rotate=(-10, 10)),
+            22: iaa.Affine(scale=(0.9, 1.2), translate_percent=(-0.01, 0.01), rotate=(-10, 10)),
             23: iaa.Crop(),
             24: iaa.CropAndPad(),
             25: iaa.CropToFixedSize(width=crop_size[1], height=crop_size[0], ),

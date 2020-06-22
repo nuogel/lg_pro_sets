@@ -29,6 +29,7 @@ Misc,Misc
 DontCare,DontCare
 
  #VOC_CLASSES
+
 car,car
 person,person
 aeroplane,aeroplane

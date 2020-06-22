@@ -1,6 +1,6 @@
 #### V1.1.0 STEADY : luogeng->master 
 ### LuoGeng's Programs Set (Forbid Copying)
-This is a PyTorch implementation of ASR / OBD / SR /DENORSE /TRACK
+This is a PyTorch implementation of ASR / OBD / SR /DENORSE /TRACK /FLOW
 #### ASR:
     CTC
     Seq2Seq
@@ -18,6 +18,9 @@ This is a PyTorch implementation of ASR / OBD / SR /DENORSE /TRACK
     FCOS
     RefineDet
     MobileNetV3
+    SSDVGG
+    EFFICIENTDTE
+    EFFICIENTNET
 #### SR:
     SRCNN
     FSRCNN
@@ -32,6 +35,11 @@ This is a PyTorch implementation of ASR / OBD / SR /DENORSE /TRACK
     
 #### TRACK:
     KCF
+    SORT
+    DEEP SORT
+#### FLOW:
+    FLOW_FGFA
+    
 
 
 #### Runtime environment

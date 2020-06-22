@@ -198,7 +198,7 @@ if __name__ == "__main__":
 
     def _parse_arguments():
         parser = ArgumentParser()
-        parser.add_argument('--type', default='VID', type=str, help='yml_path')
+        parser.add_argument('--type', default='OBD', type=str, help='yml_path')
         return parser.parse_args()
 
 

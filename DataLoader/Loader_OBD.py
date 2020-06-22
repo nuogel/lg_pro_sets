@@ -52,7 +52,7 @@ class Loader(DataLoader):
             labels = 'None'
             try_tims = 0
             while labels is 'None':
-                imgs, labels = self.dataaug.augmentation(aug_way_ids=([20, 22], [25]), datas=([img], [label]))
+                imgs, labels = self.dataaug.augmentation(aug_way_ids=([11,20, 21, 22], [25]), datas=([img], [label]))
                 try_tims += 1
                 if try_tims > 100:
                     print('trying', try_tims, ' times when data augmentation at file:', str(data_info[2]))
@@ -89,7 +89,7 @@ class Loader(DataLoader):
         img = np.asarray(img, dtype=np.float32)
         img = np.transpose(img, (2, 0, 1))
         img = img / 127.5 - 1.
-        if label_after:label_after = torch.Tensor(label_after)
+        if label_after: label_after = torch.Tensor(label_after)
         return img, label_after, data_info  # only need the labels
 
     def _load_dataset(self, dataset, is_training):
@@ -131,7 +131,7 @@ class Loader(DataLoader):
         :param pass_obj: pass the labels in the list.
                         e.g. pass_obj=['Others','Pedestrian', 'DontCare']
         :param path: the path of file that need to parse.
-        :return:lists of the classes and the key points.
+        :return:lists of the classes and the key points============ [x1, y1, x2, y2].
         """
         bbs = []
         if os.path.basename(path).split('.')[-1] == 'txt' and not predicted_line:

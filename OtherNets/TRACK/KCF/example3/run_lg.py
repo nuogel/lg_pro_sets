@@ -36,8 +36,8 @@ def load_imglst(img_dir):
 
 
 if __name__ == '__main__':
-    OTB100 = 0
-    LG = 1
+    OTB100 = 1
+    LG = 0
 
     if OTB100:
         dataset = 'E:/datasets/TRACK/OTB100/BlurCar2/'
