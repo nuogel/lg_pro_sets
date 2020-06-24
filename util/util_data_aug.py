@@ -66,11 +66,12 @@ class Dataaug:
 
             20: iaa.Fliplr(0.5),  # 增加原图的概率。
             21: iaa.Fliplr(0.5),  # 增加原图的概率。
-            22: iaa.Affine(scale=(0.9, 1.2), translate_percent=(-0.01, 0.01), rotate=(-10, 10)),
+            22: iaa.Affine(translate_percent=(-0.01, 0.01), rotate=(-10, 10)),
             23: iaa.Crop(),
             24: iaa.CropAndPad(),
             25: iaa.CropToFixedSize(width=crop_size[1], height=crop_size[0], ),
-            26: iaa.Resize(crop_size)
+            26: iaa.PadToFixedSize(width=crop_size[1], height=crop_size[0], ),
+            27: iaa.Resize(crop_size)
         }
 
         _base_funs = [base_funs.get(id) for id in aug_way_ids[0]]

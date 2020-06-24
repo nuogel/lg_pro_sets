@@ -5,8 +5,8 @@ from collections import OrderedDict
 from NetWorks.model.aid_Models.DARKNET_21 import DarkNet
 
 
-def darknet_21():
-    return DarkNet([1, 1, 2, 2, 1])
+def darknet_53():
+    return DarkNet([1, 2, 8, 8, 4])
 
 
 class YOLOV3(nn.Module):
@@ -19,7 +19,7 @@ class YOLOV3(nn.Module):
         self.cls_num = len(cfg.TRAIN.CLASSES)
         self.final_out = self.anc_num * (1 + 4 + self.cls_num)
         self.layers_out_filters = [64, 128, 256, 512, 1024]
-        self.backbone = darknet_21()
+        self.backbone = darknet_53()
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
         # self.final_in = 512

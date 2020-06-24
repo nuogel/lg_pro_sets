@@ -14,6 +14,8 @@ def _show_img(imgs, labels_out, img_in=None, save_labels=False, pic_path=None, s
     """
     label_type = "simple"  # "kitti"
     if torch.is_tensor(imgs[0]):
+        if imgs.max() <= 1:
+            imgs *= 255
         imgs = imgs.numpy().astype(np.uint8)
 
     if isinstance(imgs, list):

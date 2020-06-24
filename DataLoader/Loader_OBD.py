@@ -43,27 +43,35 @@ class Loader(DataLoader):
                 data_info = self.dataset_txt[0]
             else:
                 data_info = self.dataset_txt[index]
-            img, label = self._read_datas(data_info)
+            img, label = self._read_datas(data_info)  # labels: (x1, y1, x2, y2) & must be absolutely labels.
             if not self.is_training and not label:
                 break
             index += 1
 
+        # DOAUG:
         if self.cfg.TRAIN.DO_AUG and self.is_training:
             labels = 'None'
             try_tims = 0
             while labels is 'None':
-                imgs, labels = self.dataaug.augmentation(aug_way_ids=([11,20, 21, 22], [25]), datas=([img], [label]))
+                imgs, labels = self.dataaug.augmentation(aug_way_ids=([11, 20, 21, 22], [26]), datas=([img], [label]))  # [11,20, 21, 22]
                 try_tims += 1
                 if try_tims > 100:
                     print('trying', try_tims, ' times when data augmentation at file:', str(data_info[2]))
             img = imgs[0]
             label = labels[0]
+
+        # TEST->PAD TO SIZE:
+        if self.cfg.TEST.PADTOSIZE and not self.is_training:
+            img, label = self.pad_to_size(img, label, self.cfg.TRAIN.IMG_SIZE, decode=False)
+
         img_i_size = img.shape
         size = img_i_size
-
+        # RESIZE:
         if (self.cfg.TRAIN.RESIZE and self.is_training) or (self.cfg.TEST.RESIZE and not self.is_training):
             size = random.choice(self.cfg.TRAIN.MULTI_SIZE_RATIO) * self.cfg.TRAIN.IMG_SIZE
             img = cv2.resize(img, (size[1], size[0]))
+
+        # RELATIVE LABELS:
         if not label:
             label_after = None
         elif self.cfg.TRAIN.RELATIVE_LABELS:  # x1y1x2y2
@@ -90,7 +98,7 @@ class Loader(DataLoader):
         img = np.transpose(img, (2, 0, 1))
         img = img / 127.5 - 1.
         if label_after: label_after = torch.Tensor(label_after)
-        return img, label_after, data_info  # only need the labels
+        return img, label_after, data_info  # only need the labels  label_after[x1y1x2y2]
 
     def _load_dataset(self, dataset, is_training):
         self.dataset_txt = dataset
@@ -237,3 +245,49 @@ class Loader(DataLoader):
                 label[:, 0] = i
             labels = torch.cat(labels, 0)
         return imgs, labels, list(infos)
+
+    def pad_to_size(self, img, label, size, decode=False):
+        h, w, c = img.shape
+        ratio_w = size[1] / w
+        ratio_h = size[0] / h
+        # if ratio_w
+        if ratio_w < ratio_h:
+            ratio_min = ratio_w
+        else:
+            ratio_min = ratio_h
+
+        # resize:
+
+        img = cv2.resize(img, None, fx=ratio_min, fy=ratio_min)
+        h, w, c = img.shape
+        # Determine padding
+        # pad =[left, right, top, bottom]
+        if abs(w - size[1]) > abs(h - size[0]):
+            dim_diff = abs(w - size[1])
+            pad1, pad2 = dim_diff // 2, dim_diff - dim_diff // 2
+            pad = (pad1, pad2, 0, 0)
+        else:
+            dim_diff = abs(h - size[0])
+            pad1, pad2 = dim_diff // 2, dim_diff - dim_diff // 2
+            pad = (0, 0, pad1, pad2)
+
+        # Add padding
+        img = cv2.copyMakeBorder(img, pad[2], pad[3], pad[0], pad[1], cv2.BORDER_CONSTANT, value=[0, 0, 0])
+        if not decode:
+            label_after = [[
+                lab[0],
+                lab[1] * ratio_min + pad[0],
+                lab[2] * ratio_min + pad[2],
+                lab[3] * ratio_min + pad[1],
+                lab[4] * ratio_min + pad[3]
+            ] for lab in label]
+        else:
+            label_after = [[
+                lab[0],
+                (lab[1] - pad[0]) / ratio_min,
+                (lab[2] - pad[2]) / ratio_min,
+                (lab[3] - pad[1]) / ratio_min,
+                (lab[4] - pad[3]) / ratio_min,
+            ] for lab in label]
+
+        return img, label_after

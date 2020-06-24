@@ -10,10 +10,10 @@ PATH:
 
 
 TRAIN:
-  MODEL: yolov3 #yolov2 # yolov3_tiny_shufflenet #yolov3_tiny #ssdvgg #refinedet #efficientdet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #  fcos #
+  MODEL: yolov2 # yolov3_tiny #yolov3_tiny_shufflenet #yolov3 ssdvgg #refinedet #efficientdet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #  fcos #
   EPOCH_SIZE: 4000
   BATCH_SIZE: ''
-  BATCH_BACKWARD_SIZE: 4  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
+  BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   TRAIN_DATA_FROM_FILE: ['VOC'] #['AUTOAIR','VISDRONE'] #['AUTOAIR'] #[VISDRONE] #UCAS_AOD] #
   CLASSES:  [  'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair','cow', 'diningtable',
                'dog', 'horse','motorbike', 'person', 'pottedplant','sheep', 'sofa', 'train', 'tvmonitor']
@@ -26,7 +26,7 @@ TRAIN:
   RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0.1 #0 #
   MIN_AREA: 10 #0 #100 #400 #
-  IMG_SIZE: [416, 416] # [384, 960] #[1024,1920] #[512, 768] #[720,1024] #[H,W] #[256, 256] # [512,512] ## [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
+  IMG_SIZE: [416, 416] #[384, 960] #[512,512] # [512, 768] #[1024,1920] #[720,1024] #[H,W] #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
   MULTI_SIZE_RATIO: [1] # [1, 0.9, 0.8...]
 
   SHOW_TRAIN_NAMES: 0 #TRUE #
@@ -37,7 +37,7 @@ TRAIN:
   # optimizer:
   OPTIMIZER: 'adam' #'SGD' #
   LR_START: 0.001
-  STEP_LR: 60
+  STEP_LR: 40
   LR_EXPONENTIAL_DECAY_RATE: 0.98 #lr_scheduler.ExponentialLR
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 5e-4
@@ -66,6 +66,7 @@ TEST:
   SOFNMS_THETA: 0.5
 
   DO_AUG: 0 #TRUE  #
+  PADTOSIZE: 0
   RESIZE: 1  #FALSE #
   IMG_BLOCK: 0
   SAVE_LABELS: 0
@@ -73,7 +74,7 @@ TEST:
 
   TEST_ONLY: 0 #FALSE #
 
-  ONE_TEST: 0  #
+  ONE_TEST: 1  #
   ONE_TEST_TRAIN_STEP: 50
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [

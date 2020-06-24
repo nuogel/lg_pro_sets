@@ -23,7 +23,7 @@ def _read_CCPD_title(filename):
 
 
 def _show_ccpd(file, canny=False, crop_licience_plante=False):
-    from Traditional_CV.carPlante_bianyuan import car_canny
+    from CV_Traditional.carPlante_bianyuan import car_canny
     lines = open(file, 'r').readlines()
     for line in lines:
         filename = line.split(';')[0].strip()

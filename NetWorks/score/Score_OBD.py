@@ -163,7 +163,7 @@ class Score:
                 # and sum (\Delta recall) * prec
                 ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
             return ap
-
+        # Lg:
         ap = -1 * np.ones(self.cls_num)
         precision = -1 * np.ones(self.cls_num, dtype=np.float32)
         recall = -1 * np.ones(self.cls_num, dtype=np.float32)

@@ -8,7 +8,6 @@ At the end, we will get the weight file of the net.
 
 """
 import os
-
 import torch
 import torch.nn
 from torch.optim import lr_scheduler
@@ -20,11 +19,12 @@ from util.util_weights_init import weights_init
 from util.util_get_train_test_dataset import _get_train_test_dataset, _read_train_test_dataset
 from util.util_prepare_device import load_device
 from util.util_load_state_dict import load_state_dict
-from util.util_prepare_cfg import prepare_cfg
+from util.util_Prepare_cfg import prepare_cfg
 from util.util_logger import load_logger
 from DataLoader.DataLoaderFactory import dataloader_factory
 from OtherNets.Quantization.pq_quantization.util_quantization import util_quantize_model
 # self.LOGGER = logging.getLogger(__name__)
+
 
 class Solver:
     def __init__(self, cfg, args):
@@ -64,7 +64,7 @@ class Solver:
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch, optimizer, scheduler)
                 self._save_checkpoint(epoch)
-            if epoch > 2 or self.one_test:
+            if epoch > 200 or self.one_test:
                 self._test_an_epoch(epoch)
 
     def _prepare_parameters(self):
@@ -210,3 +210,4 @@ class Solver:
         score_out, precision, recall = self.Score.score_out()
         self.save_parameter.tbX_write(epoch=epoch, score_out=score_out, precision=precision, recall=recall, )
         self.LOGGER.info('[EVALUATE] Summary: Epoch: %s, Score0: %s, Score1: %s, Score2: %s', epoch, score_out, precision, recall)
+        if self.cfg.TEST.TEST_ONLY:exit()

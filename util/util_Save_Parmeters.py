@@ -65,7 +65,7 @@ class TrainParame:
         self._write_txt(epoch=epoch)
         return epoch, learning_rate
 
-    def tbX_show_parameters(self):
+    def tbX_show_parameters(self, start_epoch=0, end_epoch=None):
         try:
             ea = event_accumulator.EventAccumulator(self.folder)
             ea.Reload()
@@ -79,7 +79,7 @@ class TrainParame:
             batch_average_loss = ea.scalars.Items('data/batch_average_loss')
             lr = [l_r.value for l_r in learning_rate]
             loss = [l_s.value for l_s in batch_average_loss]
-            self._draw_img([lr, loss])
+            self._draw_img([lr, loss],start_epoch, end_epoch)
 
     def _write_txt(self, epoch=0):
         try:
@@ -173,6 +173,8 @@ class TrainParame:
             plt.subplot(321 + i)
             plt.xlabel('Epoch')
             plt.ylabel(line_illustration[i])
+            for ii, da in  enumerate(data_y1):
+                print(ii,'->', da)
             if len(data_y1) == 0:  # if there is no data in it ,then do nothing.
                 continue
             if data_y1.shape.__len__() == 1:
@@ -206,4 +208,4 @@ if __name__ == "__main__":
     cfg = parse_yaml(args)
     cfg.PATH.TMP_PATH = os.path.join('..', cfg.PATH.TMP_PATH)
     para = TrainParame(cfg)
-    para.tbX_show_parameters()
+    para.tbX_show_parameters(start_epoch=1, end_epoch=None)

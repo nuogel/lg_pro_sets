@@ -57,12 +57,6 @@ def prepare_cfg(cfg, arg, is_training=True):
 
     # yolov3 writer's anchors: [10,13,  16,30,  33,23,  30,61,  62,45,  59,119,  116,90,  156,198,  373,326]
 
-    # VISDRONE_anchors = [[0.0058824, 0.0143791],
-    #                     [0.0110294, 0.0300654],
-    #                     [0.0227941, 0.0261438],
-    #                     [0.0198529, 0.0562092],
-    #                     [0.0419118, 0.0535948],
-    #                     [0.0764706, 0.1202614]]
 
     VISDRONE_anchors = [[8., 11.],
                         [15., 23.],
@@ -85,9 +79,11 @@ def prepare_cfg(cfg, arg, is_training=True):
     elif 'yolov3_tiny' in cfg.TRAIN.MODEL and (cfg.TRAIN.TRAIN_DATA_FROM_FILE[0] in ['VISDRONE', 'AUTOAIR']):
         cfg.TRAIN.FMAP_ANCHOR_NUM = 3
         cfg.TRAIN.ANCHORS = VISDRONE_anchors
-
+    if 'yolov3_tiny' in cfg.TRAIN.MODEL:
+        cfg.TRAIN.FMAP_ANCHOR_NUM = 3
+        cfg.TRAIN.ANCHORS = anchor_yolov3_tiny
     elif 'yolov3' == cfg.TRAIN.MODEL:
-        cfg.TRAIN.FMAP_ANCHOR_NUM = 2
+        cfg.TRAIN.FMAP_ANCHOR_NUM = 3
         cfg.TRAIN.ANCHORS = anchor_yolov3
 
     elif 'yolov2' in cfg.TRAIN.MODEL:

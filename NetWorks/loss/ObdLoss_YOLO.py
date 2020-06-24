@@ -4,6 +4,7 @@ import numpy as np
 from util.util_iou import iou_xywh
 from util.util_get_cls_names import _get_class_names
 from util.util_parse_prediction import ParsePredict
+from torch.autograd import Variable
 
 
 class YoloLoss:

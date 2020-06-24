@@ -16,7 +16,7 @@ from util.util_parse_prediction import ParsePredict
 from util.util_data_aug import Dataaug
 from util.util_show_img import _show_img
 from util.util_parse_SR_img import parse_Tensor_img
-from util.util_prepare_cfg import prepare_cfg
+from util.util_Prepare_cfg import prepare_cfg
 from util.util_img_block import img_cut
 from util.util_nms_for_img_block import NMS_block
 from util.util_time_stamp import Time
