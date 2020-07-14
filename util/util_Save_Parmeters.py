@@ -38,11 +38,14 @@ class TrainParame:
 
     def tbX_write(self, **kwargs):
         epoch = kwargs['epoch']
+
         for k, v in kwargs.items():
             if k == 'epoch' or v is None:
                 continue
             if isinstance(v, dict):
-                self.tbX_writer.add_scalars('data/' + k, v, epoch)
+                for k1, v1 in v.items():
+                    if isinstance(v1, dict):
+                        self.tbX_writer.add_scalars('data/' + k1, v1, epoch)
             else:
                 self.tbX_writer.add_scalar('data/' + k, v, epoch)
 
@@ -77,9 +80,12 @@ class TrainParame:
         else:
             learning_rate = ea.scalars.Items('data/learning_rate')
             batch_average_loss = ea.scalars.Items('data/batch_average_loss')
+            total_score = ea.scalars.Items('data/total_score')
+
             lr = [l_r.value for l_r in learning_rate]
             loss = [l_s.value for l_s in batch_average_loss]
-            self._draw_img([lr, loss],start_epoch, end_epoch)
+            score = [l_s.value for l_s in total_score]
+            self._draw_img([lr, loss, score], start_epoch, end_epoch)
 
     def _write_txt(self, epoch=0):
         try:
@@ -173,8 +179,8 @@ class TrainParame:
             plt.subplot(321 + i)
             plt.xlabel('Epoch')
             plt.ylabel(line_illustration[i])
-            for ii, da in  enumerate(data_y1):
-                print(ii,'->', da)
+            for ii, da in enumerate(data_y1):
+                print(ii, '->', da)
             if len(data_y1) == 0:  # if there is no data in it ,then do nothing.
                 continue
             if data_y1.shape.__len__() == 1:
@@ -208,4 +214,4 @@ if __name__ == "__main__":
     cfg = parse_yaml(args)
     cfg.PATH.TMP_PATH = os.path.join('..', cfg.PATH.TMP_PATH)
     para = TrainParame(cfg)
-    para.tbX_show_parameters(start_epoch=1, end_epoch=None)
+    para.tbX_show_parameters(start_epoch=0, end_epoch=None)

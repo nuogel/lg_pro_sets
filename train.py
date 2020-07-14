@@ -14,11 +14,11 @@ from util.util_yml_parse import parse_yaml
 def _parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('--type', default='OBD', type=str, help='yml_path')
-    parser.add_argument('--checkpoint', '--cp', default=0 #'tmp/checkpoint/25.pkl'  #
+    parser.add_argument('--checkpoint', '--cp', default='tmp/checkpoint/now.pkl'  #0 #
                         , help='Path to the checkpoint to be loaded to the model')
-    parser.add_argument('--batch_size', '--bz', default=8, type=int, help='batch size')
+    parser.add_argument('--batch_size', '--bz', default=2, type=int, help='batch size')
     parser.add_argument('--lr', default=0.001, type=float, help='Learning rate')
-    parser.add_argument('--lr_continue', '--lr_c', default=0.001, type=float, help='Learning rate')
+    parser.add_argument('--lr_continue', '--lr_c', default=0.0001, type=float, help='Learning rate')
     parser.add_argument('--number_works', '--n_w', default=8, type=int, help='number works of DataLoader')
     parser.add_argument('--tensor_core', '--t_c', default='O0', type=str, help='apex-amp')
 

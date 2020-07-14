@@ -2,7 +2,7 @@ import cv2
 import os
 
 # 图片路径
-im_dir = 'F:/datasets/SR/REDS4/train_sharp_part/000'
+im_dir = 'F:/Projects/auto_Airplane/TS02/truck_tracker/tracker'
 # im_dir = 'E:/LG/GitHub/lg_pro_sets/tmp/generated_labels/000'
 # 输出视频路径
 video_dir = 'util_tmp/video.avi'

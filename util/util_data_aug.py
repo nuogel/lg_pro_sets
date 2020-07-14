@@ -66,7 +66,7 @@ class Dataaug:
 
             20: iaa.Fliplr(0.5),  # 增加原图的概率。
             21: iaa.Fliplr(0.5),  # 增加原图的概率。
-            22: iaa.Affine(translate_percent=(-0.01, 0.01), rotate=(-10, 10)),
+            22: iaa.Affine(translate_percent=(-0.01, 0.01), rotate=(-3, 3)),
             23: iaa.Crop(),
             24: iaa.CropAndPad(),
             25: iaa.CropToFixedSize(width=crop_size[1], height=crop_size[0], ),

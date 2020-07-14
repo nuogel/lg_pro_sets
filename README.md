@@ -15,6 +15,7 @@ This is a PyTorch implementation of ASR / OBD / SR /DENORSE /TRACK /FLOW
     YoloV3_Tiny_MobileNet
     YoloV3_Tiny_ShuffleNet
     YoloV3_MobileNet
+    YoloNano
     FCOS
     RefineDet
     MobileNetV3
@@ -87,9 +88,11 @@ yolov3_tiny | 512x768| 0.857 |0.76571836| 33 M|
 yolov3_tiny_squeezenet | 384x960 | 0.844 |X|5.85 M|收敛快，效果好
 yolov3_tiny_mobilenet|512x768|0.836|X|3.37 M|
 yolov3_tiny_shufflenet|512x768|0.790|0.672|686 KB|
+yolonano|X|X|...|11M
 refinedet | 512x768 | 0.91|X|129 M|收敛快，效果好
 efficientdet_b0|512x768|0.9|X|42.7M|收敛快，效果好
 ssd|512x768|0.8904|X|94.7 M|收敛慢，效果好
+
 
 以上分数是在 SCORE_THRESH: 0.7 下得到的，以yolov3_tiny为例: 
 SCORE_THRESH: 0.7 :
@@ -137,3 +140,12 @@ ESRGAN|X|X|X
 SRFBN|X|X|XXXXxxxx
 
 PS:DBPN set:max parameters for DBPN with 11GB. 4 layers(7 is not available);base_filter=28;
+
+
+### Problems
+1、when I train YOLOV3 with  voc2007 with focal loss, the obj loss is not going down, it seems that the gradient vanished.
+ 
+ 
+### TODO
+add networks:
+yolo nano

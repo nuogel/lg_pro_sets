@@ -120,17 +120,26 @@ if __name__ == '__main__':
         return np.array(dataset)
 
 
-    ANNOTATIONS_PATH = 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/annotations/'
-    CLUSTERS = 6
+    ANNOTATIONS_PATH ='E:\datasets\PASCAL_VOC\VOCdevkit\VOC2007\\trainval\Annotations'
+    # 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/annotations/'
+    CLUSTERS = 9
 
-    # data = load_dataset_xml(ANNOTATIONS_PATH)
-    data = load_dataset_txt(ANNOTATIONS_PATH)
+    data = load_dataset_xml(ANNOTATIONS_PATH)
+    # data = load_dataset_txt(ANNOTATIONS_PATH)
     out = kmeans(data, k=CLUSTERS)
+    out = np.asarray(out)
+
     print("Accuracy: {:.2f}%".format(avg_iou(data, out) * 100))
     print("Boxes:\n {}".format(out))
 
-    ratios = np.around(out[:, 0] / out[:, 1], decimals=2).tolist()
-    print("Ratios:\n {}".format(sorted(ratios)))
+    Area = (out[:, 0] * out[:, 1])
+    idx = np.argsort(Area)
+    Boxout = out[idx]
 
-    Area = (out[:, 0] * out[:, 1]).tolist()
-    print("Area:\n {}".format(sorted(Area)))
+    Area = (Boxout[:, 0] * Boxout[:, 1])
+    print("Area:\n {}".format(Area))
+
+    ratios = np.around(Boxout[:, 0] / Boxout[:, 1], decimals=2)
+    print("Ratios:\n {}".format(ratios))
+    print(Boxout)
+

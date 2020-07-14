@@ -8,7 +8,6 @@ import os
 import torch
 import cv2
 from util.util_ConfigFactory_Classes import get_model_class, get_score_class, get_loader_class
-from DataLoader.DataLoaderFactory import dataloader_factory
 import glob
 from util.util_load_state_dict import load_state_dict
 from util.util_prepare_device import load_device
@@ -16,7 +15,7 @@ from util.util_parse_prediction import ParsePredict
 from util.util_data_aug import Dataaug
 from util.util_show_img import _show_img
 from util.util_parse_SR_img import parse_Tensor_img
-from util.util_Prepare_cfg import prepare_cfg
+from cfg.cfg import prepare_cfg
 from util.util_img_block import img_cut
 from util.util_nms_for_img_block import NMS_block
 from util.util_time_stamp import Time
@@ -38,7 +37,7 @@ class Test_Base(object):
             self.model_path = self.cfg.PATH.TEST_WEIGHT_PATH
         self.Model = load_state_dict(self.Model, self.args.checkpoint, self.cfg.TRAIN.DEVICE)
         self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
-        # self.Model.eval()
+        self.Model.eval()
 
     def test_backbone(self, DataSet):
         pass

@@ -64,6 +64,7 @@ class DarkNet(nn.Module):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu1(x)
+
         x = self.layer1(x)
         x = self.layer2(x)
         out2 = self.layer3(x)  # 256

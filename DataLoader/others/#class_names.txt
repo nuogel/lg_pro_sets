@@ -15,6 +15,7 @@ Cyclist,Cyclist
 Tram,Car
 Misc,Car
 DontCare,Others
+Dontcare,Others
 
 Car, Van, Truck, Pedestrian,Person_sitting, Cyclist, Tram, Misc, DontCare
 

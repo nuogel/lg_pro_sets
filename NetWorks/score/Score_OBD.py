@@ -91,18 +91,27 @@ class Score:
             self.gt_obj_num[int(lab[1])] += 1
 
     def score_out(self):
-        if self.cfg.TEST.SCORE_TYPE.lower() == 'map':
-            score, prec, rec = self.mAP_SCORE()
-            a, b, c = self.F1_SCORE()
-            print('F1SCORE: ', a)
-        else:
-            score, prec, rec = self.F1_SCORE()
+        mapscore, prec, rec = self.mAP_SCORE()
+        f1score, b, c = self.F1_SCORE()
 
-        score_dict = dict(zip(self.cfg.TRAIN.CLASSES, score))
+        mapscore[mapscore == -1] = 0
+        mAP = mapscore.mean()
+
+        f1score[f1score == -1] = 0
+        F1Score = f1score.mean()
+
+        mapscore_dict = dict(zip(self.cfg.TRAIN.CLASSES, mapscore))
         prec_dict = dict(zip(self.cfg.TRAIN.CLASSES, prec))
         rec_dict = dict(zip(self.cfg.TRAIN.CLASSES, rec))
-        print('{}: {}\nprec: {}\nrec: {}'.format(self.cfg.TEST.SCORE_TYPE.lower(), score, prec, rec))
-        return score_dict, prec_dict, rec_dict
+
+        # printing>>>>...
+        mapscore_txt = ['%0.3f ' % score for score in mapscore]
+        f1score_txt = ['%0.3f ' % score for score in f1score]
+        prec_txt = ['%0.3f ' % score for score in prec]
+        rec_txt = ['%0.3f ' % score for score in rec]
+
+        print('mAP： %0.4f\nf1score:%0.4f\nmaps: %s\nf1sc: %s\nprec: %s\nreca: %s' % (mAP, F1Score, mapscore_txt, f1score_txt, prec_txt, rec_txt))
+        return mAP, {'score_dict': mapscore_dict, 'prec_dict': prec_dict, 'rec_dict': rec_dict}
 
     def F1_SCORE(self, beta=1):
         """
@@ -126,9 +135,9 @@ class Score:
                 rec[i] = 0
                 f1_sore[i] = 0
                 continue
-            prec[i] = tp / np.maximum(tp + fp, np.finfo(np.float64).eps)
-            rec[i] = tp / self.gt_obj_num[i]
-            f1_sore[i] = (1 + beta ** 2) * (prec[i] * rec[i]) / (beta ** 2 * prec[i] + rec[i])
+            prec[i] = tp / (tp + fp + 1e-16)
+            rec[i] = tp / (self.gt_obj_num[i] + + 1e-16)
+            f1_sore[i] = (1 + beta ** 2) * (prec[i] * rec[i]) / (beta ** 2 * prec[i] + rec[i] + 1e-16)
         return f1_sore, prec, rec
 
     def mAP_SCORE(self):
@@ -136,7 +145,7 @@ class Score:
         the VOC 07 11-point method (default:False).
         """
 
-        def count_ap(rec, prec, use_07_metric=False):
+        def count_ap(rec, prec, use_07_metric=0):
             if use_07_metric:
                 # 11 point metric
                 ap = 0.
@@ -163,6 +172,7 @@ class Score:
                 # and sum (\Delta recall) * prec
                 ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
             return ap
+
         # Lg:
         ap = -1 * np.ones(self.cls_num)
         precision = -1 * np.ones(self.cls_num, dtype=np.float32)
@@ -174,16 +184,16 @@ class Score:
             tp = np.asarray(self.true_positive[cls_i])
 
             sorted_ind = np.argsort(-pre_scores)
-            pre_scores = pre_scores[sorted_ind]
+            # pre_scores = pre_scores[sorted_ind]
             fp = fp[sorted_ind]
             tp = tp[sorted_ind]
 
             fp = np.cumsum(fp)
             tp = np.cumsum(tp)
-            rec = tp / float(self.gt_obj_num[cls_i])
+            rec = tp / (float(self.gt_obj_num[cls_i]) + 1e-16)
             # avoid divide by zero in case the first detection matches a difficult
             # ground truth
-            prec = tp / np.maximum(tp + fp, np.finfo(np.float64).eps)
+            prec = tp / (tp + fp + 1e-16)
             ap[cls_i] = count_ap(rec, prec)
             precision[cls_i] = prec[-1]
             recall[cls_i] = rec[-1]

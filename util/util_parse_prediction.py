@@ -27,13 +27,13 @@ class ParsePredict:
             'yolov3_tiny_mobilenet': self._parse_yolo_predict,
             'yolov3_tiny_squeezenet': self._parse_yolo_predict,
             'yolov3_tiny_shufflenet': self._parse_yolo_predict,
-            'yolov2_fgfa':self._parse_yolo_predict,
+            'yolov2_fgfa': self._parse_yolo_predict,
+            'yolonano': self._parse_yolo_predict,
             'fcos': self._parse_fcos_predict,
             'refinedet': self._parse_refinedet_predict,
             'efficientdet': self._parse_ssd_predict,
             'ssdvgg': self._parse_ssd_predict,
         }
-
 
         labels_predict = PARSEDICT[self.cfg.TRAIN.MODEL](f_maps)
         return labels_predict
@@ -62,25 +62,22 @@ class ParsePredict:
 
         ###1: pre deal feature mps
         obj_pred, cls_perd, loc_pred = torch.split(f_map, [self.anc_num, self.anc_num * self.cls_num, self.anc_num * 4], 3)
+        # deel predicted obj
         pre_obj = obj_pred.sigmoid()
-        cls_reshape = torch.reshape(cls_perd, (-1, self.cls_num))
-        cls_pred_prob = torch.softmax(cls_reshape, -1)
-        pre_cls = torch.reshape(cls_pred_prob, cls_perd.shape)
-        pre_loc = loc_pred
-
+        # reshape classes
         B, H, W = pre_obj.shape[0:3]
-
-        pre_cls = pre_cls.reshape([B, H, W, self.anc_num, self.cls_num])
+        pre_cls = cls_perd.reshape([B, H, W, self.anc_num, self.cls_num])
+        pre_cls = torch.softmax(pre_cls, -1)
 
         # reshape the pre_loc
-        pre_loc = pre_loc.reshape([B, H, W, self.anc_num, 4])
+        pre_loc = loc_pred.reshape([B, H, W, self.anc_num, 4])
         pre_loc_xy = pre_loc[..., 0:2].sigmoid()
         pre_loc_wh = pre_loc[..., 2:4]
         if not tolabel:
             return pre_obj, pre_cls, pre_loc_xy, pre_loc_wh
         else:
             mask = np.arange(self.anc_num) + self.anc_num * f_id
-            anchors = self.anchors[mask] / torch.FloatTensor([self.cfg.TRAIN.IMG_SIZE[1], self.cfg.TRAIN.IMG_SIZE[0]]) #* torch.Tensor([W, H])
+            anchors = self.anchors[mask] / torch.FloatTensor([self.cfg.TRAIN.IMG_SIZE[1], self.cfg.TRAIN.IMG_SIZE[0]])  # * torch.Tensor([W, H])
 
             grid_x = torch.arange(0, W).view(-1, 1).repeat(1, H).unsqueeze(2).permute(1, 0, 2)
             grid_y = torch.arange(0, H).view(-1, 1).repeat(1, W).unsqueeze(2)
@@ -94,7 +91,7 @@ class ParsePredict:
             i_0, i_1, i_2 = 0, 9, 34
             print('pre_loc_xy', pre_loc_xy[i_0, i_1, i_2])
             print('pre_realtive_xy', pre_realtive_xy[i_0, i_1, i_2])
- 
+
             '''
             anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).expand(1, H, W, self.anc_num, 2).to(loc_pred.device)
             pre_realtive_wh = pre_loc_wh.exp() * anchor_ch

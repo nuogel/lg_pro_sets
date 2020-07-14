@@ -185,9 +185,9 @@ def _show_img(images, labels, show_img=True, show_time=30000, save_img=False, sa
     cv2.putText(images, 'The Number of Cars is : %d' % len(labels), (600, 220), 1, 2, (0, 0, 255), thickness=2)
     cv2.putText(images, 'Made by AI Team of Chengdu Fourier Electronic', (600, 250), 1, 2, (0, 0, 255), thickness=2)
 
-    # if show_img:
-    #     cv2.imshow('img', images)
-    #     cv2.waitKey(show_time)
+    if show_img:
+        cv2.imshow('img', images)
+        cv2.waitKey(show_time)
     if save_img:
         cv2.imwrite("show.png", images)
     if save_video:
@@ -203,8 +203,8 @@ def main():
     # im_file = os.path.join(path, "images", "1478019971185917857.jpg")
     # label_file = os.path.join(path, "labels", "1478019971185917857.xml")
     # img, label = _read_datas(im_file, label_file)
-    img_folds = 'F:/Projects/auto_Airplane/TS02/20191217_153659/'
-    label_folds = 'F:\Projects\\auto_Airplane\TS02\\20191217_153659_predicted_labels'
+    img_folds = 'E:\datasets\person\data_person/images'
+    label_folds = 'E:\datasets\person\data_person/labels'
     # label_folds = 'F:\LG\GitHub\lg_pro_sets\\tmp\predicted_labels'
 
     # _show_img(img, label)
@@ -221,9 +221,9 @@ def main():
     img_size = (1920, 1080)
     fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
     video_writer = cv2.VideoWriter(video_dir, fourcc, fps, img_size)
-    save_video = 1
+    save_video = 0
     for index in range(min(img_num, lab_num)):
-        if index <= 6330-500: continue
+        # if index <= 6330-500: continue
         label_file = local_label_files[index]
         im_file = local_img_files[index]
         if print_path:
@@ -231,10 +231,10 @@ def main():
         img, label = _read_datas(im_file, label_file)
 
         try:
-            _show_img(img, label, show_img=True, show_time=1, save_video=save_video, video_writer=video_writer)
+            _show_img(img, label, show_img=True, show_time=1000, save_video=save_video, video_writer=video_writer)
         except:
             if save_video:video_writer.release()
-        if index >= 9750 - 500: break
+        # if index >= 9750 - 500: break
     if save_video:video_writer.release()
     print('finish')
 

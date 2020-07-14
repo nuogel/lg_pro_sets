@@ -10,23 +10,24 @@ PATH:
 
 
 TRAIN:
-  MODEL: yolov2 # yolov3_tiny #yolov3_tiny_shufflenet #yolov3 ssdvgg #refinedet #efficientdet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #  fcos #
+  MODEL: yolov3 #yolov3_tiny #yolonano #yolov2 #  yolov3_tiny_shufflenet #ssdvgg #refinedet #efficientdet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #  fcos #
   EPOCH_SIZE: 4000
   BATCH_SIZE: ''
-  BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
-  TRAIN_DATA_FROM_FILE: ['VOC'] #['AUTOAIR','VISDRONE'] #['AUTOAIR'] #[VISDRONE] #UCAS_AOD] #
-  CLASSES:  [  'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair','cow', 'diningtable',
-               'dog', 'horse','motorbike', 'person', 'pottedplant','sheep', 'sofa', 'train', 'tvmonitor']
+  BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
+  TRAIN_DATA_FROM_FILE: ['KITTI'] #['AUTOAIR','VISDRONE'] #['AUTOAIR'] #[VISDRONE] #UCAS_AOD] #'VOC''KITTI'
+  CLASSES:  ['Car', 'Cyclist', 'Pedestrian', 'Others']
 
-  #['Others', 'Car', 'Person', 'Cycle'] #['Background','Car','Others1', 'Others2']  #['Car', 'Cyclist', 'Pedestrian', 'Others']#
+  #['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair','cow', 'diningtable','dog', 'horse','motorbike', 'person', 'pottedplant','sheep', 'sofa', 'train', 'tvmonitor']
+
+  #['Others', 'Car', 'Person', 'Cycle'] #['Background','Car','Others1', 'Others2']  #
 
   # data aug:
   DO_AUG: 1 #TRUE #
   RESIZE: 1
-  RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
+  RELATIVE_LABELS: 4  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0.1 #0 #
   MIN_AREA: 10 #0 #100 #400 #
-  IMG_SIZE: [416, 416] #[384, 960] #[512,512] # [512, 768] #[1024,1920] #[720,1024] #[H,W] #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
+  IMG_SIZE: [384, 960] #[416, 416] #[512, 768] #[512,512] # [1024,1920] #[720,1024] #[H,W] #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
   MULTI_SIZE_RATIO: [1] # [1, 0.9, 0.8...]
 
   SHOW_TRAIN_NAMES: 0 #TRUE #
@@ -37,7 +38,7 @@ TRAIN:
   # optimizer:
   OPTIMIZER: 'adam' #'SGD' #
   LR_START: 0.001
-  STEP_LR: 40
+  STEP_LR: 30
   LR_EXPONENTIAL_DECAY_RATE: 0.98 #lr_scheduler.ExponentialLR
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 5e-4
@@ -51,17 +52,16 @@ TRAIN:
 
   # debug:
   LOG_FORMAT: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'  # logging format
-  FMAP_ANCHOR_NUM: ''
+  FMAP_ANCHOR_NUM: 3
   ANCHORS: 'please see the util_prepare.py'
 
 
 TEST:
   TEST_SET_RATIO: 0.1
 
-  SCORE_TYPE: 'mAP' # 'f' #
   # NMS:
   NMS_TYPE: 'SOFT_NMS'#'NMS'#
-  SCORE_THRESH: 0.5
+  SCORE_THRESH: 0.6
   IOU_THRESH: 0.5
   SOFNMS_THETA: 0.5
 
@@ -74,13 +74,12 @@ TEST:
 
   TEST_ONLY: 0 #FALSE #
 
-  ONE_TEST: 1  #
+  ONE_TEST: 0  #
   ONE_TEST_TRAIN_STEP: 50
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
-              ['000005.jpg', 'E:\\datasets\\PASCAL_VOC\\VOCdevkit\\VOC2007\\trainval\\JPEGImages\\000005.jpg', 'E:\\datasets\\PASCAL_VOC\\VOCdevkit\\VOC2007\\trainval\\Annotations\\000005.xml']
+  ['000005.jpg', 'E:\\datasets\\PASCAL_VOC\\VOCdevkit\\VOC2007\\trainval\\JPEGImages\\000005.jpg', 'E:\\datasets\\PASCAL_VOC\\VOCdevkit\\VOC2007\\trainval\\Annotations\\000005.xml']
     #  ['000000', 'E://datasets//kitti//training//images//000000.png', 'E://datasets//kitti//training//labels\\000000.xml']
     #      ['0000002_00005_d_0000014.jpg', 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/images/0000002_00005_d_0000014.jpg', 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/annotations/0000002_00005_d_0000014.txt']
-
     #  ['P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.txt']
   ]

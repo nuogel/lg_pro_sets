@@ -127,7 +127,7 @@ class Loader(DataLoader):
     def _is_finedata(self, xyxy):
         x1, y1, x2, y2 = xyxy
         for point in xyxy:
-            if point <= 0.: return False
+            if point < 0.: return False
         if x2 - x1 <= 0.: return False
         if y2 - y1 <= 0.: return False
         return True
