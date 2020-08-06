@@ -11,7 +11,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ParsePredict:
-
+    # TODO: 分解parseprdict.
     def __init__(self, cfg):
         self.cfg = cfg
         self.anchors = torch.Tensor(cfg.TRAIN.ANCHORS)

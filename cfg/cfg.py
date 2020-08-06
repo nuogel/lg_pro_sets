@@ -1,4 +1,11 @@
+import torch
+
+
 def prepare_cfg(cfg, arg, is_training=True):
+    torch.backends.cudnn.benchmark = True
+    print('torch version: ', torch.__version__)
+    print('torch.version.cuda: ', torch.version.cuda)
+
     if not is_training:
         cfg.TRAIN.TARGET_PREDEEL = 0
         cfg.TRAIN.INPUT_PREDEEL = 0
@@ -7,11 +14,14 @@ def prepare_cfg(cfg, arg, is_training=True):
         cfg.TRAIN.BATCH_SIZE = arg.batch_size
     if cfg.TEST.ONE_TEST:
         cfg.TRAIN.DO_AUG = 0
-    if cfg.TEST.ONE_TEST or cfg.TRAIN.SHOW_INPUT or cfg.BELONGS == 'VID':
-        arg.number_works = 0
-        cfg.TRAIN.SAVE_STEP = 50
+    try:
+        if cfg.TEST.ONE_TEST or cfg.TRAIN.SHOW_INPUT or cfg.BELONGS == 'VID':
+            arg.number_works = 0
+            cfg.TRAIN.SAVE_STEP = 50
+    except:
+        pass
 
-    anchor_yolov2 = [[10, 13],   # [W,H]
+    anchor_yolov2 = [[10, 13],  # [W,H]
                      [16, 30],
                      [33, 23],
                      [30, 61],

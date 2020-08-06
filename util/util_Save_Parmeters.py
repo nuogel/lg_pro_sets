@@ -1,5 +1,6 @@
 """Saving the parameters while training, and drawing."""
 import os
+import cv2
 import sys
 import torch
 import matplotlib.pyplot as plt
@@ -19,7 +20,7 @@ class TrainParame:
     def __init__(self, cfg=None):
         self.cfg = cfg
         self.file = cfg.PATH.PARAMETER_PATH.format(self.cfg.TRAIN.MODEL)
-        self.folder = cfg.PATH.TMP_PATH + '/tbx_log_' + cfg.TRAIN.MODEL
+        self.folder = cfg.PATH.TMP_PATH + '/logs/tbx_log_' + cfg.TRAIN.MODEL
 
     def clean_history_and_init_log(self):
         """Init the parameters."""
@@ -34,29 +35,33 @@ class TrainParame:
                 LOGGER.info('DELETE THE HISTORY LOG: {}'.format(self.folder))
 
         self.tbX_writer = SummaryWriter(self.folder)
-        self._write_txt(epoch=0)
+        self._write_cfg(epoch=0)
 
-    def tbX_write(self, **kwargs):
-        epoch = kwargs['epoch']
+    def tbX_write(self, w_dict):
+        epoch = w_dict['epoch']
 
-        for k, v in kwargs.items():
+        for k, v in w_dict.items():
             if k == 'epoch' or v is None:
                 continue
             if isinstance(v, dict):
                 for k1, v1 in v.items():
                     if isinstance(v1, dict):
-                        self.tbX_writer.add_scalars('data/' + k1, v1, epoch)
+                        self.tbX_writer.add_scalars(k + '/' + k1, v1, epoch)
             else:
-                self.tbX_writer.add_scalar('data/' + k, v, epoch)
+                self.tbX_writer.add_scalar(k, v, epoch)
 
-        self.tbX_writer.close()
+        # self.tbX_writer.close()
+
+    def tbX_addImage(self, names, image):
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        self.tbX_writer.add_image(names, image, 0, dataformats='HWC')
 
     def tbX_read(self):
         try:
             ea = event_accumulator.EventAccumulator(self.folder)
             ea.Reload()
             print(ea.scalars.Keys())
-            learning_rate = ea.scalars.Items('data/learning_rate')[-1]
+            learning_rate = ea.scalars.Items('learning_rate')[-1]
         except:
             print('error: no learning_rate in tbX,SET :', self.cfg.TRAIN.LR_START)
             epoch = 0
@@ -65,7 +70,7 @@ class TrainParame:
             epoch = learning_rate.step
             learning_rate = learning_rate.value
         self.tbX_writer = SummaryWriter(self.folder)
-        self._write_txt(epoch=epoch)
+        self._write_cfg(epoch=epoch)
         return epoch, learning_rate
 
     def tbX_show_parameters(self, start_epoch=0, end_epoch=None):
@@ -78,18 +83,18 @@ class TrainParame:
             epoch = 0
             learning_rate = self.cfg.TRAIN.LR_START
         else:
-            learning_rate = ea.scalars.Items('data/learning_rate')
-            batch_average_loss = ea.scalars.Items('data/batch_average_loss')
-            total_score = ea.scalars.Items('data/total_score')
+            learning_rate = ea.scalars.Items('learning_rate')
+            batch_average_loss = ea.scalars.Items('batch_average_loss')
+            total_score = ea.scalars.Items('total_score')
 
             lr = [l_r.value for l_r in learning_rate]
             loss = [l_s.value for l_s in batch_average_loss]
             score = [l_s.value for l_s in total_score]
             self._draw_img([lr, loss, score], start_epoch, end_epoch)
 
-    def _write_txt(self, epoch=0):
+    def _write_cfg(self, epoch=0):
         try:
-            f = open(self.cfg.PATH.CLASSES_PATH)
+            f = open(self.cfg.PATH.CLASSES_PATH, 'r')
         except:
             pass
         else:
@@ -97,7 +102,7 @@ class TrainParame:
             lines = lines.replace(',', ' <-> ')
             self.tbX_writer.add_text('class_dict', lines, epoch)
         config_path = 'cfg/' + self.cfg.BELONGS + '.yml'
-        config_lines = open(config_path, encoding='utf-8').read().replace('\n', '\n\n')
+        config_lines = open(config_path, 'r').read().replace('\n', '\n\n')
         self.tbX_writer.add_text('config', config_lines, epoch)
 
     def save_parameters(self, epoch, learning_rate=None, batch_average_loss=None, f1_score=None, precision=None, recall=None):

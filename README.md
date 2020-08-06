@@ -1,12 +1,15 @@
 #### V1.1.0 STEADY : luogeng->master 
 ### LuoGeng's Programs Set (Forbid Copying)
-This is a PyTorch implementation of ASR / OBD / SR /DENORSE /TRACK /FLOW
+This is a PyTorch implementation of ASR/ TTS / OBD / SR /DENORSE /TRACK /FLOW
 #### ASR:
     CTC
     Seq2Seq
     RNN
     LSTM
     Transformer
+#### TTS:
+    Tacatron(faild)
+    
 #### OBD/OBC:
     YOLOv2
     YOLOV3
@@ -38,6 +41,7 @@ This is a PyTorch implementation of ASR / OBD / SR /DENORSE /TRACK /FLOW
     KCF
     SORT
     DEEP SORT
+    SiamRPN
 #### FLOW:
     FLOW_FGFA
     

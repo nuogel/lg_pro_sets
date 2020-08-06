@@ -41,7 +41,7 @@ def detect_test():
     '''
     检测人
     '''
-    img = cv2.imread('e:/datasets/person_1.jpg')
+    img = cv2.imread('E:/datasets/SelfFilms/x2/00005/00000000.png')
     rows, cols = img.shape[:2]
     sacle = 1.0
     # print('img',img.shape)

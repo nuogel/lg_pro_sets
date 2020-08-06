@@ -10,7 +10,6 @@ class dataloader_factory:
         self.cfg = cfg
         self.args = args
 
-
     def make_dataset(self, train_dataset=None, test_dataset=None):
         if self.cfg.BELONGS == 'VID':
             shuffle = False

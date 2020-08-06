@@ -89,7 +89,7 @@ class YoloLoss:
         # One-hot encoding of label
         labels_cls[b, gj, gi, best_n, target_labels] = 1
 
-        watch = 1
+        watch = 0
         if watch:
             watcher = pre_obj[obj_mask].mean()
             watcher2 = pre_obj[noobj_mask].mean()
@@ -164,7 +164,8 @@ class YoloLoss:
         focal_loss = alpha * (1. - pt) ** self.gamma * ce
         return focal_loss
 
-    def Loss_Call(self, f_maps, dataset, losstype=None):
+    def Loss_Call(self, f_maps, dataset, kwargs):
+        losstype = kwargs['losstype']
         images, labels, datainfos = dataset
         noobj_loss, obj_loss, cls_loss, loc_loss = 0.0, 0.0, 0.0, 0.0
         for f_id, f_map in enumerate(f_maps):
@@ -173,7 +174,7 @@ class YoloLoss:
             noobj_loss += _noobj_loss
             cls_loss += _cls_loss
             loc_loss += _loc_loss
-        return obj_loss, noobj_loss, cls_loss, loc_loss
+        return {'obj_loss': obj_loss, 'noobj_loss': noobj_loss, 'cls_loss': cls_loss, 'loc_loss': loc_loss}
 
 
 '''

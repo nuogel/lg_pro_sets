@@ -9,7 +9,7 @@ from NetWorks.test_solver import Test
 
 def _parse_arguments():
     parser = ArgumentParser()
-    parser.add_argument('--type', default='OBD'  # OBD SR_DN
+    parser.add_argument('--type', default='TTS'  # OBD SR_DN
                         , type=str, help='yml_path')
     parser.add_argument('--checkpoint', default=
     'tmp/checkpoint/now.pkl'
@@ -45,10 +45,10 @@ def main():
     # files = 'E:/datasets/youku/youku_00200_00249_l/Youku_00203_l/Youku_00203_l_001.png'
     # files = 'F:/Projects/auto_Airplane/TS02/20191217_153659_10/'
     # files = 'E:/datasets/VisDrone2019/VisDrone2019-VID-val/sequences/uav0000182_00000_v/'
-    files = 'F:/LG/GitHub/lg_pro_sets/DataLoader/datasets/OBD_idx_stores/KITTI/KITTI_test_set_w.txt'
     # files = 'F:/LG/GitHub/lg_pro_sets/DataLoader/datasets/OBD_idx_stores/VISDRONE/VISDRONE_test_set_w.txt'
     # files = 'F:\LG\GitHub\lg_pro_sets\DataLoader\datasets\VID_idx_stores\VISDRONE\VISDRONE_train_set_w.txt'
     # files = 'F:\LG\GitHub\lg_pro_sets\DataLoader\datasets\OBD_idx_stores\VOC\VOC_train_set_w.txt'
+    files = 'DataLoader/datasets/TTS_idx_stores/BZNSYP/BZNSYP_test_set_w.txt'
     score = False
     args = _parse_arguments()
     cfg = parse_yaml(args)

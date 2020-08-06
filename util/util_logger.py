@@ -2,8 +2,9 @@ import logging
 from colorlog import ColoredFormatter
 import datetime
 
+
 def load_logger(args):
-    log_path = args.log_file_path+str(datetime.date.today())+'.txt'
+    log_path = args.log_file_path + str(datetime.date.today()) + '.txt'
     logging.basicConfig(filename=log_path,
                         level=logging.DEBUG if args.debug else logging.INFO,
                         format='%(asctime)s %(levelname)-8s %(filename)s[line:%(lineno)d]: %(message)s',
@@ -26,6 +27,6 @@ def load_logger(args):
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
     logger.addHandler(handler)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.DEBUG if args.debug else logging.INFO)
     logger.info('logger init finished')
     return logger

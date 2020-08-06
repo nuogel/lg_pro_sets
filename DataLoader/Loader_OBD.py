@@ -22,14 +22,14 @@ class Loader(DataLoader):
         self.class_name = _get_class_names(cfg.PATH.CLASSES_PATH)
         self.print_path = self.cfg.TRAIN.SHOW_TRAIN_NAMES
         self.cls2idx = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
-        self.a = 0
+        self.write_images = self.cfg.TRAIN.WRITE_IMAGES
 
     def __len__(self):
         if self.one_test:
             if self.is_training:
                 length = int(self.cfg.TEST.ONE_TEST_TRAIN_STEP)
             else:
-                length = len(self.cfg.TEST.ONE_NAME)
+                length = 1
         else:
             length = len(self.dataset_txt)
         return length
@@ -93,7 +93,10 @@ class Loader(DataLoader):
 
         if self.cfg.TRAIN.SHOW_INPUT:
             _show_img(img, label_after, cfg=self.cfg, show_time=self.cfg.TRAIN.SHOW_INPUT, pic_path=data_info[2])
-
+        if self.write_images > 0:
+            img_write = _show_img(img, label_after, cfg=self.cfg,show_time=0)
+            self.cfg.TRAIN.WRITER.tbX_addImage('GT_'+data_info[0], img_write)
+            self.write_images -= 1
         img = np.asarray(img, dtype=np.float32)
         img = np.transpose(img, (2, 0, 1))
         img = img / 127.5 - 1.
@@ -110,18 +113,21 @@ class Loader(DataLoader):
         :param image: if there is a image ,the just return the image.
         :return: images, labels, image_size
         '''
+
+        x_path = os.path.join(self.cfg.PATH.INPUT_PATH, id[1])
+        y_path = os.path.join(self.cfg.PATH.INPUT_PATH, id[2])
         if self.print_path:
-            print(id[1], '<--->', id[2])
-        if not (os.path.isfile(id[1]) and os.path.isfile(id[2])):
-            print('ERROR, NO SUCH A FILE.', id[1], '<--->', id[2])
+            print(x_path, '<--->', y_path)
+        if not (os.path.isfile(x_path) and os.path.isfile(y_path)):
+            print('ERROR, NO SUCH A FILE.', x_path, '<--->', y_path)
             exit()
         # labels come first.
-        label = self._read_line(id[2])
+        label = self._read_line(y_path)
         if label == [[]] or label == []:
-            print('none label at:', id[2])
+            print('none label at:', y_path)
             label = None
         # then add the images.
-        img = cv2.imread(id[1])
+        img = cv2.imread(x_path)
         return img, label
 
     def _is_finedata(self, xyxy):

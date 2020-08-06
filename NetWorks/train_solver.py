@@ -12,6 +12,7 @@ import torch
 import torch.nn
 from torch.optim import lr_scheduler
 from apex import amp
+import tqdm
 from util.util_Save_Parmeters import TrainParame
 from util.util_ConfigFactory_Classes import get_loss_class, get_model_class, get_score_class
 from util.util_time_stamp import Time
@@ -25,25 +26,20 @@ from DataLoader.DataLoaderFactory import dataloader_factory
 from OtherNets.Quantization.pq_quantization.util_quantization import util_quantize_model
 
 
-# self.LOGGER = logging.getLogger(__name__)
-
-
 class Solver:
     def __init__(self, cfg, args):
+        self.save_parameter = TrainParame(cfg)
+        cfg.TRAIN.WRITER = self.save_parameter
         self.cfg, self.args = prepare_cfg(cfg, args)
         self.one_test = self.cfg.TEST.ONE_TEST
         self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)
         self.dataloader_factory = dataloader_factory(self.cfg, self.args)
-        self.save_parameter = TrainParame(self.cfg)
+
         self.Model = get_model_class(self.cfg.BELONGS, self.cfg.TRAIN.MODEL)(self.cfg)
         self.LossFun = get_loss_class(self.cfg.BELONGS, self.cfg.TRAIN.MODEL)(self.cfg)
         self.Score = get_score_class(self.cfg.BELONGS)(self.cfg)
         self.test_batch_num = self.cfg.TEST.ONE_TEST_TEST_STEP
         self.LOGGER = load_logger(self.args)
-
-        torch.backends.cudnn.benchmark = True
-        print('torch version: ', torch.__version__)
-        print('torch.version.cuda: ', torch.version.cuda)
 
     def train(self):
         """Train the network.
@@ -66,7 +62,7 @@ class Solver:
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch, optimizer, scheduler)
                 self._save_checkpoint(epoch)
-            if epoch > 10 or self.one_test:
+            if epoch > 0 or self.one_test:
                 self._test_an_epoch(epoch)
 
     def _prepare_parameters(self):
@@ -74,7 +70,6 @@ class Solver:
         Get the self.Model, learning_rate, epoch_last, train_set, test_set.
         :return: learning_rate, epoch_last, train_set, test_set.
         """
-        torch.backends.cudnn.benchmark = True
         # load the last train parameters
         if self.args.checkpoint in [0, '0', 'None', 'no', 'none', "''"]:
             weights_init(self.Model, self.cfg)
@@ -123,19 +118,20 @@ class Solver:
         scheduler = lr_scheduler.StepLR(optimizer, step_size=self.cfg.TRAIN.STEP_LR, gamma=0.1)
         return optimizer, scheduler
 
-    def _calculate_loss(self, predict, dataset, losstype=None):
+    def _calculate_loss(self, predict, dataset, **kwargs):
         total_loss = 0.
-        losses = self.LossFun.Loss_Call(predict, dataset, losstype=losstype)
-        if self.cfg.BELONGS in ['OBD', 'VID']:
-            loss_names = ['[obj_loss]', '[noobj_loss]', '[cls_loss]', '[loc_loss]']  # obj_loss, noobj_loss, cls_loss, loc_loss
-            for i in range(len(losses)):
-                total_loss += losses[i]
-            loss_head_info = ''
-            for loss_name, head_loss in zip(loss_names[:len(losses)], losses):
-                loss_head_info += ' {}: {:6.4f}'.format(loss_name, head_loss.item())
-            self.LOGGER.debug('Loss per head: %s', loss_head_info)
-        else:
-            total_loss = losses[0]
+        loss_head_info = ''
+        losses = self.LossFun.Loss_Call(predict, dataset, kwargs=kwargs)
+        global_step = kwargs['step'] + kwargs['epoch'] * kwargs['batches']
+        w_dict = {}
+        for k, v in losses.items():
+            total_loss += v
+            loss_head_info += ' {}: {:6.4f}'.format(k, v.item())
+            w_dict['item_losses/' + k] = v
+        # add tensorboard writer.
+        w_dict['epoch'] = global_step
+        self.save_parameter.tbX_write(w_dict=w_dict)
+        self.LOGGER.debug(loss_head_info)
         if torch.isnan(total_loss) or total_loss.item() == float("inf") or total_loss.item() == -float("inf"):
             self.LOGGER.error("received an nan/inf loss")
             exit()
@@ -152,25 +148,23 @@ class Solver:
         for path_i in path_list:
             os.makedirs(os.path.dirname(path_i), exist_ok=True)
             torch.save(self.Model.state_dict(), path_i)
-            self.LOGGER.info('Epoch: %s, checkpoint is saved to %s', epoch, path_i)
+            self.LOGGER.debug('Epoch: %s, checkpoint is saved to %s', epoch, path_i)
 
     def _train_an_epoch(self, epoch, optimizer, scheduler):
         # pylint: disable=too-many-arguments
         self.Model.train()
-        self.LOGGER.info('>' * 30 + '[TRAIN] Model:%s,   Epoch: %s,   Learning Rate: %s', self.cfg.TRAIN.MODEL, epoch, optimizer.param_groups[0]['lr'])
+        self.LOGGER.debug('>' * 30 + '[TRAIN] Model:%s,   Epoch: %s,   Learning Rate: %s', self.cfg.TRAIN.MODEL, epoch, optimizer.param_groups[0]['lr'])
         losses = 0
         # count the step time, total time...
         optimizer.zero_grad()
         _timer = Time()
-        # for step in range(batch_num):
-        for step, train_data in enumerate(self.trainDataloader):
-            if step >= len(self.trainDataloader):
-                break
+        Pbar = tqdm.tqdm(self.trainDataloader)
+        for step, train_data in enumerate(Pbar):
             train_data = self.dataloader_factory.to_devce(train_data)
             # forward process
             predict = self.Model.forward(input_x=train_data[0], input_y=train_data[1], input_data=train_data, is_training=True)
             # calculate the total loss
-            total_loss = self._calculate_loss(predict, train_data, losstype=self.cfg.TRAIN.LOSSTYPE)
+            total_loss = self._calculate_loss(predict, train_data, losstype=self.cfg.TRAIN.LOSSTYPE, step=step, epoch=epoch, batches=len(self.trainDataloader))
             losses += total_loss.item()
             # backward process
             if self.args.tensor_core in ['O1', 'O2', 'O3']:
@@ -185,16 +179,25 @@ class Solver:
             if (step + 1) % self.cfg.TRAIN.SAVE_STEP == 0:
                 self._save_checkpoint(epoch)
             _timer.time_end()
-            self.LOGGER.info('[TRAIN] Model: %s Epoch-Step:%3d-%4d/%4d, Step_LOSS: %8.4f, Batch_Average_LOSS: %8.4f, Time Step/Total-%s/%s', self.cfg.TRAIN.MODEL,
-                             epoch, step, len(self.trainDataloader), total_loss.item(), losses / (step + 1), _timer.diff, _timer.from_begin)
+            info = '[TRAIN] Model: %s Epoch-Step:%3d-%4d/%4d, ' \
+                   'Step_LOSS: %8.4f, Batch_Average_LOSS: %8.4f, ' \
+                   'Time Step/Total-%s/%s' % (self.cfg.TRAIN.MODEL,
+                                              epoch, step, len(self.trainDataloader),
+                                              total_loss.item(), losses / (step + 1),
+                                              _timer.diff, _timer.from_begin)
+            # self.LOGGER.debug(info)
+            Pbar.set_description(info)
             _timer.time_start()
         scheduler.step()
-        self.save_parameter.tbX_write(epoch=epoch, learning_rate=optimizer.param_groups[0]['lr'], batch_average_loss=losses / len(self.trainDataloader), )
-        self.LOGGER.info('[TRAIN] Summary: Epoch: %s, average total loss: %s', epoch, losses / len(self.trainDataloader))
+        w_dict = {'epoch': epoch,
+                  'learning_rate': optimizer.param_groups[0]['lr'],
+                  'batch_average_loss': losses / len(self.trainDataloader)}
+        self.save_parameter.tbX_write(w_dict)
+        self.LOGGER.debug('[TRAIN] Summary: Epoch: %s, average total loss: %s', epoch, losses / len(self.trainDataloader))
 
     def _test_an_epoch(self, epoch):
         if not self.one_test: self.Model.eval()
-        self.LOGGER.info('[EVALUATE] Model:%s, Evaluating ...', self.cfg.TRAIN.MODEL)
+        self.LOGGER.debug('[EVALUATE] Model:%s, Evaluating ...', self.cfg.TRAIN.MODEL)
         _timer = Time()
         self.Score.init_parameters()
         for step, train_data in enumerate(self.testDataloader):
@@ -208,8 +211,11 @@ class Solver:
             if self.cfg.BELONGS in ['OBD']: test_data = test_data[1]
             self.Score.cal_score(predict, test_data)
             _timer.time_end()
-            self.LOGGER.info('[EVALUATE] Epoch-Step:%3d-%4d/%4d, Time Step/Total-%s/%s', epoch, step, len(self.testDataloader), _timer.diff, _timer.from_begin)
-        total_score, other_score = self.Score.score_out()
-        self.save_parameter.tbX_write(epoch=epoch, total_score=total_score, other_score=other_score)
-        self.LOGGER.info('[EVALUATE] Summary: Epoch: %s, total_score: %s, other_score: %s', epoch, str(total_score), str(other_score))
+            self.LOGGER.debug('[EVALUATE] Epoch-Step:%3d-%4d/%4d, Time Step/Total-%s/%s', epoch, step, len(self.testDataloader), _timer.diff, _timer.from_begin)
+        main_score, item_score = self.Score.score_out()
+        w_dict = {'epoch': epoch,
+                  'main_score': main_score,
+                  'item_score': item_score}
+        self.save_parameter.tbX_write(w_dict)
+        self.LOGGER.debug('[EVALUATE] Summary: Epoch: %s, total_score: %s, other_score: %s', epoch, str(main_score), str(item_score))
         if self.cfg.TEST.TEST_ONLY: exit()

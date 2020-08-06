@@ -20,6 +20,7 @@ from util.util_img_block import img_cut
 from util.util_nms_for_img_block import NMS_block
 from util.util_time_stamp import Time
 from DataLoader.DataLoaderFactory import dataloader_factory
+from util.util_audio import Util_Audio
 
 
 class Test_Base(object):
@@ -60,9 +61,9 @@ class Test_Base(object):
 
         elif os.path.isfile(file_s):
             if file_s.split('.')[1] == 'txt':  # .txt
-                lines = open(file_s, 'r').readlines()
+                lines = open(file_s, 'r', encoding='utf-8').readlines()
                 for line in lines:
-                    tmp = line.strip().split(";")
+                    tmp = line.strip().split("┣┫")
                     dataset.append(tmp)
             else:  # xx.jpg
                 dataset.append([os.path.basename(file_s), file_s, file_s])
@@ -221,8 +222,32 @@ class Test_SRDN(Test_Base):
                              show_time=self.cfg.TEST.SHOW_EVAL_TIME)
 
 
+class Test_TTS(Test_Base):
+    def __init__(self, cfg, args):
+        super(Test_TTS, self).__init__(cfg, args)
+        self.util_audio = Util_Audio(cfg)
+
+    def test_backbone(self, DataSet):
+        """Test."""
+        loader = iter(DataSet)
+        timer = Time()
+        self.Model.encoder.eval()
+        self.Model.postnet.eval()
+        for i in range(DataSet.__len__()):
+            test_data = next(loader)
+            timer.time_start()
+            test_data = self.dataloader_factory.to_devce(test_data)
+            predicted = self.Model.forward(input_x=test_data[0], input_data=test_data, is_training=False)
+            mel_outputs, linear_outputs, alignments = predicted
+            linear_output = linear_outputs[0].cpu().data.numpy()
+            # Predicted audio signal
+            waveform = self.util_audio._inv_spectrogram(linear_output.T)
+            self.util_audio.save_wav(waveform, 'dst_wav_path.wav')
+
+
 Test = {'OBD': Test_OBD,
         'ASR': Test_ASR,
         'SRDN': Test_SRDN,
         'VID': Test_OBD,
+        'TTS': Test_TTS,
         }

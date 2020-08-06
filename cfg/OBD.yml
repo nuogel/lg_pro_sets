@@ -1,7 +1,7 @@
 BELONGS: OBD
 
 PATH:
-  INPUT_PATH: '' #'E:/datasets/UdacitySelfDriving/images/'
+  INPUT_PATH: 'E:\datasets\person\data_person'
   LAB_PATH: '' #'E:/datasets/UdacitySelfDriving/labels/'
   CLASSES_PATH: 'F:\LG\GitHub\lg_pro_sets\DataLoader/others/class_names.txt'
   TMP_PATH: 'tmp/'
@@ -10,12 +10,12 @@ PATH:
 
 
 TRAIN:
-  MODEL: yolov3 #yolov3_tiny #yolonano #yolov2 #  yolov3_tiny_shufflenet #ssdvgg #refinedet #efficientdet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #  fcos #
+  MODEL: yolov3_tiny #yolov3 #yolonano #yolov2 #  yolov3_tiny_shufflenet #ssdvgg #refinedet #efficientdet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #  fcos #
   EPOCH_SIZE: 4000
   BATCH_SIZE: ''
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
-  TRAIN_DATA_FROM_FILE: ['KITTI'] #['AUTOAIR','VISDRONE'] #['AUTOAIR'] #[VISDRONE] #UCAS_AOD] #'VOC''KITTI'
-  CLASSES:  ['Car', 'Cyclist', 'Pedestrian', 'Others']
+  TRAIN_DATA_FROM_FILE: ['PERSON_COLLECT'] #['AUTOAIR','VISDRONE'] #['AUTOAIR'] #[VISDRONE] #UCAS_AOD] #'VOC''KITTI'
+  CLASSES:  ['Car', 'Person']
 
   #['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair','cow', 'diningtable','dog', 'horse','motorbike', 'person', 'pottedplant','sheep', 'sofa', 'train', 'tvmonitor']
 
@@ -27,7 +27,7 @@ TRAIN:
   RELATIVE_LABELS: 4  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0.1 #0 #
   MIN_AREA: 10 #0 #100 #400 #
-  IMG_SIZE: [384, 960] #[416, 416] #[512, 768] #[512,512] # [1024,1920] #[720,1024] #[H,W] #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
+  IMG_SIZE: [512,512] #[384, 960] #[416, 416] #[512, 768] # [1024,1920] #[720,1024] #[H,W] #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
   MULTI_SIZE_RATIO: [1] # [1, 0.9, 0.8...]
 
   SHOW_TRAIN_NAMES: 0 #TRUE #
@@ -55,6 +55,9 @@ TRAIN:
   FMAP_ANCHOR_NUM: 3
   ANCHORS: 'please see the util_prepare.py'
 
+  WRITER: 'tensorboardX'
+  WRITE_IMAGES: 40
+
 
 TEST:
   TEST_SET_RATIO: 0.1
@@ -78,7 +81,8 @@ TEST:
   ONE_TEST_TRAIN_STEP: 50
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
-  ['000005.jpg', 'E:\\datasets\\PASCAL_VOC\\VOCdevkit\\VOC2007\\trainval\\JPEGImages\\000005.jpg', 'E:\\datasets\\PASCAL_VOC\\VOCdevkit\\VOC2007\\trainval\\Annotations\\000005.xml']
+
+    #['000005.jpg', 'E:\\datasets\\PASCAL_VOC\\VOCdevkit\\VOC2007\\trainval\\JPEGImages\\000005.jpg', 'E:\\datasets\\PASCAL_VOC\\VOCdevkit\\VOC2007\\trainval\\Annotations\\000005.xml']
     #  ['000000', 'E://datasets//kitti//training//images//000000.png', 'E://datasets//kitti//training//labels\\000000.xml']
     #      ['0000002_00005_d_0000014.jpg', 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/images/0000002_00005_d_0000014.jpg', 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/annotations/0000002_00005_d_0000014.txt']
     #  ['P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.txt']

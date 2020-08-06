@@ -27,9 +27,9 @@ def _show_img(imgs, labels_out, img_in=None, save_labels=False, pic_path=None, s
 
     assert imgs.shape[0] == len(labels_out), 'error:util_show_img->image and label shape is not the same'
 
-    if is_training:
+    if is_training and cfg:
         show_time = cfg.TRAIN.SHOW_INPUT
-    else:
+    elif cfg:
         save_labels = cfg.TEST.SAVE_LABELS
         show_time = cfg.TEST.SHOW_TIMES
 

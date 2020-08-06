@@ -1,5 +1,6 @@
 import glob
 import os
+import xml.etree.ElementTree as ET
 
 
 def _make_list_by_hand(path):
@@ -13,52 +14,62 @@ def _make_list_by_hand(path):
     return list
 
 
-def make_list(img_path, lab_path):
+def make_list(base_path, x_file, y_file):
     dir_list = []
-    path_list = []
-    for path in img_path:
-        for ex_name in expand_name:
-            path_list += glob.glob(path + '/*' + ex_name)
+    path_list = os.listdir(os.path.join(base_path, x_file))
 
-        for path in path_list:
-            file_name = os.path.basename(path)
-            path_2 = os.path.join(lab_path, file_name)
-            front = path_2.split('.')[0]
-            path_2 = front + '.txt'
-            # path_2 = lab_path
-
-            if limit_fun(path, path_2):
-                dir_list.append([file_name, path, path_2])
-                print('adding:', dir_list[-1])
+    for path_i in path_list:
+        x_path = os.path.join(base_path, x_file, path_i)
+        y_base = path_i.split('.', -1)[0] + '.xml'
+        y_path = os.path.join(base_path, y_file, y_base)
+        if _is_file(x_path) and _is_file(y_path) and _label_request(y_path):
+            # dir_list.append([path_i, x_path, y_path])
+            dir_list.append([path_i, os.path.join(x_file, path_i), os.path.join(y_file, y_base)])
+            print('adding:', dir_list[-1])
 
     return dir_list
 
 
-def limit_fun(path, path_2):
-    if not os.path.isfile(path_2):
+def _is_file(path):
+    if not os.path.isfile(path):
         return False
-    lines = open(path_2).readlines()
-    if lines == []:
-        return False
+
     else:
-        # for line in lines:
-        #     name_dict = {'0': 'ignored regions', '1': 'pedestrian', '2': 'people',
-        #                  '3': 'bicycle', '4': 'car', '5': 'van', '6': 'truck',
-        #                  '7': 'tricycle', '8': 'awning-tricycle', '9': 'bus',
-        #                  '10': 'motor', '11': 'others'}
-        #     tmps = line.strip().split(',')
-        #     realname = name_dict[tmps[5]]
-        #     if realname in ['car', 'van', 'truck', 'bus']:
-        #         return True
+
         return True
-    return False
+    # return False
+
+
+def _label_request(path):
+    # lines = open(path).readlines()
+    # if lines == []:
+    # for line in lines:
+    #      name_dict = {'0': 'ignored regions', '1': 'pedestrian', '2': 'people',
+    #                   '3': 'bicycle', '4': 'car', '5': 'van', '6': 'truck',
+    #                   '7': 'tricycle', '8': 'awning-tricycle', '9': 'bus',
+    #                   '10': 'motor', '11': 'others'}
+    #      tmps = line.strip().split(',')
+    #      realname = name_dict[tmps[5]]
+    #      if realname in ['car', 'van', 'truck', 'bus']:
+    #          return True
+    class_name = ['Others', 'Person']
+    ok_file = False
+    if os.path.basename(path).split('.')[-1] == 'xml':
+        tree = ET.parse(path)
+        root = tree.getroot()
+        for obj in root.findall('object'):
+            cls_name = obj.find('name').text
+            if cls_name in class_name:
+                ok_file = True
+                return ok_file
+    return ok_file
 
 
 def _wrte_dataset_txt(dataset, save_path):
     data_set_txt = ''
     for i in dataset:
-        data_set_txt += str(i[0]) + ';' + str(i[1]) + ';' + str(i[2]) + '\n'  # '\n'  # +
-    f = open(save_path, 'w')
+        data_set_txt += str(i[0]) + '┣┫' + str(i[1]) + '┣┫' + str(i[2]) + '\n'  # '\n'  # +
+    f = open(save_path, 'w', encoding='utf-8')
     f.write(data_set_txt)
     f.close()
 
@@ -74,21 +85,18 @@ if __name__ == '__main__':
     # img_path = ['F:\Projects\\auto_Airplane\TS02\\20191220_1526019_20/']
     # lab_path = 'F:\Projects\\auto_Airplane\TS02\\20191220_1526019_20_refined/'
 
-
     # img_path = ['E:/datasets/VisDrone2019/VisDrone2019-VID-train/sequences/uav0000013_00000_v']
     # lab_path = 'E:\datasets\VisDrone2019\VisDrone2019-VID-train\\annotations/uav0000013_00000_v.txt'
-    img_path = ['E:\datasets\PASCAL_VOC\VOCdevkit\VOC2007\\test\JPEGImages']
-    lab_path = 'E:\datasets\PASCAL_VOC\VOCdevkit\VOC2007\\test\labels'
 
+    img_path = 'images'
+    lab_path = 'labels'
+    base_path = 'E:\datasets\person\data_person'
     # path = 'E:\datasets\FlyingChairs\data'
-    
-    expand_name = ['.jpg', '.png']
 
     save_path = 'util_tmp/make_list.txt'
 
     # datalist =_make_list_by_hand(path)
 
-    datalist = make_list(img_path, lab_path)
-
+    datalist = make_list(base_path, img_path, lab_path)
 
     _wrte_dataset_txt(datalist, save_path)

@@ -7,6 +7,8 @@ util_show_img - 读取图片数据，对应标签数据，将标注框画到图�
 import cv2
 import os
 import xml.etree.ElementTree as ET
+from PIL import Image, ImageDraw, ImageFont
+import numpy as np
 
 
 def get_ALL_File(dir_path, seq=['.png']):
@@ -23,7 +25,7 @@ def get_ALL_File(dir_path, seq=['.png']):
 def _read_line(path):
     objs = []
     if os.path.basename(path).split('.')[-1] == 'txt':
-        file_open = open(path, 'r')
+        file_open = open(path, 'r', encoding='utf-8')
         for line in file_open.readlines():
             if ";" in line.strip():
                 tmps = []
@@ -56,7 +58,28 @@ def _read_line(path):
                     box_y1 = y - h / 2.
                     box_x2 = x + w / 2.
                     box_y2 = y + h / 2.
+            elif len(tmps) == 6:
+                box_x1 = float(tmps[1])
+                box_y1 = float(tmps[2])
+                box_x2 = float(tmps[3])
+                box_y2 = float(tmps[4])
+                plant_number = tmps[5]
+                name = plant_number
+                if box_x1 < 1 and box_y1 < 1 and box_x2 < 1 and box_y2 < 1:
+                    print('use yolo bboxes type')
 
+                    img_w = 1920
+                    img_h = 1080
+
+                    x = box_x1 * img_w
+                    y = box_y1 * img_h
+                    w = box_x2 * img_w
+                    h = box_y2 * img_h
+
+                    box_x1 = x - w / 2.
+                    box_y1 = y - h / 2.
+                    box_x2 = x + w / 2.
+                    box_y2 = y + h / 2.
 
             else:
                 # box_x1 = float(tmps[4])
@@ -70,7 +93,7 @@ def _read_line(path):
                 box_x2 = float(tmps[4])
                 box_y2 = float(tmps[5])
             # if name in CLASS:
-            objs.append([name + ': ' + '%.3f' % score, str(box_x1), str(box_y1), str(box_x2), str(box_y2)])
+            objs.append([name, str(box_x1), str(box_y1), str(box_x2), str(box_y2)])# + ': ' + '%.3f' % score
     elif os.path.basename(path).split('.')[-1] == 'xml':
 
         tree = ET.parse(path)
@@ -180,7 +203,14 @@ def _show_img(images, labels, show_img=True, show_time=30000, save_img=False, sa
             # text = class_out+"||"+ " ".join([str(i) for i in box])
             text = class_out
             cv2.rectangle(images, (xmin, ymin), (xmax, ymax), (0, 0, 255))
-            cv2.putText(images, text, (xmin, ymin), 1, 1, (0, 255, 255))
+            # PIL图片上打印汉字
+            pilImg = Image.fromarray(cv2.cvtColor(images, cv2.COLOR_BGR2RGB))
+            draw = ImageDraw.Draw(pilImg)
+            font = ImageFont.truetype("simhei.ttf", 40, encoding="utf-8")  # 参数1：字体文件路径，参数2：字体大小
+            draw.text((xmin, ymin - 40), text, (255, 0, 0), font=font)  # 参数1：打印坐标，参数2：文本，参数3：字体颜色，参数4：字体
+            # PIL图片转cv2 图片
+            images = cv2.cvtColor(np.array(pilImg), cv2.COLOR_RGB2BGR)
+            # cv2.putText(images, text, (xmin, ymin), 1, 1, (0, 255, 255))
 
     cv2.putText(images, 'The Number of Cars is : %d' % len(labels), (600, 220), 1, 2, (0, 0, 255), thickness=2)
     cv2.putText(images, 'Made by AI Team of Chengdu Fourier Electronic', (600, 250), 1, 2, (0, 0, 255), thickness=2)
@@ -199,12 +229,12 @@ def main():
     # path = 'E:/datasets/Car/COCO_Car'
     # path = 'E:/datasets/BDD100k/'
     # path ='E:/datasets/OpenImage_Car'
-    path = 'E:/datasets/VisDrone2019/VisDrone2019-VID-train/'
+    # path = 'E:/datasets/VisDrone2019/VisDrone2019-VID-train/'
     # im_file = os.path.join(path, "images", "1478019971185917857.jpg")
     # label_file = os.path.join(path, "labels", "1478019971185917857.xml")
     # img, label = _read_datas(im_file, label_file)
-    img_folds = 'E:\datasets\person\data_person/images'
-    label_folds = 'E:\datasets\person\data_person/labels'
+    img_folds = 'E:/for_test/flys/fly3/images'
+    label_folds = 'E:/for_test/flys/fly3/labels'
     # label_folds = 'F:\LG\GitHub\lg_pro_sets\\tmp\predicted_labels'
 
     # _show_img(img, label)
@@ -216,12 +246,12 @@ def main():
     lab_num = len(local_label_files)
     img_num = len(local_img_files)
     print(lab_num, img_num)
-    video_dir = 'F:/Projects/auto_Airplane/TS02/saved_video.avi'
+    video_dir = 'E:/for_test/flys/fly3/saved_video.avi'
     fps = 12
     img_size = (1920, 1080)
     fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
     video_writer = cv2.VideoWriter(video_dir, fourcc, fps, img_size)
-    save_video = 0
+    save_video = 1
     for index in range(min(img_num, lab_num)):
         # if index <= 6330-500: continue
         label_file = local_label_files[index]
@@ -233,9 +263,9 @@ def main():
         try:
             _show_img(img, label, show_img=True, show_time=1000, save_video=save_video, video_writer=video_writer)
         except:
-            if save_video:video_writer.release()
+            if save_video: video_writer.release()
         # if index >= 9750 - 500: break
-    if save_video:video_writer.release()
+    if save_video: video_writer.release()
     print('finish')
 
 

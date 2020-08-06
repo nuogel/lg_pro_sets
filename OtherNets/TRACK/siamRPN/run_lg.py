@@ -49,7 +49,7 @@ if __name__ == '__main__':
         roi = (x1, y1, w, h)
     elif LG:
         # img_path = 'E:\datasets\TRACK\LG\images/img_'
-        img_path = 'F:/Projects/auto_Airplane/TS02/truck_tracker'
+        img_path = 'E:\\for_test\\fly1'
         img_list = []
         img_list = glob(img_path + '/*.png')
         # for i in range(0, 967):
@@ -60,8 +60,8 @@ if __name__ == '__main__':
 
     frames = len(img_list)
     frame1 = cv2.imread(img_list[0])
-    # roi = cv2.selectROI("tracking", frame1, False, False)  # x1, y1, w, h)
-    roi = (917, 547, 103, 106)
+    roi = cv2.selectROI("tracking", frame1, False, False)  # x1, y1, w, h)
+    # roi = (917, 547, 103, 106)
     tracker.init(frame1, roi)
     j = 1
     for i in range(1, frames):

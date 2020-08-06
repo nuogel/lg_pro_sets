@@ -16,7 +16,6 @@ def get_model_class(belongs, modelname):
 
 
 def get_loader_class(belongs):
-    # if belongs == 'VID': belongs = 'OBD'
     class_name = 'Loader_' + str(belongs).upper()
     model_file = __import__('DataLoader.' + class_name, fromlist=[class_name])
     model_class = _get_sub_model(model_file, 'Loader')
@@ -40,6 +39,7 @@ def get_loss_class(belongs, modelname):
         from NetWorks.loss.ObdLoss_REFINEDET import REFINEDETLOSS
         from NetWorks.loss.OcrLoss_PAN import PANLoss
         from NetWorks.loss.FlowLoss import FlowLoss
+        from NetWorks.loss.AsrLoss_TACOTRON import TACOTRONLOSS
         loss_dict = {
             'fcos': FCOSLOSS,
             'refinedet': REFINEDETLOSS,
@@ -50,6 +50,8 @@ def get_loss_class(belongs, modelname):
             'seq2seq': SEQ2SEQLOSS,
             'PAN': PANLoss,
             'flow_fgfa': FlowLoss,
+            # TTS
+            'tacotron': TACOTRONLOSS,
         }
         return loss_dict[modelname]
 

@@ -9,7 +9,7 @@ keras
 opencv
 opencv-contrib-python
 pyyaml
-tensorboardX
+tensorboard
 scikit-learn
 shapely
 imgaug
