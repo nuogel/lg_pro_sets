@@ -61,7 +61,7 @@ class Solver:
         for epoch in range(epoch_last, self.cfg.TRAIN.EPOCH_SIZE):
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch, optimizer, scheduler)
-                self._save_checkpoint(epoch)
+                self._save_checkpoint(epoch, optimizer.param_groups[0]['lr'])
             if epoch > 0 or self.one_test:
                 self._test_an_epoch(epoch)
 
@@ -83,9 +83,9 @@ class Solver:
             else:
                 train_set, test_set = _get_train_test_dataset(self.cfg)
         else:
-            self.Model = load_state_dict(self.Model, self.args.checkpoint, self.cfg.TRAIN.DEVICE)
-            epoch_last, learning_rate_last = self.save_parameter.tbX_read()
-            epoch = self.args.epoch_continue if self.args.epoch_continue else epoch_last + 1
+            self.Model, epoch_last, learning_rate_last = load_state_dict(self.Model, self.args.checkpoint, self.cfg.TRAIN.DEVICE)
+            epoch = self.args.epoch_continue if self.args.epoch_continue else epoch_last
+            self.save_parameter.tbX_reStart(epoch)
             learning_rate = self.args.lr_continue if self.args.lr_continue else learning_rate_last
             self.LOGGER.info('>' * 30 + 'Loading Last Checkpoint: %s, Last Learning Rate:%s, Last Epoch:%s',
                              self.args.checkpoint, learning_rate, epoch)
@@ -129,15 +129,16 @@ class Solver:
             loss_head_info += ' {}: {:6.4f}'.format(k, v.item())
             w_dict['item_losses/' + k] = v
         # add tensorboard writer.
-        w_dict['epoch'] = global_step
-        self.save_parameter.tbX_write(w_dict=w_dict)
+        if global_step % 1000 == 0:
+            w_dict['epoch'] = global_step
+            self.save_parameter.tbX_write(w_dict=w_dict)
         self.LOGGER.debug(loss_head_info)
         if torch.isnan(total_loss) or total_loss.item() == float("inf") or total_loss.item() == -float("inf"):
             self.LOGGER.error("received an nan/inf loss")
             exit()
         return total_loss
 
-    def _save_checkpoint(self, epoch):
+    def _save_checkpoint(self, epoch, lr_now):
         checkpoint_path_0 = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoint', '{}.pkl'.format(epoch))
         checkpoint_path_1 = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoint', 'now.pkl'.format(epoch))
         checkpoint_path_2 = os.path.join(self.cfg.PATH.TMP_PATH + '/tbx_log_' + self.cfg.TRAIN.MODEL, 'now.pkl')
@@ -147,7 +148,8 @@ class Solver:
             path_list = [checkpoint_path_0, checkpoint_path_1, checkpoint_path_2]
         for path_i in path_list:
             os.makedirs(os.path.dirname(path_i), exist_ok=True)
-            torch.save(self.Model.state_dict(), path_i)
+            saved_dict = {'state_dict': self.Model.state_dict(), 'epoch': epoch, 'lr': lr_now}
+            torch.save(saved_dict, path_i)
             self.LOGGER.debug('Epoch: %s, checkpoint is saved to %s', epoch, path_i)
 
     def _train_an_epoch(self, epoch, optimizer, scheduler):
@@ -173,11 +175,12 @@ class Solver:
             else:
                 total_loss.backward()
 
+            if (step + 1) % self.cfg.TRAIN.SAVE_STEP == 0:
+                self._save_checkpoint(epoch, optimizer.param_groups[0]['lr'])
             if step % self.cfg.TRAIN.BATCH_BACKWARD_SIZE == 0:
                 optimizer.step()
                 optimizer.zero_grad()
-            if (step + 1) % self.cfg.TRAIN.SAVE_STEP == 0:
-                self._save_checkpoint(epoch)
+
             _timer.time_end()
             info = '[TRAIN] Model: %s Epoch-Step:%3d-%4d/%4d, ' \
                    'Step_LOSS: %8.4f, Batch_Average_LOSS: %8.4f, ' \
@@ -200,7 +203,8 @@ class Solver:
         self.LOGGER.debug('[EVALUATE] Model:%s, Evaluating ...', self.cfg.TRAIN.MODEL)
         _timer = Time()
         self.Score.init_parameters()
-        for step, train_data in enumerate(self.testDataloader):
+        Pbar = tqdm.tqdm(self.testDataloader)
+        for step, train_data in enumerate(Pbar):
             _timer.time_start()
             if step >= len(self.trainDataloader):
                 break
@@ -211,7 +215,10 @@ class Solver:
             if self.cfg.BELONGS in ['OBD']: test_data = test_data[1]
             self.Score.cal_score(predict, test_data)
             _timer.time_end()
-            self.LOGGER.debug('[EVALUATE] Epoch-Step:%3d-%4d/%4d, Time Step/Total-%s/%s', epoch, step, len(self.testDataloader), _timer.diff, _timer.from_begin)
+            info = '[EVALUATE] Epoch-Step:%3d-%4d/%4d, Time Step/Total-%s/%s' % (epoch, step, len(self.testDataloader), _timer.diff, _timer.from_begin)
+            self.LOGGER.debug(info)
+            Pbar.set_description(info)
+
         main_score, item_score = self.Score.score_out()
         w_dict = {'epoch': epoch,
                   'main_score': main_score,

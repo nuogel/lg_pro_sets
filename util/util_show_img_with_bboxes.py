@@ -184,7 +184,7 @@ def _read_datas(im_file, lab_file):
     return img, label
 
 
-def _show_img(images, labels, show_img=True, show_time=30000, save_img=False, save_video=0, video_writer=None):
+def _show_img(images, labels, show_img=True, show_time=None, save_img=False, save_video=0, video_writer=None):
     if labels:
         for _, label in enumerate(labels):
             if len(label) == 5:  # in shape of [class, x1, y1, x2, y2]
@@ -233,8 +233,8 @@ def main():
     # im_file = os.path.join(path, "images", "1478019971185917857.jpg")
     # label_file = os.path.join(path, "labels", "1478019971185917857.xml")
     # img, label = _read_datas(im_file, label_file)
-    img_folds = 'E:/for_test/flys/fly3/images'
-    label_folds = 'E:/for_test/flys/fly3/labels'
+    img_folds = 'E:\datasets\person\data_person/images'
+    label_folds = 'E:\datasets\person\data_person/labels'
     # label_folds = 'F:\LG\GitHub\lg_pro_sets\\tmp\predicted_labels'
 
     # _show_img(img, label)
@@ -251,17 +251,17 @@ def main():
     img_size = (1920, 1080)
     fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
     video_writer = cv2.VideoWriter(video_dir, fourcc, fps, img_size)
-    save_video = 1
+    save_video = 0
     for index in range(min(img_num, lab_num)):
-        # if index <= 6330-500: continue
-        label_file = local_label_files[index]
+        if index <= 163300: continue
         im_file = local_img_files[index]
+        label_file = im_file.replace('images','labels').replace('.jpg', '.xml')#local_label_files[index]
         if print_path:
             print(im_file, '==>>>', label_file)
         img, label = _read_datas(im_file, label_file)
 
         try:
-            _show_img(img, label, show_img=True, show_time=1000, save_video=save_video, video_writer=video_writer)
+            _show_img(img, label, show_img=True, show_time=10000, save_video=save_video, video_writer=video_writer)
         except:
             if save_video: video_writer.release()
         # if index >= 9750 - 500: break

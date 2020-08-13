@@ -101,6 +101,7 @@ class Score:
         F1Score = f1score.mean()
 
         mapscore_dict = dict(zip(self.cfg.TRAIN.CLASSES, mapscore))
+        f1score_dict = dict(zip(self.cfg.TRAIN.CLASSES, f1score))
         prec_dict = dict(zip(self.cfg.TRAIN.CLASSES, prec))
         rec_dict = dict(zip(self.cfg.TRAIN.CLASSES, rec))
 
@@ -111,7 +112,7 @@ class Score:
         rec_txt = ['%0.3f ' % score for score in rec]
 
         print('mAP： %0.4f\nf1score:%0.4f\nmaps: %s\nf1sc: %s\nprec: %s\nreca: %s' % (mAP, F1Score, mapscore_txt, f1score_txt, prec_txt, rec_txt))
-        return mAP, {'mapscore_dict': mapscore_dict, 'prec_dict': prec_dict, 'rec_dict': rec_dict}
+        return mAP, {'mapscore_dict': mapscore_dict, 'f1score':f1score_dict, 'prec_dict': prec_dict, 'rec_dict': rec_dict}
 
     def F1_SCORE(self, beta=1):
         """

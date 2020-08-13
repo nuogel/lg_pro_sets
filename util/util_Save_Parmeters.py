@@ -56,22 +56,22 @@ class TrainParame:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         self.tbX_writer.add_image(names, image, 0, dataformats='HWC')
 
-    def tbX_read(self):
-        try:
-            ea = event_accumulator.EventAccumulator(self.folder)
-            ea.Reload()
-            print(ea.scalars.Keys())
-            learning_rate = ea.scalars.Items('learning_rate')[-1]
-        except:
-            print('error: no learning_rate in tbX,SET :', self.cfg.TRAIN.LR_START)
-            epoch = 0
-            learning_rate = self.cfg.TRAIN.LR_START
-        else:
-            epoch = learning_rate.step
-            learning_rate = learning_rate.value
+    def tbX_reStart(self, epoch):
+        # try:
+        #     ea = event_accumulator.EventAccumulator(self.folder)
+        #     # ea.Reload()
+        #     print(ea.scalars.Keys())
+        #     learning_rate = ea.scalars.Items('learning_rate')[-1]
+        # except:
+        #     print('error: no learning_rate in tbX,SET :', self.cfg.TRAIN.LR_START)
+        #     epoch = 0
+        #     learning_rate = self.cfg.TRAIN.LR_START
+        # else:
+        #     epoch = learning_rate.step
+        #     learning_rate = learning_rate.value
         self.tbX_writer = SummaryWriter(self.folder)
+
         self._write_cfg(epoch=epoch)
-        return epoch, learning_rate
 
     def tbX_show_parameters(self, start_epoch=0, end_epoch=None):
         try:

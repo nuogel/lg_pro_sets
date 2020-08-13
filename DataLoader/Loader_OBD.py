@@ -43,22 +43,26 @@ class Loader(DataLoader):
                 data_info = self.dataset_txt[0]
             else:
                 data_info = self.dataset_txt[index]
+
+            data_info[1] = os.path.join(self.cfg.PATH.INPUT_PATH, data_info[1])
+            data_info[2] = os.path.join(self.cfg.PATH.INPUT_PATH, data_info[2])
             img, label = self._read_datas(data_info)  # labels: (x1, y1, x2, y2) & must be absolutely labels.
             if not self.is_training and not label:
                 break
             index += 1
 
-        # DOAUG:
-        if self.cfg.TRAIN.DO_AUG and self.is_training:
-            labels = 'None'
-            try_tims = 0
-            while labels is 'None':
-                imgs, labels = self.dataaug.augmentation(aug_way_ids=([11, 20, 21, 22], [26]), datas=([img], [label]))  # [11,20, 21, 22]
-                try_tims += 1
-                if try_tims > 100:
-                    print('trying', try_tims, ' times when data augmentation at file:', str(data_info[2]))
-            img = imgs[0]
-            label = labels[0]
+            # DOAUG:
+            if self.cfg.TRAIN.DO_AUG and self.is_training:
+                labels = 'None'
+                try_tims = 0
+                while labels is 'None':
+                    imgs, labels = self.dataaug.augmentation(aug_way_ids=([11, 20, 21, 22], [26]), datas=([img], [label]))  # [11,20, 21, 22]
+                    try_tims += 1
+                    if try_tims > 20:
+                        print('trying', try_tims, ' times when data augmentation at file:', str(data_info[2]))
+                        labels = [None]
+                img = imgs[0]
+                label = labels[0]
 
         # TEST->PAD TO SIZE:
         if self.cfg.TEST.PADTOSIZE and not self.is_training:
@@ -93,9 +97,9 @@ class Loader(DataLoader):
 
         if self.cfg.TRAIN.SHOW_INPUT:
             _show_img(img, label_after, cfg=self.cfg, show_time=self.cfg.TRAIN.SHOW_INPUT, pic_path=data_info[2])
-        if self.write_images > 0:
-            img_write = _show_img(img, label_after, cfg=self.cfg,show_time=0)
-            self.cfg.TRAIN.WRITER.tbX_addImage('GT_'+data_info[0], img_write)
+        if self.write_images > 0 and self.is_training:
+            img_write = _show_img(img, label_after, cfg=self.cfg, show_time=0)
+            self.cfg.TRAIN.WRITER.tbX_addImage('GT_' + data_info[0], img_write)
             self.write_images -= 1
         img = np.asarray(img, dtype=np.float32)
         img = np.transpose(img, (2, 0, 1))
@@ -114,8 +118,8 @@ class Loader(DataLoader):
         :return: images, labels, image_size
         '''
 
-        x_path = os.path.join(self.cfg.PATH.INPUT_PATH, id[1])
-        y_path = os.path.join(self.cfg.PATH.INPUT_PATH, id[2])
+        x_path = id[1]
+        y_path = id[2]
         if self.print_path:
             print(x_path, '<--->', y_path)
         if not (os.path.isfile(x_path) and os.path.isfile(y_path)):

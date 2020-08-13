@@ -81,8 +81,7 @@ def _show_img(imgs, labels_out, img_in=None, save_labels=False, pic_path=None, s
                 box[2] = int(box[2])
                 box[3] = int(box[3])
 
-                img_now = cv2.rectangle(img_raw, (box[0], box[1]),
-                                        (box[2], box[3]), (0, 255, 0), 1)
+                img_now = cv2.rectangle(img_raw, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
                 img_now = cv2.putText(img_now,
                                       str(class_out) + ': ' + score_out,
                                       (int(box[0] + 1), int(box[1] - 7)),
