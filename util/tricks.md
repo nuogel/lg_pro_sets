@@ -26,6 +26,14 @@ def fun(out_dir, index, wav_path, text):
     mel_spectrogram = audio.melspectrogram(wav).astype(np.float32)
 
 ##  linux pip install
+```
+pip show numpy
+
+```
 
 the default packages location of pip install is '/home/lg/.local/lib/python3.6/'
 
+
+##  pip install opencv3
+
+pip install opencv
