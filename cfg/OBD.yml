@@ -3,7 +3,7 @@ BELONGS: OBD
 PATH:
   INPUT_PATH: 'E:\datasets\person\data_person'
   LAB_PATH: '' #'E:/datasets/UdacitySelfDriving/labels/'
-  CLASSES_PATH: 'F:\LG\GitHub\lg_pro_sets\DataLoader/others/class_names.txt'
+  CLASSES_PATH: 'DataLoader/others/class_names.txt'
   TMP_PATH: 'tmp/'
   PARAMETER_PATH: 'tmp/checkpoint//checkpoint_{}.parameter'
   GENERATE_LABEL_SAVE_PATH: 'tmp/predicted_labels/'

@@ -2,8 +2,6 @@ torch
 torchvision
 tensorflow
 matplotlib
-numpy
-scipy
 scikit-image
 keras
 opencv
@@ -16,3 +14,6 @@ imgaug
 python-Levenshtein
 librosa
 lmdb
+colorlog
+python_speech_features
+prefetch_generator

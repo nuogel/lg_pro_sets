@@ -11,7 +11,6 @@ import os
 import torch
 import torch.nn
 from torch.optim import lr_scheduler
-from apex import amp
 import tqdm
 from util.util_Save_Parmeters import TrainParame
 from util.util_ConfigFactory_Classes import get_loss_class, get_model_class, get_score_class
@@ -57,6 +56,7 @@ class Solver:
         # Prepare optimizer
         optimizer, scheduler = self._get_optimizer(learning_rate, optimizer=self.cfg.TRAIN.OPTIMIZER)
         if self.args.tensor_core in ['O1', 'O2', 'O3']:
+            from apex import amp
             self.Model, optimizer = amp.initialize(self.Model, optimizer, opt_level=self.args.tensor_core, loss_scale="dynamic")
         for epoch in range(epoch_last, self.cfg.TRAIN.EPOCH_SIZE):
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
