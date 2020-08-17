@@ -19,7 +19,7 @@ def _parse_arguments():
     parser.add_argument('--batch_size', '--bz', default=8, type=int, help='batch size')
     parser.add_argument('--lr', default=0.001, type=float, help='Learning rate')
     parser.add_argument('--lr_continue', '--lr_c', default=0.001, type=float, help='Learning rate')
-    parser.add_argument('--number_works', '--n_w', default=1, type=int, help='number works of DataLoader')
+    parser.add_argument('--number_works', '--n_w', default=0, type=int, help='number works of DataLoader')
     parser.add_argument('--tensor_core', '--t_c', default='O0', type=str, help='apex-amp')
 
     parser.add_argument('--epoch-continue', default=None, type=int, help='Epoch of continue training')

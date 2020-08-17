@@ -26,8 +26,8 @@ TRAIN:
   RESIZE: 1
   RELATIVE_LABELS: 4  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0.1 #0 #
-  MIN_AREA: 1800 #0 #100 #400 #
-  IMG_SIZE: [512,512] #[384, 960] #[416, 416] #[512, 768] # [1024,1920] #[720,1024] #[H,W] #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
+  MIN_AREA: 3600 #0 #100 #400 #
+  IMG_SIZE: [512,960] #[384, 960] #[416, 416] #[512, 768] # [1024,1920] #[720,1024] #[H,W] #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
   MULTI_SIZE_RATIO: [1] # [1, 0.9, 0.8...]
 
   SHOW_TRAIN_NAMES: 0 #TRUE #
@@ -44,7 +44,7 @@ TRAIN:
   WEIGHT_DECAY: 5e-4
   LOSSTYPE: 'focalloss' #'mse' #
   EPOCH_CONTINUE: None
-  SAVE_STEP: 2
+  SAVE_STEP: 200
 
   # CUDA:
   GPU_NUM: [0] #[] # if is [] means use CPU.

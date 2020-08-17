@@ -1,0 +1,2 @@
+bbspeech-spec-00001.npy┣┫bbspeech-mel-00001.npy┣┫502┣┫卡尔普陪外孙玩滑梯。
+

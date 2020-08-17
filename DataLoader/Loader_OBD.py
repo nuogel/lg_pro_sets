@@ -23,6 +23,7 @@ class Loader(DataLoader):
         self.print_path = self.cfg.TRAIN.SHOW_TRAIN_NAMES
         self.cls2idx = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
         self.write_images = self.cfg.TRAIN.WRITE_IMAGES
+        self.idx_bad = []
 
     def __len__(self):
         if self.one_test:
@@ -38,7 +39,7 @@ class Loader(DataLoader):
         img = None
         label = None
 
-        while img is None or label is None:  # if there is no data in img or label
+        while img is None or label is None and index not in self.idx_bad:  # if there is no data in img or label
             if self.one_test:
                 data_info = self.dataset_txt[0]
             else:
@@ -50,6 +51,7 @@ class Loader(DataLoader):
             if not self.is_training and not label:
                 break
             index += 1
+            self.idx_bad.append(index)
 
             # DOAUG:
             if self.cfg.TRAIN.DO_AUG and self.is_training:

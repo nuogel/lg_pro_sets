@@ -102,7 +102,7 @@ class TrainParame:
             lines = lines.replace(',', ' <-> ')
             self.tbX_writer.add_text('class_dict', lines, epoch)
         config_path = 'cfg/' + self.cfg.BELONGS + '.yml'
-        config_lines = open(config_path, 'r').read().replace('\n', '\n\n')
+        config_lines = open(config_path, 'r', encoding='utf-8').read().replace('\n', '\n\n')
         self.tbX_writer.add_text('config', config_lines, epoch)
 
     def save_parameters(self, epoch, learning_rate=None, batch_average_loss=None, f1_score=None, precision=None, recall=None):
