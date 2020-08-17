@@ -1,7 +1,6 @@
 ## import 
 mod = importlib.import_module('numpy')
 means: import mumpy
-
 ## 多线程处理数据
 ```
 from concurrent.futures import ProcessPoolExecutor
@@ -25,14 +24,3 @@ def fun(out_dir, index, wav_path, text):
 
     # Compute a mel-scale spectrogram from the wav:
     mel_spectrogram = audio.melspectrogram(wav).astype(np.float32)
-
-## Conda install pytorch torchvision
-```c
-conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
-conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
-conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/pytorch/
-conda config --set show_channel_urls yes
-
-conda install pytorch torchvision
-```
-
