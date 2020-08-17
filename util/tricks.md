@@ -24,3 +24,8 @@ def fun(out_dir, index, wav_path, text):
 
     # Compute a mel-scale spectrogram from the wav:
     mel_spectrogram = audio.melspectrogram(wav).astype(np.float32)
+
+##  linux pip install
+
+the default packages location of pip install is '/home/lg/.local/lib/python3.6/'
+
