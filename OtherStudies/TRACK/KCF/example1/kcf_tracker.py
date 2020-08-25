@@ -1,4 +1,4 @@
-from OtherNets.TRACK.KCF.example1 import tracker
+from OtherStudies.TRACK.KCF.example1 import tracker
 import numpy as np
 import cv2
 

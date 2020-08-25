@@ -58,8 +58,8 @@ class Loader(DataLoader):
                 while labels is 'None':
                     imgs, labels = self.dataaug.augmentation(aug_way_ids=([11, 20, 21, 22], [26]), datas=([img], [label]))  # [11,20, 21, 22]
                     try_tims += 1
-                    if try_tims > 20:
-                        print('trying', try_tims, ' times when data augmentation at file:', str(data_info[2]))
+                    if try_tims > 1:
+                        # print('trying', try_tims, ' times when data augmentation at file:', str(data_info[2]))
                         labels = [None]
                 img = imgs[0]
                 label = labels[0]

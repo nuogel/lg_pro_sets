@@ -57,8 +57,15 @@ def _label_request(path):
     if os.path.basename(path).split('.')[-1] == 'xml':
         tree = ET.parse(path)
         root = tree.getroot()
+        AREA_OK = False
         for obj in root.findall('object'):
             cls_name = obj.find('name').text
+            # bbox = obj.find('bndbox')
+            # box_x1 = float(bbox.find('xmin').text)
+            # box_y1 = float(bbox.find('ymin').text)
+            # box_x2 = float(bbox.find('xmax').text)
+            # box_y2 = float(bbox.find('ymax').text)
+            # area = (box_x2-box_x1)*(box_y2-box_y1)
             if cls_name in class_name:
                 ok_file = True
                 return ok_file
@@ -90,7 +97,7 @@ if __name__ == '__main__':
 
     img_path = 'images'
     lab_path = 'labels'
-    base_path = 'E:\datasets\person\data_person'
+    base_path = '/media/lg/DataSet_E/datasets/person/data_person/'
     # path = 'E:\datasets\FlyingChairs\data'
 
     save_path = 'util_tmp/make_list.txt'

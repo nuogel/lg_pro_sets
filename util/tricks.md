@@ -64,3 +64,18 @@ the default packages location of pip install is '/home/lg/.local/lib/python3.6/'
 ##  pip install opencv3
 
 pip install opencv
+
+##  delete nvidia-driver
+```
+sudo apt-get --purge remove nvidia*
+sudo apt autoremove
+
+To remove NVIDIA Drivers:
+$ sudo apt-get --purge remove "*nvidia*"
+
+To remove CUDA Toolkit:
+$ sudo apt-get --purge remove "*cublas*" "cuda*"
+```
+
+
+

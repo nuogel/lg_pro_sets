@@ -1,7 +1,7 @@
 import cv2
 import glob
 import os
-from OtherNets.TRACK.deep_sort.deep_sort import DeepSort
+from OtherStudies.TRACK.deep_sort.deep_sort import DeepSort
 import numpy as np
 import matplotlib.pyplot as plt
 import random

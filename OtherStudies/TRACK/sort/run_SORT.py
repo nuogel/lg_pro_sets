@@ -1,7 +1,7 @@
 import cv2
 import glob
 import os
-from OtherNets.TRACK.sort.SORT import SORT
+from OtherStudies.TRACK.sort.SORT import SORT
 import numpy as np
 import matplotlib.pyplot as plt
 import random

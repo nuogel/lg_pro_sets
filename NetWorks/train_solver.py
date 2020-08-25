@@ -22,7 +22,7 @@ from util.util_load_state_dict import load_state_dict
 from cfg.cfg import prepare_cfg
 from util.util_logger import load_logger
 from DataLoader.DataLoaderFactory import dataloader_factory
-from OtherNets.Quantization.pq_quantization.util_quantization import util_quantize_model
+from OtherStudies.Quantization.pq_quantization.util_quantization import util_quantize_model
 
 
 class Solver:
@@ -188,7 +188,7 @@ class Solver:
                                               epoch, step, len(self.trainDataloader),
                                               total_loss.item(), losses / (step + 1),
                                               _timer.diff, _timer.from_begin)
-            # self.LOGGER.debug(info)
+            self.LOGGER.debug(info)
             Pbar.set_description(info)
             _timer.time_start()
         scheduler.step()
@@ -209,7 +209,6 @@ class Solver:
             if step >= len(self.trainDataloader):
                 break
             test_data = self.dataloader_factory.to_devce(train_data)
-            # test_data = self.DataLoader.get_data_by_idx(test_set, step * batch_size, (step + 1) * batch_size, is_training=False)
             if test_data[0] is None: continue
             predict = self.Model.forward(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)
             if self.cfg.BELONGS in ['OBD']: test_data = test_data[1]
