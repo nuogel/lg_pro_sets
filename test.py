@@ -4,7 +4,7 @@
 import sys
 from argparse import ArgumentParser
 from util.util_yml_parse import parse_yaml
-from NetWorks.test_solver import Test
+from solver.test_solver import Test
 
 
 def _parse_arguments():

@@ -98,9 +98,9 @@ def _read_train_test_dataset(cfg):
         train_set = []
         test_set = []
         for FILE_TXT in cfg.TRAIN.TRAIN_DATA_FROM_FILE:
-            train_idx = os.path.join('DataLoader/datasets/', cfg.BELONGS + '_idx_stores', FILE_TXT,
+            train_idx = os.path.join('datasets/', cfg.BELONGS + '_idx_stores', FILE_TXT,
                                      FILE_TXT + '_train' + '.txt')
-            test_idx = os.path.join('DataLoader/datasets/', cfg.BELONGS + '_idx_stores', FILE_TXT,
+            test_idx = os.path.join('datasets/', cfg.BELONGS + '_idx_stores', FILE_TXT,
                                     FILE_TXT + '_test' + '.txt')
 
             print('USING DATASET: %s' % FILE_TXT)

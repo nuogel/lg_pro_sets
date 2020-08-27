@@ -1,6 +1,7 @@
 ## import 
 mod = importlib.import_module('numpy')
 means: import mumpy
+
 ## 多线程处理数据
 ```
 from concurrent.futures import ProcessPoolExecutor
@@ -77,5 +78,16 @@ To remove CUDA Toolkit:
 $ sudo apt-get --purge remove "*cublas*" "cuda*"
 ```
 
+
+#Torch Tricks
+
+## sort() and natsort()
+```
+from natsort import natsorted
+a = ['1.mp4', '3.mp4', '10.mp4', '2.mp4']
+b = natsorted(a)
+print(b)
+
+```
 
 

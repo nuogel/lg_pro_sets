@@ -1,0 +1,6 @@
+Person,Person
+Man,Person
+Woman,Person
+Girl,Person
+Boy,Person
+Car,Car
