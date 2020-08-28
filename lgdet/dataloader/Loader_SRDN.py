@@ -13,14 +13,17 @@ from torch.utils.data._utils.collate import default_collate
 from prefetch_generator import BackgroundGenerator
 from util.util_data_aug import Dataaug
 
+from ..registry import DATALOADERS
 
-class Loader(DataLoader):
+
+@DATALOADERS.registry()
+class SRDN_Loader(DataLoader):
     """
     Load data with DataLoader.
     """
 
     def __init__(self, cfg):
-        super(Loader, self).__init__(object)
+        super(SRDN_Loader, self).__init__(object)
         self.cfg = cfg
         self.one_test = cfg.TEST.ONE_TEST
         self.one_name = cfg.TEST.ONE_NAME
@@ -100,7 +103,8 @@ class Loader(DataLoader):
 
         if self.cfg.TRAIN.INPUT_TRANSFORM:  # and self.is_training and not self.cfg.TRAIN.TARGET_TRANSFORM:
             # add the augmentation ...
-            input, _ = self.Data_aug.augmentation(aug_way_ids=([5, 6, 7, 11, 12, 13, 14, 15, 16], []), datas=([input], None))
+            input, _ = self.Data_aug.augmentation(aug_way_ids=([5, 6, 7, 11, 12, 13, 14, 15, 16], []),
+                                                  datas=([input], None))
             input = input[0]
             if random.random() < 0.5:
                 compress_level = random.randint(5, 10)

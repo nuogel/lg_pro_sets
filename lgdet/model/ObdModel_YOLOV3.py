@@ -19,7 +19,7 @@ class YOLOV3(nn.Module):
     def __init__(self, cfg):
         super(YOLOV3, self).__init__()
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
-        self.cls_num = len(cfg.TRAIN.CLASSES)
+        self.cls_num = cfg.TRAIN.CLASSES_NUM
         self.final_out = self.anc_num * (1 + 4 + self.cls_num)
         self.layers_out_filters = [64, 128, 256, 512, 1024]
         self.backbone = darknet_53()

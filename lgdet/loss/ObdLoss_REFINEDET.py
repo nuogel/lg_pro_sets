@@ -13,7 +13,7 @@ class Detect_RefineDet():
     """
 
     def __init__(self, cfg):
-        self.num_classes = len(cfg.TRAIN.CLASSES)
+        self.num_classes = cfg.TRAIN.CLASSES_NUM
         self.top_k = 1000
         self.keep_top_k = 500
         self.objectness_thre = 0.01
@@ -204,7 +204,7 @@ class RefineDetMultiBoxLoss(nn.Module):
 
 class REFINEDETLOSS:
     def __init__(self, cfg):
-        self.cls_num = len(cfg.TRAIN.CLASSES)
+        self.cls_num = cfg.TRAIN.CLASSES_NUM
         self.arm_criterion = RefineDetMultiBoxLoss(cfg, 2, use_ARM=False)
         self.odm_criterion = RefineDetMultiBoxLoss(cfg, self.cls_num, use_ARM=True)
 

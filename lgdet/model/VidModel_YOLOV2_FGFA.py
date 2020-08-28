@@ -93,7 +93,7 @@ class YOLOV2_FGFA(nn.Module):
             self.cls_num = 4
         else:
             self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
-            self.cls_num = len(cfg.TRAIN.CLASSES)
+            self.cls_num = cfg.TRAIN.CLASSES_NUM
         self.tail = nn.Conv2d(1024, self.anc_num * (5 + self.cls_num), 1, 1, 0, bias=False)
 
     def forward(self, **args):

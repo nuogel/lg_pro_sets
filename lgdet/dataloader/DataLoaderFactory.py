@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
-from util.util_ConfigFactory_Classes import get_loader_class
+from ..registry import DATALOADERS, build_from_cfg
 
 
 class dataloader_factory:
@@ -15,8 +15,8 @@ class dataloader_factory:
             shuffle = True
         TrainDataset, TestDataset = None, None
         if train_dataset is not None:
-            train_data = get_loader_class(self.cfg.BELONGS)(self.cfg)
-
+            # train_data = get_loader_class(self.cfg.BELONGS)(self.cfg)
+            train_data = build_from_cfg(DATALOADERS, self.cfg.BELONGS + '_Loader')(self.cfg)
             train_data._load_dataset(train_dataset, is_training=True)
             TrainDataset = DataLoader(dataset=train_data,
                                       batch_size=self.cfg.TRAIN.BATCH_SIZE,
@@ -25,7 +25,8 @@ class dataloader_factory:
                                       shuffle=shuffle)
 
         if test_dataset is not None:
-            test_data = get_loader_class(self.cfg.BELONGS)(self.cfg)
+            # test_data = get_loader_class(self.cfg.BELONGS)(self.cfg)
+            test_data = build_from_cfg(DATALOADERS, self.cfg.BELONGS + '_Loader')(self.cfg)
             test_data._load_dataset(test_dataset, is_training=False)
             TestDataset = DataLoader(dataset=test_data,
                                      batch_size=self.cfg.TRAIN.BATCH_SIZE,

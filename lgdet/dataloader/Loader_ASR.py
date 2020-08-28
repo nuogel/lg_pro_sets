@@ -12,8 +12,11 @@ from matplotlib import pyplot as plt
 from datetime import datetime
 from scipy import signal
 
+from ..registry import DATALOADERS
 
-class Loader:
+
+@DATALOADERS.registry()
+class ASR_Loader:
     def __init__(self, cfg):
         self.cfg = cfg
         self.batchsize = cfg.TRAIN.BATCH_SIZE

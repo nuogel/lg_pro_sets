@@ -18,7 +18,7 @@ class REFINEDET(nn.Module):
         super(REFINEDET, self).__init__()
         self.cfg = cfg
         size = self.cfg.TRAIN.IMG_SIZE[0]
-        self.num_classes = len(cfg.TRAIN.CLASSES)
+        self.num_classes = cfg.TRAIN.CLASSES_NUM
 
         phase = 'train'
         self.init(phase, size, self.num_classes)

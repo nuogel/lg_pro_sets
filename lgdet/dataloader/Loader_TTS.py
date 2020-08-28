@@ -4,10 +4,13 @@ import numpy as np
 from torch.utils.data import DataLoader
 from pypinyin import lazy_pinyin, Style
 
+from ..registry import DATALOADERS
 
-class Loader(DataLoader):
+
+@DATALOADERS.registry()
+class TTS_Loader(DataLoader):
     def __init__(self, cfg):
-        super(Loader, self).__init__(object)
+        super(TTS_Loader, self).__init__(object)
         self.cfg = cfg
         self.datapath = self.cfg.PATH.INPUT_PATH
         self.one_test = cfg.TEST.ONE_TEST

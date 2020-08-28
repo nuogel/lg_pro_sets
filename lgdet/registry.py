@@ -22,6 +22,6 @@ SCORES = LG_REGISTRY('score')
 DATALOADERS = LG_REGISTRY('dataloader')
 
 
-def build_from_cfg(Registry, cfg):
-    obj_cls = Registry._module_dict.get(str(cfg.TRAIN.MODEL).upper(), None)(cfg)
+def build_from_cfg(Registry, type):
+    obj_cls = Registry._module_dict.get(type, None)
     return obj_cls

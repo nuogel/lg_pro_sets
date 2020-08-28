@@ -106,7 +106,7 @@ class YOLOV3_TINY_SHUFFLENET(nn.Module):
     def __init__(self, cfg):
         super(YOLOV3_TINY_SHUFFLENET, self).__init__()
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
-        self.cls_num = len(cfg.TRAIN.CLASSES)
+        self.cls_num = cfg.TRAIN.CLASSES_NUM
         out_ch = self.anc_num * (1 + 4 + self.cls_num)
         self.ch_1 = [1024, 256, 512, out_ch]
         self.ch_2 = [256, 128, 384, 256, out_ch]

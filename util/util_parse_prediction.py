@@ -16,7 +16,7 @@ class ParsePredict:
         self.cfg = cfg
         self.anchors = torch.Tensor(cfg.TRAIN.ANCHORS)
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
-        self.cls_num = len(cfg.TRAIN.CLASSES)
+        self.cls_num = cfg.TRAIN.CLASSES_NUM
         self.NMS = NMS(cfg)
 
     def _parse_predict(self, f_maps):

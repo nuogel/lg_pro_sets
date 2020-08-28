@@ -18,7 +18,7 @@ class YOLOV2(torch.nn.Module):
     def __init__(self, cfg):
         super(YOLOV2, self).__init__()
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
-        self.cls_num = len(cfg.TRAIN.CLASSES)
+        self.cls_num = cfg.TRAIN.CLASSES_NUM
 
         self.stage1_conv1 = nn.Sequential(nn.Conv2d(3, 32, 3, 1, 1, bias=False), nn.BatchNorm2d(32),
                                           nn.LeakyReLU(0.1, inplace=True), nn.MaxPool2d(2, 2))

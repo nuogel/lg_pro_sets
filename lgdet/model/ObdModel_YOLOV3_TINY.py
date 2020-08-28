@@ -56,7 +56,7 @@ class YOLOV3_TINY(nn.Module):
         super(YOLOV3_TINY, self).__init__()
         if cfg:
             self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
-            self.cls_num = len(cfg.TRAIN.CLASSES)
+            self.cls_num = cfg.TRAIN.CLASSES_NUM
         else:
             self.anc_num = 3
             self.cls_num = 4

@@ -13,7 +13,7 @@ import torch.nn
 from torch.optim import lr_scheduler
 import tqdm
 from util.util_Save_Parmeters import TrainParame
-from util.util_ConfigFactory_Classes import get_loss_class, get_model_class, get_score_class
+from util.util_ConfigFactory_Classes import get_loss_class,  get_score_class
 from util.util_time_stamp import Time
 from util.util_weights_init import weights_init
 from util.util_get_train_test_dataset import _get_train_test_dataset, _read_train_test_dataset
@@ -34,7 +34,7 @@ class Solver:
         self.one_test = self.cfg.TEST.ONE_TEST
         self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)
         self.dataloader_factory = dataloader_factory(self.cfg, self.args)
-        self.Model = build_from_cfg(MODELS, self.cfg)
+        self.Model = build_from_cfg(MODELS, str(self.cfg.TRAIN.MODEL).upper())(self.cfg)
         self.LossFun = get_loss_class(self.cfg.BELONGS, self.cfg.TRAIN.MODEL)(self.cfg)
         self.Score = get_score_class(self.cfg.BELONGS)(self.cfg)
         self.test_batch_num = self.cfg.TEST.ONE_TEST_TEST_STEP

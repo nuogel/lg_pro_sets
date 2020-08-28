@@ -45,7 +45,7 @@ class SSDVGG(nn.Module):
     def __init__(self, cfg):
         super(SSDVGG, self).__init__()
         self.cfg = cfg
-        self.num_classes = len(cfg.TRAIN.CLASSES)
+        self.num_classes = cfg.TRAIN.CLASSES_NUM
         # TODO: implement __call__ in PriorBox
         self.size = 512
         base, extras, head = self.multibox(vgg(vgg_base[str(self.size)], 3),

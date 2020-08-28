@@ -22,10 +22,10 @@ class YoloLoss:
         self.cfg = cfg
         self.anchors = torch.Tensor(cfg.TRAIN.ANCHORS)
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
-        self.cls_num = len(cfg.TRAIN.CLASSES)
+        self.cls_num = cfg.TRAIN.CLASSES_NUM
 
         self.batch_size = cfg.TRAIN.BATCH_SIZE
-        self.apollo_cls2idx = dict(zip(cfg.TRAIN.CLASSES, range(len(cfg.TRAIN.CLASSES))))
+        self.apollo_cls2idx = dict(zip(cfg.TRAIN.CLASSES, range(cfg.TRAIN.CLASSES_NUM)))
 
         self.mseloss = torch.nn.MSELoss(reduction='sum')
         self.bceloss = torch.nn.BCELoss()

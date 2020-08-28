@@ -7,19 +7,19 @@ def get_score_class(belongs):
     return model_class
 
 
-def get_model_class(belongs, modelname):
-    belongs_uper = str(belongs).upper()
-    modelname_uper = str(modelname).upper()
-    model_file = belongs_uper[0] + belongs_uper[1:].lower() + 'Model_' + modelname_uper
-    model_class = _get_sub_model(__import__('lgdet.model.' + model_file, fromlist=[modelname_uper]), modelname_uper)
-    return model_class
+# def get_model_class(belongs, modelname):
+#     belongs_uper = str(belongs).upper()
+#     modelname_uper = str(modelname).upper()
+#     model_file = belongs_uper[0] + belongs_uper[1:].lower() + 'Model_' + modelname_uper
+#     model_class = _get_sub_model(__import__('lgdet.model.' + model_file, fromlist=[modelname_uper]), modelname_uper)
+#     return model_class
 
 
-def get_loader_class(belongs):
-    class_name = 'Loader_' + str(belongs).upper()
-    model_file = __import__('lgdet.dataloader.' + class_name, fromlist=[class_name])
-    model_class = _get_sub_model(model_file, 'Loader')
-    return model_class
+# def get_loader_class(belongs):
+#     class_name = 'Loader_' + str(belongs).upper()
+#     model_file = __import__('lgdet.dataloader.' + class_name, fromlist=[class_name])
+#     model_class = _get_sub_model(model_file, 'Loader')
+#     return model_class
 
 
 def get_loss_class(belongs, modelname):

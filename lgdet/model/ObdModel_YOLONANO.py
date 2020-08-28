@@ -123,7 +123,7 @@ from ..registry import MODELS
 class YOLONANO(nn.Module):
     def __init__(self, cfg):
         super(YOLONANO, self).__init__()
-        self.num_classes = len(cfg.TRAIN.CLASSES)
+        self.num_classes = cfg.TRAIN.CLASSES_NUM
         self.num_anchors = cfg.TRAIN.FMAP_ANCHOR_NUM
         self.yolo_channels = (self.num_classes + 5) * self.num_anchors
 

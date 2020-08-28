@@ -11,9 +11,9 @@ class NMS:
         self.theta = cfg.TEST.SOFNMS_THETA
         self.iou_thresh = cfg.TEST.IOU_THRESH
         if self.cfg.TRAIN.MODEL in ['refinedet', 'ssdvgg', 'efficientdet']:
-            self.class_range = range(1, len(cfg.TRAIN.CLASSES) + 1)
+            self.class_range = range(1, cfg.TRAIN.CLASSES_NUM + 1)
         else:
-            self.class_range = range(len(cfg.TRAIN.CLASSES))
+            self.class_range = range(cfg.TRAIN.CLASSES_NUM)
 
     def forward(self, score, pre_loc, xywh2x1y1x2y2):
         pre_score_raw = score.max(-1)  # get the max score of the scores of classes.

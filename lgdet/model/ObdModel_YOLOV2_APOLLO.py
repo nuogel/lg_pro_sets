@@ -20,7 +20,7 @@ class YOLOV2_APOLLO(torch.nn.Module):
     def __init__(self, cfg):
         super(YOLOV2_APOLLO, self).__init__()
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
-        self.cls_num = len(cfg.TRAIN.CLASSES)
+        self.cls_num = cfg.TRAIN.CLASSES_NUM
         self.conv1 = torch.nn.Conv2d(3, 16, 3, 1, 1, 1, bias=True)
         self.conv1_relu = torch.nn.ReLU(1)
         self.pool1 = torch.nn.MaxPool2d(2, 2, 0)

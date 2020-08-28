@@ -102,4 +102,11 @@ def prepare_cfg(cfg, arg, is_training=True):
         cfg.TRAIN.FMAP_ANCHOR_NUM = len(anchor_yolov2)
         cfg.TRAIN.ANCHORS = anchor_yolov2
 
+    try:
+        from util.util_get_cls_names import _get_class_names
+        class_name = _get_class_names(cfg.PATH.CLASSES_PATH)
+        cfg.TRAIN.CLASSES_NUM = len(class_name)
+        cfg.TRAIN.CLASSES = list(class_name.values())
+    except:
+        pass
     return cfg, arg

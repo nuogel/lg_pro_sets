@@ -10,10 +10,13 @@ from util.util_show_img import _show_img
 from torch.utils.data import DataLoader
 from util.util_make_VisDrone2019_VID_dataset import make_VisDrone2019_VID_dataset
 
+from ..registry import DATALOADERS
 
-class Loader(DataLoader):
+
+@DATALOADERS.registry()
+class VID_Loader(DataLoader):
     def __init__(self, cfg):
-        super(Loader, self).__init__(object)
+        super(VID_Loader, self).__init__(object)
         self.cfg = cfg
         self.dataaug = Dataaug(cfg)
         self.one_test = cfg.TEST.ONE_TEST

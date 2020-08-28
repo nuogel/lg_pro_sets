@@ -8,11 +8,13 @@ import xml.etree.ElementTree as ET
 from util.util_get_cls_names import _get_class_names
 from util.util_show_img import _show_img
 from torch.utils.data import DataLoader
+from ..registry import DATALOADERS
 
 
-class Loader(DataLoader):
+@DATALOADERS.registry()
+class OBD_Loader(DataLoader):
     def __init__(self, cfg):
-        super(Loader, self).__init__(object)
+        super(OBD_Loader, self).__init__(object)
         self.cfg = cfg
         self.dataaug = Dataaug(cfg)
         self.one_test = cfg.TEST.ONE_TEST
@@ -21,7 +23,7 @@ class Loader(DataLoader):
         self.test_batch_num = 1
         self.class_name = _get_class_names(cfg.PATH.CLASSES_PATH)
         self.print_path = self.cfg.TRAIN.SHOW_TRAIN_NAMES
-        self.cls2idx = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
+        self.cls2idx = dict(zip(cfg.TRAIN.CLASSES, range(cfg.TRAIN.CLASSES_NUM)))
         self.write_images = self.cfg.TRAIN.WRITE_IMAGES
 
     def __len__(self):
@@ -56,9 +58,10 @@ class Loader(DataLoader):
                 labels = 'None'
                 try_tims = 0
                 while labels is 'None':
-                    imgs, labels = self.dataaug.augmentation(aug_way_ids=([11, 20, 21, 22], [26]), datas=([img], [label]))  # [11,20, 21, 22]
+                    imgs, labels = self.dataaug.augmentation(aug_way_ids=([11, 20, 21], [26]),
+                                                             datas=([img], [label]))  # [11,20, 21, 22]
                     try_tims += 1
-                    if try_tims > 1:
+                    if try_tims > 10:
                         # print('trying', try_tims, ' times when data augmentation at file:', str(data_info[2]))
                         labels = [None]
                 img = imgs[0]
@@ -111,22 +114,30 @@ class Loader(DataLoader):
         self.dataset_txt = dataset
         self.is_training = is_training
 
-    def _read_datas(self, id):
+        if 'COCO' in self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
+            from util.util_load_coco import COCODataset
+            if is_training:
+                annfile = '/media/lg/2628737E28734C35/coco/lg_coco/annotations/instances_train2017.json'
+            else:
+                annfile = '/media/lg/2628737E28734C35/coco/lg_coco/annotations/instances_val2017.json'
+            self.coco = COCODataset(ann_file=annfile, cfg=self.cfg)
+
+    def _read_datas(self, data_info):
         '''
         Read images and labels depend on the idx.
         :param image: if there is a image ,the just return the image.
         :return: images, labels, image_size
         '''
 
-        x_path = id[1]
-        y_path = id[2]
+        x_path = data_info[1]
+        y_path = data_info[2]
         if self.print_path:
             print(x_path, '<--->', y_path)
         if not (os.path.isfile(x_path) and os.path.isfile(y_path)):
             print('ERROR, NO SUCH A FILE.', x_path, '<--->', y_path)
             exit()
         # labels come first.
-        label = self._read_line(y_path)
+        label = self._read_line(y_path, data_info=data_info)
         if label == [[]] or label == []:
             print('none label at:', y_path)
             label = None
@@ -142,7 +153,7 @@ class Loader(DataLoader):
         if y2 - y1 <= 0.: return False
         return True
 
-    def _read_line(self, path, predicted_line=False, pass_obj=['DontCare', ]):
+    def _read_line(self, path, data_info=None, predicted_line=False, pass_obj=['DontCare', ]):
         """
         Parse the labels from file.
 
@@ -152,10 +163,11 @@ class Loader(DataLoader):
         :return:lists of the classes and the key points============ [x1, y1, x2, y2].
         """
         bbs = []
+
         if os.path.basename(path).split('.')[-1] == 'txt' and not predicted_line:
             file_open = open(path, 'r')
             for line in file_open.readlines():
-                if 'UCAS_AOD' in path:
+                if 'UCAS_AOD' in self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
                     tmps = line.strip().split('\t')
                     box_x1 = float(tmps[9])
                     box_y1 = float(tmps[10])
@@ -163,7 +175,8 @@ class Loader(DataLoader):
                     box_y2 = box_y1 + float(tmps[12])
                     if not self._is_finedata([box_x1, box_y1, box_x2, box_y2]): continue
                     bbs.append([1, box_x1, box_y1, box_x2, box_y2])
-                elif 'VisDrone2019' in path:
+
+                elif 'VisDrone2019' in self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
                     name_dict = {'0': 'ignored regions', '1': 'pedestrian', '2': 'people',
                                  '3': 'bicycle', '4': 'car', '5': 'van', '6': 'truck',
                                  '7': 'tricycle', '8': 'awning-tricycle', '9': 'bus',
@@ -181,7 +194,7 @@ class Loader(DataLoader):
 
                     if not self._is_finedata([box_x1, box_y1, box_x2, box_y2]): continue
                     bbs.append([self.cls2idx[self.class_name[realname]], box_x1, box_y1, box_x2, box_y2])
-                elif 'TS02' in path:
+                elif 'TS02' in self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
                     tmps = line.strip().split(' ')
                     realname = 'car'
                     if realname not in self.class_name:
@@ -237,7 +250,21 @@ class Loader(DataLoader):
             for line in f_path.readlines():
                 tmp = line.split()
                 cls_name = tmp[0]
-                bbs.append([float(tmp[1]), self.cls2idx[self.class_name[cls_name]], [float(tmp[2]), float(tmp[3]), float(tmp[4]), float(tmp[5])]])
+                bbs.append([float(tmp[1]), self.cls2idx[self.class_name[cls_name]],
+                            [float(tmp[2]), float(tmp[3]), float(tmp[4]), float(tmp[5])]])
+
+        elif 'COCO' in self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
+            img_name = data_info[0].strip()
+            img_info, ann_info = self.coco.prepare_data(img_name)
+            for i, bbx in enumerate(ann_info['bboxes']):
+                cls_name = ann_info['labels'][i]
+                if cls_name not in self.class_name:
+                    continue
+                if self.class_name[cls_name] in pass_obj:
+                    continue
+                if not self._is_finedata(bbx): continue
+                bbs.append([self.cls2idx[self.class_name[cls_name]], bbx[0], bbx[1], bbx[2], bbx[3]])
+
         return bbs
 
     def collate_fun(self, batch):
