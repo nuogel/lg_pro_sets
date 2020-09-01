@@ -9,7 +9,7 @@ from solver.test_solver import Test
 
 def _parse_arguments():
     parser = ArgumentParser()
-    parser.add_argument('--type', default='OBD'  #  SR_DN
+    parser.add_argument('--type', default='OBD'  # SR_DN
                         , type=str, help='yml_path')
     parser.add_argument('--checkpoint', default=
     'tmp/checkpoint/now.pkl'
@@ -25,6 +25,9 @@ def _parse_arguments():
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--batch_size', '--bz', default=1, type=int, help='batch size')
     parser.add_argument('--number_works', '--n_w', default=0, type=int, help='number works of DataLoader')
+    parser.add_argument('--debug', '--d', action='store_true', default=False, help='Enable verbose info')
+    parser.add_argument('--log_file_path', default='tmp/logs/', help='log_file_path')
+
     return parser.parse_args()
 
 
@@ -32,29 +35,12 @@ def main():
     """Run the script."""
     exit_code = 0
     files = None
-    # files = 'E:/LG/GitHub/lg_pro_sets/util/util_tmp/3.txt'
-    # files = 'E:/datasets/test_dataset/crop/5.png'
-    # files = 'F:/datasets/SR/REDS4/train_sharp_part_x4/train_sharp_part_x4/000/00000000.png'
-    # files = 'E:/LG/GitHub/lg_pro_sets/tmp/generated_labels/cbdnet_predict.png'
-    # files = 'F:/LG/GitHub/lg_pro_sets/tmp/generated_labels/raw/'
-    # files = 'F:/LG/GitHub/lg_pro_sets/DataLoader/datasets/SRDN_idx_stores/YOUKU/YOUKU_test_set_w.txt'
-    # files = 'F:/LG/GitHub/lg_pro_sets/DataLoader/datasets/SRDN_idx_stores/RED4/RED4_train_set_w.txt'
-    # files = 'F:/datasets/SR/REDS4/train_sharp_part_x4/000'
-    # files = 'DataLoader/datasets/SRDN_idx_stores/FILMS/FILMS_test_w.txt'
-    # files = 'E:/datasets/SR/youku/youku_00150_00199_l/Youku_00150_l/Youku_00150_l_001.png'
-    # files = 'E:/datasets/youku/youku_00200_00249_l/Youku_00203_l/Youku_00203_l_001.png'
-    # files = 'F:/Projects/auto_Airplane/TS02/20191217_153659_10/'
-    # files = 'E:/datasets/VisDrone2019/VisDrone2019-VID-val/sequences/uav0000182_00000_v/'
-    # files = 'F:/LG/GitHub/lg_pro_sets/DataLoader/datasets/OBD_idx_stores/VISDRONE/VISDRONE_test_set_w.txt'
-    # files = 'F:\LG\GitHub\lg_pro_sets\DataLoader\datasets\VID_idx_stores\VISDRONE\VISDRONE_train_set_w.txt'
-    # files = 'F:\LG\GitHub\lg_pro_sets\DataLoader\datasets\OBD_idx_stores\VOC\VOC_train_set_w.txt'
-    files = 'DataLoader/datasets/OBD_idx_stores/PERSON_COLLECT/PERSON_COLLECT_test.txt'
+    files = 'datasets/OBD_idx_stores/COCO/COCO_test.txt'
     score = False
     args = _parse_arguments()
     cfg = parse_yaml(args)
-    test = Test[cfg.BELONGS](cfg, args)
-    dataset = test.prase_file(files)
-    test.test_run(dataset)
+    test = Test[cfg.BELONGS](cfg, args, train=False)
+    test.test_run(files)
     if score:
         test.score(txt_info=files, pre_path=cfg.PATH.GENERATE_LABEL_SAVE_PATH)
     return exit_code

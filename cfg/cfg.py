@@ -1,14 +1,19 @@
 import torch
+from util.util_Save_Parmeters import TrainParame
+from util.util_logger import load_logger
 
 
 def prepare_cfg(cfg, arg, is_training=True):
+    cfg.writer = TrainParame(cfg)
+    cfg.logger = load_logger(arg)
+
     torch.backends.cudnn.benchmark = True
     print('torch version: ', torch.__version__)
     print('torch.version.cuda: ', torch.version.cuda)
 
-    if not is_training:
-        cfg.TRAIN.TARGET_PREDEEL = 0
-        cfg.TRAIN.INPUT_PREDEEL = 0
+    # if not is_training:
+    #     cfg.TRAIN.TARGET_PREDEEL = 0
+    #     cfg.TRAIN.INPUT_PREDEEL = 0
 
     if arg.batch_size != 0:
         cfg.TRAIN.BATCH_SIZE = arg.batch_size

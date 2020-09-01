@@ -109,7 +109,7 @@ class VID_Loader(DataLoader):
         if label_after: label_after = torch.Tensor(label_after)
         return img_out, label_after, data_info  # only need the labels
 
-    def _load_dataset(self, dataset, is_training):
+    def _add_dataset(self, dataset, is_training):
         self.dataset_txt = dataset
         self.is_training = is_training
 

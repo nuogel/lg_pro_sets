@@ -4,7 +4,7 @@ from .model.ObdModel_EFFICIENTDET import EFFICIENTDET
 from .model.ObdModel_EFFICIENTNET import EfficientNet
 from .model.ObdModel_SSDVGG import SSDVGG
 
-from .loss.ObdLoss_YOLO import YoloLoss
+# from .loss.ObdLoss_YOLO import YoloLoss
 
 from .score.Score_OBD import Score
 

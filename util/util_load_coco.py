@@ -13,7 +13,7 @@ class COCODataset:
     def __init__(self, ann_file, cfg):
         self.cfg = cfg
         self.ann_file = ann_file
-        self.img_infos = self._load_annotations(self.ann_file)
+        self._load_annotations(self.ann_file)
 
     def _load_annotations(self, ann_file):
         self.coco = COCO(ann_file)
@@ -23,14 +23,19 @@ class COCODataset:
             for i, cat_id in enumerate(self.cat_ids)
         }
         self.img_ids = self.coco.getImgIds()
-        img_infos = {}
-        for i in self.img_ids:
-            info = self.coco.loadImgs([i])[0]
-            img_infos[info['file_name']] = info
-        return img_infos
+        for i, id in enumerate(self.img_ids):
+            ann_ids = self.coco.getAnnIds(imgIds=[id])
+            if ann_ids is not []:
+                # print(id)
+               ...
+            else:
+                print('no', id)
 
     def prepare_data(self, file_name):
-        img_info = self.img_infos[file_name]
+
+        imgid = int(file_name.split('.')[0].strip())
+        assert imgid in self.img_ids, print(imgid, 'is no in', self.img_ids)
+        img_info = self.coco.loadImgs([imgid])[0]
         ann_info = self.get_ann_info(img_info)
         return img_info, ann_info
 

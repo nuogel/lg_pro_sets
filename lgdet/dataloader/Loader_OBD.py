@@ -49,19 +49,20 @@ class OBD_Loader(DataLoader):
             data_info[1] = os.path.join(self.cfg.PATH.INPUT_PATH, data_info[1])
             data_info[2] = os.path.join(self.cfg.PATH.INPUT_PATH, data_info[2])
             img, label = self._read_datas(data_info)  # labels: (x1, y1, x2, y2) & must be absolutely labels.
-            if not self.is_training and not label:
+            index = random.randint(1, len(self.dataset_txt) - 1)
+
+            if not self.is_training and not label:  # for test
                 break
-            index += 1
 
             # DOAUG:
-            if self.cfg.TRAIN.DO_AUG and self.is_training:
+            if self.cfg.TRAIN.DO_AUG and self.is_training and label:
                 labels = 'None'
                 try_tims = 0
                 while labels is 'None':
-                    imgs, labels = self.dataaug.augmentation(aug_way_ids=([11, 20, 21], [26]),
+                    imgs, labels = self.dataaug.augmentation(aug_way_ids=([11, 20, 21, 22], [26]),
                                                              datas=([img], [label]))  # [11,20, 21, 22]
                     try_tims += 1
-                    if try_tims > 10:
+                    if try_tims > 2:
                         # print('trying', try_tims, ' times when data augmentation at file:', str(data_info[2]))
                         labels = [None]
                 img = imgs[0]
@@ -102,7 +103,7 @@ class OBD_Loader(DataLoader):
             _show_img(img, label_after, cfg=self.cfg, show_time=self.cfg.TRAIN.SHOW_INPUT, pic_path=data_info[2])
         if self.write_images > 0 and self.is_training:
             img_write = _show_img(img, label_after, cfg=self.cfg, show_time=0)
-            self.cfg.TRAIN.WRITER.tbX_addImage('GT_' + data_info[0], img_write)
+            self.cfg.writer.tbX_addImage('GT_' + data_info[0], img_write)
             self.write_images -= 1
         img = np.asarray(img, dtype=np.float32)
         img = np.transpose(img, (2, 0, 1))
@@ -110,16 +111,16 @@ class OBD_Loader(DataLoader):
         if label_after: label_after = torch.Tensor(label_after)
         return img, label_after, data_info  # only need the labels  label_after[x1y1x2y2]
 
-    def _load_dataset(self, dataset, is_training):
+    def _add_dataset(self, dataset, is_training):
         self.dataset_txt = dataset
         self.is_training = is_training
 
         if 'COCO' in self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
             from util.util_load_coco import COCODataset
             if is_training:
-                annfile = '/media/lg/2628737E28734C35/coco/lg_coco/annotations/instances_train2017.json'
+                annfile = '/media/lg/2628737E28734C35/coco/annotations/instances_train2017.json'
             else:
-                annfile = '/media/lg/2628737E28734C35/coco/lg_coco/annotations/instances_val2017.json'
+                annfile = '/media/lg/2628737E28734C35/coco/annotations/instances_val2017.json'
             self.coco = COCODataset(ann_file=annfile, cfg=self.cfg)
 
     def _read_datas(self, data_info):

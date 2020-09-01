@@ -59,7 +59,7 @@ class FLOW_Loader(DataLoader):
 
         return img, label, data_info  # only need the labels
 
-    def _load_dataset(self, dataset, is_training):
+    def _add_dataset(self, dataset, is_training):
         self.dataset_txt = dataset
         self.is_training = is_training
 

@@ -71,7 +71,7 @@ class SRDN_Loader(DataLoader):
         '''
         return BackgroundGenerator(super().__iter__())
 
-    def _load_dataset(self, dataset, is_training):
+    def _add_dataset(self, dataset, is_training):
         self.dataset_txt = dataset
         self.is_training = is_training
 

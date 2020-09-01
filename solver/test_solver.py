@@ -7,9 +7,7 @@ and with it's score at the left top of the box.
 import os
 import torch
 import cv2
-from util.util_ConfigFactory_Classes import get_model_class, get_score_class, get_loader_class
 import glob
-from util.util_load_state_dict import load_state_dict
 from util.util_prepare_device import load_device
 from util.util_parse_prediction import ParsePredict
 from util.util_data_aug import Dataaug
@@ -19,39 +17,25 @@ from cfg.cfg import prepare_cfg
 from util.util_img_block import img_cut
 from util.util_nms_for_img_block import NMS_block
 from util.util_time_stamp import Time
-from lgdet.dataloader.DataLoaderFactory import dataloader_factory
+from lgdet.dataloader.DataLoaderFactory import DataLoaderFactory
 from util.util_audio import Util_Audio
+from .solver_base import SolverBase
 
 
-class Test_Base(object):
-    def __init__(self, cfg, args):
-        self.cfg, self.args = prepare_cfg(cfg, args, is_training=False)
-        self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)
-        self.Model = get_model_class(self.cfg.BELONGS, self.cfg.TRAIN.MODEL)(self.cfg)
-        self.dataloader_factory = dataloader_factory(self.cfg, self.args)
-        self.DataLoader = get_loader_class(cfg.BELONGS)(self.cfg)
-        self.SCORE = get_score_class(self.cfg.BELONGS)(self.cfg)
-        self.SCORE.init_parameters()
-        if self.args.checkpoint:
-            self.model_path = self.args.checkpoint
-        else:
-            self.model_path = self.cfg.PATH.TEST_WEIGHT_PATH
-        self.Model = load_state_dict(self.Model, self.args.checkpoint, self.cfg.TRAIN.DEVICE)
-        self.Model = self.Model.to(self.cfg.TRAIN.DEVICE)
-        self.Model.eval()
+class TestBase(SolverBase):
 
     def test_backbone(self, DataSet):
         pass
 
-    def test_run(self, dataset):
+    def test_run(self, file_s):
         """
         Test images in the file_s.
 
         :param file_s:
         :return:
         """
-
-        DataSet = self.dataloader_factory.make_dataset(None, dataset)[1]
+        dataset = self.prase_file(file_s)
+        DataSet = self.DataFun.make_dataset(None, dataset)[1]
         self.test_backbone(DataSet)
 
     def prase_file(self, file_s):
@@ -83,10 +67,9 @@ class Test_Base(object):
         return dataset
 
 
-class Test_OBD(Test_Base):
-    def __init__(self, cfg, args):
-        super(Test_OBD, self).__init__(cfg, args)
-        self.dataaug = Dataaug(cfg)
+class Test_OBD(TestBase):
+    def __init__(self, cfg, args, train):
+        super(Test_OBD, self).__init__(cfg, args, train)
         self.parsepredict = ParsePredict(cfg)
         self.apolloclass2num = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
 
@@ -98,7 +81,7 @@ class Test_OBD(Test_Base):
         for i in range(DataSet.__len__()):
             test_data = next(loader)
             timer.time_start()
-            test_data = self.dataloader_factory.to_devce(test_data)
+            test_data = self.DataFun.to_devce(test_data)
             inputs, targets, data_infos = test_data
             if self.cfg.TEST.IMG_BLOCK:
                 raw_inputs = inputs.clone()
@@ -134,7 +117,6 @@ class Test_OBD(Test_Base):
                         labels_pres[0].append(pre)
                 # TODO:nms for labels
                 labels_pres = NMS_block(labels_pres, self.cfg)
-
             else:
                 predicts = self.Model.forward(input_x=inputs, is_training=False)
                 labels_pres = self.parsepredict._parse_predict(predicts)
@@ -144,31 +126,14 @@ class Test_OBD(Test_Base):
             for i in range(batches):
                 img_raw = [cv2.imread(data_infos[i][1])]
                 img_in = inputs[i]
-                _show_img(img_raw, labels_pres, img_in=img_in, pic_path=data_infos[i][1], cfg=self.cfg, is_training=False)
-
-    def score(self, txt_info, pre_path):
-        pre_path_list = glob.glob(pre_path + '/*.*')
-        lines = open(txt_info, 'r').readlines()
-        gt_labels = []
-        pre_labels = []
-        for line in lines:
-            tmp = line.split(";")
-            gt_name = tmp[0].strip()
-            for pre_path_i in pre_path_list:
-                if gt_name == os.path.basename(pre_path_i).split('.')[0]:
-                    gt_path = tmp[2].strip()
-                    gt_labels.append(self.DataLoader._read_line(gt_path))
-                    pre_labels.append(self.DataLoader._read_line(pre_path_i, predicted_line=True))
-                    break
-
-        self.SCORE.cal_score(pre_labels, gt_labels, from_net=False)
-        return self.SCORE.score_out()
+                _show_img(img_raw, labels_pres, img_in=img_in, pic_path=data_infos[i][1], cfg=self.cfg,
+                          is_training=False)
 
 
-class Test_ASR(Test_Base):
-    def __init__(self, cfg, args):
-        super(Test_ASR, self).__init__(cfg, args)
-        # self.DataLoader = self.dataloader_factory.DataLoaderDict
+class Test_ASR(TestBase):
+    def __init__(self, cfg, args, train):
+        super(Test_ASR, self).__init__(cfg, args, train)
+        # self.DataLoader = self.DataFun.DataLoaderDict
 
     def test_backbone(self, wav_path):
         """Test."""
@@ -180,10 +145,10 @@ class Test_ASR(Test_Base):
             print('pre:', k, self.DataLoader._number2pinying(v[:-1]))
 
 
-class Test_SRDN(Test_Base):
-    def __init__(self, cfg, args):
-        super(Test_SRDN, self).__init__(cfg, args)
-        # self.DataLoader = self.dataloader_factory.DataLoaderDict[cfg.BELONGS](cfg)
+class Test_SRDN(TestBase):
+    def __init__(self, cfg, args, train):
+        super(Test_SRDN, self).__init__(cfg, args, train)
+        # self.DataLoader = self.DataFun.DataLoaderDict[cfg.BELONGS](cfg)
 
     def test_backbone(self, DataSet):
         """Test."""
@@ -191,7 +156,7 @@ class Test_SRDN(Test_Base):
 
         for i in range(DataSet.__len__()):
             test_data = next(loader)
-            test_data = self.dataloader_factory.to_devce(test_data)
+            test_data = self.DataFun.to_devce(test_data)
             inputs, targets, data_infos = test_data
             predicts = self.Model.forward(input_x=inputs, is_training=False)
             predicts = predicts.permute(0, 2, 3, 1)
@@ -202,8 +167,10 @@ class Test_SRDN(Test_Base):
                 for i in range(batches):
                     data_info = data_infos[i]
                     os.makedirs(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, exist_ok=True)
-                    os.makedirs(os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, self.cfg.TRAIN.MODEL), exist_ok=True)
-                    save_paths.append(os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, self.cfg.TRAIN.MODEL + '/' + data_info[0]))
+                    os.makedirs(os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, self.cfg.TRAIN.MODEL),
+                                exist_ok=True)
+                    save_paths.append(
+                        os.path.join(self.cfg.PATH.GENERATE_LABEL_SAVE_PATH, self.cfg.TRAIN.MODEL + '/' + data_info[0]))
 
             predict_size = (predicts.shape[1], predicts.shape[2])
             inputs = torch.nn.functional.interpolate(inputs, size=predict_size)
@@ -222,9 +189,9 @@ class Test_SRDN(Test_Base):
                              show_time=self.cfg.TEST.SHOW_EVAL_TIME)
 
 
-class Test_TTS(Test_Base):
-    def __init__(self, cfg, args):
-        super(Test_TTS, self).__init__(cfg, args)
+class Test_TTS(TestBase):
+    def __init__(self, cfg, args, train):
+        super(Test_TTS, self).__init__(cfg, args, train)
         self.util_audio = Util_Audio(cfg)
 
     def test_backbone(self, DataSet):
@@ -236,7 +203,7 @@ class Test_TTS(Test_Base):
         for i in range(DataSet.__len__()):
             test_data = next(loader)
             timer.time_start()
-            test_data = self.dataloader_factory.to_devce(test_data)
+            test_data = self.DataFun.to_devce(test_data)
             predicted = self.Model.forward(input_x=test_data[0], input_data=test_data, is_training=False)
             mel_outputs, linear_outputs, alignments = predicted
             linear_output = linear_outputs[0].cpu().data.numpy()

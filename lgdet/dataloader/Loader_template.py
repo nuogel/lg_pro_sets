@@ -38,7 +38,7 @@ class Loader(DataLoader):
             data_info = self.dataset_txt[index]
         a=0
 
-    def _load_dataset(self, dataset, is_training):
+    def _add_dataset(self, dataset, is_training):
         self.dataset_txt = dataset
         self.is_training = is_training
 
