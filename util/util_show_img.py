@@ -4,7 +4,7 @@ import os
 import torch
 
 
-def _show_img(imgs, labels_out, img_in=None, save_labels=False, pic_path=None, show_time=3000, cfg=None, is_training=True):
+def _show_img(imgs, labels_out=None, img_in=None, save_labels=False, pic_path=None, show_time=3000, cfg=None, is_training=True):
     """
     Show the bounding boxes of images.
 
@@ -21,13 +21,17 @@ def _show_img(imgs, labels_out, img_in=None, save_labels=False, pic_path=None, s
     if isinstance(imgs, list):
         imgs = np.asarray(imgs)
 
+    if isinstance(labels_out, np.ndarray):
+        labels_out = list(labels_out)
+
     if len(imgs.shape) == 3:
         imgs = imgs[np.newaxis, :]
         labels_out = [labels_out]
 
     assert imgs.shape[0] == len(labels_out), 'error:util_show_img->image and label shape is not the same'
-
-    if is_training and cfg:
+    if show_time < 0:
+        show_time = 0
+    elif is_training and cfg:
         show_time = cfg.TRAIN.SHOW_INPUT
     elif cfg:
         save_labels = cfg.TEST.SAVE_LABELS
@@ -57,7 +61,7 @@ def _show_img(imgs, labels_out, img_in=None, save_labels=False, pic_path=None, s
                 else:
                     print('error: util_show_img-->no such a label shape')
                     continue
-
+                class_out = int(class_out)
                 score_out = '%.4f' % score_out
                 if cfg:
                     try:

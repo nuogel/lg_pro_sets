@@ -1,16 +1,14 @@
-import logging
 import os.path as osp
 import tempfile
 
 import mmcv
 import numpy as np
 from pycocotools.coco import COCO
-from pycocotools.cocoeval import COCOeval
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 
 
 class COCODataset:
-    def __init__(self, ann_file, cfg):
+    def __init__(self, ann_file, cfg=None):
         self.cfg = cfg
         self.ann_file = ann_file
         self._load_annotations(self.ann_file)
@@ -23,18 +21,21 @@ class COCODataset:
             for i, cat_id in enumerate(self.cat_ids)
         }
         self.img_ids = self.coco.getImgIds()
-        for i, id in enumerate(self.img_ids):
-            ann_ids = self.coco.getAnnIds(imgIds=[id])
-            if ann_ids is not []:
-                # print(id)
-               ...
-            else:
-                print('no', id)
+
+    def _set_group_flag(self):  # LG: this is important
+        """Set flag according to image aspect ratio.
+
+        Images with aspect ratio greater than 1 will be set as group 1,
+        otherwise group 0.
+        """
+        self.flag = np.zeros(len(self), dtype=np.uint8)
+        for i in range(len(self)):
+            img_info = self.data_infos[i]
+            if img_info['width'] / img_info['height'] > 1:
+                self.flag[i] = 1
 
     def prepare_data(self, file_name):
-
         imgid = int(file_name.split('.')[0].strip())
-        assert imgid in self.img_ids, print(imgid, 'is no in', self.img_ids)
         img_info = self.coco.loadImgs([imgid])[0]
         ann_info = self.get_ann_info(img_info)
         return img_info, ann_info
@@ -100,158 +101,12 @@ class COCODataset:
 
         return ann
 
-    def xyxy2xywh(self, bbox):
-        _bbox = bbox.tolist()
-        return [
-            _bbox[0],
-            _bbox[1],
-            _bbox[2] - _bbox[0] + 1,
-            _bbox[3] - _bbox[1] + 1,
-        ]
 
-    def _proposal2json(self, results):
-        json_results = []
-        for idx in range(len(self)):
-            img_id = self.img_ids[idx]
-            bboxes = results[idx]
-            for i in range(bboxes.shape[0]):
-                data = dict()
-                data['image_id'] = img_id
-                data['bbox'] = self.xyxy2xywh(bboxes[i])
-                data['score'] = float(bboxes[i][4])
-                data['category_id'] = 1
-                json_results.append(data)
-        return json_results
-
-    def _det2json(self, results):
-        json_results = []
-        for idx in range(len(self)):
-            img_id = self.img_ids[idx]
-            result = results[idx]
-            for label in range(len(result)):
-                bboxes = result[label]
-                for i in range(bboxes.shape[0]):
-                    data = dict()
-                    data['image_id'] = img_id
-                    data['bbox'] = self.xyxy2xywh(bboxes[i])
-                    data['score'] = float(bboxes[i][4])
-                    data['category_id'] = self.cat_ids[label]
-                    json_results.append(data)
-        return json_results
-
-    def _segm2json(self, results):
-        bbox_json_results = []
-        segm_json_results = []
-        for idx in range(len(self)):
-            img_id = self.img_ids[idx]
-            det, seg = results[idx]
-            for label in range(len(det)):
-                # bbox results
-                bboxes = det[label]
-                for i in range(bboxes.shape[0]):
-                    data = dict()
-                    data['image_id'] = img_id
-                    data['bbox'] = self.xyxy2xywh(bboxes[i])
-                    data['score'] = float(bboxes[i][4])
-                    data['category_id'] = self.cat_ids[label]
-                    bbox_json_results.append(data)
-
-                # segm results
-                # some detectors use different scores for bbox and mask
-                if isinstance(seg, tuple):
-                    segms = seg[0][label]
-                    mask_score = seg[1][label]
-                else:
-                    segms = seg[label]
-                    mask_score = [bbox[4] for bbox in bboxes]
-                for i in range(bboxes.shape[0]):
-                    data = dict()
-                    data['image_id'] = img_id
-                    data['bbox'] = self.xyxy2xywh(bboxes[i])
-                    data['score'] = float(mask_score[i])
-                    data['category_id'] = self.cat_ids[label]
-                    if isinstance(segms[i]['counts'], bytes):
-                        segms[i]['counts'] = segms[i]['counts'].decode()
-                    data['segmentation'] = segms[i]
-                    segm_json_results.append(data)
-        return bbox_json_results, segm_json_results
-
-    def results2json(self, results, outfile_prefix):
-        """Dump the detection results to a json file.
-
-        There are 3 types of results: proposals, bbox predictions, mask
-        predictions, and they have different data types. This method will
-        automatically recognize the type, and dump them to json files.
-
-        Args:
-            results (list[list | tuple | ndarray]): Testing results of the
-                dataset.
-            outfile_prefix (str): The filename prefix of the json files. If the
-                prefix is "somepath/xxx", the json files will be named
-                "somepath/xxx.bbox.json", "somepath/xxx.segm.json",
-                "somepath/xxx.proposal.json".
-
-        Returns:
-            dict[str: str]: Possible keys are "bbox", "segm", "proposal", and
-                values are corresponding filenames.
-        """
-        result_files = dict()
-        if isinstance(results[0], list):
-            json_results = self._det2json(results)
-            result_files['bbox'] = '{}.{}.json'.format(outfile_prefix, 'bbox')
-            result_files['proposal'] = '{}.{}.json'.format(
-                outfile_prefix, 'bbox')
-            mmcv.dump(json_results, result_files['bbox'])
-        elif isinstance(results[0], tuple):
-            json_results = self._segm2json(results)
-            result_files['bbox'] = '{}.{}.json'.format(outfile_prefix, 'bbox')
-            result_files['proposal'] = '{}.{}.json'.format(
-                outfile_prefix, 'bbox')
-            result_files['segm'] = '{}.{}.json'.format(outfile_prefix, 'segm')
-            mmcv.dump(json_results[0], result_files['bbox'])
-            mmcv.dump(json_results[1], result_files['segm'])
-        elif isinstance(results[0], np.ndarray):
-            json_results = self._proposal2json(results)
-            result_files['proposal'] = '{}.{}.json'.format(
-                outfile_prefix, 'proposal')
-            mmcv.dump(json_results, result_files['proposal'])
-        else:
-            raise TypeError('invalid type of results')
-        return result_files
-
-    def format_results(self, results, jsonfile_prefix=None, **kwargs):
-        """Format the results to json (standard format for COCO evaluation).
-
-        Args:
-            results (list): Testing results of the dataset.
-            jsonfile_prefix (str | None): The prefix of json files. It includes
-                the file path and the prefix of filename, e.g., "a/b/prefix".
-                If not specified, a temp file will be created. Default: None.
-
-        Returns:
-            tuple: (result_files, tmp_dir), result_files is a dict containing
-                the json filepaths, tmp_dir is the temporal directory created
-                for saving json files when jsonfile_prefix is not specified.
-        """
-        assert isinstance(results, list), 'results must be a list'
-        assert len(results) == len(self), (
-            'The length of results is not equal to the dataset len: {} != {}'.
-                format(len(results), len(self)))
-
-        if jsonfile_prefix is None:
-            tmp_dir = tempfile.TemporaryDirectory()
-            jsonfile_prefix = osp.join(tmp_dir.name, 'results')
-        else:
-            tmp_dir = None
-        result_files = self.results2json(results, jsonfile_prefix)
-        return result_files, tmp_dir
-
-#
-# if __name__ == '__main__':
-#     dataset = COCODataset('/media/lg/2628737E28734C35/coco/lg_coco/annotations/stuff_val2017.json')
-#     traindata = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=0)
-#     # data = iter(traindata)
-#     # i, l = next(data)
-#     # or use the next code.
-#     for i, (img, lab) in enumerate(traindata):
-#         print(lab)
+if __name__ == '__main__':
+    dataset = COCODataset('/media/lg/2628737E28734C35/coco/annotations/instances_train2017.json')
+    traindata = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=0)
+    # data = iter(traindata)
+    # i, l = next(data)
+    # or use the next code.
+    for i, (img, lab) in enumerate(traindata):
+        print(lab)

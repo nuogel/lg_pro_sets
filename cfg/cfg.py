@@ -1,15 +1,17 @@
 import torch
 from util.util_Save_Parmeters import TrainParame
 from util.util_logger import load_logger
-
+import numpy as np
 
 def prepare_cfg(cfg, arg, is_training=True):
-    cfg.writer = TrainParame(cfg)
-    cfg.logger = load_logger(arg)
-
     torch.backends.cudnn.benchmark = True
     print('torch version: ', torch.__version__)
     print('torch.version.cuda: ', torch.version.cuda)
+
+    cfg = common_cfg(cfg)
+
+    cfg.writer = TrainParame(cfg)
+    cfg.logger = load_logger(arg)
 
     # if not is_training:
     #     cfg.TRAIN.TARGET_PREDEEL = 0
@@ -115,3 +117,11 @@ def prepare_cfg(cfg, arg, is_training=True):
     except:
         pass
     return cfg, arg
+
+
+def common_cfg(cfg):
+    mean = np.asarray([123.675, 116.28, 103.53])
+    std = np.asarray([58.395, 57.12, 57.375])
+    cfg.mean = mean
+    cfg.std = std
+    return cfg

@@ -17,7 +17,7 @@ class Dataaug:
 
     def augmentation(self, aug_way_ids, datas):
         images, labels = self._augmenting(aug_way_ids, datas)
-        images, labels = self._check_results(images, labels)
+        # images, labels = self._check_results(images, labels)
         return images, labels
 
     def _augmenting(self, aug_way_ids, datas):
@@ -76,7 +76,7 @@ class Dataaug:
 
         _base_funs = [base_funs.get(id) for id in aug_way_ids[0]]
         must_funs = [base_funs.get(id) for id in aug_way_ids[1]]
-        aug_funs = [random.choice(_base_funs)]+[random.choice(must_funs)]
+        aug_funs = [random.choice(_base_funs)] + [random.choice(must_funs)]
 
         # do the augmentation
         seq_det = iaa.Sequential(aug_funs)
@@ -109,11 +109,6 @@ class Dataaug:
             bb_y1 = min(max(1, _bb_y1), height - 1)
             bb_x2 = min(max(1, _bb_x2), width - 1)
             bb_y2 = min(max(1, _bb_y2), height - 1)
-            # calculate the ratio of area
-            area_before = (_bb_x2 - _bb_x1) * (_bb_y2 - _bb_y1)
-            area_after = (bb_x2 - bb_x1) * (bb_y2 - bb_y1)
-            if area_after / area_before < self.cfg.TRAIN.AREAR_RATIO or area_after < self.cfg.TRAIN.MIN_AREA:
-                continue
             # get the lab
             lab = [cls, bb_x1, bb_y1, bb_x2, bb_y2]
             labs.append(lab)
@@ -136,6 +131,7 @@ class Dataaug:
                     except:
                         return images, 'None'
         return images, labels
+
 
 if __name__ == '__main__':
     aug = Dataaug()

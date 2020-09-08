@@ -5,6 +5,8 @@ means: import mumpy
 ## 多线程处理数据
 ```
 from concurrent.futures import ProcessPoolExecutor
+from functools import partial
+
 executor = ProcessPoolExecutor(max_workers=num_workers)
 executor.submit(partial(fun, out_dir, index, wav_path, text)))
 

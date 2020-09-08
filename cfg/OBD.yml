@@ -3,10 +3,12 @@ BELONGS: OBD
 PATH:
   INPUT_PATH: '/media/lg/2628737E28734C35/coco/' # '/media/lg/DataSet_E/datasets/person/data_person'
   LAB_PATH: ''
+  LMDB_PATH: '/media/lg/2628737E28734C35/coco/{}2017_lmdb'
   CLASSES_PATH: 'lgdet/dataloader/others/class_names.txt'
   TMP_PATH: 'tmp/'
   PARAMETER_PATH: 'tmp/checkpoint//checkpoint_{}.parameter'
   GENERATE_LABEL_SAVE_PATH: 'tmp/predicted_labels/'
+
 
 
 TRAIN:
@@ -15,19 +17,19 @@ TRAIN:
   BATCH_SIZE: ''
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   TRAIN_DATA_FROM_FILE: ['COCO'] #'PERSON_COLLECT'['AUTOAIR','VISDRONE'] #['AUTOAIR'] #[VISDRONE] #UCAS_AOD] #'VOC''KITTI'
+  USE_LMDB: 1
 
   # data aug:
   DO_AUG: 1 #TRUE #
   RESIZE: 1
+  PADTOSIZE: 0
   RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0 #0 #
-  MIN_AREA: 0 #0 #100 #400 #
+  MIN_AREA: 32 #0 #100 #400 #
   IMG_SIZE: [512,512] #[384, 960] #[416, 416] #[512, 768] # [1024,1920] #[720,1024] #[H,W] #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
-  MULTI_SIZE_RATIO: [1] # [1, 0.9, 0.8...]
 
   SHOW_TRAIN_NAMES: 0 #TRUE #
-  SHOW_INPUT:  0 #10000 #
-
+  SHOW_INPUT: -1 #10000 #
 
 
   # optimizer:
@@ -39,7 +41,7 @@ TRAIN:
   WEIGHT_DECAY: 5e-4
   LOSSTYPE: 'focalloss' #'mse' #
   EPOCH_CONTINUE: None
-  SAVE_STEP: 2
+  SAVE_STEP: 200
 
   # CUDA:
   GPU_NUM: [0] #[] # if is [] means use CPU.
@@ -51,7 +53,7 @@ TRAIN:
   ANCHORS: 'please see the util_prepare.py'
 
   WRITER: 'tensorboardX'
-  WRITE_IMAGES: 40
+  WRITE_IMAGES: 10
 
 
 TEST:
@@ -59,7 +61,7 @@ TEST:
 
   # NMS:
   NMS_TYPE: 'SOFT_NMS'#'NMS'#
-  SCORE_THRESH: 0.6
+  SCORE_THRESH: 0.5
   IOU_THRESH: 0.5
   SOFNMS_THETA: 0.5
 

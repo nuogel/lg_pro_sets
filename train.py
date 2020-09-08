@@ -4,7 +4,7 @@
 import sys
 
 # print(sys.path)
-# sys.path.append('/home/lg/new_disk/deep_learning/Lg_Pro_Set')
+# sys.path.append('/home/lg/new_disk/deep_learning/lg_Pro_Set')
 from argparse import ArgumentParser
 from solver.train_solver import Solver
 from util.util_yml_parse import parse_yaml
@@ -13,12 +13,12 @@ from util.util_yml_parse import parse_yaml
 def _parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('--type', default='OBD', type=str, help='yml_path')
-    parser.add_argument('--checkpoint', '--cp', default='tmp/checkpoint/now.pkl'  # 0 #
+    parser.add_argument('--checkpoint', '--cp', default='tmp/checkpoint/now.pkl'  #0 #
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--batch_size', '--bz', default=16, type=int, help='batch size')
-    parser.add_argument('--lr', default=0.001, type=float, help='Learning rate')
-    parser.add_argument('--lr_continue', '--lr_c', default=0.001, type=float, help='Learning rate')
-    parser.add_argument('--number_works', '--n_w', default=16, type=int, help='number works of DataLoader')
+    parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
+    parser.add_argument('--lr_continue', '--lr_c', default=0, type=float, help='learning rate')
+    parser.add_argument('--number_works', '--n_w', default=16, type=int, help='number works of dataloader')
     parser.add_argument('--tensor_core', '--t_c', default='O0', type=str, help='apex-amp')
 
     parser.add_argument('--epoch-continue', default=None, type=int, help='Epoch of continue training')

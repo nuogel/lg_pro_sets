@@ -22,7 +22,7 @@ def make_list(base_path, x_file, y_file):
         x_path = os.path.join(base_path, x_file, path_i)
         y_base = path_i.split('.', -1)[0] + '.xml'
         y_path = os.path.join(base_path, y_file, y_base)
-        if _is_file(x_path) and _is_file(y_path) and _label_request(y_path):
+        if _is_file(x_path) and _is_file(y_path):
             # dir_list.append([path_i, x_path, y_path])
             dir_list.append([path_i, os.path.join(x_file, path_i), os.path.join(y_file, y_base)])
             print('adding:', dir_list[-1])
@@ -95,9 +95,9 @@ if __name__ == '__main__':
     # img_path = ['E:/datasets/VisDrone2019/VisDrone2019-VID-train/sequences/uav0000013_00000_v']
     # lab_path = 'E:\datasets\VisDrone2019\VisDrone2019-VID-train\\annotations/uav0000013_00000_v.txt'
 
-    img_path = 'images'
-    lab_path = 'labels'
-    base_path = '/media/lg/DataSet_E/datasets/person/data_person/'
+    img_path = 'imgs/train2017'
+    lab_path = 'labels/train2017_xml'
+    base_path = '/media/lg/2628737E28734C35/coco'
     # path = 'E:\datasets\FlyingChairs\data'
 
     save_path = 'util_tmp/make_list.txt'
