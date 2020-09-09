@@ -154,7 +154,7 @@ class OBD_Loader(DataLoader):
         :return: images, labels, image_size
         '''
         if self.cfg.TRAIN.USE_LMDB:
-            img_name ='000000413287.jpg' #data_info[0]
+            img_name = data_info[0]
 
             try:
                 image_bin = self.txn_image.get(img_name.encode())
@@ -184,12 +184,12 @@ class OBD_Loader(DataLoader):
                 exit()
             # labels come first.
             label = self._load_labels(y_path, data_info=data_info)
-            if label == [[]] or label == []:
-                print('loader obd :none label at:', y_path)
-                label = None
+
             # then add the images.
             img = cv2.imread(x_path)
-
+        if label == [[]] or label == []:
+            print('loader obd :none label at:', data_info)
+            label = None
         return img, label
 
     def _is_finedata(self, xyxy):
