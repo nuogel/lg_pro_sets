@@ -69,9 +69,10 @@ def lmdb_writer(lmdb_path):
                             pickle.dumps(label_infos), db=db_label)
 
     env.close()
+    print('lmdb finished')
 
 
-def lmdb_reader(lmdb_path, is_training, ):
+def lmdb_reader(lmdb_path):
     txt_base = '/media/lg/SSD_WorkSpace/LG/GitHub/lg_pro_sets/datasets/OBD_idx_stores/COCO/COCO_{}.txt'
     model = 'test'
     txt_path = txt_base.format(model)

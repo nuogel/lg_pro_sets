@@ -154,7 +154,8 @@ class OBD_Loader(DataLoader):
         :return: images, labels, image_size
         '''
         if self.cfg.TRAIN.USE_LMDB:
-            img_name = data_info[0]
+            img_name ='000000413287.jpg' #data_info[0]
+
             try:
                 image_bin = self.txn_image.get(img_name.encode())
                 label_bin = self.txn_label.get(img_name.encode())
@@ -171,6 +172,7 @@ class OBD_Loader(DataLoader):
                 cls_name = cls_names[i]
                 if self.class_name[cls_name] not in self.class_name:
                     continue
+                if not self._is_finedata(bbx): continue
                 label.append([self.cls2idx[self.class_name[cls_name]], bbx[0], bbx[1], bbx[2], bbx[3]])
         else:
             x_path = data_info[1]
