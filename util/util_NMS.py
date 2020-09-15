@@ -4,7 +4,7 @@ from util.util_iou import iou_xywh, iou_xyxy
 from torchvision.ops import nms
 
 
-class NMS:
+class NMS:   # TODO: dubug the for ...in each NMS.
     def __init__(self, cfg):
         self.cfg = cfg
         self.score_thresh = cfg.TEST.SCORE_THRESH

@@ -19,10 +19,10 @@ from util.util_nms_for_img_block import NMS_block
 from util.util_time_stamp import Time
 from lgdet.dataloader.DataLoaderFactory import DataLoaderFactory
 from util.util_audio import Util_Audio
-from .solver_base import SolverBase
+from .solver_base import BaseSolver
 
 
-class TestBase(SolverBase):
+class TestBase(BaseSolver):
 
     def test_backbone(self, DataSet):
         pass
@@ -91,7 +91,7 @@ class Test_OBD(TestBase):
                 labels_pres = [[]]
                 for bbox in img_cuts_pixcel:
                     input = raw_inputs[:, :, bbox[1]:bbox[3], bbox[0]:bbox[2]]
-                    predict = self.Model.forward(input_x=input, is_training=False)
+                    predict = self.model.forward(input_x=input, is_training=False)
                     labels_pre = self.parsepredict._parse_predict(predict)
                     for i, pre in enumerate(labels_pre[0]):
                         if self.cfg.TRAIN.RELATIVE_LABELS:
@@ -118,7 +118,7 @@ class Test_OBD(TestBase):
                 # TODO:nms for labels
                 labels_pres = NMS_block(labels_pres, self.cfg)
             else:
-                predicts = self.Model.forward(input_x=inputs, is_training=False)
+                predicts = self.model.forward(input_x=inputs, is_training=False)
                 labels_pres = self.parsepredict._parse_predict(predicts)
             batches = 1
             timer.time_end()
@@ -140,7 +140,7 @@ class Test_ASR(TestBase):
         # prepare paramertas
         self.cfg.TRAIN.BATCH_SIZE = 1
         test_data = self.DataLoader.get_one_data_for_test(wav_path)
-        predict = self.Model.forward(test_data, is_training=False)
+        predict = self.model.forward(test_data, is_training=False)
         for k, v in predict.items():
             print('pre:', k, self.DataLoader._number2pinying(v[:-1]))
 
@@ -158,7 +158,7 @@ class Test_SRDN(TestBase):
             test_data = next(loader)
             test_data = self.DataFun.to_devce(test_data)
             inputs, targets, data_infos = test_data
-            predicts = self.Model.forward(input_x=inputs, is_training=False)
+            predicts = self.model.forward(input_x=inputs, is_training=False)
             predicts = predicts.permute(0, 2, 3, 1)
 
             batches = inputs.shape[0]
@@ -198,13 +198,13 @@ class Test_TTS(TestBase):
         """Test."""
         loader = iter(DataSet)
         timer = Time()
-        self.Model.encoder.eval()
-        self.Model.postnet.eval()
+        self.model.encoder.eval()
+        self.model.postnet.eval()
         for i in range(DataSet.__len__()):
             test_data = next(loader)
             timer.time_start()
             test_data = self.DataFun.to_devce(test_data)
-            predicted = self.Model.forward(input_x=test_data[0], input_data=test_data, is_training=False)
+            predicted = self.model.forward(input_x=test_data[0], input_data=test_data, is_training=False)
             mel_outputs, linear_outputs, alignments = predicted
             linear_output = linear_outputs[0].cpu().data.numpy()
             # Predicted audio signal

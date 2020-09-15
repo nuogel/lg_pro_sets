@@ -1,10 +1,14 @@
+import os
 import torch
 from util.util_Save_Parmeters import TrainParame
 from util.util_logger import load_logger
 import numpy as np
 
+
 def prepare_cfg(cfg, arg, is_training=True):
     torch.backends.cudnn.benchmark = True
+    os.makedirs(cfg.PATH.TMP_PATH, exist_ok=True)
+
     print('torch version: ', torch.__version__)
     print('torch.version.cuda: ', torch.version.cuda)
 

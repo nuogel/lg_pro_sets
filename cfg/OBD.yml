@@ -12,7 +12,7 @@ PATH:
 
 
 TRAIN:
-  MODEL: yolov3_tiny #yolov3 #yolonano #yolov2 #  yolov3_tiny_shufflenet #ssdvgg #refinedet #efficientdet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #  fcos #
+  MODEL: yolonano #yolov3 #yolonano #yolov2 #  yolov3_tiny_shufflenet #ssdvgg #refinedet #efficientdet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #  fcos #
   EPOCH_SIZE: 4000
   BATCH_SIZE: ''
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
@@ -33,15 +33,15 @@ TRAIN:
 
 
   # optimizer:
-  OPTIMIZER: 'adam' #'SGD' #
+  OPTIMIZER: 'SGD' #'adam' #
   LR_START: 0.001
-  STEP_LR: 30
-  LR_EXPONENTIAL_DECAY_RATE: 0.98 #lr_scheduler.ExponentialLR
+  STEP_LR: 10
+  WARM_UP_STEP: 500
   BETAS_ADAM: 0.9
-  WEIGHT_DECAY: 5e-4
+  WEIGHT_DECAY: 0.0001
   LOSSTYPE: 'focalloss' #'mse' #
   EPOCH_CONTINUE: None
-  SAVE_STEP: 200
+  SAVE_STEP: 400
 
   # CUDA:
   GPU_NUM: [0] #[] # if is [] means use CPU.

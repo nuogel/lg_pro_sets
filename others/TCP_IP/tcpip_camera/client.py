@@ -18,7 +18,7 @@ class Camera:
 
 class Client:
     def __init__(self):
-        self.HOST = 'localhost'
+        self.HOST = '192.168.0.104'
         self.PORT = 21567
         self.BUFSIZ = 1024
         self.ADDR = (self.HOST, self.PORT)
@@ -33,7 +33,7 @@ class Client:
             data = self.camera.get_one_frame()
             # data = cv2.imread('/media/lg/SSD_WorkSpace/LG/GitHub/lg_pro_sets/saved/denoise/edsr_1216x554x2.png')
             time.sleep(0.1)
-            ret, fram = True, data
+            ret, fram = data
             # img_encode = np.reshape(data, (-1, 1))
             _, img_encode = cv2.imencode(".jpg", fram)
             data_encode = np.array(img_encode)
@@ -50,10 +50,10 @@ class Client:
             if feedback != len(send_byte):
                 print(feedback)
 
-            # data = self.tcpClientSock.recv(self.BUFSIZ)
-            # if not data:
-            #     break
-            # print(str(data, encoding='utf-8'))
+            data = self.tcpClientSock.recv(self.BUFSIZ)
+            if not data:
+                break
+            print(str(data, encoding='utf-8'))
 
     def close_clent(self):
         self.tcpClientSock.close()

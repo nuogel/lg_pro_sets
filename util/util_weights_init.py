@@ -36,3 +36,4 @@ def weights_init(Modle, cfg):
                 torch.nn.init.kaiming_normal_(m.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
                 if m.bias is not None:
                     m.bias.data.zero_()
+    return Modle
