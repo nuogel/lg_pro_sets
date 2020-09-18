@@ -12,6 +12,7 @@ with the new yolo loss, in 8 images, loss is 0.015 and map is 0.99.and the test 
 
 '''
 
+
 class YoloLoss:
     # pylint: disable=too-few-public-methods
     """Calculate loss."""
@@ -27,7 +28,7 @@ class YoloLoss:
         self.batch_size = cfg.TRAIN.BATCH_SIZE
         self.apollo_cls2idx = dict(zip(cfg.TRAIN.CLASSES, range(cfg.TRAIN.CLASSES_NUM)))
 
-        self.mseloss = torch.nn.MSELoss(reduction='sum')
+        self.mseloss = torch.nn.MSELoss()
         self.bceloss = torch.nn.BCELoss()
         self.class_name = _get_class_names(cfg.PATH.CLASSES_PATH)
 
@@ -36,6 +37,7 @@ class YoloLoss:
 
         self.alpha = 0.25
         self.gamma = 2
+        self.use_hard_noobj_loss = True
 
     def _reshape_labels(self, pre_obj, pre_cls, pre_loc_xy, pre_loc_wh, labels, f_id):
         """
@@ -105,7 +107,7 @@ class YoloLoss:
             # iou50 = (iou_scores > 0.5).float()
 
             print("layer %d: pre_obj.mean():%0.4f pre_noobj.mean():%0.4f pre_cls.acc():%0.4f" % (
-            f_id, watcher, watcher2, watcher3))
+                f_id, watcher, watcher2, watcher3))
 
         if self.multiply_area_scale:
             # TODO: labels_loc_wh is no fit for area_scale
@@ -113,7 +115,24 @@ class YoloLoss:
                 labels_loc_wh)
         else:
             area_scale = 1.0
-        return obj_mask, noobj_mask, labels_cls, labels_loc_xy, labels_loc_wh
+        return obj_mask, noobj_mask, labels_cls, labels_loc_xy, labels_loc_wh  # TODO: obj_mask==8 & noobj_mask == 12220
+
+    def _hard_noobj_loss(self, pre_obj, noobj_mask, hard_num=300):
+        '''
+        due to the imbalance betwine  obj and noobj, (obj=10, noobj=500000).
+        so, we design the hard_noobj function to find the top N noobj to backward.
+        :return: noobj mask.
+
+        '''
+        # mask = torch.ge(pre_obj, thresh_score)
+        # mask = mask & noobj_mask
+        pre_noobj = pre_obj[noobj_mask]
+        pre_noobj_sort = pre_noobj.sort()
+        pre_noobj_hard = pre_noobj_sort[0][-hard_num:]
+
+        noobj_loss = self.bceloss(pre_noobj_hard, torch.zeros_like(pre_noobj_hard))
+
+        return noobj_loss
 
     def _loss_cal_one_Fmap(self, f_map, f_id, labels, losstype=None):
         """Calculate the loss."""
@@ -140,28 +159,27 @@ class YoloLoss:
             print('sum of obj_mask', obj_mask.sum())
             print('NOobj_mask', noobj_mask[i_0, i_1, i_2].t())
         '''
-
         if losstype == 'focalloss':
             # # FOCAL loss
-            obj_loss = (self.alpha * (((1. - pre_obj)[obj_mask]) ** self.gamma)) * self.bceloss(pre_obj[obj_mask],
-                                                                                                labels_obj[obj_mask])
-            noobj_loss = ((1 - self.alpha) * ((pre_obj[noobj_mask]) ** self.gamma)) * self.bceloss(pre_obj[noobj_mask],
-                                                                                                   labels_obj[
-                                                                                                       noobj_mask])
-            obj_loss = torch.sum(obj_loss) / self.batch_size
-            noobj_loss = torch.sum(noobj_loss) / self.batch_size
+            obj_loss = (self.alpha * (((1. - pre_obj)[obj_mask]) ** self.gamma)) * self.bceloss(pre_obj[obj_mask], labels_obj[obj_mask])
+            noobj_loss = ((1 - self.alpha) * ((pre_obj[noobj_mask]) ** self.gamma)) * self.bceloss(pre_obj[noobj_mask], labels_obj[noobj_mask])
+            obj_loss = torch.mean(obj_loss)
+            noobj_loss = torch.mean(noobj_loss)
 
         elif losstype == 'mse' or losstype is None:
             # nomal loss
-            obj_loss = self.mseloss(pre_obj[obj_mask], labels_obj[obj_mask]) / self.batch_size
-            noobj_loss = 100 * self.mseloss(pre_obj[noobj_mask], labels_obj[noobj_mask]) / self.batch_size
+            obj_loss = self.bceloss(pre_obj[obj_mask], labels_obj[obj_mask])
+            if self.use_hard_noobj_loss:
+                noobj_loss = self._hard_noobj_loss(pre_obj, noobj_mask)
+            else:
+                noobj_loss = self.bceloss(pre_obj[noobj_mask], labels_obj[noobj_mask])
         else:
             print(losstype, 'is not define.')
             obj_loss = 0.
             noobj_loss = 0.
-        lxy_loss = self.mseloss(pre_loc_xy[obj_mask], labels_loc_xy[obj_mask]) / self.batch_size
-        lwh_loss = self.mseloss(pre_loc_wh[obj_mask], labels_loc_wh[obj_mask]) / self.batch_size
-        cls_loss = self.mseloss(pre_cls[obj_mask], labels_cls[obj_mask]) / self.batch_size
+        lxy_loss = self.mseloss(pre_loc_xy[obj_mask], labels_loc_xy[obj_mask])
+        lwh_loss = self.mseloss(pre_loc_wh[obj_mask], labels_loc_wh[obj_mask])
+        cls_loss = self.bceloss(pre_cls[obj_mask], labels_cls[obj_mask])
         loc_loss = lxy_loss + lwh_loss
         return obj_loss, noobj_loss, cls_loss, loc_loss
 

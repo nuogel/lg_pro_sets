@@ -32,7 +32,6 @@ class DataLoaderFactory:
                                     num_workers=self.args.number_works,
                                     collate_fn=test_data.collate_fun,
                                     shuffle=False)
-
         return trainLoader, testLoader
 
     def to_devce(self, data):

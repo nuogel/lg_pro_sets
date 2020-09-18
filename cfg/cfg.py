@@ -1,11 +1,11 @@
 import os
 import torch
-from util.util_Save_Parmeters import TrainParame
+from util.util_Save_Parmeters import TxbLogger
 from util.util_logger import load_logger
 import numpy as np
 
 
-def prepare_cfg(cfg, arg, is_training=True):
+def prepare_cfg(cfg, args, is_training=True):
     torch.backends.cudnn.benchmark = True
     os.makedirs(cfg.PATH.TMP_PATH, exist_ok=True)
 
@@ -14,20 +14,21 @@ def prepare_cfg(cfg, arg, is_training=True):
 
     cfg = common_cfg(cfg)
 
-    cfg.writer = TrainParame(cfg)
-    cfg.logger = load_logger(arg)
+    cfg.writer = TxbLogger(cfg)
+    cfg.logger = load_logger(cfg, args)
 
     # if not is_training:
     #     cfg.TRAIN.TARGET_PREDEEL = 0
     #     cfg.TRAIN.INPUT_PREDEEL = 0
 
-    if arg.batch_size != 0:
-        cfg.TRAIN.BATCH_SIZE = arg.batch_size
+    if args.batch_size != 0:
+        cfg.TRAIN.BATCH_SIZE = args.batch_size
     if cfg.TEST.ONE_TEST:
         cfg.TRAIN.DO_AUG = 0
+        cfg.TRAIN.USE_LMDB=0
     try:
         if cfg.TEST.ONE_TEST or cfg.TRAIN.SHOW_INPUT or cfg.BELONGS == 'VID':
-            arg.number_works = 0
+            args.number_works = 0
             cfg.TRAIN.SAVE_STEP = 50
     except:
         pass
@@ -120,7 +121,7 @@ def prepare_cfg(cfg, arg, is_training=True):
         cfg.TRAIN.CLASSES = list(class_name.values())
     except:
         pass
-    return cfg, arg
+    return cfg, args
 
 
 def common_cfg(cfg):

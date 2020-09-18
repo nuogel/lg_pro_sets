@@ -187,7 +187,8 @@ class BiFPNModule(nn.Module):
             inputs_clone.append(in_tensor.clone())
 
         for i in range(levels - 1, 0, -1):
-            pathtd[i - 1] = (w1[0, i - 1] * pathtd[i - 1] + w1[1, i - 1] * F.interpolate(pathtd[i], scale_factor=2, mode='nearest')) / (w1[0, i - 1] + w1[1, i - 1] + self.eps)
+            pathtd[i - 1] = (w1[0, i - 1] * pathtd[i - 1] + w1[1, i - 1] * F.interpolate(pathtd[i], scale_factor=2, mode='nearest')) / (
+                        w1[0, i - 1] + w1[1, i - 1] + self.eps)
             pathtd[i - 1] = self.bifpn_convs[idx_bifpn](pathtd[i - 1])
             idx_bifpn = idx_bifpn + 1
         # build down-top
@@ -201,6 +202,7 @@ class BiFPNModule(nn.Module):
                 w1[0, levels - 1] + w1[1, levels - 1] + self.eps)
         pathtd[levels - 1] = self.bifpn_convs[idx_bifpn](pathtd[levels - 1])
         return pathtd
+
 
 from ..registry import MODELS
 
@@ -216,7 +218,7 @@ class EFFICIENTDET(nn.Module):
         scales = np.array([1, 1.25, 1.5])
         self.cfg = cfg
         super(EFFICIENTDET, self).__init__()
-        self.backbone = EfficientNet.from_pretrained(MODEL_MAP[network])
+        self.backbone = EfficientNet.from_name(MODEL_MAP[network])
         # self.backbone = EfficientNet()
 
         self.neck = BIFPN(in_channels=self.backbone.get_list_features()[-5:],

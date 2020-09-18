@@ -6,13 +6,13 @@ PATH:
   LMDB_PATH: '/media/lg/2628737E28734C35/coco/{}2017_lmdb'
   CLASSES_PATH: 'lgdet/dataloader/others/class_names.txt'
   TMP_PATH: 'tmp/'
-  PARAMETER_PATH: 'tmp/checkpoint//checkpoint_{}.parameter'
   GENERATE_LABEL_SAVE_PATH: 'tmp/predicted_labels/'
 
 
 
 TRAIN:
-  MODEL: yolonano #yolov3 #yolonano #yolov2 #  yolov3_tiny_shufflenet #ssdvgg #refinedet #efficientdet #yolov3_tiny_mobilenet #yolov3_tiny_squeezenet #  fcos #
+  #yolov3  ssdvgg   yolonano  yolov2 yolov3_tiny_shufflenet refinedet efficientdet yolov3_tiny_mobilenet yolov3_tiny_squeezenet fcos
+  MODEL: efficientdet
   EPOCH_SIZE: 4000
   BATCH_SIZE: ''
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
@@ -36,10 +36,10 @@ TRAIN:
   OPTIMIZER: 'SGD' #'adam' #
   LR_START: 0.001
   STEP_LR: 10
-  WARM_UP_STEP: 500
+  WARM_UP_STEP: 100
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 0.0001
-  LOSSTYPE: 'focalloss' #'mse' #
+  LOSSTYPE: 'mse' #'focalloss' #
   EPOCH_CONTINUE: None
   SAVE_STEP: 400
 
@@ -70,17 +70,11 @@ TEST:
   RESIZE: 1  #FALSE #
   IMG_BLOCK: 0
   SAVE_LABELS: 0
-  SHOW_TIMES: 10000
+  SHOW_TIMES: 100000
 
   TEST_ONLY: 0 #FALSE #
 
   ONE_TEST: 0  #
-  ONE_TEST_TRAIN_STEP: 50
+  ONE_TEST_TRAIN_STEP: 100
   ONE_TEST_TEST_STEP: 1
-  ONE_NAME: [
-
-    #['000005.jpg', 'E:\\datasets\\PASCAL_VOC\\VOCdevkit\\VOC2007\\trainval\\JPEGImages\\000005.jpg', 'E:\\datasets\\PASCAL_VOC\\VOCdevkit\\VOC2007\\trainval\\Annotations\\000005.xml']
-    #  ['000000', 'E://datasets//kitti//training//images//000000.png', 'E://datasets//kitti//training//labels\\000000.xml']
-    #      ['0000002_00005_d_0000014.jpg', 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/images/0000002_00005_d_0000014.jpg', 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/annotations/0000002_00005_d_0000014.txt']
-    #  ['P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.png', 'E:/datasets/UCAS_AOD/CAR\\P0001.txt']
-  ]
+  ONE_NAME: [['000000000009.jpg', 'imgs/train2017/000000000009.jpg', 'labels/train2017_xml/000000000009.xml'] ]

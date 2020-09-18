@@ -23,13 +23,6 @@ class PriorBox(object):
         if self.scales is None:
             self.scales = [2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)]  # [1, 1.25, 1.5]
         self.feature_maps = [(self.image_shape + 2 ** x - 1) // (2 ** x) for x in self.pyramid_levels]
-        # self.feature_maps[-1] = self.feature_maps[-2] # add by LG
-        # self.image_size = 512
-        # number of priors for feature map location (either 4 or 6)
-        # self.feature_maps = [64, 32, 16, 8]
-        # self.min_sizes = [32, 64, 128, 256]
-        # self.max_sizes = []
-        # self.strides = [8, 16, 32, 64]
         self.clip = True
 
     def forward(self):

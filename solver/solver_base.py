@@ -16,6 +16,7 @@ class BaseSolver(object):
         self.is_training = train
         self._get_configs(cfg, args)
         self._get_model()
+        self._get_dataloader()
 
     def _get_configs(self, cfg, args):
         self.cfg, self.args = prepare_cfg(cfg, args)
@@ -26,14 +27,14 @@ class BaseSolver(object):
         # init model:
         if self.args.checkpoint not in [0, '0', 'None', 'no', 'none', "''"]:
             self.model, self.epoch_last, self.optimizer, self.global_step = self._load_checkpoint(self.model, self.args.checkpoint, self.cfg.TRAIN.DEVICE)
-            self.cfg.writer.clean_history_and_init_log()
+            self.cfg.writer.tbX_reStart(self.epoch_last)
 
         else:
             self.model = weights_init(self.model, self.cfg)
             self.optimizer = None
             self.epoch_last = 0
             self.global_step = 0
-            self.cfg.writer.tbX_reStart(self.epoch_last)
+            self.cfg.writer.clean_history_and_init_log()
 
         self.model = self.model.to(self.cfg.TRAIN.DEVICE)
 
@@ -44,7 +45,8 @@ class BaseSolver(object):
             self.model.train()
             self.model.zero_grad()
         else:
-            self.model.eval()
+            if not self.cfg.TEST.ONE_TEST:
+                self.model.eval()
 
     def _get_score(self):
         self.score = get_score_class(self.cfg.BELONGS)(self.cfg)
@@ -90,12 +92,9 @@ class BaseSolver(object):
         :return: learning_rate, epoch_last, train_set, test_set.
         """
         self.DataFun = DataLoaderFactory(self.cfg, self.args)
-
-        self.cfg.logger.info('>' * 30 + 'Loading Checkpoint: %s, Last Learning Rate:%s, Last Epoch:%s',
-                             self.args.checkpoint, self.learning_rate, self.epoch_last)
         #  load the last data set
         train_set, test_set = _read_train_test_dataset(self.cfg)
-        print('train set:', train_set[:4], '\n', 'test set:', test_set[:4])
+        print('train set:', train_set[0], '\n', 'test set:', test_set[0])
         self.cfg.logger.info('>' * 30 + 'train set:{}; test set:{}'.format(len(train_set), len(test_set)))
         self.trainDataloader, self.testDataloader = self.DataFun.make_dataset(train_set, test_set)
 
@@ -106,22 +105,26 @@ class BaseSolver(object):
         w_dict = {}
         for k, v in losses.items():
             total_loss += v
-            loss_head_info += ' {}: {:6.4f}'.format(k, v.item())
-            w_dict['item_losses/' + k] = v
+
         # add tensorboard writer.
         if self.global_step % 200 == 0:
+            for k, v in losses.items():
+                loss_head_info += ' {}: {:6.4f}'.format(k, v.item())
+                w_dict['item_losses/' + k] = v
             w_dict['epoch'] = self.global_step
             self.cfg.writer.tbX_write(w_dict=w_dict)
+
         self.cfg.logger.debug(loss_head_info)
         if torch.isnan(total_loss) or total_loss.item() == float("inf") or total_loss.item() == -float("inf"):
-            self.cfg.logger.error("received an nan/inf loss")
+            self.cfg.logger.error("received an nan/inf loss:", dataset[-1])
+
             exit()
         return total_loss
 
     def _save_checkpoint(self, model, epoch, optimizer, global_step):
-        checkpoint_path_0 = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoint', '{}.pkl'.format(epoch))
-        checkpoint_path_1 = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoint', 'now.pkl'.format(epoch))
-        checkpoint_path_2 = os.path.join(self.cfg.PATH.TMP_PATH + 'checkpoint/tbx_log_' + self.cfg.TRAIN.MODEL, 'now.pkl')
+        checkpoint_path_0 = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoints/common_checkpoints', '{}.pkl'.format(epoch))
+        checkpoint_path_1 = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoints/common_checkpoints', 'now.pkl'.format(epoch))
+        checkpoint_path_2 = os.path.join(self.cfg.PATH.TMP_PATH + 'checkpoints/' + self.cfg.TRAIN.MODEL, 'now.pkl')
         if self.cfg.TEST.ONE_TEST:
             path_list = [checkpoint_path_1]
         else:

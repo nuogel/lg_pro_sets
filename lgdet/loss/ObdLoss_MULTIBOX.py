@@ -14,13 +14,13 @@ class MULTIBOXLOSS():
          and Smooth L1 regression loss.
         """
         self.iou_threshold = cfg.TEST.IOU_THRESH
-        self.neg_pos_ratio = 3
+        self.neg_pos_ratio = 3  # 3:1
         # self.center_variance = center_variance
         # self.size_variance = size_variance
         # self.priors = priors
         # self.priors.to(device)
 
-    def Loss_Call(self, predictions, targets, losstype=None):
+    def Loss_Call(self, predictions, targets, kwargs):
         """Compute classification loss and smooth l1 loss.
 
         Args:
@@ -35,10 +35,10 @@ class MULTIBOXLOSS():
 
         encode_target, labels = [], []
         for i in range(batchsize):
-            lab = [box[0] for box in gt_labels[i]]
-            box = [box[1:] for box in gt_labels[i]]
-            lab = torch.LongTensor(lab).to(anchors_xywh.device)
-            box_xywh = xyxy2xywh(torch.Tensor(box).to(anchors_xywh.device))
+            gt_i = gt_labels[gt_labels[..., 0] == i]
+            lab = gt_i[..., 1].long()
+            box = gt_i[..., 2:]
+            box_xywh = xyxy2xywh(box)
             _gt_loc_xywh, _labels = self._assign_priors(box_xywh, lab, anchors_xywh, self.iou_threshold)
             _gt_loc_xywh = self._encode_bbox(_gt_loc_xywh, anchors_xywh)
             encode_target.append(_gt_loc_xywh)
@@ -55,17 +55,18 @@ class MULTIBOXLOSS():
         labels_ = labels[mask]
         # print(confidence_[labels_>0])
         # print(torch.softmax(confidence_[labels_>0], -1))
-        classification_loss = F.cross_entropy(confidence_, labels_, size_average=False)
+        classification_loss = F.cross_entropy(confidence_, labels_, size_average=True)
         pos_mask = labels > 0
         predicted_locations = predicted_locations[pos_mask, :].reshape(-1, 4)
         encode_target = encode_target[pos_mask, :].reshape(-1, 4)
 
-        smooth_l1_loss = F.smooth_l1_loss(predicted_locations, encode_target, size_average=False)
+        smooth_l1_loss = F.smooth_l1_loss(predicted_locations, encode_target, size_average=True)
         num_pos = encode_target.size(0)
         loc_loss = smooth_l1_loss / num_pos
         class_loss = classification_loss / num_pos
 
-        return loc_loss, class_loss
+        return {'loc_loss': loc_loss,
+                'class_loss': class_loss}
 
     def _hard_negative_mining(self, loss, labels, neg_pos_ratio):
         """

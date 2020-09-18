@@ -23,6 +23,9 @@ from .solver_base import BaseSolver
 
 
 class TestBase(BaseSolver):
+    def __init__(self, cfg, args, train):
+        super().__init__(cfg, args, train)
+        ...
 
     def test_backbone(self, DataSet):
         pass
@@ -40,7 +43,7 @@ class TestBase(BaseSolver):
 
     def prase_file(self, file_s):
         dataset = []
-        if file_s is None:
+        if file_s == 'one_name':
             dataset = self.cfg.TEST.ONE_NAME
 
         elif os.path.isfile(file_s):

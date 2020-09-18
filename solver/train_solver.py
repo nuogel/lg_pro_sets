@@ -18,11 +18,13 @@ class Solver(BaseSolver):
         self._get_optimizer()
         self._get_score()
         self._get_lossfun()
-        self._get_dataloader()
 
     def train(self):
         """Train the network.
         """
+        self.cfg.logger.info('>' * 30 + 'Loading Checkpoint: %s, Last Learning Rate:%s, Last Epoch:%s',
+                             self.args.checkpoint, self.learning_rate, self.epoch_last)
+
         for epoch in range(self.epoch_last, self.cfg.TRAIN.EPOCH_SIZE):
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch)
@@ -31,7 +33,7 @@ class Solver(BaseSolver):
 
     def _train_an_epoch(self, epoch):
         self.model.train()
-        self.cfg.logger.debug('>' * 30 + '[TRAIN] model:%s,   epoch: %s' % (self.cfg.TRAIN.MODEL, epoch))
+        self.cfg.logger.info('>' * 30 + '[TRAIN] model:%s,   epoch: %s' % (self.cfg.TRAIN.MODEL, epoch))
         losses = 0
         # count the step time, total time...
         Pbar = tqdm.tqdm(self.trainDataloader)
@@ -56,16 +58,17 @@ class Solver(BaseSolver):
                 self.optimizer.step()
                 self.optimizer.zero_grad()
                 self.model.zero_grad()
-            info = '[train] model:%s;lr:%0.6f; step loss: %0.4f; batch average loss:%0.4f; epoch:%0d; global step:%d' \
-                   % (self.cfg.TRAIN.MODEL, self.optimizer.param_groups[0]['lr'], total_loss.item(), losses / (step + 1), epoch, self.global_step)
-            self.cfg.logger.debug(info)
+            info = '[train] model:%s; epoch:%0d; global_step:%d; lr:%0.6f; step_loss: %0.4f; batch_loss:%0.4f' \
+                   % (self.cfg.TRAIN.MODEL, epoch, self.global_step, self.optimizer.param_groups[0]['lr'], total_loss.item(), losses / (step + 1))
+            if self.global_step % 50 == 0:
+                self.cfg.logger.info(info)
             Pbar.set_description(info)
         self.scheduler.step()
         w_dict = {'epoch': epoch,
                   'learning_rate': self.optimizer.param_groups[0]['lr'],
                   'batch_average_loss': losses / len(self.trainDataloader)}
         self.cfg.writer.tbX_write(w_dict)
-        self.cfg.logger.debug('[train] summary: epoch: %s, average total loss: %s', epoch, losses / len(self.trainDataloader))
+        self.cfg.logger.debug('[train] summary: epoch: %s, batch_loss: %s', epoch, losses / len(self.trainDataloader))
         self._save_checkpoint(self.model, epoch, self.optimizer, self.global_step)
 
     def _test_an_epoch(self, epoch):

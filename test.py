@@ -12,7 +12,7 @@ def _parse_arguments():
     parser.add_argument('--type', default='OBD'  # SR_DN
                         , type=str, help='yml_path')
     parser.add_argument('--checkpoint', default=
-    'tmp/checkpoint/now.pkl'
+    'tmp/checkpoints/common_checkpoints/now.pkl'
                         # 'F:/saved_weight/saved_tbx_log_yolov3_tiny_clean/checkpoint.pkl',
                         # 'F:/saved_weight/tbx_log_ssd_coco/checkpoint.pkl'
                         # 'F:/saved_weight/tbx_log_vdsr/checkpoint.pkl'
@@ -34,8 +34,8 @@ def _parse_arguments():
 def main():
     """Run the script."""
     exit_code = 0
-    files = None
-    files = 'datasets/OBD_idx_stores/COCO/COCO_test.txt'
+    files = 'one_name'
+    # files = 'datasets/OBD_idx_stores/COCO/COCO_test.txt'
     score = False
     args = _parse_arguments()
     cfg = parse_yaml(args)

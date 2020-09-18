@@ -63,7 +63,7 @@ class ParsePredict:
         # reshape classes
         B, H, W = pre_obj.shape[0:3]
         pre_cls = cls_perd.reshape([B, H, W, self.anc_num, self.cls_num])
-        pre_cls = torch.softmax(pre_cls, -1)
+        pre_cls = pre_cls.sigmoid()
 
         # reshape the pre_loc
         pre_loc = loc_pred.reshape([B, H, W, self.anc_num, 4])

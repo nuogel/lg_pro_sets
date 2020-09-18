@@ -101,14 +101,14 @@ class OBD_Loader(DataLoader):
 
         while img is None or label is None:  # if there is no data in img or label
             if self.one_test:
-                data_info = self.dataset_txt[0]
+                data_info = self.one_name[0]
             else:
                 data_info = self.dataset_txt[index]
 
             data_info[1] = os.path.join(self.cfg.PATH.INPUT_PATH, data_info[1])
             data_info[2] = os.path.join(self.cfg.PATH.INPUT_PATH, data_info[2])
             img, label = self._read_datas(data_info)  # labels: (x1, y1, x2, y2) & must be absolutely labels.
-            index = random.randint(1, len(self.dataset_txt) - 1)
+            index = random.randint(0, len(self.dataset_txt) - 1)
 
             if not self.is_training and not label:  # for test
                 break

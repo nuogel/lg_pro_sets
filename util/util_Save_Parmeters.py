@@ -15,24 +15,24 @@ from argparse import ArgumentParser
 LOGGER = logging.getLogger(__name__)
 
 
-class TrainParame:
+class TxbLogger:
     # TODO: save the weight to parameters.
     def __init__(self, cfg=None):
         self.cfg = cfg
-        self.file = cfg.PATH.PARAMETER_PATH.format(self.cfg.TRAIN.MODEL)
         self.folder = cfg.PATH.TMP_PATH + '/logs/tbx_log_' + cfg.TRAIN.MODEL
 
     def clean_history_and_init_log(self):
         """Init the parameters."""
-        # if os.path.isfile(self.file):
-        #     os.remove(self.file)
         if os.path.isdir(self.folder):
             try:
                 shutil.rmtree(self.folder)
             except:
                 exit(FileExistsError('FILE IS USING, PLEASE CLOSE IT: {}'.format(self.folder)))
             else:
-                LOGGER.info('DELETE THE HISTORY LOG: {}'.format(self.folder))
+                info = 'delete the history log from: {}'.format(self.folder)
+                LOGGER.info(info)
+                print(info)
+
         self.tbX_writer = SummaryWriter(self.folder)
 
         self._write_cfg(epoch=0)
@@ -203,5 +203,5 @@ if __name__ == "__main__":
     args = _parse_arguments()
     cfg = parse_yaml(args)
     cfg.PATH.TMP_PATH = os.path.join('..', cfg.PATH.TMP_PATH)
-    para = TrainParame(cfg)
+    para = TxbLogger(cfg)
     para.tbX_show_parameters(start_epoch=0, end_epoch=None)
