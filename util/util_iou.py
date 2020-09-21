@@ -77,8 +77,7 @@ def _iou_mat_N21(box1, box2):
     ih = torch.clamp(ih, min=0)
     intersection = iw * ih
     ua = area1 + area2 - intersection
-    ua = torch.clamp(ua, min=1e-8)
-    IoU = intersection / ua
+    IoU = intersection / ua + 1e-16
     return IoU
 
 

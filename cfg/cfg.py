@@ -26,6 +26,7 @@ def prepare_cfg(cfg, args, is_training=True):
     if cfg.TEST.ONE_TEST:
         cfg.TRAIN.DO_AUG = 0
         cfg.TRAIN.USE_LMDB=0
+
     try:
         if cfg.TEST.ONE_TEST or cfg.TRAIN.SHOW_INPUT or cfg.BELONGS == 'VID':
             args.number_works = 0

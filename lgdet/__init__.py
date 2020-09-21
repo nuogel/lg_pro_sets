@@ -1,4 +1,6 @@
 from .model.ObdModel_YOLOV3_TINY import YOLOV3_TINY
+from .model.ObdModel_YOLOV3_TINY_MOBILENET import YOLOV3_TINY_MOBILENET
+
 from .model.ObdModel_YOLONANO import YOLONANO
 from .model.ObdModel_YOLOV3 import YOLOV3
 from .model.ObdModel_EFFICIENTDET import EFFICIENTDET

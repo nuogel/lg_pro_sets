@@ -12,12 +12,12 @@ PATH:
 
 TRAIN:
   #yolov3  ssdvgg   yolonano  yolov2 yolov3_tiny_shufflenet refinedet efficientdet yolov3_tiny_mobilenet yolov3_tiny_squeezenet fcos
-  MODEL: efficientdet
+  MODEL: yolov3_tiny_mobilenet
   EPOCH_SIZE: 4000
   BATCH_SIZE: ''
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   TRAIN_DATA_FROM_FILE: ['COCO'] #'PERSON_COLLECT'['AUTOAIR','VISDRONE'] #['AUTOAIR'] #[VISDRONE] #UCAS_AOD] #'VOC''KITTI'
-  USE_LMDB: 1
+  USE_LMDB: 0
 
   # data aug:
   DO_AUG: 1 #TRUE #
@@ -30,6 +30,7 @@ TRAIN:
 
   SHOW_TRAIN_NAMES: 0 #TRUE #
   SHOW_INPUT: -1 #10000 #
+  WATCH_METIRICS: 0
 
 
   # optimizer:
@@ -39,7 +40,7 @@ TRAIN:
   WARM_UP_STEP: 100
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 0.0001
-  LOSSTYPE: 'mse' #'focalloss' #
+  LOSSTYPE: 'bce' #'focalloss' #
   EPOCH_CONTINUE: None
   SAVE_STEP: 400
 

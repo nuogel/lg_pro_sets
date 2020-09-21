@@ -1,10 +1,9 @@
 """Loss calculation based on yolo."""
 import torch
 import numpy as np
-from util.util_iou import iou_xywh
+from util.util_iou import iou_xywh, xywh2xyxy, iou_xyxy
 from util.util_get_cls_names import _get_class_names
 from util.util_parse_prediction import ParsePredict
-from torch.autograd import Variable
 
 '''
 with the new yolo loss, in 56 images, loss is 0.18 and map is 0.2.and the test show wrong bboxes.
@@ -21,6 +20,7 @@ class YoloLoss:
         """Init."""
         #
         self.cfg = cfg
+        self.device = self.cfg.TRAIN.DEVICE
         self.anchors = torch.Tensor(cfg.TRAIN.ANCHORS)
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
         self.cls_num = cfg.TRAIN.CLASSES_NUM
@@ -37,7 +37,8 @@ class YoloLoss:
 
         self.alpha = 0.25
         self.gamma = 2
-        self.use_hard_noobj_loss = True
+        self.use_hard_noobj_loss = False
+        self.watch_metrics = self.cfg.TRAIN.WATCH_METIRICS
 
     def _reshape_labels(self, pre_obj, pre_cls, pre_loc_xy, pre_loc_wh, labels, f_id):
         """
@@ -48,28 +49,31 @@ class YoloLoss:
         :return: labels_obj, labels_cls, lab_loc_xy, lab_loc_wh, labels_boxes, area_scal
         """
         B, H, W = pre_obj.shape[0:3]
-        mask = np.arange(
-            self.anc_num) + self.anc_num * f_id  # be care of the relationship between anchor size and the feature map size.
-        anchors = self.anchors[mask] / torch.Tensor(
-            [self.cfg.TRAIN.IMG_SIZE[1], self.cfg.TRAIN.IMG_SIZE[0]])  # * torch.Tensor([W, H])
-        anchors = anchors.to(self.cfg.TRAIN.DEVICE)
-        obj_mask = torch.BoolTensor(B, H, W, self.anc_num).fill_(0).to(self.cfg.TRAIN.DEVICE)
-        noobj_mask = torch.BoolTensor(B, H, W, self.anc_num).fill_(1).to(self.cfg.TRAIN.DEVICE)
-        labels_loc_xy = torch.zeros([B, H, W, self.anc_num, 2]).to(self.cfg.TRAIN.DEVICE)
-        labels_loc_wh = torch.zeros([B, H, W, self.anc_num, 2]).to(self.cfg.TRAIN.DEVICE)
-        labels_cls = torch.zeros([B, H, W, self.anc_num, self.cls_num]).to(self.cfg.TRAIN.DEVICE)
+        mask = np.arange(self.anc_num) + self.anc_num * f_id  # be care of the relationship between anchor size and the feature map size.
+        anchors_raw = self.anchors[mask]
+        anchors = torch.Tensor([(a_w / self.cfg.TRAIN.IMG_SIZE[1] * W, a_h / self.cfg.TRAIN.IMG_SIZE[0] * H) for a_w, a_h in anchors_raw])
+
+        # anchors = self.anchors[mask] / torch.Tensor([self.cfg.TRAIN.IMG_SIZE[1], self.cfg.TRAIN.IMG_SIZE[0]])  # * torch.Tensor([W, H])
+        anchors = anchors.to(self.device)
+        obj_mask = torch.BoolTensor(B, H, W, self.anc_num).fill_(0).to(self.device)
+        noobj_mask = torch.BoolTensor(B, H, W, self.anc_num).fill_(1).to(self.device)
+        labels_loc_xy = torch.zeros([B, H, W, self.anc_num, 2]).to(self.device)
+        labels_loc_wh = torch.zeros([B, H, W, self.anc_num, 2]).to(self.device)
+        labels_cls = torch.zeros([B, H, W, self.anc_num, self.cls_num]).to(self.device)
+
+        grid_wh = torch.Tensor([W, H]).to(self.device)
 
         target_boxes = labels[..., 2:6]
         # x1y1x2y2->xywh
         gx1y1 = target_boxes[..., :2]
         gx2y2 = target_boxes[..., 2:]
-        gxy = (gx1y1 + gx2y2) / 2.0 * torch.Tensor([W, H]).to(self.cfg.TRAIN.DEVICE)
-        gwh = gx2y2 - gx1y1
+        gxy = (gx1y1 + gx2y2) / 2.0 * grid_wh
+        gwh = (gx2y2 - gx1y1) * grid_wh
 
         box_iou = torch.cat([torch.zeros_like(gwh), gwh], 1)
         anc = torch.cat([torch.zeros_like(anchors), anchors], 1)
 
-        ious = iou_xywh(anc.to(self.cfg.TRAIN.DEVICE), box_iou.to(self.cfg.TRAIN.DEVICE), type='N2N')
+        ious = iou_xywh(anc.to(self.device), box_iou.to(self.device), type='N2N')
         best_ious, best_n = ious.max(0)
         # Separate target values
         b, target_labels = labels[..., :2].long().t()
@@ -92,22 +96,53 @@ class YoloLoss:
         # One-hot encoding of label
         labels_cls[b, gj, gi, best_n, target_labels] = 1
 
-        watch = 0
-        if watch:
-            watcher = pre_obj[obj_mask].mean()
-            watcher2 = pre_obj[noobj_mask].mean()
-            # print(labels_cls[obj_mask].sum())
-            # print(obj_mask.sum())
-            # a = pre_cls[b, best_n, gj, gi].argmax(-1)== target_labels
-            watcher3 = (pre_cls[b, gj, gi, best_n].argmax(-1) == target_labels).float().mean()
+        if self.watch_metrics:
+            class_mask = torch.zeros([B, H, W, self.anc_num]).to(self.device)
+            iou_scores = torch.zeros([B, H, W, self.anc_num]).to(self.device)
             # # Compute label correctness and iou at best anchor
             pre_loc = torch.cat((pre_loc_xy, pre_loc_wh), -1)
-            # iou_scores = iou_xywh(pre_loc[b, gj, gi, best_n].to(self.cfg.TRAIN.DEVICE),
-            #                                          target_boxes.to(self.cfg.TRAIN.DEVICE), type='N2N')
-            # iou50 = (iou_scores > 0.5).float()
+            class_mask[b, gj, gi, best_n] = (pre_cls[b, gj, gi, best_n].argmax(-1) == target_labels).float()
 
-            print("layer %d: pre_obj.mean():%0.4f pre_noobj.mean():%0.4f pre_cls.acc():%0.4f" % (
-                f_id, watcher, watcher2, watcher3))
+            grid_x = torch.arange(0, W).view(-1, 1).repeat(1, H).unsqueeze(2).permute(1, 0, 2)
+            grid_y = torch.arange(0, H).view(-1, 1).repeat(1, W).unsqueeze(2)
+            grid_xy = torch.cat([grid_x, grid_y], 2).unsqueeze(2).unsqueeze(0). \
+                expand(1, H, W, self.anc_num, 2).expand_as(pre_loc_xy).to(self.device)
+
+            # prepare gird xy
+            pre_realtive_xy = (pre_loc_xy + grid_xy) / grid_wh
+
+            anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).expand(1, H, W, self.anc_num, 2).to(self.device)
+            pre_wh = pre_loc_wh.exp() * anchor_ch
+            pre_realtive_wh = pre_wh / grid_wh
+
+            pre_relative_box = torch.cat([pre_realtive_xy, pre_realtive_wh], -1)
+
+            iou_scores[b, gj, gi, best_n] = iou_xyxy(xywh2xyxy(pre_relative_box[b, gj, gi, best_n]).to(self.device),
+                                                     target_boxes.to(self.device), type='N21')
+
+            cls_acc = 100 * class_mask[obj_mask].mean()
+            conf_obj = pre_obj[obj_mask].mean()
+            conf_noobj = pre_obj[noobj_mask].mean()
+            conf50 = (pre_obj > 0.5).float()
+            iou50 = (iou_scores > 0.5).float()
+            iou75 = (iou_scores > 0.75).float()
+            detected_mask = conf50 * class_mask * obj_mask.float()
+            precision = torch.sum(iou50 * detected_mask) / (conf50.sum() + 1e-16)
+            recall50 = torch.sum(iou50 * detected_mask) / (obj_mask.sum() + 1e-16)
+            recall75 = torch.sum(iou75 * detected_mask) / (obj_mask.sum() + 1e-16)
+
+            metrics = {
+                "\n>>>>>>>feature_ID": f_id + 1,
+                "cls_acc": cls_acc.item(),
+                "recall50": recall50.item(),
+                "recall75": recall75.item(),
+                "precision": precision.item(),
+                "conf_obj": conf_obj.item(),
+                "conf_noobj": conf_noobj.item(),
+            }
+
+            for k, v in metrics.items():
+                print('%s: %.3f' % (k, v))
 
         if self.multiply_area_scale:
             # TODO: labels_loc_wh is no fit for area_scale
@@ -115,50 +150,38 @@ class YoloLoss:
                 labels_loc_wh)
         else:
             area_scale = 1.0
-        return obj_mask, noobj_mask, labels_cls, labels_loc_xy, labels_loc_wh  # TODO: obj_mask==8 & noobj_mask == 12220
+        return obj_mask, noobj_mask, labels_cls, labels_loc_xy, labels_loc_wh
 
-    def _hard_noobj_loss(self, pre_obj, noobj_mask, hard_num=300):
+    def _hard_noobj_mask(self, pre_obj, noobj_mask, obj_mask, hard_num=1000):  # TODO: obj_mask==8 & noobj_mask == 12220
         '''
         due to the imbalance betwine  obj and noobj, (obj=10, noobj=500000).
         so, we design the hard_noobj function to find the top N noobj to backward.
         :return: noobj mask.
-
+        PS:
+            When training coco. the loss is steady,and won't go down...
         '''
         # mask = torch.ge(pre_obj, thresh_score)
         # mask = mask & noobj_mask
-        pre_noobj = pre_obj[noobj_mask]
-        pre_noobj_sort = pre_noobj.sort()
-        pre_noobj_hard = pre_noobj_sort[0][-hard_num:]
+        pre_obj_copy = pre_obj.clone()
 
-        noobj_loss = self.bceloss(pre_noobj_hard, torch.zeros_like(pre_noobj_hard))
+        pre_obj_copy[obj_mask] = 0.
 
-        return noobj_loss
+        nomask = pre_obj_copy > 0.2
+
+        if torch.sum(noobj_mask) == 0:
+            nomask = noobj_mask
+        return nomask
 
     def _loss_cal_one_Fmap(self, f_map, f_id, labels, losstype=None):
         """Calculate the loss."""
 
         pre_obj, pre_cls, pre_loc_xy, pre_loc_wh = self.parsepredict._parse_yolo_predict_fmap(f_map, f_id)
-        obj_mask, noobj_mask, labels_cls, labels_loc_xy, labels_loc_wh = self._reshape_labels(pre_obj, pre_cls,
-                                                                                              pre_loc_xy, pre_loc_wh,
-                                                                                              labels, f_id)
+        obj_mask, noobj_mask, labels_cls, labels_loc_xy, labels_loc_wh = self._reshape_labels(pre_obj, pre_cls, pre_loc_xy, pre_loc_wh, labels, f_id)
 
         labels_obj = obj_mask.float()
+        if self.use_hard_noobj_loss:
+            noobj_mask = self._hard_noobj_mask(pre_obj, noobj_mask, obj_mask)
 
-        '''
-        #Debug code.
-                
-        if pre_obj.shape[1] < 18:
-            i_0, i_1, i_2 = 0, 11, 14
-            print('pre_obj[i_0, i_1, i_2]:\n', pre_obj[i_0, i_1, i_2].t())
-            print('GT_obj[i_0, i_1, i_2]:\n', labels_obj[i_0, i_1, i_2].t())
-            print('pre_cls[i_0, i_1, i_2]', pre_cls[i_0, i_1, i_2])
-            print('GT_cls[i_0, i_1, i_2]', labels_cls[i_0, i_1, i_2])
-            print('pre_loc_xy', pre_loc_xy[i_0, i_1, i_2])
-            print('lab_loc_xy', labels_loc_xy[i_0, i_1, i_2])
-            print('obj_mask', obj_mask[i_0, i_1, i_2].t())
-            print('sum of obj_mask', obj_mask.sum())
-            print('NOobj_mask', noobj_mask[i_0, i_1, i_2].t())
-        '''
         if losstype == 'focalloss':
             # # FOCAL loss
             obj_loss = (self.alpha * (((1. - pre_obj)[obj_mask]) ** self.gamma)) * self.bceloss(pre_obj[obj_mask], labels_obj[obj_mask])
@@ -166,13 +189,10 @@ class YoloLoss:
             obj_loss = torch.mean(obj_loss)
             noobj_loss = torch.mean(noobj_loss)
 
-        elif losstype == 'mse' or losstype is None:
+        elif losstype == 'bce' or losstype is None:
             # nomal loss
             obj_loss = self.bceloss(pre_obj[obj_mask], labels_obj[obj_mask])
-            if self.use_hard_noobj_loss:
-                noobj_loss = self._hard_noobj_loss(pre_obj, noobj_mask)
-            else:
-                noobj_loss = self.bceloss(pre_obj[noobj_mask], labels_obj[noobj_mask])
+            noobj_loss = 100 * self.bceloss(pre_obj[noobj_mask], labels_obj[noobj_mask])
         else:
             print(losstype, 'is not define.')
             obj_loss = 0.
@@ -201,25 +221,3 @@ class YoloLoss:
             cls_loss += _cls_loss
             loc_loss += _loc_loss
         return {'obj_loss': obj_loss, 'noobj_loss': noobj_loss, 'cls_loss': cls_loss, 'loc_loss': loc_loss}
-
-
-'''
-yolov3 test of voc2007
-mAP:  0.028912177841298514
-F1SCORE:  [0.17535545 0.10291595 0.01410437 0.06827309 0.00269179 0.04761904
- 0.25238854 0.09503239 0.06493507 0.13333333 0.0247678  0.04930662
- 0.10367171 0.08       0.2844862  0.0083682  0.14888337 0.03023758
- 0.06417113 0.11498974]
-map: [0.05944339 0.01411944 0.00080376 0.01195635 0.00013837 0.01090248
- 0.10537232 0.02183381 0.00954061 0.04768166 0.0083612  0.00670902
- 0.03323201 0.02257409 0.12607616 0.00022342 0.04919026 0.00216555
- 0.01138146 0.03653822]
-prec: [0.33333334 0.15463917 0.03759398 0.16190477 0.01162791 0.175
- 0.32646757 0.23655914 0.08951407 0.30769232 0.16666667 0.13445379
- 0.3529412  0.22222222 0.29788572 0.024      0.32608697 0.10447761
- 0.16666667 0.22222222]
-rec: [0.11897106 0.07712083 0.00868056 0.043257   0.00152207 0.02755906
- 0.20571057 0.05945946 0.05094614 0.08510638 0.01337793 0.03018868
- 0.06075949 0.04878049 0.27224028 0.00506757 0.09646302 0.01767677
- 0.0397351  0.07756232]
- '''

@@ -210,7 +210,7 @@ from ..registry import MODELS
 @MODELS.registry()
 class EFFICIENTDET(nn.Module):
     def __init__(self, cfg):
-        num_classes = cfg.TRAIN.CLASSES_NUM
+        num_classes = cfg.TRAIN.CLASSES_NUM + 1  # +1 :set 0 as background
         network = 'efficientdet-d0'
         D_bifpn = 3
         W_bifpn = 88

@@ -26,12 +26,12 @@ class BaseSolver(object):
         self.model = build_from_cfg(MODELS, str(self.cfg.TRAIN.MODEL).upper())(self.cfg)
         # init model:
         if self.args.checkpoint not in [0, '0', 'None', 'no', 'none', "''"]:
-            self.model, self.epoch_last, self.optimizer, self.global_step = self._load_checkpoint(self.model, self.args.checkpoint, self.cfg.TRAIN.DEVICE)
+            self.model, self.epoch_last, self.optimizer_dict, self.global_step = self._load_checkpoint(self.model, self.args.checkpoint, self.cfg.TRAIN.DEVICE)
             self.cfg.writer.tbX_reStart(self.epoch_last)
 
         else:
             self.model = weights_init(self.model, self.cfg)
-            self.optimizer = None
+            self.optimizer_dict = None
             self.epoch_last = 0
             self.global_step = 0
             self.cfg.writer.clean_history_and_init_log()
@@ -43,7 +43,6 @@ class BaseSolver(object):
 
         if self.is_training:
             self.model.train()
-            self.model.zero_grad()
         else:
             if not self.cfg.TEST.ONE_TEST:
                 self.model.eval()
@@ -55,34 +54,31 @@ class BaseSolver(object):
         self.lossfun = get_loss_class(self.cfg.BELONGS, self.cfg.TRAIN.MODEL)(self.cfg)
 
     def _get_optimizer(self):
-        if not self.is_training:
-            pass
-        if self.optimizer is None:
-            opt_type = self.cfg.TRAIN.OPTIMIZER
-            learning_rate = self.args.lr
-            model_parameters = filter(lambda p: p.requires_grad, self.model.parameters())
-            if opt_type == 'adam' or opt_type == 'Adam':
-                self.optimizer = torch.optim.Adam(model_parameters,
-                                                  lr=learning_rate,
-                                                  betas=(self.cfg.TRAIN.BETAS_ADAM, 0.999),
-                                                  weight_decay=float(self.cfg.TRAIN.WEIGHT_DECAY))
-            elif opt_type == 'sgd' or opt_type == 'SGD':
-                self.optimizer = torch.optim.SGD(model_parameters,
-                                                 lr=learning_rate,
-                                                 momentum=0.9,
-                                                 weight_decay=0.0001)
-            else:
-                self.cfg.logger.error('NO such a optimizer: ' + str(opt_type))
+        opt_type = self.cfg.TRAIN.OPTIMIZER
+        learning_rate = self.args.lr
+        model_parameters = filter(lambda p: p.requires_grad, self.model.parameters())
+        if opt_type == 'adam' or opt_type == 'Adam':
+            self.optimizer = torch.optim.Adam(model_parameters,
+                                              lr=learning_rate,
+                                              betas=(self.cfg.TRAIN.BETAS_ADAM, 0.999),
+                                              weight_decay=0.0001)
+        elif opt_type == 'sgd' or opt_type == 'SGD':
+            self.optimizer = torch.optim.SGD(model_parameters,
+                                             lr=learning_rate,
+                                             momentum=0.9,
+                                             weight_decay=0.0001)
         else:
-            if self.args.lr_continue:
-                self.optimizer.param_groups[0]['lr'] = self.args.lr_continue
+            self.cfg.logger.error('NO such a optimizer: ' + str(opt_type))
+
+        if self.optimizer_dict: self.optimizer.load_state_dict(self.optimizer_dict)
+        if self.args.lr_continue:
+            self.optimizer.param_groups[0]['lr'] = self.args.lr_continue
 
         self.learning_rate = self.optimizer.param_groups[0]['lr']
         self.scheduler = lr_scheduler.StepLR(self.optimizer, step_size=self.cfg.TRAIN.STEP_LR, gamma=0.1)
         self.optimizer.zero_grad()
 
     def _set_warmup_lr(self, optimizer):
-
         optimizer.param_groups[0]['lr'] = self.learning_rate / self.cfg.TRAIN.WARM_UP_STEP * (self.global_step + 1)
         return optimizer
 
@@ -131,7 +127,7 @@ class BaseSolver(object):
             path_list = [checkpoint_path_0, checkpoint_path_1, checkpoint_path_2]
         for path_i in path_list:
             os.makedirs(os.path.dirname(path_i), exist_ok=True)
-            saved_dict = {'state_dict': model.state_dict(), 'epoch': epoch, 'optimizer': optimizer,
+            saved_dict = {'state_dict': model.state_dict(), 'epoch': epoch, 'optimizer': optimizer.state_dict(),
                           'global_step': global_step}
             torch.save(saved_dict, path_i)
             self.cfg.logger.debug('Epoch: %s, checkpoint is saved to %s', epoch, path_i)
@@ -141,11 +137,11 @@ class BaseSolver(object):
         checkpoint = torch.load(checkpoint, map_location=device)
         state_dict = checkpoint['state_dict']
         last_epoch = checkpoint['epoch']
-        optimizer = checkpoint['optimizer']
+        optimizer_dict = checkpoint['optimizer']
         global_step = checkpoint['global_step']
         for k, v in state_dict.items():
             if 'module.' == k[:8]:
                 k = k.replace('module.', '')
             new_dic[k] = v
         model.load_state_dict(new_dic)
-        return model, last_epoch, optimizer, global_step
+        return model, last_epoch, optimizer_dict, global_step

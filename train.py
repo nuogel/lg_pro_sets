@@ -13,10 +13,10 @@ from util.util_yml_parse import parse_yaml
 def _parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('--type', default='OBD', type=str, help='yml_path')
-    parser.add_argument('--checkpoint', '--cp', default=0 #'tmp/checkpoints/common_checkpoints/now.pkl'  #
+    parser.add_argument('--checkpoint', '--cp', default=0  # 'tmp/checkpoints/common_checkpoints/now.pkl'  #
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--batch_size', '--bz', default=4, type=int, help='batch size')
-    parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
+    parser.add_argument('--lr', default=0.01, type=float, help='learning rate')
     parser.add_argument('--lr_continue', '--lr_c', default=0, type=float, help='learning rate')
     parser.add_argument('--number_works', '--n_w', default=16, type=int, help='number works of dataloader')
 
@@ -30,6 +30,7 @@ def main():
     """Main. entry of this script."""
     exit_code = 0
     args = _parse_arguments()
+    print(args)
     cfg = parse_yaml(args)
     solver = Solver(cfg, args, train=True)
     solver.train()

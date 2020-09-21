@@ -28,10 +28,11 @@ from ..registry import MODELS
 class SSDVGG(nn.Module):
     """Single Shot Multibox Architecture  SSDVGG
     """
+
     def __init__(self, cfg):
         super(SSDVGG, self).__init__()
         self.cfg = cfg
-        self.num_classes = cfg.TRAIN.CLASSES_NUM
+        self.num_classes = cfg.TRAIN.CLASSES_NUM + 1
         # TODO: implement __call__ in PriorBox
         self.size = 512
         base, extras, head = self.multibox(vgg(vgg_base[str(self.size)], 3),

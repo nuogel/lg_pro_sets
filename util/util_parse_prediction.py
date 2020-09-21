@@ -73,7 +73,9 @@ class ParsePredict:
             return pre_obj, pre_cls, pre_loc_xy, pre_loc_wh
         else:
             mask = np.arange(self.anc_num) + self.anc_num * f_id
-            anchors = self.anchors[mask] / torch.FloatTensor([self.cfg.TRAIN.IMG_SIZE[1], self.cfg.TRAIN.IMG_SIZE[0]])  # * torch.Tensor([W, H])
+            anchors_raw = self.anchors[mask]
+            # anchors = self.anchors[mask] / torch.FloatTensor([self.cfg.TRAIN.IMG_SIZE[1], self.cfg.TRAIN.IMG_SIZE[0]])  # * torch.Tensor([W, H])
+            anchors = torch.Tensor([(a_w / self.cfg.TRAIN.IMG_SIZE[1] * W, a_h / self.cfg.TRAIN.IMG_SIZE[0] * H) for a_w, a_h in anchors_raw])
 
             grid_x = torch.arange(0, W).view(-1, 1).repeat(1, H).unsqueeze(2).permute(1, 0, 2)
             grid_y = torch.arange(0, H).view(-1, 1).repeat(1, W).unsqueeze(2)
@@ -81,8 +83,8 @@ class ParsePredict:
                 expand(1, H, W, self.anc_num, 2).expand_as(pre_loc_xy).type(torch.FloatTensor).to(loc_pred.device)
 
             # prepare gird xy
-            box_ch = torch.Tensor([W, H]).to(loc_pred.device)
-            pre_realtive_xy = (pre_loc_xy + grid_xy) / box_ch
+            grid_wh = torch.Tensor([W, H]).to(loc_pred.device)
+            pre_realtive_xy = (pre_loc_xy + grid_xy) / grid_wh
             '''
             i_0, i_1, i_2 = 0, 9, 34
             print('pre_loc_xy', pre_loc_xy[i_0, i_1, i_2])
@@ -90,7 +92,8 @@ class ParsePredict:
 
             '''
             anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).expand(1, H, W, self.anc_num, 2).to(loc_pred.device)
-            pre_realtive_wh = pre_loc_wh.exp() * anchor_ch
+            pre_wh = pre_loc_wh.exp() * anchor_ch
+            pre_realtive_wh = pre_wh / grid_wh
 
             pre_relative_box = torch.cat([pre_realtive_xy, pre_realtive_wh], -1)
 

@@ -13,7 +13,9 @@ class MULTIBOXLOSS():
         Basically, Multibox loss combines classification loss
          and Smooth L1 regression loss.
         """
-        self.iou_threshold = cfg.TEST.IOU_THRESH
+        self.cfg = cfg
+        self.num_cls = self.cfg.TRAIN.CLASSES_NUM
+        self.neg_iou_threshold = 0.5
         self.neg_pos_ratio = 3  # 3:1
         # self.center_variance = center_variance
         # self.size_variance = size_variance
@@ -39,7 +41,7 @@ class MULTIBOXLOSS():
             lab = gt_i[..., 1].long()
             box = gt_i[..., 2:]
             box_xywh = xyxy2xywh(box)
-            _gt_loc_xywh, _labels = self._assign_priors(box_xywh, lab, anchors_xywh, self.iou_threshold)
+            _gt_loc_xywh, _labels = self._assign_priors(box_xywh, lab, anchors_xywh, self.neg_iou_threshold)
             _gt_loc_xywh = self._encode_bbox(_gt_loc_xywh, anchors_xywh)
             encode_target.append(_gt_loc_xywh)
             labels.append(_labels)
@@ -51,16 +53,14 @@ class MULTIBOXLOSS():
             loss = -F.log_softmax(confidence, dim=2)[:, :, 0]
             mask = self._hard_negative_mining(loss, labels, self.neg_pos_ratio)
 
-        confidence_ = confidence[mask, :].reshape(-1, num_classes)
-        labels_ = labels[mask]
-        # print(confidence_[labels_>0])
-        # print(torch.softmax(confidence_[labels_>0], -1))
-        classification_loss = F.cross_entropy(confidence_, labels_, size_average=True)
-        pos_mask = labels > 0
+        input_c = confidence[mask].reshape(-1, num_classes)
+        target_c = labels[mask]
+        classification_loss = F.cross_entropy(input_c, target_c)
+        pos_mask = labels < self.num_cls
         predicted_locations = predicted_locations[pos_mask, :].reshape(-1, 4)
         encode_target = encode_target[pos_mask, :].reshape(-1, 4)
 
-        smooth_l1_loss = F.smooth_l1_loss(predicted_locations, encode_target, size_average=True)
+        smooth_l1_loss = F.smooth_l1_loss(predicted_locations, encode_target)
         num_pos = encode_target.size(0)
         loc_loss = smooth_l1_loss / num_pos
         class_loss = classification_loss / num_pos
@@ -82,11 +82,11 @@ class MULTIBOXLOSS():
             labels (N, num_priors): the labels.
             neg_pos_ratio:  the ratio between the negative examples and positive examples.
         """
-        pos_mask = labels > 0
+        pos_mask = labels < self.num_cls
         num_pos = pos_mask.long().sum(dim=1, keepdim=True)
         num_neg = num_pos * neg_pos_ratio
 
-        loss[pos_mask] = -math.inf
+        loss[pos_mask] = 0.
         _, indexes = loss.sort(dim=1, descending=True)
         _, orders = indexes.sort(dim=1)
         neg_mask = orders < num_neg
@@ -114,10 +114,10 @@ class MULTIBOXLOSS():
         for target_index, prior_index in enumerate(best_prior_per_target_index):
             best_target_per_prior_index[prior_index] = target_index
         # 2.0 is used to make sure every target has a prior assigned
-        best_target_per_prior.index_fill_(0, best_prior_per_target_index, 2)
+        best_target_per_prior.index_fill_(0, best_prior_per_target_index, 2)  # fill 2>1.
         # size: num_priors
         labels = gt_labels[best_target_per_prior_index]
-        labels[best_target_per_prior < iou_threshold] = 0  # the backgournd id
+        labels[best_target_per_prior < iou_threshold] = self.num_cls  # the backgournd id
         boxes = gt_boxes[best_target_per_prior_index]
         return boxes, labels
 

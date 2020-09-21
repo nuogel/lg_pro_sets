@@ -4,16 +4,17 @@ from util.util_iou import iou_xywh, iou_xyxy
 from torchvision.ops import nms
 
 
-class NMS:   # TODO: dubug the for ...in each NMS.
+class NMS:  # TODO: dubug the for ...in each NMS.
     def __init__(self, cfg):
         self.cfg = cfg
         self.score_thresh = cfg.TEST.SCORE_THRESH
         self.theta = cfg.TEST.SOFNMS_THETA
         self.iou_thresh = cfg.TEST.IOU_THRESH
-        if self.cfg.TRAIN.MODEL in ['refinedet', 'ssdvgg', 'efficientdet']:
-            self.class_range = range(1, cfg.TRAIN.CLASSES_NUM + 1)
-        else:
-            self.class_range = range(cfg.TRAIN.CLASSES_NUM)
+        # if self.cfg.TRAIN.MODEL in ['refinedet', 'ssdvgg', 'efficientdet']:
+        #     self.class_range = range(1, cfg.TRAIN.CLASSES_NUM + 1)
+        # else:
+        #     self.class_range = range(cfg.TRAIN.CLASSES_NUM)
+        self.class_range = range(cfg.TRAIN.CLASSES_NUM)
 
     def forward(self, score, pre_loc, xywh2x1y1x2y2):
         pre_score_raw = score.max(-1)  # get the max score of the scores of classes.
@@ -48,8 +49,8 @@ class NMS:   # TODO: dubug the for ...in each NMS.
                 box_out = [boxx1, boxy1, boxx2, boxy2]
             pre_score_out = pre_score[keep_idx].item()
             class_out = pre_class[keep_idx].item()
-            if self.cfg.TRAIN.MODEL in ['refinedet']:
-                class_out = class_out - 1
+            # if self.cfg.TRAIN.MODEL in ['refinedet']:
+            #     class_out = class_out - 1
             labels_out.append([pre_score_out, class_out, box_out])
         return labels_out
 
@@ -307,5 +308,3 @@ class NMS:   # TODO: dubug the for ...in each NMS.
             class_out = pre_class[keep_idx].item()
             labels_out.append([pre_score_out, class_out, box_out])
         return labels_out
-
-

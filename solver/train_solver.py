@@ -57,7 +57,6 @@ class Solver(BaseSolver):
             if self.global_step % self.cfg.TRAIN.BATCH_BACKWARD_SIZE == 0:
                 self.optimizer.step()
                 self.optimizer.zero_grad()
-                self.model.zero_grad()
             info = '[train] model:%s; epoch:%0d; global_step:%d; lr:%0.6f; step_loss: %0.4f; batch_loss:%0.4f' \
                    % (self.cfg.TRAIN.MODEL, epoch, self.global_step, self.optimizer.param_groups[0]['lr'], total_loss.item(), losses / (step + 1))
             if self.global_step % 50 == 0:
