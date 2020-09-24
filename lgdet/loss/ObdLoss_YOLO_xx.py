@@ -48,18 +48,18 @@ class YoloLoss:
         :param grid_xy: the matrix of the grid numbers
         :return: labels_obj, labels_cls, lab_loc_xy, lab_loc_wh, labels_boxes, area_scal
         """
-        B, H, W = pre_obj.shape[0:3]
+        B, C, H, W = pre_obj.shape
         mask = np.arange(self.anc_num) + self.anc_num * f_id  # be care of the relationship between anchor size and the feature map size.
         anchors_raw = self.anchors[mask]
         anchors = torch.Tensor([(a_w / self.cfg.TRAIN.IMG_SIZE[1] * W, a_h / self.cfg.TRAIN.IMG_SIZE[0] * H) for a_w, a_h in anchors_raw])
 
         # anchors = self.anchors[mask] / torch.Tensor([self.cfg.TRAIN.IMG_SIZE[1], self.cfg.TRAIN.IMG_SIZE[0]])  # * torch.Tensor([W, H])
         anchors = anchors.to(self.device)
-        obj_mask = torch.BoolTensor(B, H, W, self.anc_num).fill_(0).to(self.device)
-        noobj_mask = torch.BoolTensor(B, H, W, self.anc_num).fill_(1).to(self.device)
-        labels_loc_xy = torch.zeros([B, H, W, self.anc_num, 2]).to(self.device)
-        labels_loc_wh = torch.zeros([B, H, W, self.anc_num, 2]).to(self.device)
-        labels_cls = torch.zeros([B, H, W, self.anc_num, self.cls_num]).to(self.device)
+        obj_mask = torch.BoolTensor(B, self.anc_num, H, W, ).fill_(0).to(self.device)
+        noobj_mask = torch.BoolTensor(B, self.anc_num, H, W).fill_(1).to(self.device)
+        labels_loc_xy = torch.zeros([B, self.anc_num, H, W, 2]).to(self.device)
+        labels_loc_wh = torch.zeros([B, self.anc_num, H, W, 2]).to(self.device)
+        labels_cls = torch.zeros([B, self.anc_num, H, W, self.cls_num]).to(self.device)
 
         grid_wh = torch.Tensor([W, H]).to(self.device)
 
@@ -81,43 +81,48 @@ class YoloLoss:
         gw, gh = gwh.t()
         gi, gj = gxy.long().t()
         # Set masks
-        obj_mask[b, gj, gi, best_n] = 1
-        noobj_mask[b, gj, gi, best_n] = 0
+        obj_mask[b, best_n, gj, gi] = 1
+        noobj_mask[b, best_n, gj, gi] = 0
         ignore_thresh = 0.5
         for i, anchor_ious in enumerate(ious.t()):
-            noobj_mask[b[i], gj[i], gi[i], anchor_ious > ignore_thresh] = 0
+            noobj_mask[b[i], anchor_ious > ignore_thresh, gj[i], gi[i]] = 0
 
         # Coordinates
-        labels_loc_xy[b, gj, gi, best_n, 0] = gx - gx.floor()
-        labels_loc_xy[b, gj, gi, best_n, 1] = gy - gy.floor()
+        labels_loc_xy[b, best_n, gj, gi, 0] = gx - gx.floor()
+        labels_loc_xy[b, best_n, gj, gi, 1] = gy - gy.floor()
         # Width and height
-        labels_loc_wh[b, gj, gi, best_n, 0] = torch.log(gw / anchors[best_n][:, 0] + 1e-16)
-        labels_loc_wh[b, gj, gi, best_n, 1] = torch.log(gh / anchors[best_n][:, 1] + 1e-16)
+        labels_loc_wh[b, best_n, gj, gi, 0] = torch.log(gw / anchors[best_n][:, 0] + 1e-16)
+        labels_loc_wh[b, best_n, gj, gi, 1] = torch.log(gh / anchors[best_n][:, 1] + 1e-16)
         # One-hot encoding of label
-        labels_cls[b, gj, gi, best_n, target_labels] = 1
+        labels_cls[b, best_n, gj, gi, target_labels] = 1
 
         if self.watch_metrics:
-            class_mask = torch.zeros([B, H, W, self.anc_num]).to(self.device)
-            iou_scores = torch.zeros([B, H, W, self.anc_num]).to(self.device)
+            class_mask = torch.zeros([B, self.anc_num, H, W]).to(self.device)
+            iou_scores = torch.zeros([B, self.anc_num, H, W]).to(self.device)
             # # Compute label correctness and iou at best anchor
             pre_loc = torch.cat((pre_loc_xy, pre_loc_wh), -1)
-            class_mask[b, gj, gi, best_n] = (pre_cls[b, gj, gi, best_n].argmax(-1) == target_labels).float()
+            class_mask[b, best_n, gj, gi] = (pre_cls[b, best_n, gj, gi].argmax(-1) == target_labels).float()
 
-            grid_x = torch.arange(0, W).view(-1, 1).repeat(1, H).unsqueeze(2).permute(1, 0, 2)
-            grid_y = torch.arange(0, H).view(-1, 1).repeat(1, W).unsqueeze(2)
-            grid_xy = torch.cat([grid_x, grid_y], 2).unsqueeze(2).unsqueeze(0). \
-                expand(1, H, W, self.anc_num, 2).expand_as(pre_loc_xy).to(self.device)
+            # grid_x = torch.arange(0, W).view(-1, 1).repeat(1, H).unsqueeze(2).permute(1, 0, 2)
+            # grid_y = torch.arange(0, H).view(-1, 1).repeat(1, W).unsqueeze(2)
+            # grid_xy = torch.cat([grid_x, grid_y], 2).unsqueeze(2).unsqueeze(0). \
+            #     expand(1, self.anc_num, H, W, 2).expand_as(pre_loc_xy).to(self.device)
+            grid_x = torch.arange(W).repeat(H, 1).view([1, 1, H, W]).to(self.device)
+            grid_y = torch.arange(H).repeat(W, 1).t().view([1, 1, H, W]).to(self.device)
 
+            pre_realtive_xy = pre_loc_xy.clone()
+            pre_realtive_xy[...,0] = pre_loc_xy[...,0] + grid_x
+            pre_realtive_xy[...,1] = pre_loc_xy[...,1] + grid_y
             # prepare gird xy
-            pre_realtive_xy = (pre_loc_xy + grid_xy) / grid_wh
+            pre_realtive_xy = pre_realtive_xy / grid_wh
 
-            anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).expand(1, H, W, self.anc_num, 2).to(self.device)
+            anchor_ch = anchors.view(1, self.anc_num,1, 1,  2).expand(1, self.anc_num, H, W, 2).to(self.device)
             pre_wh = pre_loc_wh.exp() * anchor_ch
             pre_realtive_wh = pre_wh / grid_wh
 
             pre_relative_box = torch.cat([pre_realtive_xy, pre_realtive_wh], -1)
 
-            iou_scores[b, gj, gi, best_n] = iou_xyxy(xywh2xyxy(pre_relative_box[b, gj, gi, best_n]).to(self.device),
+            iou_scores[b, best_n, gj, gi] = iou_xyxy(xywh2xyxy(pre_relative_box[b, best_n, gj, gi]).to(self.device),
                                                      target_boxes.to(self.device), type='N21')
 
             cls_acc = class_mask[obj_mask].mean()

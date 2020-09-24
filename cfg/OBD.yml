@@ -28,7 +28,8 @@ TRAIN:
   RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0 #0 #
   MIN_AREA: 0 #0 #100 #400 #
-  IMG_SIZE: [416,416] #[384, 960] #[416, 416] #[512, 768] # [1024,1920] #[720,1024] #[H,W] #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
+    #[H,W]
+  IMG_SIZE: [416,416] #[384, 960] #[416, 416] #[512, 768] # [1024,1920] #[720,1024]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
 
   SHOW_TRAIN_NAMES: 0 #TRUE #
   SHOW_INPUT: -1 #10000 #
@@ -78,7 +79,7 @@ TEST:
 
   TEST_ONLY: 0 #FALSE #
 
-  ONE_TEST: 1  #
+  ONE_TEST: 0  #
   ONE_TEST_TRAIN_STEP: 100
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [['000005.jpg', 'VOC2007/trainval/JPEGImages/000005.jpg', 'VOC2007/trainval/Annotations/000005.xml'] ]

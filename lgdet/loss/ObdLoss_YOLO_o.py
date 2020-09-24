@@ -4,7 +4,8 @@ import torch
 import torch.nn as nn
 
 import numpy as np
-from util.util_iou import xyxy2xywh, _bbox_iou, _iou_wh
+from util.util_iou import xyxy2xywh
+from util.util_yolo import build_targets, to_cpu
 
 
 class YoloLoss(nn.Module):
@@ -39,67 +40,6 @@ class YoloLoss(nn.Module):
         self.scaled_anchors = FloatTensor([(a_w / self.stride, a_h / self.stride) for a_w, a_h in self.anchors])
         self.anchor_w = self.scaled_anchors[:, 0:1].view((1, self.num_anchors, 1, 1))
         self.anchor_h = self.scaled_anchors[:, 1:2].view((1, self.num_anchors, 1, 1))
-
-    def build_targets(self, pred_boxes, pred_cls, raw_target, anchors, ignore_thres):
-        BoolTensor = torch.cuda.BoolTensor if pred_boxes.is_cuda else torch.BoolTensor
-        FloatTensor = torch.cuda.FloatTensor if pred_boxes.is_cuda else torch.FloatTensor
-
-        nB = pred_boxes.size(0)
-        nA = pred_boxes.size(1)
-        nH = pred_boxes.size(2)
-        nW = pred_boxes.size(3)
-        nC = pred_cls.size(4)
-
-        # Output tensors
-        obj_mask = BoolTensor(nB, nA, nH, nW).fill_(0)
-        noobj_mask = BoolTensor(nB, nA, nH, nW).fill_(1)
-        class_mask = FloatTensor(nB, nA, nH, nW).fill_(0)
-        iou_scores = FloatTensor(nB, nA, nH, nW).fill_(0)
-        tx = FloatTensor(nB, nA, nH, nW).fill_(0)
-        ty = FloatTensor(nB, nA, nH, nW).fill_(0)
-        tw = FloatTensor(nB, nA, nH, nW).fill_(0)
-        th = FloatTensor(nB, nA, nH, nW).fill_(0)
-        tcls = FloatTensor(nB, nA, nH, nW, nC).fill_(0)
-
-        target = raw_target.clone()
-        # Convert to position relative to box
-        target[:, 2::2] = raw_target[:, 2::2] * nW
-        target[:, 3::2] = raw_target[:, 3::2] * nH
-
-        target_boxes = target[:, 2:6]  # * nG
-        gxy = target_boxes[:, :2]
-        gwh = target_boxes[:, 2:]
-
-        # Get anchors with best iou
-        ious = torch.stack([_iou_wh(anchor, gwh) for anchor in anchors])
-        best_ious, best_n = ious.max(0)  # tensor([0.4050, 0.6302, 0.4081, 0.3759, 0.0789, 0.4050, 0.6302, 0.4081, 0.3759, 0.0789], device='cuda:0')
-        # Separate target values
-        b, target_labels = target[:, :2].long().t()
-        gx, gy = gxy.t()
-        gw, gh = gwh.t()
-        gi, gj = gxy.long().t()
-        # Set masks
-        obj_mask[b, best_n, gj, gi] = 1
-        noobj_mask[b, best_n, gj, gi] = 0
-
-        # Set noobj mask to zero where iou exceeds ignore threshold
-        for i, anchor_ious in enumerate(ious.t()):
-            noobj_mask[b[i], anchor_ious > ignore_thres, gj[i], gi[i]] = 0
-
-        # Coordinates
-        tx[b, best_n, gj, gi] = gx - gx.floor()
-        ty[b, best_n, gj, gi] = gy - gy.floor()
-        # Width and height
-        tw[b, best_n, gj, gi] = torch.log(gw / anchors[best_n][:, 0] + 1e-16)
-        th[b, best_n, gj, gi] = torch.log(gh / anchors[best_n][:, 1] + 1e-16)
-        # One-hot encoding of label
-        tcls[b, best_n, gj, gi, target_labels] = 1
-        # Compute label correctness and iou at best anchor
-        class_mask[b, best_n, gj, gi] = (pred_cls[b, best_n, gj, gi].argmax(-1) == target_labels).float()
-        iou_scores[b, best_n, gj, gi] = _bbox_iou(pred_boxes[b, best_n, gj, gi], target_boxes, x1y1x2y2=False)
-
-        tconf = obj_mask.float()
-        return iou_scores, class_mask, obj_mask, noobj_mask, tx, ty, tw, th, tcls, tconf
 
     def _loss_cal_one_Fmap(self, x, f_id, targets=None, img_dim=416):
 
@@ -152,10 +92,10 @@ class YoloLoss(nn.Module):
         if targets is None:
             return output, 0
         else:
-            iou_scores, class_mask, obj_mask, noobj_mask, tx, ty, tw, th, tcls, tconf = self.build_targets(
+            iou_scores, class_mask, obj_mask, noobj_mask, tx, ty, tw, th, tcls, tconf = build_targets(
                 pred_boxes=pred_boxes,
                 pred_cls=pred_cls,
-                raw_target=targets,
+                target=targets,
                 anchors=self.scaled_anchors,
                 ignore_thres=self.ignore_thres,
             )
@@ -184,18 +124,18 @@ class YoloLoss(nn.Module):
             recall75 = torch.sum(iou75 * detected_mask) / (obj_mask.sum() + 1e-16)
 
             metrics = {
-                "x": (loss_x).item(),
-                "y": (loss_y).item(),
-                "w": (loss_w).item(),
-                "h": (loss_h).item(),
-                "conf": (loss_conf).item(),
-                "cls": (loss_cls).item(),
-                "cls_acc": (cls_acc).item(),
-                "recall50": (recall50).item(),
-                "recall75": (recall75).item(),
-                "precision": (precision).item(),
-                "conf_obj": (conf_obj).item(),
-                "conf_noobj": (conf_noobj).item(),
+                "x": to_cpu(loss_x).item(),
+                "y": to_cpu(loss_y).item(),
+                "w": to_cpu(loss_w).item(),
+                "h": to_cpu(loss_h).item(),
+                "conf": to_cpu(loss_conf).item(),
+                "cls": to_cpu(loss_cls).item(),
+                "cls_acc": to_cpu(cls_acc).item(),
+                "recall50": to_cpu(recall50).item(),
+                "recall75": to_cpu(recall75).item(),
+                "precision": to_cpu(precision).item(),
+                "conf_obj": to_cpu(conf_obj).item(),
+                "conf_noobj": to_cpu(conf_noobj).item(),
             }
 
             return output, total_loss, metrics

@@ -1,5 +1,4 @@
 """Calculate the F1 score."""
-import os
 import numpy as np
 import torch
 from util.util_get_cls_names import _get_class_names
@@ -20,7 +19,7 @@ class Score:
         self.false_positive = {}
         self.pre_scores = {}
         try:
-            from util.util_parse_prediction import ParsePredict
+            from lgdet.postprocess.parse_prediction import ParsePredict
         except:
             print("no ParsePredict")
         else:
