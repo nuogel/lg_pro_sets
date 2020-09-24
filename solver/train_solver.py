@@ -80,7 +80,7 @@ class Solver(BaseSolver):
                   'lr': self.optimizer.param_groups[0]['lr'],
                   'epoch_loss': epoch_losses / len(self.trainDataloader)}
         self.cfg.writer.tbX_write(w_dict)
-        # self._save_checkpoint()
+        self._save_checkpoint()
 
     def _test_an_epoch(self, epoch):
         if not self.cfg.TEST.ONE_TEST: self.model.eval()

@@ -60,21 +60,26 @@ class ParsePredict:
         ###1: pre deal feature mps
         B, C, H, W = f_map.shape
         f_map = f_map.view(B, self.anc_num, self.cls_num + 5, H, W)
-        f_map = f_map.permute(0, 1, 3, 4, 2).contiguous() #((0, 1, 3, 4, 2),   (0, 3, 4, 1, 2))
+        f_map = f_map.permute(0, 3, 4, 1, 2).contiguous()  # ((0, 1, 3, 4, 2),   (0, 3, 4, 1, 2))
 
-        pred_x = torch.sigmoid(f_map[..., 0])  # Center x
-        pred_y = torch.sigmoid(f_map[..., 1])  # Center y
-        pred_w = f_map[..., 2]  # Width
-        pred_h = f_map[..., 3]  # Height
-        pred_conf = torch.sigmoid(f_map[..., 4])  # Conf
-        pred_cls = torch.sigmoid(f_map[..., 5:])  # Cls pred.
+        # pred_x = torch.sigmoid(f_map[..., 0])  # Center x
+        # pred_y = torch.sigmoid(f_map[..., 1])  # Center y
+        # pred_w = f_map[..., 2]  # Width
+        # pred_h = f_map[..., 3]  # Height
+        # pred_conf = torch.sigmoid(f_map[..., 4])  # Conf
+        # pred_cls = torch.sigmoid(f_map[..., 5:])  # Cls pred.
 
         # pred_xy = torch.sigmoid(f_map[..., 0:2])  # Center x
         # pred_wh = f_map[..., 2:4]  # Width
         # pred_conf = torch.sigmoid(f_map[..., 4])  # Conf
         # pred_cls = torch.sigmoid(f_map[..., 5:])  # Cls pred.
+
+        pred_conf = torch.sigmoid(f_map[..., 0])  # Conf
+        pred_xy = torch.sigmoid(f_map[..., 1:3])  # Center x
+        pred_wh = f_map[..., 3:5]  # Width
+        pred_cls = torch.sigmoid(f_map[..., 5:])  # Cls pred.
         if not tolabel:
-            return pred_conf, pred_cls,  pred_x, pred_y, pred_w, pred_h #pred_xy, pred_wh  #
+            return pred_conf, pred_cls, pred_xy, pred_wh  ##pred_x, pred_y, pred_w, pred_h
         else:
             mask = np.arange(self.anc_num) + self.anc_num * f_id
             anchors_raw = self.anchors[mask]
@@ -87,12 +92,12 @@ class ParsePredict:
             grid_y = torch.arange(H).repeat(W, 1).t().view([1, H, W, 1]).to(self.device)
             grid_xy = torch.cat([grid_x, grid_y], -1).unsqueeze(3).expand(1, H, W, self.anc_num, 2).to(self.device)
 
-            pre_wh = pre_loc_wh.exp() * anchor_ch
+            pre_wh = pred_wh.exp() * anchor_ch
             pre_realtive_wh = pre_wh / grid_wh
-            pre_realtive_xy = (pre_loc_xy + grid_xy) / grid_wh
+            pre_realtive_xy = (pred_xy + grid_xy) / grid_wh
 
             pre_relative_box = torch.cat([pre_realtive_xy, pre_realtive_wh], -1)
-            return pre_obj, pre_cls, pre_relative_box
+            return pred_conf, pred_cls, pre_relative_box
 
     def _parse_yolo_predict(self, f_maps):
         """
