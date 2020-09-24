@@ -234,7 +234,4 @@ class YOLONANO(nn.Module):
         out = self.ep7(out_conv5)
         featuremap2 = self.conv11(out)
 
-        featuremap0 = featuremap0.permute([0, 2, 3, 1])
-        featuremap1 = featuremap1.permute([0, 2, 3, 1])
-        featuremap2 = featuremap2.permute([0, 2, 3, 1])
         return featuremap0, featuremap1, featuremap2
