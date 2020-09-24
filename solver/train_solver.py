@@ -77,14 +77,14 @@ class Solver(BaseSolver):
             Pbar.set_description(info)
         self.scheduler.step()
         w_dict = {'epoch': epoch,
-                  'learning_rate': self.optimizer.param_groups[0]['lr'],
-                  'batch_average_loss': losses / len(self.trainDataloader)}
+                  'lr': self.optimizer.param_groups[0]['lr'],
+                  'epoch_loss': epoch_losses / len(self.trainDataloader)}
         self.cfg.writer.tbX_write(w_dict)
         # self._save_checkpoint()
 
     def _test_an_epoch(self, epoch):
         if not self.cfg.TEST.ONE_TEST: self.model.eval()
-        self.cfg.logger.debug('[EVALUATE] Model:%s, Evaluating ...', self.cfg.TRAIN.MODEL)
+        self.cfg.logger.debug('[evaluate] model:%s, evaluating ...', self.cfg.TRAIN.MODEL)
         self.score.init_parameters()
         Pbar = tqdm.tqdm(self.testDataloader)
         for step, train_data in enumerate(Pbar):
