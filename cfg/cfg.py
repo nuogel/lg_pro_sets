@@ -28,9 +28,8 @@ def prepare_cfg(cfg, args, is_training=True):
         cfg.TRAIN.USE_LMDB=0
 
     try:
-        if cfg.TEST.ONE_TEST or cfg.TRAIN.SHOW_INPUT or cfg.BELONGS == 'VID':
+        if cfg.TEST.ONE_TEST:
             args.number_works = 0
-            cfg.TRAIN.SAVE_STEP = 50
     except:
         pass
 
@@ -90,6 +89,9 @@ def prepare_cfg(cfg, args, is_training=True):
                         [8., 11.],
                         ]
     # anchors should be 倒序。
+
+    cfg.PATH.CLASSES_PATH = cfg.PATH.CLASSES_PATH.format(cfg.TRAIN.TRAIN_DATA_FROM_FILE[0].lower())
+
     cfg.TRAIN.ANCHORS = anchor_yolov3
     if cfg.TEST.ONE_TEST:
         if cfg.TEST.ONE_NAME != []:
@@ -122,6 +124,7 @@ def prepare_cfg(cfg, args, is_training=True):
         cfg.TRAIN.CLASSES = list(class_name.values())
     except:
         pass
+
     return cfg, args
 
 

@@ -98,13 +98,12 @@ class YOLOV2(torch.nn.Module):
         output_1 = self.stage2_a_conv7(output_1)
 
         output_2 = self.stage2_b_conv(residual)
-        batch_size, num_channel, height, width = output_2.data.size()
-        output_2 = output_2.view(batch_size, int(num_channel / 4), height, 2, width, 2).contiguous()
+        batch_size, num_channel, height, width = output_2.size()
+        output_2 = output_2.reshape(batch_size, int(num_channel / 4), height, 2, width, 2).contiguous()
         output_2 = output_2.permute(0, 3, 5, 1, 2, 4).contiguous()
         output_2 = output_2.view(batch_size, -1, int(height / 2), int(width / 2))
 
         output = torch.cat((output_1, output_2), 1)
         output = self.stage3_conv1(output)
-        output = self.stage3_conv2(output)
-        net_final = output.permute([0, 2, 3, 1])
+        net_final = self.stage3_conv2(output)
         return [net_final, ]

@@ -103,7 +103,7 @@ def _read_train_test_dataset(cfg):
             test_idx = os.path.join('datasets/', cfg.BELONGS + '_idx_stores', FILE_TXT,
                                     FILE_TXT + '_test' + '.txt')
 
-            print('USING DATASET: %s' % FILE_TXT)
+            print('data set: %s' % FILE_TXT)
             f = open(train_idx, 'r', encoding='utf-8-sig')
             train_set.extend([line.strip().split('┣┫') for line in f.readlines()])
             f = open(test_idx, 'r', encoding='utf-8-sig')

@@ -16,10 +16,10 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         #     self.class_range = range(cfg.TRAIN.CLASSES_NUM)
         self.class_range = range(cfg.TRAIN.CLASSES_NUM)
 
-    def forward(self, score, pre_loc, xywh2x1y1x2y2):
-        pre_score_raw = score.max(-1)  # get the max score of the scores of classes.
-        pre_score = pre_score_raw[0]  # score out
-        pre_class = pre_score_raw[1]  # idx of score: is class
+    def forward(self, pre_score, pre_class, pre_loc, xywh2x1y1x2y2):
+        # pre_score_raw = score.max(-1)  # get the max score of the scores of classes.
+        # pre_score = pre_score_raw[0]  # score out
+        # pre_class = pre_score_raw[1]  # idx of score: is class
 
         if self.cfg.TEST.NMS_TYPE in ['soft_nms', 'SOFT_NMS']:
             keep = self.NMS_Soft(pre_score, pre_class, pre_loc)
@@ -97,13 +97,11 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         # print('using Soft NMS')
 
         score_sort = pre_score.sort(descending=True)
-        score_idx = score_sort[1][score_sort[0] > self.score_thresh]
+        score_idx = score_sort[1]
 
         keep = []
-
         for i in self.class_range:  # with different classess.
             a = pre_class[score_idx] == i
-            bboxes = torch.sum(a)
             order_index = score_idx[a]
             while order_index.shape[0] > 0:
                 max_one = order_index[0].item()

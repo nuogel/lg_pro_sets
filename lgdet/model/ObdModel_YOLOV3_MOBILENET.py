@@ -126,7 +126,4 @@ class YOLOV3_MOBILENET(nn.Module):
         net2 = self.bb2_2(net2)
         f_map2 = self.bb2_3(net2)
 
-        f_map1 = f_map1.permute([0, 2, 3, 1])
-        f_map2 = f_map2.permute([0, 2, 3, 1])
-
         return [f_map1, f_map2, ]

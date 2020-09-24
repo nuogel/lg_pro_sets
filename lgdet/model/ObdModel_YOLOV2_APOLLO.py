@@ -101,5 +101,4 @@ class YOLOV2_APOLLO(torch.nn.Module):
         x = self.concat8((cat, x), 1)
         x = self.conv9_relu(self.conv9(x))
         x = self.conv_final(x)
-        net_final = x.permute([0, 2, 3, 1])
-        return [net_final, ]
+        return [x, ]

@@ -15,6 +15,7 @@ class ParsePredict:
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
         self.cls_num = cfg.TRAIN.CLASSES_NUM
         self.NMS = NMS(cfg)
+        self.device = self.cfg.TRAIN.DEVICE
 
     def _parse_predict(self, f_maps):
         PARSEDICT = {
@@ -57,18 +58,20 @@ class ParsePredict:
         # make the feature map anchors
 
         ###1: pre deal feature mps
-        obj_pred, cls_perd, loc_pred = torch.split(f_map, [self.anc_num, self.anc_num * self.cls_num, self.anc_num * 4], 3)
+        B, C, H, W = f_map.shape
+        f_map = f_map.view(B, self.anc_num, self.cls_num + 5, H, W)
+        f_map = f_map.permute(0, 3, 4, 1, 2).contiguous()
+
         # deel predicted obj
-        pre_obj = obj_pred.sigmoid()
-        # reshape classes
-        B, H, W = pre_obj.shape[0:3]
-        pre_cls = cls_perd.reshape([B, H, W, self.anc_num, self.cls_num])
-        pre_cls = pre_cls.sigmoid()
+        pre_obj = torch.sigmoid(f_map[..., 0])
 
         # reshape the pre_loc
-        pre_loc = loc_pred.reshape([B, H, W, self.anc_num, 4])
-        pre_loc_xy = pre_loc[..., 0:2].sigmoid()
-        pre_loc_wh = pre_loc[..., 2:4]
+        pre_loc_xy = torch.sigmoid(f_map[..., 1:3])
+        pre_loc_wh = f_map[..., 3:5]
+
+        # reshape classes
+        pre_cls = torch.sigmoid(f_map[..., 5:])
+
         if not tolabel:
             return pre_obj, pre_cls, pre_loc_xy, pre_loc_wh
         else:
@@ -80,10 +83,10 @@ class ParsePredict:
             grid_x = torch.arange(0, W).view(-1, 1).repeat(1, H).unsqueeze(2).permute(1, 0, 2)
             grid_y = torch.arange(0, H).view(-1, 1).repeat(1, W).unsqueeze(2)
             grid_xy = torch.cat([grid_x, grid_y], 2).unsqueeze(2).unsqueeze(0). \
-                expand(1, H, W, self.anc_num, 2).expand_as(pre_loc_xy).type(torch.FloatTensor).to(loc_pred.device)
+                expand(1, H, W, self.anc_num, 2).expand_as(pre_loc_xy).to(self.device)
 
             # prepare gird xy
-            grid_wh = torch.Tensor([W, H]).to(loc_pred.device)
+            grid_wh = torch.Tensor([W, H]).to(self.device)
             pre_realtive_xy = (pre_loc_xy + grid_xy) / grid_wh
             '''
             i_0, i_1, i_2 = 0, 9, 34
@@ -91,7 +94,7 @@ class ParsePredict:
             print('pre_realtive_xy', pre_realtive_xy[i_0, i_1, i_2])
 
             '''
-            anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).expand(1, H, W, self.anc_num, 2).to(loc_pred.device)
+            anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).expand(1, H, W, self.anc_num, 2).to(self.device)
             pre_wh = pre_loc_wh.exp() * anchor_ch
             pre_realtive_wh = pre_wh / grid_wh
 
@@ -126,8 +129,18 @@ class ParsePredict:
         pre_cls = torch.cat(pre_cls, -2)
         pre_loc = torch.cat(pre_loc, -2)
 
-        pre_score = pre_cls * (pre_obj.expand_as(pre_cls))  # score of obj * score of class.
-        labels_predict = self._predict2nms(pre_score, pre_loc)
+        labels_predict = []
+        BN = pre_obj.shape[0]
+        for bi in range(BN):
+            # score is conf*cls,but obj is pre_obj>thresh.
+            mask = pre_obj[bi] > self.cfg.TEST.SCORE_THRESH
+            pre_obj_i = pre_obj[bi][mask]
+            pre_cls_score, pre_cls_id = pre_cls[bi].max(-1, keepdim=True)
+            pre_cls_score = pre_cls_score[mask]
+            pre_cls_id = pre_cls_id[mask]
+            pre_score = pre_obj_i * pre_cls_score  # score of obj * score of class.
+            pre_loc_i = pre_loc[bi][mask.squeeze(-1)]
+            labels_predict.append(self.NMS.forward(pre_score, pre_cls_id, pre_loc_i, xywh2x1y1x2y2=True))
         return labels_predict
 
     def _parse_fcos_predict(self, predicts):

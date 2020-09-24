@@ -11,17 +11,7 @@ def _parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('--type', default='OBD'  # SR_DN
                         , type=str, help='yml_path')
-    parser.add_argument('--checkpoint', default=
-    'tmp/checkpoints/common_checkpoints/now.pkl'
-                        # 'F:/saved_weight/saved_tbx_log_yolov3_tiny_clean/checkpoint.pkl',
-                        # 'F:/saved_weight/tbx_log_ssd_coco/checkpoint.pkl'
-                        # 'F:/saved_weight/tbx_log_vdsr/checkpoint.pkl'
-                        # 'F:/saved_weight/tbx_log_cbdnet/checkpoint.pkl'
-                        # 'F:/saved_weight/tbx_log_edsr/checkpoint.pkl'
-                        # 'F:/saved_weight/saved_tbx_log_rdn_youku_clean/checkpoint.pkl'
-                        # 'F:/LG/GitHub/lg_pro_sets/tmp/tbx_log_rdn/checkpoint.pkl'
-                        # 'F:/saved_weight/tbx_log_rcan_without_dataaug/checkpoint.pkl'
-                        # 'F:\saved_weight\saved_tbx_log_efficientdet_kitti_car_512x768/checkpoint.pkl'
+    parser.add_argument('--checkpoint', default= 1
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--batch_size', '--bz', default=1, type=int, help='batch size')
     parser.add_argument('--number_works', '--n_w', default=0, type=int, help='number works of DataLoader')
@@ -35,7 +25,7 @@ def main():
     """Run the script."""
     exit_code = 0
     files = 'one_name'
-    files = 'datasets/OBD_idx_stores/COCO/COCO_test.txt'
+    files = 'datasets/OBD_idx_stores/VOC/VOC_test.txt'
     score = False
     args = _parse_arguments()
     cfg = parse_yaml(args)

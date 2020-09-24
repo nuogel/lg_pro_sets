@@ -87,8 +87,4 @@ class YOLOV3_TINY(nn.Module):
         net2 = self.bb2_cat((f2, net2), 1)  # jump2_TO    26x26x256+26x26x128=26x26x384
         net2 = self.bb2_2(net2)
         net2 = self.bb2_3(net2)
-
-        f_map1 = net1.permute([0, 2, 3, 1])
-        f_map2 = net2.permute([0, 2, 3, 1])
-
-        return [f_map1, f_map2, ]
+        return [net1, net2, ]

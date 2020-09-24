@@ -26,15 +26,16 @@ class Solver(BaseSolver):
                              self.args.checkpoint, self.learning_rate, self.epoch_last)
 
         for epoch in range(self.epoch_last, self.cfg.TRAIN.EPOCH_SIZE):
+            self.epoch = epoch
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch)
-            if epoch > 0 or self.cfg.TEST.ONE_TEST:
+            if epoch > -1 or self.cfg.TEST.ONE_TEST:
                 self._test_an_epoch(epoch)
 
     def _train_an_epoch(self, epoch):
         self.model.train()
         self.cfg.logger.info('>' * 30 + '[TRAIN] model:%s,   epoch: %s' % (self.cfg.TRAIN.MODEL, epoch))
-        losses = 0
+        epoch_losses = 0
         # count the step time, total time...
         Pbar = tqdm.tqdm(self.trainDataloader)
         for step, train_data in enumerate(Pbar):
@@ -45,20 +46,32 @@ class Solver(BaseSolver):
             predict = self.model.forward(input_x=train_data[0], input_y=train_data[1], input_data=train_data,
                                          is_training=True)
             # calculate the total loss
-            total_loss = self._calculate_loss(predict, train_data, losstype=self.cfg.TRAIN.LOSSTYPE)
-            losses += total_loss.item()
+            total_loss, loss_metrics = self._calculate_loss(predict, train_data, losstype=self.cfg.TRAIN.LOSSTYPE)
+            epoch_losses += total_loss.item()
             # backward process
 
             total_loss.backward()
 
             self.global_step += 1
             if self.global_step % self.cfg.TRAIN.SAVE_STEP == 0:
-                self._save_checkpoint(self.model, epoch, self.optimizer, self.global_step)
+                self._save_checkpoint()
             if self.global_step % self.cfg.TRAIN.BATCH_BACKWARD_SIZE == 0:
                 self.optimizer.step()
                 self.optimizer.zero_grad()
-            info = '[train] model:%s; epoch:%0d; global_step:%d; lr:%0.6f; step_loss: %0.4f; batch_loss:%0.4f' \
-                   % (self.cfg.TRAIN.MODEL, epoch, self.global_step, self.optimizer.param_groups[0]['lr'], total_loss.item(), losses / (step + 1))
+
+            info_dict = {'[train]': self.cfg.TRAIN.MODEL,
+                         'ep': epoch,
+                         'g_s': self.global_step,
+                         'lr': '%0.5f' % self.optimizer.param_groups[0]['lr'],
+                         's_l': '%0.3f' % total_loss.item(),
+                         'a_l': '%0.3f' % (epoch_losses / (step + 1)),
+                         }
+            for k, v in loss_metrics.items():
+                info_dict[k] = v
+            info = ''
+            for k, v in info_dict.items():
+                info += k + ':' + str(v) + '; '
+
             if self.global_step % 50 == 0:
                 self.cfg.logger.info(info)
             Pbar.set_description(info)
@@ -67,35 +80,27 @@ class Solver(BaseSolver):
                   'learning_rate': self.optimizer.param_groups[0]['lr'],
                   'batch_average_loss': losses / len(self.trainDataloader)}
         self.cfg.writer.tbX_write(w_dict)
-        self.cfg.logger.debug('[train] summary: epoch: %s, batch_loss: %s', epoch, losses / len(self.trainDataloader))
-        self._save_checkpoint(self.model, epoch, self.optimizer, self.global_step)
+        # self._save_checkpoint()
 
     def _test_an_epoch(self, epoch):
         if not self.cfg.TEST.ONE_TEST: self.model.eval()
         self.cfg.logger.debug('[EVALUATE] Model:%s, Evaluating ...', self.cfg.TRAIN.MODEL)
-        _timer = Time()
         self.score.init_parameters()
         Pbar = tqdm.tqdm(self.testDataloader)
         for step, train_data in enumerate(Pbar):
-            _timer.time_start()
             if step >= len(self.trainDataloader):
                 break
             test_data = self.DataFun.to_devce(train_data)
             if test_data[0] is None: continue
-            predict = self.model.forward(input_x=test_data[0], input_y=test_data[1], input_data=test_data,
-                                         is_training=False)
+            predict = self.model.forward(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)
             if self.cfg.BELONGS in ['OBD']: test_data = test_data[1]
             self.score.cal_score(predict, test_data)
-            _timer.time_end()
-            info = '[EVALUATE] Epoch:%3d, Time Step/Total-%s/%s' % (epoch, _timer.diff, _timer.from_begin)
-            self.cfg.logger.debug(info)
-            Pbar.set_description(info)
+            Pbar.set_description('[valid]')
 
         main_score, item_score = self.score.score_out()
         w_dict = {'epoch': epoch,
                   'main_score': main_score,
                   'item_score': item_score}
         self.cfg.writer.tbX_write(w_dict)
-        self.cfg.logger.debug('[EVALUATE] Summary: Epoch: %s, total_score: %s, other_score: %s', epoch, str(main_score),
-                              str(item_score))
+        self.cfg.logger.debug('[EVALUATE] Summary: Epoch: %s, total_score: %s, other_score: %s', epoch, str(main_score), str(item_score))
         if self.cfg.TEST.TEST_ONLY: exit()

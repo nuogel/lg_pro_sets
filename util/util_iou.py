@@ -141,3 +141,18 @@ def xyxy2xywh(boxes_xyxy):
 
     boxes_xywh = torch.cat([(boxes_xyxy[..., :2] + boxes_xyxy[..., 2:]) / 2.0, boxes_xyxy[..., 2:] - boxes_xyxy[..., :2]], -1)
     return boxes_xywh
+
+
+def _iou_wh(wh1, wh2):
+    '''
+    only [w,h]
+    :param wh1:
+    :param wh2:
+    :return:
+    '''
+    wh2 = wh2.t()
+    w1, h1 = wh1[0], wh1[1]
+    w2, h2 = wh2[0], wh2[1]
+    inter_area = torch.min(w1, w2) * torch.min(h1, h2)
+    union_area = (w1 * h1 + 1e-16) + w2 * h2 - inter_area
+    return inter_area / union_area
