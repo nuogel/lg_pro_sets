@@ -139,7 +139,7 @@ class Score:
                 f1_sore[i] = 0
                 continue
             prec[i] = tp / (tp + fp + 1e-16)
-            rec[i] = tp / (self.gt_obj_num[i] + + 1e-16)
+            rec[i] = tp / (self.gt_obj_num[i]+ 1e-16)
             f1_sore[i] = (1 + beta ** 2) * (prec[i] * rec[i]) / (beta ** 2 * prec[i] + rec[i] + 1e-16)
         return f1_sore, prec, rec
 

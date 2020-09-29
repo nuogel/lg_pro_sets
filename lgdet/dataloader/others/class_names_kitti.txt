@@ -1,0 +1,10 @@
+Car
+Van
+Truck
+Pedestrian
+Person_sitting
+Cyclist
+Tram
+Misc
+DontCare
+Dontcare,DontCare

@@ -35,7 +35,7 @@ class YoloLoss:
         self.parsepredict = ParsePredict(cfg)
         self.multiply_area_scale = 0  # whether multiply loss to area_scale.
 
-        self.alpha = 0.25
+        self.alpha = 0.5
         self.gamma = 2
         self.use_hard_noobj_loss = False
         self.watch_metrics = self.cfg.TRAIN.WATCH_METIRICS
@@ -63,7 +63,6 @@ class YoloLoss:
 
         grid_wh = torch.Tensor([W, H]).to(self.device)
 
-        b, target_labels = labels[..., :2].long().t()
         target_boxes = labels[..., 2:6]
         # x1y1x2y2->xywh
         gx1y1 = target_boxes[..., :2]
@@ -77,6 +76,7 @@ class YoloLoss:
         ious = iou_xywh(anc.to(self.device), box_iou.to(self.device), type='N2N')
         best_ious, best_n = ious.max(0)
         # Separate target values
+        b, target_labels = labels[..., :2].long().t()
         gx, gy = gxy.t()
         gw, gh = gwh.t()
         gi, gj = gxy.long().t()
@@ -105,36 +105,39 @@ class YoloLoss:
 
             grid_x = torch.arange(0, W).view(-1, 1).repeat(1, H).unsqueeze(2).permute(1, 0, 2)
             grid_y = torch.arange(0, H).view(-1, 1).repeat(1, W).unsqueeze(2)
-            grid_xy = torch.cat([grid_x, grid_y], 2).unsqueeze(2).unsqueeze(0).to(self.device)
+            grid_xy = torch.cat([grid_x, grid_y], 2).unsqueeze(2).unsqueeze(0). \
+                expand(1, H, W, self.anc_num, 2).expand_as(pre_loc_xy).to(self.device)
 
             # prepare gird xy
             pre_realtive_xy = (pre_loc_xy + grid_xy) / grid_wh
-            anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).to(self.device)
+
+            anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).expand(1, H, W, self.anc_num, 2).to(self.device)
             pre_wh = pre_loc_wh.exp() * anchor_ch
             pre_realtive_wh = pre_wh / grid_wh
 
             pre_relative_box = torch.cat([pre_realtive_xy, pre_realtive_wh], -1)
 
-            iou_scores[b, gj, gi, best_n] = iou_xyxy(xywh2xyxy(pre_relative_box[b, gj, gi, best_n]).to(self.device), target_boxes.to(self.device), type='N21')
+            iou_scores[b, gj, gi, best_n] = iou_xyxy(xywh2xyxy(pre_relative_box[b, gj, gi, best_n]).to(self.device),
+                                                     target_boxes.to(self.device), type='N21')
 
             cls_acc = class_mask[obj_mask].mean()
             conf_obj = pre_obj[obj_mask].mean()
             conf_noobj = pre_obj[noobj_mask].mean()
-            conf = (pre_obj > self.cfg.TEST.SCORE_THRESH).float()
+            conf50 = (pre_obj > 0.5).float()
             iou50 = (iou_scores > 0.5).float()
             iou75 = (iou_scores > 0.75).float()
-            detected_mask = conf * class_mask * obj_mask.float()
-            precision = torch.sum(iou50 * detected_mask) / (conf.sum() + 1e-16)
+            detected_mask = conf50 * class_mask * obj_mask.float()
+            precision = torch.sum(iou50 * detected_mask) / (conf50.sum() + 1e-16)
             recall50 = torch.sum(iou50 * detected_mask) / (obj_mask.sum() + 1e-16)
             recall75 = torch.sum(iou75 * detected_mask) / (obj_mask.sum() + 1e-16)
 
             metrics = {
-                "c_acc": [cls_acc.item()],
-                "rec50": [recall50.item()],
-                "rec75": [recall75.item()],
-                "pre": [precision.item()],
-                "cf_ob": [conf_obj.item()],
-                "cf_nob": [conf_noobj.item()],
+                "cls_acc": cls_acc.item(),
+                "recall50": recall50.item(),
+                "recall75": recall75.item(),
+                "precision": precision.item(),
+                "conf_obj": conf_obj.item(),
+                "conf_noobj": conf_noobj.item(),
             }
 
         if self.multiply_area_scale:
@@ -145,6 +148,26 @@ class YoloLoss:
             area_scale = 1.0
         return obj_mask, noobj_mask, labels_cls, labels_loc_xy, labels_loc_wh, metrics
 
+    def _hard_noobj_mask(self, pre_obj, noobj_mask, obj_mask, hard_num=1000):  # TODO: obj_mask==8 & noobj_mask == 12220
+        '''
+        due to the imbalance betwine  obj and noobj, (obj=10, noobj=500000).
+        so, we design the hard_noobj function to find the top N noobj to backward.
+        :return: noobj mask.
+        PS:
+            When training coco. the loss is steady,and won't go down...
+        '''
+        # mask = torch.ge(pre_obj, thresh_score)
+        # mask = mask & noobj_mask
+        pre_obj_copy = pre_obj.clone()
+
+        pre_obj_copy[obj_mask] = 0.
+
+        nomask = pre_obj_copy > 0.2
+
+        if torch.sum(noobj_mask) == 0:
+            nomask = noobj_mask
+        return nomask
+
     def _loss_cal_one_Fmap(self, f_map, f_id, labels, losstype=None):
         """Calculate the loss."""
 
@@ -152,6 +175,8 @@ class YoloLoss:
         obj_mask, noobj_mask, labels_cls, labels_loc_xy, labels_loc_wh, metrics = self._reshape_labels(pre_obj, pre_cls, pre_loc_xy, pre_loc_wh, labels, f_id)
 
         labels_obj = obj_mask.float()
+        if self.use_hard_noobj_loss:
+            noobj_mask = self._hard_noobj_mask(pre_obj, noobj_mask, obj_mask)
 
         if losstype == 'focalloss':
             # # FOCAL loss
@@ -161,9 +186,9 @@ class YoloLoss:
             noobj_loss = torch.mean(noobj_loss)
 
         elif losstype == 'bce' or losstype is None:
-            weight = [1., 1.]  # weight is the speed of which to go down. degree(loss)*lr, the higher loss ,the faster for weight.
-            obj_loss = weight[0] * self.bceloss(pre_obj[obj_mask], labels_obj[obj_mask])
-            noobj_loss = weight[1] * self.bceloss(pre_obj[noobj_mask], labels_obj[noobj_mask])
+            # nomal loss
+            obj_loss = self.bceloss(pre_obj[obj_mask], labels_obj[obj_mask])
+            noobj_loss = 100 * self.bceloss(pre_obj[noobj_mask], labels_obj[noobj_mask])
         else:
             print(losstype, 'is not define.')
             obj_loss = 0.
@@ -172,9 +197,6 @@ class YoloLoss:
         lwh_loss = self.mseloss(pre_loc_wh[obj_mask], labels_loc_wh[obj_mask])
         cls_loss = self.bceloss(pre_cls[obj_mask], labels_cls[obj_mask])
         loc_loss = lxy_loss + lwh_loss
-
-        metrics['xy'] = [lxy_loss.item()]
-        metrics['wh'] = [lwh_loss.item()]
         return obj_loss, noobj_loss, cls_loss, loc_loss, metrics
 
     def _focal_loss(self, pred, target):  # not used
@@ -199,9 +221,9 @@ class YoloLoss:
                 metrics = _metrics
             else:
                 for k, v in metrics.items():
-                    metrics[k].append(_metrics[k][0])
+                    metrics[k] += _metrics[k]
 
         for k, v in metrics.items():
-            metrics[k] = '%.2f' % np.asarray(v).mean()
+            metrics[k] = '%.3f' % (v / len(f_maps))
 
         return {'obj_loss': obj_loss, 'noobj_loss': noobj_loss, 'cls_loss': cls_loss, 'loc_loss': loc_loss, 'metrics': metrics}

@@ -80,7 +80,6 @@ class OBD_Loader(DataLoader):
             img_write = _show_img(show_img, _label.numpy(), cfg=self.cfg, show_time=-1)
             self.cfg.writer.tbX_addImage('GT_' + data_info[0], img_write)
             self.write_images -= 1
-
         return img, label, data_info  # only need the labels  label_after[x1y1x2y2]
 
     def _set_group_flag(self):  # LG: this is important
@@ -206,7 +205,7 @@ class OBD_Loader(DataLoader):
         if (x2 - x1) * (y2 - y1) < self.cfg.TRAIN.MIN_AREA: return False
         return True
 
-    def _load_labels(self, path, data_info=None, predicted_line=False, pass_obj=['DontCare', ]):
+    def _load_labels(self, path, data_info=None, predicted_line=False, pass_obj=['_DontCare_', ]):
         """
         Parse the labels from file.
 

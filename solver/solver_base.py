@@ -17,7 +17,7 @@ class BaseSolver(object):
         self._get_configs(cfg, args)
         self._get_model()
         self._get_dataloader()
-        self.epoch=0
+        self.epoch = 0
 
     def _get_configs(self, cfg, args):
         self.cfg, self.args = prepare_cfg(cfg, args)
@@ -46,9 +46,10 @@ class BaseSolver(object):
         else:
             if not self.cfg.TEST.ONE_TEST:
                 self.model.eval()
+            else:
+                self.model.train()
 
         self.model = self.model.to(self.cfg.TRAIN.DEVICE)
-
 
     def _get_score(self):
         self.score = get_score_class(self.cfg.BELONGS)(self.cfg)
@@ -93,7 +94,9 @@ class BaseSolver(object):
         #  load the last data set
         train_set, test_set = _read_train_test_dataset(self.cfg)
         print('train set:', train_set[0], '\n', 'test set:', test_set[0])
-        self.cfg.logger.info('>' * 30 + 'train set:{}; test set:{}'.format(len(train_set), len(test_set)))
+        txt = 'train set:{}; test set:{}'.format(len(train_set), len(test_set))
+        print(txt)
+        self.cfg.logger.info(txt)
         self.trainDataloader, self.testDataloader = self.DataFun.make_dataset(train_set, test_set)
 
     def _calculate_loss(self, predict, dataset, **kwargs):
@@ -128,15 +131,17 @@ class BaseSolver(object):
         return total_loss, loss_metrics
 
     def _save_checkpoint(self):
-        saved_dict = {'state_dict': self.model.state_dict(), 'epoch': self.epoch, 'optimizer': self.optimizer.state_dict(),
+        saved_dict = {'state_dict': self.model.state_dict(),
+                      'epoch': self.epoch,
+                      'optimizer': self.optimizer.state_dict(),
                       'global_step': self.global_step}
-        checkpoint_path_0 = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoints/' + self.cfg.TRAIN.MODEL, '{}.pkl'.format(self.epoch))
-        checkpoint_path_1 = os.path.join(self.cfg.PATH.TMP_PATH + 'checkpoints/' + self.cfg.TRAIN.MODEL, 'now.pkl')
-        path_list = [checkpoint_path_0, checkpoint_path_1]
+
+        path_list = [str(self.epoch), 'now']
         for path_i in path_list:
-            os.makedirs(os.path.dirname(path_i), exist_ok=True)
-            torch.save(saved_dict, path_i)
-            self.cfg.logger.debug('epoch: %s, checkpoint is saved to %s', self.epoch, path_i)
+            checkpoint_path = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoints/' + self.cfg.TRAIN.MODEL, path_i + '.pkl')
+            os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
+            torch.save(saved_dict, checkpoint_path)
+            print('checkpoint is saved to %s', checkpoint_path)
 
     def _load_checkpoint(self, model, checkpoint, device):
         new_dic = OrderedDict()

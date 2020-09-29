@@ -29,7 +29,7 @@ class Solver(BaseSolver):
             self.epoch = epoch
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch)
-            if epoch > -1 or self.cfg.TEST.ONE_TEST:
+            if epoch > 0 or self.cfg.TEST.ONE_TEST:
                 self._test_an_epoch(epoch)
 
     def _train_an_epoch(self, epoch):
@@ -37,6 +37,7 @@ class Solver(BaseSolver):
         self.cfg.logger.info('>' * 30 + '[TRAIN] model:%s,   epoch: %s' % (self.cfg.TRAIN.MODEL, epoch))
         epoch_losses = 0
         # count the step time, total time...
+        print(('\n[train] ' + '%8s|' + '%8s|' * 6) % ('model_n', 'epoch', 'g_step', 'l_rate', 'step_l', 'aver_l', 'others'))
         Pbar = tqdm.tqdm(self.trainDataloader)
         for step, train_data in enumerate(Pbar):
             if self.global_step < self.cfg.TRAIN.WARM_UP_STEP:
@@ -59,18 +60,12 @@ class Solver(BaseSolver):
                 self.optimizer.step()
                 self.optimizer.zero_grad()
 
-            info_dict = {'[train]': self.cfg.TRAIN.MODEL,
-                         'ep': epoch,
-                         'g_s': self.global_step,
-                         'lr': '%0.5f' % self.optimizer.param_groups[0]['lr'],
-                         's_l': '%0.3f' % total_loss.item(),
-                         'a_l': '%0.3f' % (epoch_losses / (step + 1)),
-                         }
+            info_base = (self.cfg.TRAIN.MODEL, epoch, self.global_step, '%0.5f' % self.optimizer.param_groups[0]['lr'],
+                         '%0.3f' % total_loss.item(), '%0.3f' % (epoch_losses / (step + 1)))
+
+            info = ('%16s|' + '%8s|' * 5) % info_base + ' ' * 2
             for k, v in loss_metrics.items():
-                info_dict[k] = v
-            info = ''
-            for k, v in info_dict.items():
-                info += k + ':' + str(v) + '; '
+                info += k + ':' + str(v) + '|'
 
             if self.global_step % 50 == 0:
                 self.cfg.logger.info(info)

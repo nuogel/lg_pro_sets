@@ -43,13 +43,6 @@ def prepare_cfg(cfg, args, is_training=True):
                      [156, 198],
                      [373, 326]]
 
-    # anchor_ratio_min = [[0.0240385, 0.0336538],
-    #                       [0.0552885, 0.0649038],
-    #                       [0.0889423, 0.1394231],
-    #                       [0.1947115, 0.1971154],
-    #                       [0.3245192, 0.4062500],
-    #                       [0.8269231, 0.7668269]]  # yolov3_tiny
-
     anchor_yolov3_tiny = [[347., 286.],
                           [158., 211.],
                           [124., 94.],
@@ -69,16 +62,6 @@ def prepare_cfg(cfg, args, is_training=True):
                      [10, 13],
                      ]  # yolov3_tiny yolov3 writer's anchors
 
-    # anchor_yolov3 = [[363., 289.],
-    #                  [175., 236.],
-    #                  [163., 109.],
-    #                  [87., 155.],
-    #                  [76., 60.],
-    #                  [43., 99.],
-    #                  [44., 31.],
-    #                  [24., 53.],
-    #                  [17., 21.],
-    #                  ]  ## VOC2007
     # yolov3 writer's anchors: [10,13,  16,30,  33,23,  30,61,  62,45,  59,119,  116,90,  156,198,  373,326]
 
     VISDRONE_anchors = [[104., 92.],
@@ -119,11 +102,15 @@ def prepare_cfg(cfg, args, is_training=True):
 
     try:
         from util.util_get_cls_names import _get_class_names
-        class_name = _get_class_names(cfg.PATH.CLASSES_PATH)
-        cfg.TRAIN.CLASSES_NUM = len(class_name)
-        cfg.TRAIN.CLASSES = list(class_name.values())
+        class_dict= _get_class_names(cfg.PATH.CLASSES_PATH)
+        class_names = []
+        for k,v in class_dict.items():
+            if v not in class_names:
+                class_names.append(v)
+        cfg.TRAIN.CLASSES_NUM = len(class_names)
+        cfg.TRAIN.CLASSES = class_names
     except:
-        pass
+        print('cfg.py trying get class number and classes faild.')
 
     return cfg, args
 

@@ -1,7 +1,9 @@
 """Loss calculation based on yolo."""
 import torch
+import torch.nn as nn
+import math
 import numpy as np
-from util.util_iou import iou_xywh, xywh2xyxy, iou_xyxy
+from util.util_iou import iou_xywh, xywh2xyxy, iou_xyxy, _iou_wh
 from util.util_get_cls_names import _get_class_names
 from lgdet.postprocess.parse_prediction import ParsePredict
 
@@ -10,8 +12,6 @@ with the new yolo loss, in 56 images, loss is 0.18 and map is 0.2.and the test s
 with the new yolo loss, in 8 images, loss is 0.015 and map is 0.99.and the test show terrible bboxes.
 
 '''
-
-
 class YoloLoss:
     # pylint: disable=too-few-public-methods
     """Calculate loss."""
@@ -25,205 +25,101 @@ class YoloLoss:
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
         self.cls_num = cfg.TRAIN.CLASSES_NUM
 
-        self.batch_size = cfg.TRAIN.BATCH_SIZE
-        self.apollo_cls2idx = dict(zip(cfg.TRAIN.CLASSES, range(cfg.TRAIN.CLASSES_NUM)))
-
         self.mseloss = torch.nn.MSELoss()
         self.bceloss = torch.nn.BCELoss()
-        self.class_name = _get_class_names(cfg.PATH.CLASSES_PATH)
 
         self.parsepredict = ParsePredict(cfg)
         self.multiply_area_scale = 0  # whether multiply loss to area_scale.
 
-        self.alpha = 0.5
+        self.alpha = 0.25
         self.gamma = 2
         self.use_hard_noobj_loss = False
-        self.watch_metrics = self.cfg.TRAIN.WATCH_METIRICS
 
-    def _reshape_labels(self, pre_obj, pre_cls, pre_loc_xy, pre_loc_wh, labels, f_id):
-        """
-        Reshape the labels.
+    def build_targets(self, pre_obj, labels, f_id):
+        # x1y1x2y2 to xywh:
+        targets = labels.clone()
+        targets[..., 2:4] = (labels[..., 2:4] + labels[..., 4:6]) / 2
+        targets[..., 4:6] = (labels[..., 4:6] - labels[..., 2:4])
+        B, C, H, W = pre_obj.shape
 
-        :param labels: labels from training data
-        :param grid_xy: the matrix of the grid numbers
-        :return: labels_obj, labels_cls, lab_loc_xy, lab_loc_wh, labels_boxes, area_scal
-        """
-        B, H, W = pre_obj.shape[0:3]
         mask = np.arange(self.anc_num) + self.anc_num * f_id  # be care of the relationship between anchor size and the feature map size.
         anchors_raw = self.anchors[mask]
-        anchors = torch.Tensor([(a_w / self.cfg.TRAIN.IMG_SIZE[1] * W, a_h / self.cfg.TRAIN.IMG_SIZE[0] * H) for a_w, a_h in anchors_raw])
+        anchors = torch.Tensor([(a_w / self.cfg.TRAIN.IMG_SIZE[1] * W, a_h / self.cfg.TRAIN.IMG_SIZE[0] * H) for a_w, a_h in anchors_raw]).to(self.device)
 
-        # anchors = self.anchors[mask] / torch.Tensor([self.cfg.TRAIN.IMG_SIZE[1], self.cfg.TRAIN.IMG_SIZE[0]])  # * torch.Tensor([W, H])
-        anchors = anchors.to(self.device)
-        obj_mask = torch.BoolTensor(B, H, W, self.anc_num).fill_(0).to(self.device)
-        noobj_mask = torch.BoolTensor(B, H, W, self.anc_num).fill_(1).to(self.device)
-        labels_loc_xy = torch.zeros([B, H, W, self.anc_num, 2]).to(self.device)
-        labels_loc_wh = torch.zeros([B, H, W, self.anc_num, 2]).to(self.device)
-        labels_cls = torch.zeros([B, H, W, self.anc_num, self.cls_num]).to(self.device)
+        num_target = targets.shape[0]
+        gain = torch.ones(6, device=targets.device)  # normalized to gridspace gain
+        gain[2:] = torch.tensor([W, H, W, H])  # xyxy gain
+        t = targets * gain
 
-        grid_wh = torch.Tensor([W, H]).to(self.device)
+        self.anc_num = anchors.shape[0]  # number of anchors
+        at = torch.arange(self.anc_num).view(self.anc_num, 1).repeat(1, num_target)  # anchor tensor, same as .repeat_interleave(num_target)
 
-        b, target_labels = labels[..., :2].long().t()
-        target_boxes = labels[..., 2:6]
-        # x1y1x2y2->xywh
-        gx1y1 = target_boxes[..., :2]
-        gx2y2 = target_boxes[..., 2:]
-        gxy = (gx1y1 + gx2y2) / 2.0 * grid_wh
-        gwh = (gx2y2 - gx1y1) * grid_wh
+        # Match targets to anchors
+        if num_target:
+            j = _iou_wh(anchors, t[:, 4:6]) > 0.2  # iou(3,n) = wh_iou(anchors(3,2), gwh(n,2))
+            a, t = at[j], t.repeat(self.anc_num, 1, 1)[j]  # filter
+        # Define
+        batch, tcls = t[:, :2].long().T  # image, class
+        gxy = t[:, 2:4]  # grid xy
+        gwh = t[:, 4:6]  # grid wh
+        gij = gxy.long()
+        gi, gj = gij.T  # grid xy indices
 
-        box_iou = torch.cat([torch.zeros_like(gwh), gwh], 1)
-        anc = torch.cat([torch.zeros_like(anchors), anchors], 1)
-
-        ious = iou_xywh(anc.to(self.device), box_iou.to(self.device), type='N2N')
-        best_ious, best_n = ious.max(0)
-        # Separate target values
-        gx, gy = gxy.t()
-        gw, gh = gwh.t()
-        gi, gj = gxy.long().t()
-        # Set masks
-        obj_mask[b, gj, gi, best_n] = 1
-        noobj_mask[b, gj, gi, best_n] = 0
-        ignore_thresh = 0.5
-        for i, anchor_ious in enumerate(ious.t()):
-            noobj_mask[b[i], gj[i], gi[i], anchor_ious > ignore_thresh] = 0
-
-        # Coordinates
-        labels_loc_xy[b, gj, gi, best_n, 0] = gx - gx.floor()
-        labels_loc_xy[b, gj, gi, best_n, 1] = gy - gy.floor()
-        # Width and height
-        labels_loc_wh[b, gj, gi, best_n, 0] = torch.log(gw / anchors[best_n][:, 0] + 1e-16)
-        labels_loc_wh[b, gj, gi, best_n, 1] = torch.log(gh / anchors[best_n][:, 1] + 1e-16)
-        # One-hot encoding of label
-        labels_cls[b, gj, gi, best_n, target_labels] = 1
-
-        if self.watch_metrics:
-            class_mask = torch.zeros([B, H, W, self.anc_num]).to(self.device)
-            iou_scores = torch.zeros([B, H, W, self.anc_num]).to(self.device)
-            # # Compute label correctness and iou at best anchor
-            pre_loc = torch.cat((pre_loc_xy, pre_loc_wh), -1)
-            class_mask[b, gj, gi, best_n] = (pre_cls[b, gj, gi, best_n].argmax(-1) == target_labels).float()
-
-            grid_x = torch.arange(0, W).view(-1, 1).repeat(1, H).unsqueeze(2).permute(1, 0, 2)
-            grid_y = torch.arange(0, H).view(-1, 1).repeat(1, W).unsqueeze(2)
-            grid_xy = torch.cat([grid_x, grid_y], 2).unsqueeze(2).unsqueeze(0). \
-                expand(1, H, W, self.anc_num, 2).expand_as(pre_loc_xy).to(self.device)
-
-            # prepare gird xy
-            pre_realtive_xy = (pre_loc_xy + grid_xy) / grid_wh
-
-            anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).expand(1, H, W, self.anc_num, 2).to(self.device)
-            pre_wh = pre_loc_wh.exp() * anchor_ch
-            pre_realtive_wh = pre_wh / grid_wh
-
-            pre_relative_box = torch.cat([pre_realtive_xy, pre_realtive_wh], -1)
-
-            iou_scores[b, gj, gi, best_n] = iou_xyxy(xywh2xyxy(pre_relative_box[b, gj, gi, best_n]).to(self.device),
-                                                     target_boxes.to(self.device), type='N21')
-
-            cls_acc = class_mask[obj_mask].mean()
-            conf_obj = pre_obj[obj_mask].mean()
-            conf_noobj = pre_obj[noobj_mask].mean()
-            conf50 = (pre_obj > 0.5).float()
-            iou50 = (iou_scores > 0.5).float()
-            iou75 = (iou_scores > 0.75).float()
-            detected_mask = conf50 * class_mask * obj_mask.float()
-            precision = torch.sum(iou50 * detected_mask) / (conf50.sum() + 1e-16)
-            recall50 = torch.sum(iou50 * detected_mask) / (obj_mask.sum() + 1e-16)
-            recall75 = torch.sum(iou75 * detected_mask) / (obj_mask.sum() + 1e-16)
-
-            metrics = {
-                "c_acc": cls_acc.item(),
-                "rec50": recall50.item(),
-                "rec75": recall75.item(),
-                "pre": precision.item(),
-                "cf_ob": conf_obj.item(),
-                "cf_nob": conf_noobj.item(),
-            }
-
-        if self.multiply_area_scale:
-            # TODO: labels_loc_wh is no fit for area_scale
-            area_scale = (1 - torch.sqrt(labels_loc_wh[..., 0] * labels_loc_wh[..., 1])).unsqueeze(-1).expand_as(
-                labels_loc_wh)
-        else:
-            area_scale = 1.0
-        return obj_mask, noobj_mask, labels_cls, labels_loc_xy, labels_loc_wh, metrics
-
-    def _hard_noobj_mask(self, pre_obj, noobj_mask, obj_mask, hard_num=1000):  # TODO: obj_mask==8 & noobj_mask == 12220
-        '''
-        due to the imbalance betwine  obj and noobj, (obj=10, noobj=500000).
-        so, we design the hard_noobj function to find the top N noobj to backward.
-        :return: noobj mask.
-        PS:
-            When training coco. the loss is steady,and won't go down...
-        '''
-        # mask = torch.ge(pre_obj, thresh_score)
-        # mask = mask & noobj_mask
-        pre_obj_copy = pre_obj.clone()
-
-        pre_obj_copy[obj_mask] = 0.
-
-        nomask = pre_obj_copy > 0.2
-
-        if torch.sum(noobj_mask) == 0:
-            nomask = noobj_mask
-        return nomask
+        indices = [batch, a, gj, gi]  # image, anchor, grid indices
+        tbox = torch.cat((gxy - gij, gwh), 1)  # box
+        anch = anchors[a]  # anchors
+        if tcls.shape[0]:  # if any targets
+            assert tcls.max() < self.cls_num, 'cls_num is beyound the classes.'
+        return tcls, tbox, indices, anch
 
     def _loss_cal_one_Fmap(self, f_map, f_id, labels, losstype=None):
         """Calculate the loss."""
+        # init loss.
+        lcls, lxy, lwh, lobj = [torch.FloatTensor([0]).to(self.device) for _ in range(4)]
 
         pre_obj, pre_cls, pre_loc_xy, pre_loc_wh = self.parsepredict._parse_yolo_predict_fmap(f_map, f_id)
-        obj_mask, noobj_mask, labels_cls, labels_loc_xy, labels_loc_wh, metrics = self._reshape_labels(pre_obj, pre_cls, pre_loc_xy, pre_loc_wh, labels, f_id)
+        tcls, tbox, indices, anchors = self.build_targets(pre_obj, labels, f_id)  # targets
 
-        labels_obj = obj_mask.float()
-        if self.use_hard_noobj_loss:
-            noobj_mask = self._hard_noobj_mask(pre_obj, noobj_mask, obj_mask)
+        tobj = torch.zeros_like(pre_obj)  # target obj
+        tobj[indices] = 1.0
+        nb = indices[0].shape[0]  # number of targets
+        if nb:
+            pre_cls, pre_xy, pre_wh = [i[indices] for i in [pre_cls, pre_loc_xy, pre_loc_wh]]
 
-        if losstype == 'focalloss':
-            # # FOCAL loss
-            obj_loss = (self.alpha * (((1. - pre_obj)[obj_mask]) ** self.gamma)) * self.bceloss(pre_obj[obj_mask], labels_obj[obj_mask])
-            noobj_loss = ((1 - self.alpha) * ((pre_obj[noobj_mask]) ** self.gamma)) * self.bceloss(pre_obj[noobj_mask], labels_obj[noobj_mask])
-            obj_loss = torch.mean(obj_loss)
-            noobj_loss = torch.mean(noobj_loss)
+            # mse:
+            twh = torch.log(tbox[..., 2:] / anchors + 1e-16)  # torch.log(gw / anchors[best_n][:, 0] + 1e-16)
+            lxy = self.mseloss(pre_xy, tbox[..., :2])
+            lwh = self.mseloss(pre_wh, twh)
 
-        elif losstype == 'bce' or losstype is None:
-            weight = [1., 50.]  # weight is the speed of which to go down. degree(loss)*lr, the higher loss ,the faster for weight.
-            obj_loss = weight[0] * self.bceloss(pre_obj[obj_mask], labels_obj[obj_mask])
-            noobj_loss = weight[1] * self.bceloss(pre_obj[noobj_mask], labels_obj[noobj_mask])
-        else:
-            print(losstype, 'is not define.')
-            obj_loss = 0.
-            noobj_loss = 0.
-        lxy_loss = self.mseloss(pre_loc_xy[obj_mask], labels_loc_xy[obj_mask])
-        lwh_loss = self.mseloss(pre_loc_wh[obj_mask], labels_loc_wh[obj_mask])
-        cls_loss = self.bceloss(pre_cls[obj_mask], labels_cls[obj_mask])
-        loc_loss = lxy_loss + lwh_loss
-        return obj_loss, noobj_loss, cls_loss, loc_loss, metrics
+            t_cls = torch.zeros_like(pre_cls)  # targets
+            t_cls[range(nb), tcls] = 1
+            lcls = self.bceloss(pre_cls, t_cls)  # BCE
 
-    def _focal_loss(self, pred, target):  # not used
-        ce = self.bceloss(pred, target)
-        alpha = target * self.alpha + (1. - target) * (1. - self.alpha)
-        pt = torch.where(target == 1, pred, 1 - pred)
-        focal_loss = alpha * (1. - pt) ** self.gamma * ce
-        return focal_loss
+        lobj = self.bceloss(pre_obj, tobj)  # obj loss
+
+        total_loss = lobj + lcls + lxy + lwh
+        metrics = {'obj_loss': [lobj.item()],
+                   'cls_loss': [lcls.item()],
+                   'xy_loss': [lcls.item()],
+                   'wh_loss': [lcls.item()],
+                   }
+        return total_loss, metrics
 
     def Loss_Call(self, f_maps, dataset, kwargs):
         losstype = kwargs['losstype']
         images, labels, datainfos = dataset
-        noobj_loss, obj_loss, cls_loss, loc_loss = 0.0, 0.0, 0.0, 0.0
         metrics = {}
+        total_loss = torch.FloatTensor([0]).to(self.device)
         for f_id, f_map in enumerate(f_maps):
-            _obj_loss, _noobj_loss, _cls_loss, _loc_loss, _metrics = self._loss_cal_one_Fmap(f_map, f_id, labels, losstype)
-            obj_loss += _obj_loss
-            noobj_loss += _noobj_loss
-            cls_loss += _cls_loss
-            loc_loss += _loc_loss
+            _loss, _metrics = self._loss_cal_one_Fmap(f_map, f_id, labels, losstype)
+            total_loss += _loss
             if f_id == 0:
                 metrics = _metrics
             else:
                 for k, v in metrics.items():
-                    metrics[k] += _metrics[k]
+                    metrics[k].append(_metrics[k][0])
 
         for k, v in metrics.items():
-            metrics[k] = '%.2f' % (v / len(f_maps))
+            metrics[k] = '%.3f' % np.asarray(v).mean()
 
-        return {'obj_loss': obj_loss, 'noobj_loss': noobj_loss, 'cls_loss': cls_loss, 'loc_loss': loc_loss, 'metrics': metrics}
+        return {'total_loss': total_loss, 'metrics': metrics}

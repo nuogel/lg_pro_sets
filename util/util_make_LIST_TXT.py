@@ -81,6 +81,22 @@ def _wrte_dataset_txt(dataset, save_path):
     f.close()
 
 
+def cope_with_VOC():
+    datalist = []
+    voc_path = '/media/lg/DataSet_E/datasets/PASCAL_VOC/VOCdevkit'
+    img_path = 'VOC2012/JPEGImages/'
+    lab_path = 'VOC2012/Annotations/'
+    txt_file = 'VOC2012/ImageSets/Main/trainval.txt'
+    lines = open(os.path.join(voc_path,txt_file), 'r').readlines()
+    for line in lines:
+        line = line.strip()
+        if os.path.isfile(os.path.join(voc_path, img_path, line + '.jpg')) and os.path.isfile(os.path.join(voc_path, lab_path, line + '.xml')):
+            datalist.append([line + '.jpg', img_path + line + '.jpg', lab_path + line + '.xml'])
+            print('adding:', datalist[-1])
+
+    return datalist
+
+
 if __name__ == '__main__':
     # pathes = ['D:/datasets/CCPD2019/ccpd_challenge/']
     # pathes = ['F:/datasets/SR/REDS4/train_sharp_part/']
@@ -95,15 +111,18 @@ if __name__ == '__main__':
     # img_path = ['E:/datasets/VisDrone2019/VisDrone2019-VID-train/sequences/uav0000013_00000_v']
     # lab_path = 'E:\datasets\VisDrone2019\VisDrone2019-VID-train\\annotations/uav0000013_00000_v.txt'
 
-    img_path = 'imgs/train2017'
-    lab_path = 'labels/train2017_xml'
-    base_path = '/media/lg/2628737E28734C35/coco'
+    img_path = 'VOC2012/JPEGImages'
+    lab_path = 'VOC2012/Annotations'
+    base_path = '/media/lg/DataSet_E/datasets/PASCAL_VOC/VOCdevkit'
     # path = 'E:\datasets\FlyingChairs\data'
 
     save_path = 'util_tmp/make_list.txt'
 
     # datalist =_make_list_by_hand(path)
 
-    datalist = make_list(base_path, img_path, lab_path)
+    # datalist = make_list(base_path, img_path, lab_path)
+    datalist = cope_with_VOC()
 
     _wrte_dataset_txt(datalist, save_path)
+
+

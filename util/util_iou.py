@@ -143,19 +143,27 @@ def xyxy2xywh(boxes_xyxy):
     return boxes_xywh
 
 
+# def _iou_wh(wh1, wh2):
+#     '''
+#     only [w,h]
+#     :param wh1:
+#     :param wh2:
+#     :return:
+#     '''
+#     wh2 = wh2.t()
+#     w1, h1 = wh1[0], wh1[1]
+#     w2, h2 = wh2[0], wh2[1]
+#     inter_area = torch.min(w1, w2) * torch.min(h1, h2)
+#     union_area = (w1 * h1 + 1e-16) + w2 * h2 - inter_area
+#     return inter_area / union_area
+
+
 def _iou_wh(wh1, wh2):
-    '''
-    only [w,h]
-    :param wh1:
-    :param wh2:
-    :return:
-    '''
-    wh2 = wh2.t()
-    w1, h1 = wh1[0], wh1[1]
-    w2, h2 = wh2[0], wh2[1]
-    inter_area = torch.min(w1, w2) * torch.min(h1, h2)
-    union_area = (w1 * h1 + 1e-16) + w2 * h2 - inter_area
-    return inter_area / union_area
+    # Returns the nxm IoU matrix. wh1 is nx2, wh2 is mx2
+    wh1 = wh1[:, None]  # [N,1,2]
+    wh2 = wh2[None]  # [1,M,2]
+    inter = torch.min(wh1, wh2).prod(2)  # [N,M]
+    return inter / (wh1.prod(2) + wh2.prod(2) - inter)  # iou = inter / (area1 + area2 - inter)
 
 
 def _bbox_iou(box1, box2, x1y1x2y2=True):

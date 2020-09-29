@@ -24,7 +24,7 @@ class YOLOV3(nn.Module):
         self.final_out = self.anc_num * (1 + 4 + self.cls_num)
         self.layers_out_filters = [64, 128, 256, 512, 1024]
         self.backbone = darknet_53()
-        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear')
+        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
 
         self.conv_set0 = self._conv_set('conv_set0', [512, 1024], self.layers_out_filters[-1], self.final_out)
         self.conv_set1 = self._conv_set('conv_set1', [256, 512], self.layers_out_filters[-2] + 256, self.final_out)
