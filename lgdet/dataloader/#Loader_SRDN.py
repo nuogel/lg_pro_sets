@@ -108,7 +108,7 @@ class Loader:
 
         if self.cfg.TRAIN.INPUT_AUG:# and is_training:
             # add the augmentation ...
-            input = np.asarray(input)
+            input = np.asarray(input, np.float32)
             input, _ = self.Data_aug.augmentation(for_one_image=[input])
             input = input[0]
             compress_level = random.randint(5, 20)

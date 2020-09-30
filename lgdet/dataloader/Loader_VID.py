@@ -159,6 +159,6 @@ class VID_Loader(DataLoader):
         :return:
         '''
         imgs, labels, infos = zip(*batch)
-        imgs = torch.from_numpy(np.asarray(imgs[0]))
+        imgs = torch.from_numpy(np.asarray(imgs[0], np.float32))
 
         return imgs, labels[0], list(infos)

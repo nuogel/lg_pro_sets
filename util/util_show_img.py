@@ -27,7 +27,7 @@ def _show_img(imgs, labels_out=None, img_in=None, save_labels=False, pic_path=No
     if len(imgs.shape) == 3:
         imgs = imgs[np.newaxis, :]
         labels_out = [labels_out]
-
+    assert len(labels_out) > 0, 'img_show.py->labels is NONE.'
     assert imgs.shape[0] == len(labels_out), 'error:util_show_img->image and label shape is not the same'
     if show_time < 0:
         show_time = 0

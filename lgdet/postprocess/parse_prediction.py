@@ -137,12 +137,13 @@ class ParsePredict:
             # score is conf*cls,but obj is pre_obj>thresh.
 
             mask = pre_obj[bi] > self.cfg.TEST.SCORE_THRESH
-            pre_obj_i = pre_obj[bi][mask]
-            pre_cls_i = pre_cls[bi][mask.squeeze()]
-            pre_cls_score_i, pre_cls_id = pre_cls_i.max(-1)
-            pre_score = pre_obj_i * pre_cls_score_i  # score of obj * score of class.
-            pre_loc_i = pre_loc[bi][mask.squeeze()]
-            labels_predict.append(self.NMS.forward(pre_score, pre_cls_id, pre_loc_i, xywh2x1y1x2y2=True))
+            if torch.sum(mask)>0:
+                pre_obj_i = pre_obj[bi][mask]
+                pre_cls_i = pre_cls[bi][mask.squeeze()]
+                pre_cls_score_i, pre_cls_id = pre_cls_i.max(-1)
+                pre_score = pre_obj_i * pre_cls_score_i  # score of obj * score of class.
+                pre_loc_i = pre_loc[bi][mask.squeeze()]
+                labels_predict.append(self.NMS.forward(pre_score, pre_cls_id, pre_loc_i, xywh2x1y1x2y2=True))
         return labels_predict
 
     def _parse_fcos_predict(self, predicts):

@@ -190,7 +190,7 @@ class ASR_Loader:
             signal_win = signal_divide * np.hamming(window_length)
             signal_fft = np.abs(np.fft.fft(signal_win)) / (window_length / 2)
             signal_framed.append(signal_fft[0:int(window_length / 2)])
-        signal_framed = np.asarray(signal_framed)
+        signal_framed = np.asarray(signal_framed, np.float32)
         data_input = np.log(signal_framed + (1e-10))
         return data_input
 

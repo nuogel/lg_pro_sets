@@ -44,11 +44,11 @@ class Score:
         """
         if from_net:
             pre_labels = self.parsepredict._parse_predict(pre_labels)
-        if pre_labels != [[]]:
+        if pre_labels != [[]] and pre_labels != [] :
             for i, pre_label in enumerate(pre_labels):  # calculate every image
                 self._cal_per_image(pre_label, gt_labels[gt_labels[..., 0] == i], self.cfg.TEST.IOU_THRESH)
-        else:
-            print('predicted labels is None.')
+        # else:
+        #     print('predicted labels is None.')
 
     def _cal_per_image(self, pre_label, gt_label, iou_thresh=0.5):
         """
@@ -130,8 +130,8 @@ class Score:
             if self.gt_obj_num[i] == 0:
                 # TODO: BUG, when there is a FP about this class. how ?, But ,gt_obj_num is hardly tobe Zero.
                 continue
-            tp = np.sum(np.asarray(self.true_positive[i]))
-            fp = np.sum(np.asarray(self.false_positive[i]))
+            tp = np.sum(np.asarray(self.true_positive[i], np.float32))
+            fp = np.sum(np.asarray(self.false_positive[i], np.float32))
 
             if tp == 0 and fp == 0:
                 prec[i] = 0
@@ -182,9 +182,9 @@ class Score:
         recall = -1 * np.ones(self.cls_num, dtype=np.float32)
         for cls_i in range(self.cls_num):
             if self.pre_scores[cls_i] == []: continue
-            pre_scores = np.asarray(self.pre_scores[cls_i])
-            fp = np.asarray(self.false_positive[cls_i])
-            tp = np.asarray(self.true_positive[cls_i])
+            pre_scores = np.asarray(self.pre_scores[cls_i], np.float32)
+            fp = np.asarray(self.false_positive[cls_i], np.float32)
+            tp = np.asarray(self.true_positive[cls_i], np.float32)
 
             sorted_ind = np.argsort(-pre_scores)
             # pre_scores = pre_scores[sorted_ind]

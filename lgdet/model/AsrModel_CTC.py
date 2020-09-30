@@ -124,7 +124,7 @@ class CTC(nn.Module):  # write by LG
             for num in pre[batch]:
                 if num != 0 and num != pre_list[-1]:  # drop the _ and repeat word.
                     pre_list.append(num)
-            pre_list_all.append(np.asarray(pre_list))
+            pre_list_all.append(np.asarray(pre_list, np.float32))
         return pre_list_all
 
     def decode_ctc_K(self, y_pred, input_length, greedy=False):  # okay

@@ -13,29 +13,30 @@ PATH:
 
 TRAIN:
   #yolov3  ssdvgg   yolonano  yolov2 yolov3_tiny_shufflenet refinedet efficientdet yolov3_tiny_mobilenet yolov3_tiny_squeezenet fcos
-  MODEL: yolov3
-  EPOCH_SIZE: 4000
-  BATCH_SIZE: ''
-  BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
+  MODEL: yolov3_tiny
+  EPOCH_SIZE: 400
+  BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO'
   TRAIN_DATA_FROM_FILE: ['VOC']
   USE_LMDB: 0
 
   # data aug:
   DO_AUG: 0 #TRUE #
-  RESIZE: 1
+  MOSAIC: 1
+  RESIZE: 0
   PADTOSIZE: 0
   RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0 #0 #
   MIN_AREA: 0 #0 #100 #400 #
     #[H,W]
   #[384, 960] #[416, 416] #[512, 768] # [1024,1920] #[720,1024]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
-  IMG_SIZE: [416, 416]
+  IMG_SIZE: [640, 640]
 
   SHOW_TRAIN_NAMES: 0 #TRUE #
   SHOW_INPUT: -1 #10000 #
   WATCH_METIRICS: 1
-
+  WRITE_IMAGES: 10
+  WRITER: 'tensorboardX'
 
   # optimizer:
   OPTIMIZER: 'adam' #'SGD' #
@@ -44,8 +45,8 @@ TRAIN:
   WARM_UP_STEP: 100
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 0.0001
-  # {focalloss  bce}
-  LOSSTYPE: focalloss
+      # focalloss mse giou
+  LOSSTYPE: mse
   EPOCH_CONTINUE: None
   SAVE_STEP: 1000
 
@@ -58,8 +59,6 @@ TRAIN:
   FMAP_ANCHOR_NUM: 3
   ANCHORS: 'please see the util_prepare.py'
 
-  WRITER: 'tensorboardX'
-  WRITE_IMAGES: 10
 
 
 TEST:
@@ -67,20 +66,20 @@ TEST:
 
   # NMS:
   NMS_TYPE: 'SOFT_NMS'#'NMS'#
-  SCORE_THRESH: 0.7
+  SCORE_THRESH: 0.5
   IOU_THRESH: 0.5
   SOFNMS_THETA: 0.5
 
-  DO_AUG: 0 #TRUE  #
+  DO_AUG: 0
   PADTOSIZE: 0
-  RESIZE: 1  #FALSE #
+  RESIZE: 1
   IMG_BLOCK: 0
   SAVE_LABELS: 0
   SHOW_TIMES: 100000
 
-  TEST_ONLY: 0 #FALSE #
+  TEST_ONLY: 0
 
-  ONE_TEST: 0 #
+  ONE_TEST: 1
   ONE_TEST_TRAIN_STEP: 200
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [['000005.jpg', 'VOC2007/trainval/JPEGImages/000005.jpg', 'VOC2007/trainval/Annotations/000005.xml'] ]

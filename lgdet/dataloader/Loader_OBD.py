@@ -18,7 +18,6 @@ class OBD_Loader(DataLoader):
     def __init__(self, cfg, dataset, is_training):
         super(OBD_Loader, self).__init__(object)
         self.cfg = cfg
-        self.dataset_txt = dataset
         self.is_training = is_training
         self.one_test = cfg.TEST.ONE_TEST
         self.one_name = cfg.TEST.ONE_NAME
@@ -29,6 +28,8 @@ class OBD_Loader(DataLoader):
         self.cls2idx = dict(zip(cfg.TRAIN.CLASSES, range(cfg.TRAIN.CLASSES_NUM)))
         self.write_images = self.cfg.TRAIN.WRITE_IMAGES
         self.lgtransformer = LgTransformer(self.cfg)
+        self.prepared_labels, self.dataset_infos = self._load_labels2memery(dataset, self.one_name)
+
         if self.cfg.TRAIN.USE_LMDB:
             mod = 'train' if self.is_training else 'val'
             lmdb_path = self.cfg.PATH.LMDB_PATH.format(mod)
@@ -45,14 +46,21 @@ class OBD_Loader(DataLoader):
             else:
                 length = 1
         else:
-            length = len(self.dataset_txt)
+            length = len(self.dataset_infos)
         return length
 
     def __getitem__(self, index):
         img, label, data_info = self._load_gt(index)
         # DOAUG:
-        if self.cfg.TRAIN.DO_AUG and self.is_training:
+        if self.cfg.TRAIN.DO_AUG and self.is_training:  # data aug is wasting time.
             img, label = self.lgtransformer.data_aug(img, label)
+
+        if self.cfg.TRAIN.MOSAIC and self.is_training:
+            # need 4 images
+            indices = [random.randint(0, len(self.dataset_infos) - 1) for _ in range(3)]  # 3 additional image indices
+            imglabs = [self._load_gt(index) for index in indices]
+            imglabs.insert(0, [img, label, data_info])
+            img, label = self.lgtransformer.aug_mosaic(imglabs)
 
         # PAD TO SIZE:
         if (self.cfg.TRAIN.PADTOSIZE and self.is_training) or (self.cfg.TEST.PADTOSIZE and not self.is_training):
@@ -95,22 +103,23 @@ class OBD_Loader(DataLoader):
                 self.flag[i] = 1
 
     def _load_gt(self, index):
+        '''
+        Xxxx
+        :param index:
+        :return: img, list(label)
+        '''
         img = None
-        label = None
+        _label = None
 
-        while img is None or label is None:  # if there is no data in img or label
-            if self.one_test:
-                data_info = self.one_name[0]
-            else:
-                data_info = self.dataset_txt[index]
-
-            data_info[1] = os.path.join(self.cfg.PATH.INPUT_PATH, data_info[1])
-            data_info[2] = os.path.join(self.cfg.PATH.INPUT_PATH, data_info[2])
-            img, label = self._read_datas(data_info)  # labels: (x1, y1, x2, y2) & must be absolutely labels.
-            index = random.randint(0, len(self.dataset_txt) - 1)
-
-            if not self.is_training and not label:  # for test
+        while img is None or _label is None:  # if there is no data in img or label
+            if self.one_test: index = 0
+            data_info = self.dataset_infos[index]
+            img, _label = self._read_datas(data_info)  # labels: (x1, y1, x2, y2) & must be absolutely labels.
+            index = random.randint(0, len(self.dataset_infos) - 1)
+            if not self.is_training and not _label:  # for test
                 break
+
+        label = np.asarray(_label, np.float32).copy()
         return img, label, data_info
 
     def _add_dataset(self, dataset, is_training):
@@ -145,6 +154,20 @@ class OBD_Loader(DataLoader):
                 self.data_infos.append({'imgname': datainfo[0],
                                         'imgpath': datainfo[1],
                                         'labpath': datainfo[2]})
+
+    def _load_labels2memery(self, dataset_txt, one_name):
+        all_labels = {}
+        data_infos = []
+        print('prepare loading labels to memery...')
+        if self.one_test:
+            dataset_txt = one_name
+        for data_info in dataset_txt:
+            x_path = os.path.join(self.cfg.PATH.INPUT_PATH, data_info[1])
+            y_path = os.path.join(self.cfg.PATH.INPUT_PATH, data_info[2])
+            data_infos.append([data_info[0], x_path, y_path])
+            label_i = self._load_labels(y_path, data_info=data_info)
+            all_labels[data_info[0]] = label_i
+        return all_labels, data_infos
 
     def _read_datas(self, data_info):
         '''
@@ -182,7 +205,10 @@ class OBD_Loader(DataLoader):
                 print('ERROR, NO SUCH A FILE.', x_path, '<--->', y_path)
                 exit()
             # labels come first.
-            label = self._load_labels(y_path, data_info=data_info)
+            try:
+                label = self.prepared_labels[data_info[0]]
+            except:
+                label = self._load_labels(y_path, data_info=data_info)
 
             # then add the images.
             img = cv2.imread(x_path)
@@ -330,7 +356,7 @@ class OBD_Loader(DataLoader):
         :return:
         '''
         imgs, labels, infos = zip(*batch)
-        imgs = torch.from_numpy(np.asarray(imgs))
+        imgs = torch.from_numpy(np.asarray(imgs, np.float32))
         imgs = imgs.permute(0, 3, 1, 2)
         if isinstance(labels[0], torch.Tensor):
             for i, label in enumerate(labels):

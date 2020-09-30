@@ -20,6 +20,7 @@ class DataLoaderFactory:
             trainLoader = DataLoader(dataset=train_data,
                                      batch_size=self.cfg.TRAIN.BATCH_SIZE,
                                      sampler=sampler,
+                                     pin_memory=True,
                                      num_workers=self.args.number_works,
                                      collate_fn=train_data.collate_fun,
                                      )
@@ -30,6 +31,7 @@ class DataLoaderFactory:
             testLoader = DataLoader(dataset=test_data,
                                     batch_size=self.cfg.TRAIN.BATCH_SIZE,
                                     num_workers=self.args.number_works,
+                                    pin_memory=True,
                                     collate_fn=test_data.collate_fun,
                                     shuffle=False)
         return trainLoader, testLoader

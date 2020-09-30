@@ -23,9 +23,13 @@ def prepare_cfg(cfg, args, is_training=True):
 
     if args.batch_size != 0:
         cfg.TRAIN.BATCH_SIZE = args.batch_size
+        assert cfg.TRAIN.BATCH_SIZE>0, 'batch size <0 !!!!'
     if cfg.TEST.ONE_TEST:
         cfg.TRAIN.DO_AUG = 0
         cfg.TRAIN.USE_LMDB=0
+        cfg.TRAIN.MOSAIC=0
+        cfg.TRAIN.RESIZE = 1
+
 
     try:
         if cfg.TEST.ONE_TEST:
@@ -116,8 +120,8 @@ def prepare_cfg(cfg, args, is_training=True):
 
 
 def common_cfg(cfg):
-    mean = np.asarray([123.675, 116.28, 103.53])
-    std = np.asarray([58.395, 57.12, 57.375])
+    mean = np.asarray([123.675, 116.28, 103.53], np.float32)
+    std = np.asarray([58.395, 57.12, 57.375], np.float32)
     cfg.mean = mean
     cfg.std = std
     return cfg

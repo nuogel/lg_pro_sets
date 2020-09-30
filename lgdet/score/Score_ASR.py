@@ -9,12 +9,12 @@ class Score:  # WER（字错误率）/CER（字符错误率）和SER（句错误
         self.dataloader = DataLoader(cfg)
 
     def init_parameters(self):
-        self.rate_all = np.asarray([0., 0., 0.])
-        self.rate_batch = np.asarray([0., 0., 0.])
+        self.rate_all = np.asarray([0., 0., 0.], np.float32)
+        self.rate_batch = np.asarray([0., 0., 0.], np.float32)
         self.batches = 0
 
     def cal_score(self, pre, gt_data):  # SER
-        self.rate_batch = np.asarray([0., 0., 0.])
+        self.rate_batch = np.asarray([0., 0., 0.], np.float32)
         _, target, input_lengths, target_lengths = gt_data
         # print('batch NO:', self.batches)
         for i in range(self.cfg.TRAIN.BATCH_SIZE):

@@ -61,17 +61,24 @@ class BaseSolver(object):
         opt_type = self.cfg.TRAIN.OPTIMIZER
         learning_rate = self.args.lr
         # model_parameters = filter(lambda p: p.requires_grad, self.model.parameters())
+
+        pa_others, pa_conv, pa_bias = [], [], []  # optimizer parameter groups
+        for k, v in dict(self.model.named_parameters()).items():
+            if '.bias' in k:
+                pa_bias += [v]  # biases
+            elif 'Conv2d.weight' in k:
+                pa_conv += [v]  # apply weight_decay
+            else:
+                pa_others += [v]  # all else
         if opt_type == 'adam' or opt_type == 'Adam':
-            self.optimizer = torch.optim.Adam(self.model.parameters(),
-                                              lr=learning_rate,
-                                              weight_decay=0.0005)
+            self.optimizer = torch.optim.Adam(pa_others, lr=learning_rate)
         elif opt_type == 'sgd' or opt_type == 'SGD':
-            self.optimizer = torch.optim.SGD(self.model.parameters(),
-                                             lr=learning_rate,
-                                             momentum=0.9,
-                                             weight_decay=0.0005)
+            self.optimizer = torch.optim.SGD(pa_others, lr=learning_rate, momentum=0.937, nesterov=True)
         else:
             self.cfg.logger.error('NO such a optimizer: ' + str(opt_type))
+        self.optimizer.add_param_group({'params': pa_conv, 'weight_decay': 0.0005})  # add pa_conv with weight_decay
+        self.optimizer.add_param_group({'params': pa_bias})  # add pa_bias (biases)
+        del pa_others, pa_conv, pa_bias
 
         if self.optimizer_dict: self.optimizer.load_state_dict(self.optimizer_dict)
         if self.args.lr_continue:
