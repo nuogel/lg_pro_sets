@@ -43,7 +43,7 @@ TRAIN:
   LR_START: 0.001
   LR_SCHEDULE: 'cos'
   STEP_LR: 50
-  WARM_UP_STEP: 10
+  WARM_UP_STEP: 100
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 0.0001
       # focalloss mse giou

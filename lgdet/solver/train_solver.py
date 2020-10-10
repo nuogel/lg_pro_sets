@@ -41,7 +41,7 @@ class Solver(BaseSolver):
         Pbar = tqdm.tqdm(self.trainDataloader)
         for step, train_data in enumerate(Pbar):
             if self.global_step < self.cfg.TRAIN.WARM_UP_STEP:
-                self.optimizer = self._set_warmup_lr(self.optimizer)
+                self._set_warmup_lr()
             train_data = self.DataFun.to_devce(train_data)
             # forward process
             predict = self.model.forward(input_x=train_data[0], input_y=train_data[1], input_data=train_data,
