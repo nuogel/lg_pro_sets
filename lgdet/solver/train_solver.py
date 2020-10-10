@@ -22,9 +22,9 @@ class Solver(BaseSolver):
     def train(self):
         """Train the network.
         """
-        self.cfg.logger.info('>' * 30 + 'Loading Checkpoint: %s, Last Learning Rate:%s, Last Epoch:%s',
-                             self.args.checkpoint, self.learning_rate, self.epoch_last)
-
+        info = '>' * 30 + 'Loading Checkpoint: %s, Last Learning Rate:%s, Last Epoch:%s', self.args.checkpoint, self.learning_rate, self.epoch_last
+        print(info)
+        self.cfg.logger.info(info)
         for epoch in range(self.epoch_last, self.cfg.TRAIN.EPOCH_SIZE):
             self.epoch = epoch
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
@@ -61,8 +61,8 @@ class Solver(BaseSolver):
                 self.optimizer.zero_grad()
                 if self.ema: self.ema.update(self.model)
 
-            info_base = (self.cfg.TRAIN.MODEL, epoch, self.global_step, '%0.5f' % self.optimizer.param_groups[0]['lr'],
-                         '%0.3f' % total_loss.item(), '%0.3f' % (epoch_losses / (10 + 1)))
+            info_base = (self.cfg.TRAIN.MODEL, epoch, self.global_step, '%0.8f' % self.optimizer.param_groups[0]['lr'],
+                         '%0.3f' % total_loss.item(), '%0.3f' % (epoch_losses / (step + 1)))
 
             info = ('%16s|' + '%8s|' * 5) % info_base + ' ' * 2
             for k, v in loss_metrics.items():
@@ -71,6 +71,7 @@ class Solver(BaseSolver):
             if self.global_step % 50 == 0:
                 self.cfg.logger.info(info)
             Pbar.set_description(info)
+
         self.scheduler.step()
         if self.ema: self.ema.update_attr(self.model)
         w_dict = {'epoch': epoch,

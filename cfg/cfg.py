@@ -11,6 +11,10 @@ def prepare_cfg(cfg, args, is_training=True):
 
     print('torch version: ', torch.__version__)
     print('torch.version.cuda: ', torch.version.cuda)
+    if args.model:
+        cfg.TRAIN.MODEL = args.model
+    if args.gpu:
+        cfg.TRAIN.GPU_NUM = args.gpu
 
     cfg = common_cfg(cfg)
 

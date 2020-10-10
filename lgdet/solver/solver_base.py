@@ -88,18 +88,23 @@ class BaseSolver(object):
         del pa_others, pa_conv, pa_bias
 
         if self.optimizer_dict: self.optimizer.load_state_dict(self.optimizer_dict)
+
         if self.args.lr_continue:
             self.optimizer.param_groups[0]['lr'] = self.args.lr_continue
         self.learning_rate = self.optimizer.param_groups[0]['lr']
+
         if self.cfg.TRAIN.LR_SCHEDULE == 'cos':
+            print('using cos LambdaLR lr_scheduler')
             lf = lambda x: (((1 + math.cos(x * math.pi / self.cfg.TRAIN.EPOCH_SIZE)) / 2) ** 1.0) * 0.95 + 0.05  # ==0.05 cosine the last lr = 0.05xlr_start
             self.scheduler = lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lf)
             # Plot lr schedule
             plot_lr = 0
             if plot_lr:
                 y = []
-                for _ in range(40, self.cfg.TRAIN.EPOCH_SIZE):
+                for _ in range(0, self.cfg.TRAIN.EPOCH_SIZE):
                     self.scheduler.step()
+                    if _ < self.cfg.TRAIN.WARM_UP_STEP:
+                        self._set_warmup_lr()
                     y.append(self.optimizer.param_groups[0]['lr'])
                 plt.plot(y, '.-', label='LambdaLR')
                 plt.xlabel('epoch')
@@ -107,15 +112,15 @@ class BaseSolver(object):
                 plt.tight_layout()
                 plt.savefig('LR.png', dpi=300)
         else:
+            print('using StepLR lr_scheduler ', self.cfg.TRAIN.STEP_LR)
             self.scheduler = lr_scheduler.StepLR(self.optimizer, step_size=self.cfg.TRAIN.STEP_LR, gamma=0.1)
 
         self.scheduler.last_epoch = self.epoch_last  # see link below
 
         self.optimizer.zero_grad()
 
-    def _set_warmup_lr(self, optimizer):
-        optimizer.param_groups[0]['lr'] = self.learning_rate / self.cfg.TRAIN.WARM_UP_STEP * (self.global_step + 1)
-        return optimizer
+    def _set_warmup_lr(self):
+        self.optimizer.param_groups[0]['lr'] = self.learning_rate / self.cfg.TRAIN.WARM_UP_STEP * (self.global_step + 1)
 
     def _get_dataloader(self):
         """
