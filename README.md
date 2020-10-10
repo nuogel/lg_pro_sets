@@ -146,6 +146,28 @@ SRFBN|X|X|XXXXxxxx
 PS:DBPN set:max parameters for DBPN with 11GB. 4 layers(7 is not available);base_filter=28;
 
 
+
+### Contrast of training speed(2020.10.10版本)
+items| value
+--- | ---
+model|yolo_tiny
+batch size|4
+gpu|nvidia-2080ti
+
+dataloader only| 0 number works| 8 number works| 
+---|---|---
+mosaic&affine|7it/s|19it/s
+masic only| 3.5it/s|8it/s
+resize only|17it/s|40it/s
+
+training items|0 number works| 8 number works| 
+---|---|---
+train without dataloader| 7it/s|7it/s(same)
+dataloader+forward&backward|3.5it/s|6.8it/s
+forward only|19it/s| the same
+
+that means the backward waste a lot of time.
+
 ### Problems
 1、when I train YOLOV3 with  voc2007 with focal loss, the obj loss is not going down, it seems that the gradient vanished.
  

@@ -59,18 +59,20 @@ class Solver(BaseSolver):
             if self.global_step % self.cfg.TRAIN.BATCH_BACKWARD_SIZE == 0:
                 self.optimizer.step()
                 self.optimizer.zero_grad()
+                if self.ema: self.ema.update(self.model)
 
             info_base = (self.cfg.TRAIN.MODEL, epoch, self.global_step, '%0.5f' % self.optimizer.param_groups[0]['lr'],
-                         '%0.3f' % total_loss.item(), '%0.3f' % (epoch_losses / (step + 1)))
+                         '%0.3f' % total_loss.item(), '%0.3f' % (epoch_losses / (10 + 1)))
 
             info = ('%16s|' + '%8s|' * 5) % info_base + ' ' * 2
             for k, v in loss_metrics.items():
-                info += k + ':' + str(v) + '|'
+                info += k + ':' + '%.3f' % v + '|'
 
             if self.global_step % 50 == 0:
                 self.cfg.logger.info(info)
             Pbar.set_description(info)
         self.scheduler.step()
+        if self.ema: self.ema.update_attr(self.model)
         w_dict = {'epoch': epoch,
                   'lr': self.optimizer.param_groups[0]['lr'],
                   'epoch_loss': epoch_losses / len(self.trainDataloader)}
@@ -87,7 +89,10 @@ class Solver(BaseSolver):
                 break
             test_data = self.DataFun.to_devce(train_data)
             if test_data[0] is None: continue
-            predict = self.model.forward(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)
+            if self.ema:
+                predict = self.ema.ema(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)
+            else:
+                predict = self.model(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)
             if self.cfg.BELONGS in ['OBD']: test_data = test_data[1]
             self.score.cal_score(predict, test_data)
             Pbar.set_description('[valid]')

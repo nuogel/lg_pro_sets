@@ -106,10 +106,10 @@ class Score:
         rec_dict = dict(zip(self.cfg.TRAIN.CLASSES, rec))
 
         # printing>>>>...
-        mapscore_txt = ['%0.3f' % score for score in mapscore]
-        f1score_txt = ['%0.3f' % score for score in f1score]
-        prec_txt = ['%0.3f' % score for score in prec]
-        rec_txt = ['%0.3f' % score for score in rec]
+        mapscore_txt = ['%0.2f' % score for score in mapscore]
+        f1score_txt = ['%0.2f' % score for score in f1score]
+        prec_txt = ['%0.2f' % score for score in prec]
+        rec_txt = ['%0.2f' % score for score in rec]
 
         print('mAP： %0.4f\nf1score:%0.4f\nmaps: %s\nf1sc: %s\nprec: %s\nreca: %s' % (
         mAP, F1Score, mapscore_txt, f1score_txt, prec_txt, rec_txt))

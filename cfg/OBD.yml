@@ -9,22 +9,22 @@ PATH:
   TMP_PATH: 'tmp/'
   GENERATE_LABEL_SAVE_PATH: 'tmp/predicted_labels/'
 
-
-
 TRAIN:
   #yolov3  ssdvgg   yolonano  yolov2 yolov3_tiny_shufflenet refinedet efficientdet yolov3_tiny_mobilenet yolov3_tiny_squeezenet fcos
   MODEL: yolov3_tiny
-  EPOCH_SIZE: 400
+  EMA: 0
+  EPOCH_SIZE: 300
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO'
   TRAIN_DATA_FROM_FILE: ['VOC']
   USE_LMDB: 0
 
   # data aug:
-  DO_AUG: 0 #TRUE #
   MOSAIC: 1
+  AFFINE: 1
   RESIZE: 0
   PADTOSIZE: 0
+  DO_AUG: 0 #TRUE #
   RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0 #0 #
   MIN_AREA: 0 #0 #100 #400 #
@@ -39,16 +39,17 @@ TRAIN:
   WRITER: 'tensorboardX'
 
   # optimizer:
-  OPTIMIZER: 'adam' #'SGD' #
+  OPTIMIZER: 'SGD' #'adam' #
   LR_START: 0.001
+  LR_SCHEDULE: 'cos'
   STEP_LR: 50
   WARM_UP_STEP: 100
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 0.0001
       # focalloss mse giou
-  LOSSTYPE: mse
+  LOSSTYPE: giou
   EPOCH_CONTINUE: None
-  SAVE_STEP: 1000
+  SAVE_STEP: 2000
 
   # CUDA:
   GPU_NUM: [0] #[] # if is [] means use CPU.
@@ -79,7 +80,7 @@ TEST:
 
   TEST_ONLY: 0
 
-  ONE_TEST: 1
+  ONE_TEST: 0
   ONE_TEST_TRAIN_STEP: 200
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [['000005.jpg', 'VOC2007/trainval/JPEGImages/000005.jpg', 'VOC2007/trainval/Annotations/000005.xml'] ]

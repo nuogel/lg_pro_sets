@@ -61,6 +61,8 @@ class OBD_Loader(DataLoader):
             imglabs = [self._load_gt(index) for index in indices]
             imglabs.insert(0, [img, label, data_info])
             img, label = self.lgtransformer.aug_mosaic(imglabs)
+            while len(label) <= 0:  # if there is no label in mosaic, then repeat mosaic
+                img, label = self.lgtransformer.aug_mosaic(imglabs)
 
         # PAD TO SIZE:
         if (self.cfg.TRAIN.PADTOSIZE and self.is_training) or (self.cfg.TEST.PADTOSIZE and not self.is_training):
@@ -358,14 +360,13 @@ class OBD_Loader(DataLoader):
         imgs, labels, infos = zip(*batch)
         imgs = torch.from_numpy(np.asarray(imgs, np.float32))
         imgs = imgs.permute(0, 3, 1, 2)
-        if isinstance(labels[0], torch.Tensor):
-            for i, label in enumerate(labels):
-                try:
-                    label[:, 0] = i
-                except:
-                    print(infos[i])
+        for i, label in enumerate(labels):
             try:
-                labels = torch.cat(labels, 0)
+                label[:, 0] = i
             except:
-                print(labels, infos)
+                print(infos[i])
+        try:
+            labels = torch.cat(labels, 0)
+        except:
+            print(labels, infos)
         return imgs, labels, list(infos)

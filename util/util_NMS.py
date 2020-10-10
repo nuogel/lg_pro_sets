@@ -10,17 +10,9 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         self.score_thresh = cfg.TEST.SCORE_THRESH
         self.theta = cfg.TEST.SOFNMS_THETA
         self.iou_thresh = cfg.TEST.IOU_THRESH
-        # if self.cfg.TRAIN.MODEL in ['refinedet', 'ssdvgg', 'efficientdet']:
-        #     self.class_range = range(1, cfg.TRAIN.CLASSES_NUM + 1)
-        # else:
-        #     self.class_range = range(cfg.TRAIN.CLASSES_NUM)
         self.class_range = range(cfg.TRAIN.CLASSES_NUM)
 
-    def forward(self, pre_score, pre_class, pre_loc, xywh2x1y1x2y2):
-        # pre_score_raw = score.max(-1)  # get the max score of the scores of classes.
-        # pre_score = pre_score_raw[0]  # score out
-        # pre_class = pre_score_raw[1]  # idx of score: is class
-
+    def forward(self, pre_score=None, pre_class=None, pre_loc=None, xywh2x1y1x2y2=None):
         if self.cfg.TEST.NMS_TYPE in ['soft_nms', 'SOFT_NMS']:
             keep = self.NMS_Soft(pre_score, pre_class, pre_loc)
         else:
@@ -89,7 +81,7 @@ class NMS:  # TODO: dubug the for ...in each NMS.
            Nms.
 
            :param pre_score: in the shape of [box_number, class_number]
-           :param pre_loc: int the shape of [box_number, 4] 4 means [x1, y1, x2, y2]
+           :param pre_loc: int the shape of [box_number, 4] 4 means [x, y, w, h]
            :param score_thresh:score_thresh
            :param iou_thresh:iou_thresh
            :return: labels_out

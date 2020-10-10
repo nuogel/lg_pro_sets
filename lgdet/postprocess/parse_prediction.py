@@ -36,14 +36,24 @@ class ParsePredict:
         labels_predict = PARSEDICT[self.cfg.TRAIN.MODEL](f_maps)
         return labels_predict
 
-    def _predict2nms(self, pre_cls_score, pre_loc, xywh2x1y1x2y2=True):
+    def _parse_multi_boxes(self, pre_score, pre_loc, xywh2x1y1x2y2=True):
+
         labels_predict = []
-        for batch_n in range(pre_cls_score.shape[0]):
-            # TODO: make a matrix instead of for...
-            score = pre_cls_score[batch_n]
-            loc = pre_loc[batch_n]
-            labels = self.NMS.forward(score, loc, xywh2x1y1x2y2)
+        for batch_n in range(pre_score.shape[0]):
+            pre_score_max = pre_score[batch_n].max(-1)
+            pre_score_i = pre_score_max[0]
+            pre_class_i = pre_score_max[1]
+            pre_loc_i = pre_loc[batch_n]
+
+            index = pre_score_i > self.cfg.TEST.SCORE_THRESH
+
+            _pre_score = pre_score_i[index]
+            _pre_class = pre_class_i[index]
+            _pre_loc = pre_loc_i[index]
+
+            labels = self.NMS.forward(_pre_score, _pre_class, _pre_loc, xywh2x1y1x2y2)
             labels_predict.append(labels)
+
         return labels_predict
 
     def _parse_yolo_predict_fmap(self, f_map, f_id, tolabel=False):
@@ -111,12 +121,6 @@ class ParsePredict:
         for f_id, f_map in enumerate(f_maps):
             # Parse one feature map.
             _pre_obj, _pre_cls, _pre_relative_box = self._parse_yolo_predict_fmap(f_map, f_id=f_id, tolabel=True)
-
-            # mask = _pre_obj > self.cfg.TEST.SCORE_THRESH
-            # pre_obj_i = _pre_obj[mask]
-            # pre_cls_i = _pre_cls[mask]
-            # pre_cls_score_i, pre_cls_id = pre_cls_i.max(-1)
-
             _pre_obj = _pre_obj.unsqueeze(-1)
             BN = _pre_obj.shape[0]
             _pre_obj = _pre_obj.reshape(BN, -1, _pre_obj.shape[-1])
@@ -135,9 +139,8 @@ class ParsePredict:
         BN = pre_obj.shape[0]
         for bi in range(BN):
             # score is conf*cls,but obj is pre_obj>thresh.
-
             mask = pre_obj[bi] > self.cfg.TEST.SCORE_THRESH
-            if torch.sum(mask)>0:
+            if torch.sum(mask) > 0:
                 pre_obj_i = pre_obj[bi][mask]
                 pre_cls_i = pre_cls[bi][mask.squeeze()]
                 pre_cls_score_i, pre_cls_id = pre_cls_i.max(-1)
@@ -145,6 +148,34 @@ class ParsePredict:
                 pre_loc_i = pre_loc[bi][mask.squeeze()]
                 labels_predict.append(self.NMS.forward(pre_score, pre_cls_id, pre_loc_i, xywh2x1y1x2y2=True))
         return labels_predict
+
+    def _parse_ssd_predict(self, predicts):
+        pre_score, loc, anchors_xywh = predicts
+        pre_score = torch.softmax(pre_score, -1)  # conf preds
+        pre_loc_xywh = self._decode_bboxes(loc, anchors_xywh)
+        labels_predict = self._parse_multi_boxes(pre_score, pre_loc_xywh)
+        return labels_predict
+
+    def _parse_refinedet_predict(self, predicts):
+        detecte = Detect_RefineDet(self.cfg)
+        pre_score, pre_loc = detecte.forward(predicts)
+        pre_loc_xywh = xyxy2xywh(pre_loc)
+        labels_predict = self._parse_multi_boxes(pre_score, pre_loc_xywh)
+
+        return labels_predict
+
+    def _parse_efficientdet_predict(self, predicts):
+        pre_score, pre_loc_xyxy = predicts
+        pre_loc_xywh = xyxy2xywh(pre_loc_xyxy)
+        labels_predict = self._parse_multi_boxes(pre_score, pre_loc_xywh)
+        return labels_predict
+
+    def _decode_bboxes(self, locations, priors):
+        bboxes = torch.cat([
+            locations[..., :2] * 0.1 * priors[..., 2:] + priors[..., :2],
+            torch.exp(locations[..., 2:] * 0.2) * priors[..., 2:]
+        ], dim=locations.dim() - 1)
+        return bboxes
 
     def _parse_fcos_predict(self, predicts):
 
@@ -218,37 +249,9 @@ class ParsePredict:
         scores = torch.cat(scores, 1)
         locs = torch.cat(locs, 1)
 
-        labels_predict = self._predict2nms(scores, locs)
+        labels_predict = self._parse_multi_boxes(scores, locs)
 
         return labels_predict
-
-    def _parse_ssd_predict(self, predicts):
-        pre_score, loc, anchors_xywh = predicts
-        pre_score = torch.softmax(pre_score, -1)  # conf preds
-        pre_loc_xywh = self._decode_bboxes(loc, anchors_xywh)
-        labels_predict = self._predict2nms(pre_score, pre_loc_xywh)
-        return labels_predict
-
-    def _parse_refinedet_predict(self, predicts):
-        detecte = Detect_RefineDet(self.cfg)
-        pre_score, pre_loc = detecte.forward(predicts)
-        pre_loc_xywh = xyxy2xywh(pre_loc)
-        labels_predict = self._predict2nms(pre_score, pre_loc_xywh)
-
-        return labels_predict
-
-    def _parse_efficientdet_predict(self, predicts):
-        pre_score, pre_loc_xyxy = predicts
-        pre_loc_xywh = xyxy2xywh(pre_loc_xyxy)
-        labels_predict = self._predict2nms(pre_score, pre_loc_xywh)
-        return labels_predict
-
-    def _decode_bboxes(self, locations, priors):
-        bboxes = torch.cat([
-            locations[..., :2] * 0.1 * priors[..., 2:] + priors[..., :2],
-            torch.exp(locations[..., 2:] * 0.2) * priors[..., 2:]
-        ], dim=locations.dim() - 1)
-        return bboxes
 
 
 class DecodeBBox(nn.Module):

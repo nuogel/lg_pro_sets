@@ -210,8 +210,8 @@ from ..registry import MODELS
 @MODELS.registry()
 class EFFICIENTDET(nn.Module):
     def __init__(self, cfg):
-        num_classes = cfg.TRAIN.CLASSES_NUM + 1  # +1 :set 0 as background
-        network = 'efficientdet-d0'
+        num_classes = cfg.TRAIN.CLASSES_NUM + 1  # +1 :set last one as background
+        network = 'efficientdet-d2'
         D_bifpn = 3
         W_bifpn = 88
         pyramid_levels = [3, 4, 5, 6, 7]
@@ -219,8 +219,6 @@ class EFFICIENTDET(nn.Module):
         self.cfg = cfg
         super(EFFICIENTDET, self).__init__()
         self.backbone = EfficientNet.from_name(MODEL_MAP[network])
-        # self.backbone = EfficientNet()
-
         self.neck = BIFPN(in_channels=self.backbone.get_list_features()[-5:],
                           out_channels=W_bifpn,
                           stack=D_bifpn,

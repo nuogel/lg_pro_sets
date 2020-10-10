@@ -17,10 +17,6 @@ class MULTIBOXLOSS():
         self.num_cls = self.cfg.TRAIN.CLASSES_NUM
         self.neg_iou_threshold = 0.5
         self.neg_pos_ratio = 3  # 3:1
-        # self.center_variance = center_variance
-        # self.size_variance = size_variance
-        # self.priors = priors
-        # self.priors.to(device)
 
     def Loss_Call(self, predictions, targets, kwargs):
         """Compute classification loss and smooth l1 loss.
@@ -50,7 +46,7 @@ class MULTIBOXLOSS():
         num_classes = confidence.size(2)
         with torch.no_grad():
             # derived from cross_entropy=sum(log(p))
-            loss = -F.log_softmax(confidence, dim=2)[:, :, 0]
+            loss = -F.log_softmax(confidence, dim=-1)[:, :, -1]  # -1 reprsent the background
             mask = self._hard_negative_mining(loss, labels, self.neg_pos_ratio)
 
         input_c = confidence[mask].reshape(-1, num_classes)
@@ -60,13 +56,16 @@ class MULTIBOXLOSS():
         predicted_locations = predicted_locations[pos_mask, :].reshape(-1, 4)
         encode_target = encode_target[pos_mask, :].reshape(-1, 4)
 
-        smooth_l1_loss = F.smooth_l1_loss(predicted_locations, encode_target)
-        num_pos = encode_target.size(0)
-        loc_loss = smooth_l1_loss / num_pos
-        class_loss = classification_loss / num_pos
+        loc_loss = F.smooth_l1_loss(predicted_locations, encode_target)
 
-        return {'loc_loss': loc_loss,
-                'class_loss': class_loss}
+        # num_pos = encode_target.size(0)
+        loc_loss = loc_loss
+        class_loss = classification_loss
+        total_loss = loc_loss + class_loss
+
+        metrics = {'loc_loss': loc_loss.item(),
+                   'cls_loss': class_loss.item()}
+        return {'total_loss': total_loss, 'metrics': metrics}
 
     def _hard_negative_mining(self, loss, labels, neg_pos_ratio):
         """
@@ -107,7 +106,10 @@ class MULTIBOXLOSS():
         # size: num_priors x num_targets
         ious = iou_xywh(corner_form_priors, gt_boxes, type='N2N')
         # size: num_priors
-        best_target_per_prior, best_target_per_prior_index = ious.max(1)
+        try:
+            best_target_per_prior, best_target_per_prior_index = ious.max(1)
+        except:
+            print('xxxx')
         # size: num_targets
         best_prior_per_target, best_prior_per_target_index = ious.max(0)
 
@@ -121,9 +123,8 @@ class MULTIBOXLOSS():
         boxes = gt_boxes[best_target_per_prior_index]
         return boxes, labels
 
-    def _encode_bbox(self, center_form_boxes, center_form_priors):
-        encode_target = torch.cat([
-            (center_form_boxes[..., :2] - center_form_priors[..., :2]) / center_form_priors[..., 2:] / 0.1,
-            torch.log(center_form_boxes[..., 2:] / center_form_priors[..., 2:]) / 0.2
-        ], dim=- 1)
+    def _encode_bbox(self, xywh_boxes, xywh_priors):
+        encode_target = torch.cat([(xywh_boxes[..., :2] - xywh_priors[..., :2]) / xywh_priors[..., 2:] / 0.1,
+                                   torch.log(xywh_boxes[..., 2:] / xywh_priors[..., 2:]) / 0.2
+                                   ], dim=- 1)
         return encode_target

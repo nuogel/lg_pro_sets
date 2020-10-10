@@ -105,7 +105,7 @@ class YoloLoss:
                 giou = bbox_GDCiou(pbox.t(), tbox, x1y1x2y2=False, GIoU=True)  # giou(prediction, target)
                 lbox = (1.0 - giou).mean()  # giou loss
                 # Obj
-                gr = 0.0
+                gr = 0.2
                 tobj[indices] = (1.0 - gr) + gr * giou.detach().clamp(0).type(tobj.dtype)  # giou ratio
                 loss_ratio['obj'] = 64.3
                 loss_ratio['cls'] = 9.35
@@ -142,6 +142,6 @@ class YoloLoss:
                     metrics[k].append(_metrics[k][0])
 
         for k, v in metrics.items():
-            metrics[k] = '%.3f' % np.asarray(v, np.float32).mean()
+            metrics[k] = np.asarray(v, np.float32).mean()
 
         return {'total_loss': total_loss, 'metrics': metrics}

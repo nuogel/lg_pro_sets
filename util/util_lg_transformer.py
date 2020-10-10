@@ -60,14 +60,16 @@ class LgTransformer:
             # np.clip(labels4[:, 1:] - s / 2, 0, s, out=labels4[:, 1:])  # use with center crop
             np.clip(labels4[:, 1:], 0, 2 * s, out=labels4[:, 1:])  # use with random_affine
 
+
         # Augment
         # img4 = img4[s // 2: int(s * 1.5), s // 2:int(s * 1.5)]  # center crop (WARNING, requires box pruning)
-        img4, labels4 = self.random_affine(img4, labels4,
-                                           degrees=1.98,
-                                           translate=0.05,
-                                           scale=0.05,
-                                           shear=0.64,
-                                           border=-s // 2)  # border to remove
+        if self.cfg.TRAIN.AFFINE:
+            img4, labels4 = self.random_affine(img4, labels4,
+                                               degrees=1.98,
+                                               translate=0.05,
+                                               scale=0.05,
+                                               shear=0.64,
+                                               border=-s // 2)  # border to remove
 
         return img4, labels4
 
