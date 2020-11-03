@@ -4,7 +4,7 @@ from lgdet.util.util_data_aug import Dataaug
 import numpy as np
 from lgdet.util.util_get_cls_names import _get_class_names
 from torch.utils.data import DataLoader
-from util.util_show_FLOW import _viz_flow
+from lgdet.util.util_show_FLOW import _viz_flow
 from ..registry import DATALOADERS
 
 

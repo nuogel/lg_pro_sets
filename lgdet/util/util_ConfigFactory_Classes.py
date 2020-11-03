@@ -40,9 +40,11 @@ def get_loss_class(belongs, modelname):
         from lgdet.loss.OcrLoss_PAN import PANLoss
         from lgdet.loss.FlowLoss import FlowLoss
         from lgdet.loss.AsrLoss_TACOTRON import TACOTRONLOSS
+        from lgdet.loss.ObdLoss_RETINANET import RETINANETLOSS
         loss_dict = {
             'fcos': FCOSLOSS,
             'refinedet': REFINEDETLOSS,
+            'retinanet': RETINANETLOSS,
 
             # ASR
             'rnn': RnnLoss,

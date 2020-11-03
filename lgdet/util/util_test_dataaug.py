@@ -3,7 +3,7 @@
 import os
 import time
 from util import Dataaug
-from util.util_yml_parse import parse_yaml
+from lgdet.util.util_yml_parse import parse_yaml
 
 
 def test_time_data_aug():

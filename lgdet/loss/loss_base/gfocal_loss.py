@@ -1,11 +1,9 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ..builder import LOSSES
 from .utils import weighted_loss
 
 
-@weighted_loss
 def quality_focal_loss(pred, target, beta=2.0):
     r"""Quality Focal Loss (QFL) is from `Generalized Focal Loss: Learning
     Qualified and Distributed Bounding Boxes for Dense Object Detection

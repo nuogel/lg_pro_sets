@@ -6,7 +6,7 @@ import numpy as np
 import math
 
 from utils import constant
-from util.common_layers import MultiHeadAttention, PositionalEncoding, PositionwiseFeedForwardWithConv, get_subsequent_mask, get_non_pad_mask, \
+from lgdet.util.common_layers import MultiHeadAttention, PositionalEncoding, PositionwiseFeedForwardWithConv, get_subsequent_mask, get_non_pad_mask, \
     get_attn_key_pad_mask, get_attn_pad_mask, pad_list
 
 from utils.lstm_utils import calculate_lm_score

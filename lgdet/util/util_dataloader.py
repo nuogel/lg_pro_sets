@@ -4,7 +4,7 @@ import os
 import torch
 import cv2
 from cfg import config as cfg
-from util.util_read_label_xml import _read_label_voc
+from lgdet.util.util_read_label_xml import _read_label_voc
 
 
 class MyDataset_VOC(DataLoader):

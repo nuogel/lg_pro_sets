@@ -1,7 +1,7 @@
 """Loss calculation based on yolo."""
 import torch
 import torch.nn.functional as F
-from util.util_show_FLOW import _viz_flow
+from lgdet.util.util_show_FLOW import _viz_flow
 
 
 class FlowLoss:

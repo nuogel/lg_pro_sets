@@ -43,7 +43,7 @@ class FocalLoss(nn.Module):
         self.gamma = gamma
         self.reduction = reduction
 
-    def forward(self, pred, target, obj_mask, split_loss=False, logist=False):
+    def forward(self, pred, target, logist=False):
         if logist:
             ce = F.binary_cross_entropy_with_logits(pred, target, reduction='none')
         else:
@@ -51,7 +51,11 @@ class FocalLoss(nn.Module):
         alpha = target * self.alpha + (1. - target) * (1. - self.alpha)
         pt = torch.where(target == 1, pred, 1 - pred)
         all_loss = alpha * (1. - pt) ** self.gamma * ce
-        return obj_noobj_loss_metrics(all_loss, obj_mask, split_loss, self.reduction)
+        if self.reduction == 'sum':
+            all_loss = torch.sum(all_loss)
+        elif self.reduction == 'mean':
+            all_loss = torch.mean(all_loss)
+        return all_loss
 
 
 class FocalLoss_lg(nn.Module):

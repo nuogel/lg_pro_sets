@@ -7,7 +7,7 @@ from scipy import signal
 import glob
 from python_speech_features import mfcc, delta, sigproc
 import librosa
-from util.util_vad import VAD
+from lgdet.util.util_vad import VAD
 from matplotlib import pyplot as plt
 from datetime import datetime
 from scipy import signal

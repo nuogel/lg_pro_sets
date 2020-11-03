@@ -2,11 +2,11 @@ import os
 import torch
 import random
 import cv2
-from util.util_data_aug import Dataaug
+from lgdet.util.util_data_aug import Dataaug
 import numpy as np
 import xml.etree.ElementTree as ET
-from util.util_get_cls_names import _get_class_names
-from util.util_show_img import _show_img
+from lgdet.util.util_get_cls_names import _get_class_names
+from lgdet.util.util_show_img import _show_img
 from torch.utils.data import DataLoader
 
 

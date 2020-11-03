@@ -1,7 +1,7 @@
 import torch
 from torch.nn import CTCLoss
 from lgdet.util.util_to_onehot import to_onehot
-from lgdet.dataloader.Loader_ASR import Loader
+from lgdet.dataloader.Loader_ASR import ASR_Loader
 
 
 class RnnLoss:
@@ -9,7 +9,7 @@ class RnnLoss:
         self.cfg = cfg
         self.loss_ctc = CTCLoss(reduction='sum', blank=0)
         self.loss_mse = torch.nn.MSELoss(reduction='sum')
-        self.data = Loader(cfg)
+        self.data = ASR_Loader(cfg)
 
     def Loss_Call(self, input, train_data, losstype='mse'):
         _, target, input_lengths, target_lengths = train_data

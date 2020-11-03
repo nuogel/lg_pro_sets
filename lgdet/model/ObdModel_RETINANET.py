@@ -263,7 +263,6 @@ class ClassificationModel(nn.Module):
         self.act4 = nn.ReLU()
 
         self.output = nn.Conv2d(feature_size, num_anchors * num_classes, kernel_size=3, padding=1)
-        self.output_act = nn.Sigmoid()
 
     def forward(self, x):
         out = self.conv1(x)
@@ -279,7 +278,6 @@ class ClassificationModel(nn.Module):
         out = self.act4(out)
 
         out = self.output(out)
-        out = self.output_act(out)
 
         # out is B x C x W x H, with C = n_classes + n_anchors
         out1 = out.permute(0, 2, 3, 1)
@@ -290,13 +288,14 @@ class ClassificationModel(nn.Module):
 
         return out2.contiguous().view(x.shape[0], -1, self.num_classes)
 
+
 from ..registry import MODELS
 
 
 @MODELS.registry()
 class RETINANET(nn.Module):
     def __init__(self, cfg):
-        num_classes = cfg.TRAIN.CLASSES_NUM + 1  # +1 :set last one as background
+        num_classes = cfg.TRAIN.CLASSES_NUM  # +1 :set last one as background
         block = Bottleneck  # or BasicBlock
         _resnet50 = [3, 4, 6, 3]
         _resnet101 = [3, 4, 23, 3]
@@ -372,14 +371,9 @@ class RETINANET(nn.Module):
             if isinstance(layer, nn.BatchNorm2d):
                 layer.eval()
 
-    def forward(self, inputs):
-
-        if self.training:
-            img_batch, annotations = inputs
-        else:
-            img_batch = inputs
-
-        x = self.conv1(img_batch)
+    def forward(self, **args):
+        x = args['input_x']
+        x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
         x = self.maxpool(x)
@@ -393,7 +387,7 @@ class RETINANET(nn.Module):
 
         classification = torch.cat([self.classificationModel(feature) for feature in features], dim=1)
         location = torch.cat([self.regressionModel(feature) for feature in features], dim=1)
-        anchors = self.anchors(img_batch)
+        anchors = self.anchors(args['input_x'])
 
         return classification, location, anchors
 

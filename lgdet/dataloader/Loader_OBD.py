@@ -86,7 +86,7 @@ class OBD_Loader(DataLoader):
             show_img = self.lgtransformer.imdenormalize(_img, self.cfg.mean, self.cfg.std, to_bgr=True)
             _show_img(show_img, _label.numpy(), cfg=self.cfg, show_time=self.cfg.TRAIN.SHOW_INPUT, pic_path=data_info['lab_path'])
 
-        if self.write_images > 0 and self.is_training and self.cfg.checkpoint:
+        if self.write_images > 0 and self.is_training and not self.cfg.checkpoint:
             _img = img.copy()
             _label = label.clone()
             show_img = self.lgtransformer.imdenormalize(_img, self.cfg.mean, self.cfg.std, to_bgr=True)

@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from util.util_iou import iou_xyxy, xywh2xyxy
+from lgdet.util.util_iou import iou_xyxy, xywh2xyxy
 
 
 class EfficientDetLoss():

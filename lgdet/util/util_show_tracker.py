@@ -1,7 +1,7 @@
 import os
 import cv2
 import glob
-from util.util_show_img import _show_img
+from lgdet.util.util_show_img import _show_img
 
 
 def show_tracker_OTB(img_path, gt_path):

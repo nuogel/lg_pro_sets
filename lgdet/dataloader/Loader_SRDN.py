@@ -6,7 +6,7 @@ from lgdet.util.util_JPEG_compression import Jpegcompress2
 from torchvision import transforms as T
 from torch.utils.data._utils.collate import default_collate
 from prefetch_generator import BackgroundGenerator
-from util.util_data_aug import Dataaug
+from lgdet.util.util_data_aug import Dataaug
 
 from ..registry import DATALOADERS
 

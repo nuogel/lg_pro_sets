@@ -68,7 +68,7 @@ TEST:
 
   # NMS:
   NMS_TYPE: 'SOFT_NMS'#'NMS'#
-  SCORE_THRESH: 0.5
+  SCORE_THRESH: 0.6
   IOU_THRESH: 0.5
   SOFNMS_THETA: 0.5
 
@@ -84,6 +84,6 @@ TEST:
   ONE_TEST_TRAIN_STEP: 100
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
-    #  ['000009', 'kitti/training/images/000009.png', 'kitti/training/labels/000009.xml']
-  ['000005.jpg', 'VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg', 'VOCdevkit/VOC2007/trainval/Annotations/000005.xml']
+      ['000009', 'kitti/training/images/000009.png', 'kitti/training/labels/000009.xml']
+#  ['000005.jpg', 'VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg', 'VOCdevkit/VOC2007/trainval/Annotations/000005.xml']
   ]
