@@ -12,11 +12,11 @@ def _parse_arguments():
     parser.add_argument('--type', default='OBD'  # SR_DN
                         , type=str, help='yml_path')
     parser.add_argument('--model', type=str, help='yml_path')
-    parser.add_argument('--checkpoint', '--c_p', default=1
+    parser.add_argument('--checkpoint', '--cp', default=1
                         , help='Path to the checkpoint to be loaded to the model')
-    parser.add_argument('--batch_size', '--b_s', default=1, type=int, help='batch size')
+    parser.add_argument('--batch_size', '--bz', default=1, type=int, help='batch size')
     parser.add_argument('--gpu', help='number works of dataloader')
-    parser.add_argument('--number_works', '--n_w', default=0, type=int, help='number works of dataloader')
+    parser.add_argument('--number_works', '--nw', default=0, type=int, help='number works of dataloader')
     parser.add_argument('--debug', '--d', action='store_true', default=False, help='Enable verbose info')
     return parser.parse_args()
 
