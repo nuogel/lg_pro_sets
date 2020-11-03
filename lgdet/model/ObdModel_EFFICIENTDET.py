@@ -1,11 +1,9 @@
 import torch
 import torch.nn as nn
 import numpy as np
-import math
 from lgdet.model.ObdModel_EFFICIENTNET import EfficientNet
-from util.util_efficientdet import RegressionModel, ClassificationModel, ClipBoxes, DecodeBBox, ConvModule, RetinaHead
-from util.util_anchor_maker_lg import PriorBox
-from torchvision.ops import nms
+from lgdet.util.util_efficientdet import ConvModule, RetinaHead
+from lgdet.util.util_anchor_maker_lg import PriorBox
 import torch.nn.functional as F
 
 MODEL_MAP = {

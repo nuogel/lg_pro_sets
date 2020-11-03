@@ -7,14 +7,14 @@ import sys
 # sys.path.append('/home/lg/new_disk/deep_learning/lg_Pro_Set')
 from argparse import ArgumentParser
 from lgdet.solver.train_solver import Solver
-from util.util_yml_parse import parse_yaml
+from lgdet.util.util_yml_parse import parse_yaml
 
 
 def _parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('--type', default='OBD', type=str, help='yml_path')
     parser.add_argument('--model', type=str, help='yml_path')
-    parser.add_argument('--checkpoint', '--c_p', default=0
+    parser.add_argument('--checkpoint', '--c_p', default=1
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--batch_size', '--b_s', default=4, type=int, help='batch size')
     parser.add_argument('--lr', default=0.001, type=float, help='learning rate')

@@ -1,7 +1,7 @@
 import os
 import torch
-from util.util_Save_Parmeters import TxbLogger
-from util.util_logger import load_logger
+from lgdet.util.util_Save_Parmeters import TxbLogger
+from lgdet.util.util_logger import load_logger
 import numpy as np
 
 
@@ -11,28 +11,48 @@ def prepare_cfg(cfg, args, is_training=True):
 
     print('torch version: ', torch.__version__)
     print('torch.version.cuda: ', torch.version.cuda)
-    if args.model:
-        cfg.TRAIN.MODEL = args.model
-    if args.gpu:
-        cfg.TRAIN.GPU_NUM = args.gpu
+    try:
+        if args.model:
+            cfg.TRAIN.MODEL = args.model
+        if args.gpu:
+            cfg.TRAIN.GPU_NUM = args.gpu
+        if args.score_thresh:
+            cfg.TEST.SCORE_THRESH = args.score_thresh
+        cfg.TRAIN.pre_trained = args.pre_trained
+    except:
+        pass
 
+    if is_training:
+        if args.epoch_size:
+            cfg.TRAIN.EPOCH_SIZE = args.epoch_size
+        if args.ema:
+            cfg.TRAIN.EMA = args.ema
+        if args.test_only:
+            cfg.TEST.TEST_ONLY = args.test_only
+    else:
+        args.pre_trained = 0
+
+    cfg.checkpoint = args.checkpoint
     cfg = common_cfg(cfg)
 
     cfg.writer = TxbLogger(cfg)
     cfg.logger = load_logger(cfg, args)
 
-    # if not is_training:
-    #     cfg.TRAIN.TARGET_PREDEEL = 0
-    #     cfg.TRAIN.INPUT_PREDEEL = 0
-
     if args.batch_size != 0:
         cfg.TRAIN.BATCH_SIZE = args.batch_size
-        assert cfg.TRAIN.BATCH_SIZE>0, 'batch size <0 !!!!'
+        assert cfg.TRAIN.BATCH_SIZE > 0, 'batch size <0 !!!!'
     if cfg.TEST.ONE_TEST:
-        cfg.TRAIN.DO_AUG = 0
-        cfg.TRAIN.USE_LMDB=0
-        cfg.TRAIN.MOSAIC=0
         cfg.TRAIN.RESIZE = 1
+        cfg.TRAIN.PADTOSIZE = 0
+        cfg.TRAIN.DO_AUG = 0
+        cfg.TRAIN.USE_LMDB = 0
+        cfg.TRAIN.MOSAIC = 0
+        cfg.TRAIN.MULTI_SCALE = 0
+        cfg.TRAIN.WARM_UP_STEP = 0
+
+        cfg.TEST.PADTOSIZE= 0
+        cfg.TEST.RESIZE= 1
+        cfg.TEST.MULTI_SCALE = 0
 
 
     try:
@@ -40,6 +60,28 @@ def prepare_cfg(cfg, args, is_training=True):
             args.number_works = 0
     except:
         pass
+
+    # single level anchor box config for VOC and COCO
+    ANCHOR_SIZE = [[1.19, 1.98], [2.79, 4.59], [4.53, 8.92], [8.06, 5.29], [10.32, 10.65]]
+
+    ANCHOR_SIZE_COCO = [[0.53, 0.79], [1.71, 2.36], [2.89, 6.44], [6.33, 3.79], [9.03, 9.74]]
+
+    # multi level anchor box config for VOC and COCO
+    # yolo_v3
+    MULTI_ANCHOR_SIZE = [[32.64, 47.68], [50.24, 108.16], [126.72, 96.32],
+                         [78.4, 201.92], [178.24, 178.56], [129.6, 294.72],
+                         [331.84, 194.56], [227.84, 325.76], [365.44, 358.72]]
+
+    MULTI_ANCHOR_SIZE_COCO = [[12.48, 19.2], [31.36, 46.4], [46.4, 113.92],
+                              [97.28, 55.04], [133.12, 127.36], [79.04, 224.],
+                              [301.12, 150.4], [172.16, 285.76], [348.16, 341.12]]
+
+    # tiny yolo_v3
+    TINY_MULTI_ANCHOR_SIZE = [[34.01, 61.79], [86.94, 109.68], [93.49, 227.46],
+                              [246.38, 163.33], [178.68, 306.55], [344.89, 337.14]]
+
+    TINY_MULTI_ANCHOR_SIZE_COCO = [[15.09, 23.25], [46.36, 61.47], [68.41, 161.84],
+                                   [168.88, 93.59], [154.96, 257.45], [334.74, 302.47]]
 
     anchor_yolov2 = [[10, 13],  # [W,H]
                      [16, 30],
@@ -51,24 +93,12 @@ def prepare_cfg(cfg, args, is_training=True):
                      [156, 198],
                      [373, 326]]
 
-    anchor_yolov3_tiny = [[347., 286.],
-                          [158., 211.],
-                          [124., 94.],
-                          [67., 132.],
-                          [45., 59.],
-                          [20., 28.],
-                          ]  # VOC2007
+    anchor_yolov3_tiny = [[344.89, 337.14], [178.68, 306.55], [246.38, 163.33],
+                          [93.49, 227.46], [86.93, 109.69], [34.01, 61.78]]  # others
 
-    anchor_yolov3 = [[373, 326],
-                     [156, 198],
-                     [116, 90],
-                     [59, 119],
-                     [62, 45],
-                     [30, 61],
-                     [33, 23],
-                     [16, 30],
-                     [10, 13],
-                     ]  # yolov3_tiny yolov3 writer's anchors
+    anchor_yolov3 = [[331.84, 194.56], [227.84, 325.76], [365.44, 358.72],
+                     [78.4, 201.92], [178.24, 178.56], [129.6, 294.72],
+                     [32.64, 47.68], [50.24, 108.16], [126.72, 96.32], ]
 
     # yolov3 writer's anchors: [10,13,  16,30,  33,23,  30,61,  62,45,  59,119,  116,90,  156,198,  373,326]
 
@@ -109,10 +139,10 @@ def prepare_cfg(cfg, args, is_training=True):
         cfg.TRAIN.ANCHORS = anchor_yolov2
 
     try:
-        from util.util_get_cls_names import _get_class_names
-        class_dict= _get_class_names(cfg.PATH.CLASSES_PATH)
+        from lgdet.util.util_get_cls_names import _get_class_names
+        class_dict = _get_class_names(cfg.PATH.CLASSES_PATH)
         class_names = []
-        for k,v in class_dict.items():
+        for k, v in class_dict.items():
             if v not in class_names:
                 class_names.append(v)
         cfg.TRAIN.CLASSES_NUM = len(class_names)

@@ -4,7 +4,7 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as init
-from util.util_anchor_maker_lg import PriorBox
+from lgdet.util.util_anchor_maker_lg import PriorBox
 
 vgg_base = {
     '300': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',

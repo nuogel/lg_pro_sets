@@ -1,11 +1,9 @@
-import os
 import torch
 import numpy as np
 import cv2
 import random
-from util.util_CCPD import _crop_licience_plante
-from util.util_data_aug import Dataaug
-from util.util_JPEG_compression import Jpegcompress2
+from lgdet.util.util_data_aug import Dataaug
+from lgdet.util.util_JPEG_compression import Jpegcompress2
 
 
 # import multiprocessing as mp

@@ -1,17 +1,18 @@
 import os
 import torch
 from torch.optim import lr_scheduler
-from util.util_ConfigFactory_Classes import get_loss_class, get_score_class
-from util.util_prepare_device import load_device
+from lgdet.util.util_ConfigFactory_Classes import get_loss_class, get_score_class
+from lgdet.util.util_prepare_device import load_device
 from cfg.cfg import prepare_cfg
 from lgdet.dataloader.DataLoaderFactory import DataLoaderFactory
 from lgdet.registry import MODELS, LOSSES, SCORES, build_from_cfg
-from util.util_weights_init import weights_init
-from util.util_get_dataset_from_file import _read_train_test_dataset
+from lgdet.util.util_weights_init import weights_init
+from lgdet.util.util_get_dataset_from_file import _read_train_test_dataset
 from collections import OrderedDict
 from lgdet.metrics.ema import ModelEMA
 import math
 from matplotlib import pyplot as plt
+import time
 
 
 class BaseSolver(object):
@@ -21,9 +22,11 @@ class BaseSolver(object):
         self._get_model()
         self._get_dataloader()
         self.epoch = 0
+        self.metrics_ave = {}
+        self.epoch_losses = 0
 
     def _get_configs(self, cfg, args):
-        self.cfg, self.args = prepare_cfg(cfg, args)
+        self.cfg, self.args = prepare_cfg(cfg, args, self.is_training)
         self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)
 
     def _get_model(self):
@@ -36,7 +39,7 @@ class BaseSolver(object):
                                                                                                        self.args.pre_trained)
             self.cfg.writer.tbX_reStart(self.epoch_last)
         else:
-            self.model = weights_init(self.model, self.cfg)
+            weights_init(self.model, self.cfg)
             self.optimizer_dict = None
             self.epoch_last = 0
             self.global_step = 0
@@ -69,25 +72,26 @@ class BaseSolver(object):
         learning_rate = self.args.lr
         # model_parameters = filter(lambda p: p.requires_grad, self.model.parameters())
 
-        pa_others, pa_conv, pa_bias = [], [], []  # optimizer parameter groups
-        for k, v in dict(self.model.named_parameters()).items():
-            if '.bias' in k:
-                pa_bias += [v]  # biases
-            elif 'Conv2d.weight' in k:
-                pa_conv += [v]  # apply weight_decay
-            else:
-                pa_others += [v]  # all else
+        # pa_others, pa_conv, pa_bias = [], [], []  # optimizer parameter groups
+        # for k, v in dict(self.model.named_parameters()).items():
+        #     if '.bias' in k:
+        #         pa_bias += [v]  # biases
+        #     elif 'conv' in k:
+        #         pa_conv += [v]  # apply weight_decay
+        #     else:
+        #         pa_others += [v]  # all else
         if opt_type == 'adam' or opt_type == 'Adam':
-            self.optimizer = torch.optim.Adam(pa_others, lr=learning_rate)
+            self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=5e-4)
         elif opt_type == 'sgd' or opt_type == 'SGD':
-            self.optimizer = torch.optim.SGD(pa_others, lr=learning_rate, momentum=0.937, nesterov=True)
+            self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=0.937, weight_decay=5e-4)
         else:
             self.cfg.logger.error('NO such a optimizer: ' + str(opt_type))
-        self.optimizer.add_param_group({'params': pa_conv, 'weight_decay': 0.0005})  # add pa_conv with weight_decay
-        self.optimizer.add_param_group({'params': pa_bias})  # add pa_bias (biases)
-        del pa_others, pa_conv, pa_bias
+        # self.optimizer.add_param_group({'params': pa_conv, 'weight_decay': 0.0005})  # add pa_conv with weight_decay
+        # self.optimizer.add_param_group({'params': pa_bias})  # add pa_bias (biases)
+        # del pa_others, pa_conv, pa_bias
 
-        if self.optimizer_dict: self.optimizer.load_state_dict(self.optimizer_dict)
+        if self.optimizer_dict:
+            self.optimizer.load_state_dict(self.optimizer_dict)
 
         if self.args.lr_continue:
             self.optimizer.param_groups[0]['lr'] = self.args.lr_continue
@@ -95,27 +99,24 @@ class BaseSolver(object):
 
         if self.cfg.TRAIN.LR_SCHEDULE == 'cos':
             print('using cos LambdaLR lr_scheduler')
-            lf = lambda x: (((1 + math.cos(x * math.pi / self.cfg.TRAIN.EPOCH_SIZE)) / 2) ** 1.0) * 0.95 + 0.05  # ==0.05 cosine the last lr = 0.05xlr_start
-            self.scheduler = lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lf)
+            lf = lambda x: (((1 + math.cos(x * math.pi / self.cfg.TRAIN.EPOCH_SIZE)) / 2) ** 1.0) * 0.99 + 0.01  # ==0.05 cosine the last lr = 0.05xlr_start
+            self.scheduler = lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lf, last_epoch=self.epoch_last - 1)
             # Plot lr schedule
             plot_lr = 0
             if plot_lr:
                 y = []
                 for _ in range(0, self.cfg.TRAIN.EPOCH_SIZE):
                     self.scheduler.step()
-                    if _ < self.cfg.TRAIN.WARM_UP_STEP:
-                        self._set_warmup_lr()
                     y.append(self.optimizer.param_groups[0]['lr'])
                 plt.plot(y, '.-', label='LambdaLR')
                 plt.xlabel('epoch')
                 plt.ylabel('LR')
                 plt.tight_layout()
-                plt.savefig('LR.png', dpi=300)
+                plt.show()
+                plt.savefig('LR.png')
         else:
             print('using StepLR lr_scheduler ', self.cfg.TRAIN.STEP_LR)
             self.scheduler = lr_scheduler.StepLR(self.optimizer, step_size=self.cfg.TRAIN.STEP_LR, gamma=0.1)
-
-        self.scheduler.last_epoch = self.epoch_last  # see link below
 
         self.optimizer.zero_grad()
 
@@ -137,33 +138,44 @@ class BaseSolver(object):
         self.trainDataloader, self.testDataloader = self.DataFun.make_dataset(train_set, test_set)
 
     def _calculate_loss(self, predict, dataset, **kwargs):
-        total_loss = 0.
-        loss_head_info = ''
-        losses = self.lossfun.Loss_Call(predict, dataset, kwargs=kwargs)
+        metrics_info = ''
+        epoch = kwargs['epoch']
+        step = kwargs['step']
+        len_batch = kwargs['len_batch']
 
-        for k, v in losses.items():
-            if k == 'metrics':
-                continue
-            total_loss += v
+        losses = self.lossfun.Loss_Call(predict, dataset, kwargs)
+        total_loss = losses['total_loss']
         try:
             loss_metrics = losses['metrics']
         except:
             loss_metrics = {}
 
-        # add tensorboard writer.
-        w_dict = {}
+        for k, v in loss_metrics.items():
+            if step == 0:
+                self.metrics_ave[k] = 0
+                self.epoch_losses = 0
+            self.metrics_ave[k] += v
+
+            metrics_info += k + ':' + '%.3f' % (self.metrics_ave[k] / (step + 1)) + '|'
+        self.epoch_losses += total_loss.item()
+
+        info_base = (self.cfg.TRAIN.MODEL, epoch, self.global_step, '%0.6f' % self.optimizer.param_groups[0]['lr'],
+                     '%0.3f' % total_loss.item(), '%0.3f' % (self.epoch_losses / (step + 1)))
+        train_info = ('%16s|%5s|%7s|%9s|' + '%6s|' * 2) % info_base + ' '
+        train_info += metrics_info
         if self.global_step % 1000 == 0:
-            for k, v in loss_metrics.items():
-                loss_head_info += ' %s: %.4f; ' % (k, v)
-                w_dict['metrics/' + k] = v
-            w_dict['epoch'] = self.global_step
+            self.cfg.logger.info(train_info)
+
+        # add tensorboard writer.
+        if self.global_step % len_batch == 0:
+            w_dict = {'epoch': epoch, 'lr': self.optimizer.param_groups[0]['lr'], 'epoch_loss': self.epoch_losses / len(self.trainDataloader)}
+            for k, v in self.metrics_ave.items():
+                w_dict['metrics/' + k] = v / (step + 1)
             self.cfg.writer.tbX_write(w_dict=w_dict)
 
-        self.cfg.logger.debug(loss_head_info)
         if torch.isnan(total_loss) or total_loss.item() == float("inf") or total_loss.item() == -float("inf"):
             self.cfg.logger.error("received an nan/inf loss:", dataset[-1])
-            exit()
-        return total_loss, loss_metrics
+        return total_loss, train_info
 
     def _save_checkpoint(self):
         _model = self.ema.ema if self.ema else self.model
@@ -177,14 +189,14 @@ class BaseSolver(object):
             checkpoint_path = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoints/' + self.cfg.TRAIN.MODEL, path_i + '.pkl')
             os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
             torch.save(saved_dict, checkpoint_path)
-            print('checkpoint is saved to %s', checkpoint_path)
+        print('checkpoint is saved')
 
     def _load_checkpoint(self, model, checkpoint, device, pre_trained=False):
         new_dic = OrderedDict()
         checkpoint = torch.load(checkpoint, map_location=device)
         state_dict = checkpoint['state_dict']
         for k, v in state_dict.items():
-            if 'module.' == k[:8]:
+            if 'module.' == k[:7]:
                 k = k.replace('module.', '')
             new_dic[k] = v
         model.load_state_dict(new_dic)

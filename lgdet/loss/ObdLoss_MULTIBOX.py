@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 import math
-from util.util_iou import iou_xyxy, xywh2xyxy, xyxy2xywh, iou_xywh
+from lgdet.util.util_iou import iou_xyxy, xywh2xyxy, xyxy2xywh, iou_xywh
 import numpy as np
 
 
@@ -124,7 +124,7 @@ class MULTIBOXLOSS():
         return boxes, labels
 
     def _encode_bbox(self, xywh_boxes, xywh_priors):
-        encode_target = torch.cat([(xywh_boxes[..., :2] - xywh_priors[..., :2]) / xywh_priors[..., 2:] / 0.1,
+        encode_target = torch.cat([((xywh_boxes[..., :2] - xywh_priors[..., :2]) / xywh_priors[..., 2:]) / 0.1,
                                    torch.log(xywh_boxes[..., 2:] / xywh_priors[..., 2:]) / 0.2
                                    ], dim=- 1)
         return encode_target

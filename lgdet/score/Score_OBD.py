@@ -1,8 +1,8 @@
 """Calculate the F1 score."""
 import numpy as np
 import torch
-from util.util_get_cls_names import _get_class_names
-from util.util_iou import iou_xyxy
+from lgdet.util.util_get_cls_names import _get_class_names
+from lgdet.util.util_iou import iou_xyxy
 from ..registry import SCORES
 
 
@@ -43,7 +43,7 @@ class Score:
         :return: TP FP object numbers
         """
         if from_net:
-            pre_labels = self.parsepredict._parse_predict(pre_labels)
+            pre_labels = self.parsepredict.parse_predict(pre_labels)
         if pre_labels != [[]] and pre_labels != [] :
             for i, pre_label in enumerate(pre_labels):  # calculate every image
                 self._cal_per_image(pre_label, gt_labels[gt_labels[..., 0] == i], self.cfg.TEST.IOU_THRESH)
@@ -73,7 +73,7 @@ class Score:
                     cls_gt = int(lab[0].cpu())
                     if cls_gt != cls:
                         continue
-                    pre_box = torch.Tensor(one_pre_box[2]).unsqueeze(0).to(self.cfg.TRAIN.DEVICE)
+                    pre_box = torch.Tensor(one_pre_box[2:]).unsqueeze(0).to(self.cfg.TRAIN.DEVICE)
                     gt_box = lab[1:5].unsqueeze(0)
                     iou = iou_xyxy(pre_box, gt_box)[0][0]  # to(anchors.device))
                     if iou > max_iou:

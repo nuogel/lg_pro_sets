@@ -1,5 +1,5 @@
 import torch
-from util.util_refinedet import decode, nms, center_size, match, log_sum_exp, refine_match
+from lgdet.util.util_refinedet import decode, center_size, log_sum_exp, refine_match
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np

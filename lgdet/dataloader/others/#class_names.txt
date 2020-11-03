@@ -17,6 +17,18 @@ Misc,Car
 DontCare,Others
 Dontcare,Others
 
+
+Car
+Van
+Truck
+Pedestrian
+Person_sitting
+Cyclist
+Tram
+Misc
+DontCare
+Dontcare,DontCare
+
 Car, Van, Truck, Pedestrian,Person_sitting, Cyclist, Tram, Misc, DontCare
 
 Car,Car

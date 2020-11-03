@@ -3,7 +3,6 @@ import os
 import xml.etree.ElementTree as ET
 import numpy as np
 import cv2
-from util.util_get_cls_names import _get_class_names
 import tqdm
 import pickle
 

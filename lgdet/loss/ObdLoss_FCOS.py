@@ -1,6 +1,6 @@
 """Loss calculation based on yolo2."""
 import torch
-from util.util_get_cls_names import _get_class_names
+from lgdet.util.util_get_cls_names import _get_class_names
 
 
 class FCOSLOSS:

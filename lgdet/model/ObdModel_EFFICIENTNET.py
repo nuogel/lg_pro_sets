@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from util.util_efficientdet import (
+from lgdet.util.util_efficientdet import (
     round_filters,
     round_repeats,
     drop_connect,

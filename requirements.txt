@@ -17,3 +17,4 @@ lmdb
 colorlog
 python_speech_features
 prefetch_generator
+munch

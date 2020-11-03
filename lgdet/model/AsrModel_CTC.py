@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from collections import OrderedDict
-from util.util_ctc_decoder import beam_decode
+from lgdet.util.util_ctc_decoder import beam_decode
 from keras import backend as K
 import numpy as np
 

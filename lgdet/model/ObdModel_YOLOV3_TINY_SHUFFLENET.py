@@ -13,8 +13,7 @@ class ShuffleBottleneck(nn.Module):
         self.stride = stride
         self.shortcat = False
         # 1X1 Gconv
-        self.gconv1 = nn.Conv2d(in_ch, self.mid_ch, kernel_size=1, padding=0, bias=False,
-                                groups=groups)
+        self.gconv1 = nn.Conv2d(in_ch, self.mid_ch, kernel_size=1, padding=0, bias=False, groups=groups)
         self.bn1 = nn.BatchNorm2d(self.mid_ch)
         self.relu = nn.ReLU6()
         # shuffle
@@ -98,6 +97,7 @@ class BackBone(nn.Module):
         f1 = self.layer7(x)
         return f1, f2  # f1:13x13x1024; f2:26x26x256
 
+
 from ..registry import MODELS
 
 
@@ -135,4 +135,4 @@ class YOLOV3_TINY_SHUFFLENET(nn.Module):
         net2 = self.bb2_2(net2)
         net2 = self.bb2_3(net2)
 
-        return [net1, net2, ]
+        return [net1, net2]

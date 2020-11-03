@@ -93,8 +93,12 @@ from ..registry import MODELS
 class YOLOV3_TINY_MOBILENET(nn.Module):
     def __init__(self, cfg):
         super(YOLOV3_TINY_MOBILENET, self).__init__()
-        self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
-        self.cls_num = cfg.TRAIN.CLASSES_NUM
+        if cfg:
+            self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
+            self.cls_num = cfg.TRAIN.CLASSES_NUM
+        else:
+            self.anc_num = 3
+            self.cls_num = 4
         out_ch = self.anc_num * (1 + 4 + self.cls_num)
         self.ch_1 = [1024, 256, 512, out_ch]
         self.ch_2 = [256, 128, 384, 256, out_ch]
@@ -122,5 +126,4 @@ class YOLOV3_TINY_MOBILENET(nn.Module):
         net2 = self.bb2_cat((f2, net2), 1)  # jump2_TO    26x26x256+26x26x128=26x26x384
         net2 = self.bb2_2(net2)
         net2 = self.bb2_3(net2)
-
         return [net1, net2]

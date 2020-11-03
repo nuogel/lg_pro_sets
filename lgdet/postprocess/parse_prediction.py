@@ -2,9 +2,10 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from util.util_NMS import NMS
+from lgdet.util.util_NMS import NMS
 from lgdet.loss.ObdLoss_REFINEDET import Detect_RefineDet
-from util.util_iou import xywh2xyxy, xyxy2xywh
+from lgdet.util.util_iou import xyxy2xywh
+from lgdet.util.util_lg_transformer import LgTransformer
 
 
 class ParsePredict:
@@ -16,12 +17,14 @@ class ParsePredict:
         self.cls_num = cfg.TRAIN.CLASSES_NUM
         self.NMS = NMS(cfg)
         self.device = self.cfg.TRAIN.DEVICE
+        self.transformer = LgTransformer(self.cfg)
 
-    def _parse_predict(self, f_maps):
+    def parse_predict(self, f_maps):
         PARSEDICT = {
             'yolov2': self._parse_yolo_predict,
             'yolov3': self._parse_yolo_predict,
             'yolov3_tiny': self._parse_yolo_predict,
+            'yolov3_tiny_o': self._parse_yolo_predict,
             'yolov3_tiny_mobilenet': self._parse_yolo_predict,
             'yolov3_tiny_squeezenet': self._parse_yolo_predict,
             'yolov3_tiny_shufflenet': self._parse_yolo_predict,
@@ -34,6 +37,12 @@ class ParsePredict:
         }
 
         labels_predict = PARSEDICT[self.cfg.TRAIN.MODEL](f_maps)
+
+        return labels_predict
+
+    def predict2labels(self, labels_predict, data_infos):
+        labels_predict = self.transformer.decode_pad2size(labels_predict, data_infos)  # absolute labels
+
         return labels_predict
 
     def _parse_multi_boxes(self, pre_score, pre_loc, xywh2x1y1x2y2=True):
@@ -56,6 +65,55 @@ class ParsePredict:
 
         return labels_predict
 
+    def _parse_yolo_predict_fmap_old(self, f_map, f_id, tolabel=False):
+        # pylint: disable=no-self-use
+        """
+        Reshape the predict, or reshape it to label shape.
+
+        :param predict: out of net
+        :param tolabel: True or False to label shape
+        :return:
+        """
+        # make the feature map anchors
+        mask = np.arange(self.anc_num) + self.anc_num * f_id
+        anchors = self.anchors[mask]
+        f_map = f_map.permute(0, 2, 3, 1)
+        ###1: pre deal feature mps
+        obj_pred, cls_perd, loc_pred = torch.split(f_map, [self.anc_num, self.anc_num * self.cls_num, self.anc_num * 4], 3)
+        pre_obj = obj_pred.sigmoid()
+        cls_reshape = torch.reshape(cls_perd, (-1, self.cls_num))
+        cls_pred_prob = torch.softmax(cls_reshape, -1)
+        pre_cls = torch.reshape(cls_pred_prob, cls_perd.shape)
+        pre_loc = loc_pred
+
+        batch_size = pre_obj.shape[0]
+        shape = pre_obj.shape[1:3]
+
+        pre_obj = pre_obj.unsqueeze(-1)
+        pre_cls = pre_cls.reshape([batch_size, shape[0], shape[1], self.anc_num, self.cls_num])
+
+        # reshape the pre_loc
+        pre_loc = pre_loc.reshape([batch_size, shape[0], shape[1], self.anc_num, 4])
+        pre_loc_xy = pre_loc[..., 0:2].sigmoid()
+        pre_loc_wh = pre_loc[..., 2:4]
+
+        grid_x = torch.arange(0, shape[1]).view(-1, 1).repeat(1, shape[0]).unsqueeze(2).permute(1, 0, 2)
+        grid_y = torch.arange(0, shape[0]).view(-1, 1).repeat(1, shape[1]).unsqueeze(2)
+        grid_xy = torch.cat([grid_x, grid_y], 2).unsqueeze(2).unsqueeze(0). \
+            expand(1, shape[0], shape[1], self.anc_num, 2).expand_as(pre_loc_xy).type(torch.FloatTensor).to(loc_pred.device)
+
+        # prepare gird xy
+        box_ch = torch.Tensor([shape[1], shape[0]]).to(loc_pred.device)
+        pre_realtive_xy = (pre_loc_xy + grid_xy) / box_ch
+        anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).expand(1, shape[0], shape[1], self.anc_num, 2).to(loc_pred.device)
+        pre_realtive_wh = pre_loc_wh.exp() * anchor_ch
+
+        pre_relative_box = torch.cat([pre_realtive_xy, pre_realtive_wh], -1)
+
+        if tolabel:
+            return pre_obj, pre_cls, pre_relative_box
+        return pre_obj, pre_cls, pre_relative_box, pre_loc_xy, pre_loc_wh, grid_xy, shape
+
     def _parse_yolo_predict_fmap(self, f_map, f_id, tolabel=False):
         # pylint: disable=no-self-use
         """
@@ -73,40 +131,41 @@ class ParsePredict:
         _permiute = (0, 1, 3, 4, 2)  # ((0, 1, 3, 4, 2),   (0, 3, 4, 1, 2))
         f_map = f_map.permute(_permiute).contiguous()
 
-        pred_xy = torch.sigmoid(f_map[..., 0:2])  # Center x
-        pred_wh = f_map[..., 2:4]  # Width
-        pred_conf = torch.sigmoid(f_map[..., 4])  # Conf
-        pred_cls = torch.sigmoid(f_map[..., 5:])  # Cls pred.
+        # pred_xy = torch.sigmoid(f_map[..., 0:2])  # Center x
+        # pred_wh = f_map[..., 2:4]  # Width
+        # pred_conf = torch.sigmoid(f_map[..., 4])  # Conf
+        # pred_cls = torch.sigmoid(f_map[..., 5:])  # Cls pred.
 
-        # pred_conf = torch.sigmoid(f_map[..., 0])  # Conf
-        # pred_xy = torch.sigmoid(f_map[..., 1:3])  # Center x
-        # pred_wh = f_map[..., 3:5]  # Width
-        # pred_cls = torch.softmax(f_map[..., 5:], -1)  # Cls pred.
-        if not tolabel:
-            return pred_conf, pred_cls, pred_xy, pred_wh
+        pred_conf = f_map[..., 0]  # NO sigmoid()
+        pred_xy = torch.sigmoid(f_map[..., 1:3])  # Center x
+        pred_wh = f_map[..., 3:5]  # Width
+        pred_cls = torch.softmax(f_map[..., 5:], -1)  # Cls pred.
+
+        mask = np.arange(self.anc_num) + self.anc_num * f_id
+        anchors_raw = self.anchors[mask]
+        anchors = torch.Tensor([(a_w / self.cfg.TRAIN.IMG_SIZE[1] * W, a_h / self.cfg.TRAIN.IMG_SIZE[0] * H) for a_w, a_h in anchors_raw]).to(self.device)
+        grid_wh = torch.Tensor([W, H, W, H]).to(self.device)
+        grid_x = torch.arange(W).repeat(H, 1).view([1, H, W, 1]).to(self.device)
+        grid_y = torch.arange(H).repeat(W, 1).t().view([1, H, W, 1]).to(self.device)
+        '''
+        yv, xv = torch.meshgrid([torch.arange(self.ny, device=device), torch.arange(self.nx, device=device)])
+        self.grid = torch.stack((xv, yv), 2).view((1, 1, self.ny, self.nx, 2)).float()
+        '''
+        if _permiute == (0, 1, 3, 4, 2):
+            anchor_ch = anchors.view(1, self.anc_num, 1, 1, 2)
+            grid_xy = torch.cat([grid_x, grid_y], -1).unsqueeze(1)
         else:
-            mask = np.arange(self.anc_num) + self.anc_num * f_id
-            anchors_raw = self.anchors[mask]
-            anchors = torch.Tensor([(a_w / self.cfg.TRAIN.IMG_SIZE[1] * W, a_h / self.cfg.TRAIN.IMG_SIZE[0] * H) for a_w, a_h in anchors_raw]).to(self.device)
-            grid_wh = torch.Tensor([W, H, W, H]).to(self.device)
-            grid_x = torch.arange(W).repeat(H, 1).view([1, H, W, 1]).to(self.device)
-            grid_y = torch.arange(H).repeat(W, 1).t().view([1, H, W, 1]).to(self.device)
-            '''
-            yv, xv = torch.meshgrid([torch.arange(self.ny, device=device), torch.arange(self.nx, device=device)])
-            self.grid = torch.stack((xv, yv), 2).view((1, 1, self.ny, self.nx, 2)).float()
-            '''
-            if _permiute == (0, 1, 3, 4, 2):
-                anchor_ch = anchors.view(1, self.anc_num, 1, 1, 2)
-                grid_xy = torch.cat([grid_x, grid_y], -1).unsqueeze(1)
-            else:
-                anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2)
-                grid_xy = torch.cat([grid_x, grid_y], -1).unsqueeze(3).expand(1, H, W, self.anc_num, 2).to(self.device)
+            anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2)
+            grid_xy = torch.cat([grid_x, grid_y], -1).unsqueeze(3).expand(1, H, W, self.anc_num, 2).to(self.device)
+        pre_wh = pred_wh.exp() * anchor_ch
+        pre_xy = pred_xy + grid_xy.float()
+        pre_box = torch.cat([pre_xy, pre_wh], -1) / grid_wh
 
-            pre_wh = pred_wh.exp() * anchor_ch
-            pre_xy = pred_xy + grid_xy
-
-            pre_relative_box = torch.cat([pre_xy, pre_wh], -1) / grid_wh
-            return pred_conf, pred_cls, pre_relative_box
+        if not tolabel:
+            return pred_conf, pred_cls, pred_xy, pred_wh, pre_box
+        else:
+            pred_conf = torch.sigmoid(pred_conf)
+            return pred_conf, pred_cls, pre_box
 
     def _parse_yolo_predict(self, f_maps):
         """
@@ -137,16 +196,26 @@ class ParsePredict:
 
         labels_predict = []
         BN = pre_obj.shape[0]
-        for bi in range(BN):
-            # score is conf*cls,but obj is pre_obj>thresh.
-            mask = pre_obj[bi] > self.cfg.TEST.SCORE_THRESH
-            if torch.sum(mask) > 0:
-                pre_obj_i = pre_obj[bi][mask]
-                pre_cls_i = pre_cls[bi][mask.squeeze()]
-                pre_cls_score_i, pre_cls_id = pre_cls_i.max(-1)
-                pre_score = pre_obj_i * pre_cls_score_i  # score of obj * score of class.
-                pre_loc_i = pre_loc[bi][mask.squeeze()]
-                labels_predict.append(self.NMS.forward(pre_score, pre_cls_id, pre_loc_i, xywh2x1y1x2y2=True))
+        pre_obj_thresh = 0
+        if pre_obj_thresh:
+            for bi in range(BN):
+                # score is conf*cls,but obj is pre_obj>thresh.
+                mask = pre_obj[bi] > self.cfg.TEST.SCORE_THRESH
+                if torch.sum(mask) > 0:
+                    pre_obj_i = pre_obj[bi][mask]
+                    pre_cls_i = pre_cls[bi][mask.squeeze()]
+                    pre_cls_score_i, pre_cls_id = pre_cls_i.max(-1)
+                    pre_score = pre_obj_i * pre_cls_score_i  # score of obj * score of class.
+                    pre_loc_i = pre_loc[bi][mask.squeeze()]
+                    labels_predict.append(self.NMS.forward(pre_score, pre_cls_id, pre_loc_i, xywh2x1y1x2y2=True))
+                else:
+                    labels_predict.append([])
+        else:
+            #  conf*cls>thresh
+
+            pre_score = pre_obj * pre_cls
+            labels_predict = self._parse_multi_boxes(pre_score, pre_loc)
+
         return labels_predict
 
     def _parse_ssd_predict(self, predicts):

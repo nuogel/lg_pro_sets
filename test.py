@@ -3,7 +3,7 @@
 
 import sys
 from argparse import ArgumentParser
-from util.util_yml_parse import parse_yaml
+from lgdet.util.util_yml_parse import parse_yaml
 from lgdet.solver.test_solver import Test
 
 
@@ -11,13 +11,13 @@ def _parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('--type', default='OBD'  # SR_DN
                         , type=str, help='yml_path')
-    parser.add_argument('--checkpoint', default= 1
+    parser.add_argument('--model', type=str, help='yml_path')
+    parser.add_argument('--checkpoint', '--c_p', default=1
                         , help='Path to the checkpoint to be loaded to the model')
-    parser.add_argument('--batch_size', '--bz', default=1, type=int, help='batch size')
-    parser.add_argument('--number_works', '--n_w', default=0, type=int, help='number works of DataLoader')
+    parser.add_argument('--batch_size', '--b_s', default=1, type=int, help='batch size')
+    parser.add_argument('--gpu', help='number works of dataloader')
+    parser.add_argument('--number_works', '--n_w', default=0, type=int, help='number works of dataloader')
     parser.add_argument('--debug', '--d', action='store_true', default=False, help='Enable verbose info')
-    parser.add_argument('--log_file_path', default='tmp/logs/', help='log_file_path')
-
     return parser.parse_args()
 
 
@@ -26,7 +26,8 @@ def main():
     exit_code = 0
     files = 'one_name'
 
-    # files = 'datasets/OBD_idx_stores/COCO/COCO_train.txt'#'datasets/OBD_idx_stores/VOC/VOC_test.txt'
+    # files = 'datasets/OBD_idx_stores/VOC/VOC_train.txt' #'datasets/OBD_idx_stores/COCO/COCO_train.txt'#
+    files = 'datasets/OBD_idx_stores/KITTI/KITTI_test.txt'
     score = False
     args = _parse_arguments()
     cfg = parse_yaml(args)

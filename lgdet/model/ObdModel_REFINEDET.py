@@ -3,9 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as init
-from itertools import product as product
-from math import sqrt as sqrt
-from util.util_anchor_maker_lg import PriorBox
+from lgdet.util.util_anchor_maker_lg import PriorBox
 import numpy as np
 
 from ..registry import MODELS

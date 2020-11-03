@@ -1,5 +1,5 @@
 import torch
-from util.util_audio import Util_Audio
+from lgdet.util.util_audio import Util_Audio
 
 
 class TACOTRONLOSS:

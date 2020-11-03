@@ -1,6 +1,6 @@
 import torch
 from torch.nn import CTCLoss
-from util.util_to_onehot import to_onehot
+from lgdet.util.util_to_onehot import to_onehot
 from lgdet.dataloader.Loader_ASR import Loader
 
 

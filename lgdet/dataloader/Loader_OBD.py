@@ -4,13 +4,14 @@ import random
 import cv2
 import numpy as np
 import xml.etree.ElementTree as ET
-from util.util_get_cls_names import _get_class_names
-from util.util_show_img import _show_img
+from lgdet.util.util_get_cls_names import _get_class_names
+from lgdet.util.util_show_img import _show_img
 from torch.utils.data import DataLoader
 from ..registry import DATALOADERS
-from util.util_lg_transformer import LgTransformer
+from lgdet.util.util_lg_transformer import LgTransformer
 import lmdb
 import pickle
+import math
 
 
 @DATALOADERS.registry()
@@ -28,7 +29,9 @@ class OBD_Loader(DataLoader):
         self.cls2idx = dict(zip(cfg.TRAIN.CLASSES, range(cfg.TRAIN.CLASSES_NUM)))
         self.write_images = self.cfg.TRAIN.WRITE_IMAGES
         self.lgtransformer = LgTransformer(self.cfg)
-        self.prepared_labels, self.dataset_infos = self._load_labels2memery(dataset, self.one_name)
+        self.dataset_infos = self._load_labels2memery(dataset, self.one_name)
+        if self.cfg.TRAIN.MULTI_SCALE:
+            self._prepare_multiszie()
 
         if self.cfg.TRAIN.USE_LMDB:
             mod = 'train' if self.is_training else 'val'
@@ -60,17 +63,17 @@ class OBD_Loader(DataLoader):
             indices = [random.randint(0, len(self.dataset_infos) - 1) for _ in range(3)]  # 3 additional image indices
             imglabs = [self._load_gt(index) for index in indices]
             imglabs.insert(0, [img, label, data_info])
-            img, label = self.lgtransformer.aug_mosaic(imglabs)
+            img, label = self.lgtransformer.aug_mosaic(imglabs, s=self.cfg.TRAIN.IMG_SIZE[0])
             while len(label) <= 0:  # if there is no label in mosaic, then repeat mosaic
-                img, label = self.lgtransformer.aug_mosaic(imglabs)
+                img, label = self.lgtransformer.aug_mosaic(imglabs, s=self.cfg.TRAIN.IMG_SIZE[0])
 
         # PAD TO SIZE:
         if (self.cfg.TRAIN.PADTOSIZE and self.is_training) or (self.cfg.TEST.PADTOSIZE and not self.is_training):
-            img, label = self.lgtransformer.pad_to_size(img, label, self.cfg.TRAIN.IMG_SIZE, decode=False)
+            img, label, data_info = self.lgtransformer.pad_to_size(img, label, data_info, new_shape=self.cfg.TRAIN.IMG_SIZE, auto=False, scaleup=False)
 
         # resize
         if (self.cfg.TRAIN.RESIZE and self.is_training) or (self.cfg.TEST.RESIZE and not self.is_training):
-            img, label = self.lgtransformer.resize(img, label, self.cfg.TRAIN.IMG_SIZE)
+            img, label, data_info = self.lgtransformer.resize(img, label, self.cfg.TRAIN.IMG_SIZE, data_info)
 
         if self.cfg.TRAIN.RELATIVE_LABELS:
             img, label = self.lgtransformer.relative_label(img, label)
@@ -81,15 +84,17 @@ class OBD_Loader(DataLoader):
             _img = img.copy()
             _label = label.clone()
             show_img = self.lgtransformer.imdenormalize(_img, self.cfg.mean, self.cfg.std, to_bgr=True)
-            _show_img(show_img, _label.numpy(), cfg=self.cfg, show_time=self.cfg.TRAIN.SHOW_INPUT, pic_path=data_info[2])
+            _show_img(show_img, _label.numpy(), cfg=self.cfg, show_time=self.cfg.TRAIN.SHOW_INPUT, pic_path=data_info['lab_path'])
 
-        if self.write_images > 0 and self.is_training:
+        if self.write_images > 0 and self.is_training and self.cfg.checkpoint:
             _img = img.copy()
             _label = label.clone()
             show_img = self.lgtransformer.imdenormalize(_img, self.cfg.mean, self.cfg.std, to_bgr=True)
-            img_write = _show_img(show_img, _label.numpy(), cfg=self.cfg, show_time=-1)
-            self.cfg.writer.tbX_addImage('GT_' + data_info[0], img_write)
+            img_write = _show_img(show_img, _label.numpy(), cfg=self.cfg, show_time=-1)[0]
+            self.cfg.writer.tbX_addImage('GT_' + data_info['img_name'], img_write)
             self.write_images -= 1
+        assert len(img) > 0, 'img length is error'
+        assert len(label) > 0, 'lab length is error'
         return img, label, data_info  # only need the labels  label_after[x1y1x2y2]
 
     def _set_group_flag(self):  # LG: this is important
@@ -130,7 +135,7 @@ class OBD_Loader(DataLoader):
 
     def pre_load_data_infos(self):
         if 'COCO' in self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
-            from util.util_load_coco import COCODataset
+            from lgdet.util.util_load_coco import COCODataset
             if self.is_training:
                 annfile = os.path.join(self.cfg.PATH.INPUT_PATH, 'annotations/instances_train2017.json')
             else:
@@ -158,18 +163,20 @@ class OBD_Loader(DataLoader):
                                         'labpath': datainfo[2]})
 
     def _load_labels2memery(self, dataset_txt, one_name):
-        all_labels = {}
-        data_infos = []
         print('prepare loading labels to memery...')
         if self.one_test:
             dataset_txt = one_name
-        for data_info in dataset_txt:
-            x_path = os.path.join(self.cfg.PATH.INPUT_PATH, data_info[1])
-            y_path = os.path.join(self.cfg.PATH.INPUT_PATH, data_info[2])
-            data_infos.append([data_info[0], x_path, y_path])
-            label_i = self._load_labels(y_path, data_info=data_info)
-            all_labels[data_info[0]] = label_i
-        return all_labels, data_infos
+        data_infos = []
+        for data_line in dataset_txt:
+            x_path = os.path.join(self.cfg.PATH.INPUT_PATH, data_line[1])
+            y_path = os.path.join(self.cfg.PATH.INPUT_PATH, data_line[2])
+            label_i = self._load_labels(y_path, data_info=data_line)
+            data_infos.append({'img_name': data_line[0],
+                               'img_path': x_path,
+                               'lab_path': y_path,
+                               'label': label_i
+                               })
+        return data_infos
 
     def _read_datas(self, data_info):
         '''
@@ -178,7 +185,7 @@ class OBD_Loader(DataLoader):
         :return: images, labels, image_size
         '''
         if self.cfg.TRAIN.USE_LMDB:
-            img_name = data_info[0]
+            img_name = data_info['img_name']
 
             try:
                 image_bin = self.txn_image.get(img_name.encode())
@@ -199,8 +206,8 @@ class OBD_Loader(DataLoader):
                 if not self._is_finedata(bbx): continue
                 label.append([self.cls2idx[self.class_name[cls_name]], bbx[0], bbx[1], bbx[2], bbx[3]])
         else:
-            x_path = data_info[1]
-            y_path = data_info[2]
+            x_path = data_info['img_path']
+            y_path = data_info['lab_path']
             if self.print_path:
                 print(x_path, '<--->', y_path)
             if not (os.path.isfile(x_path) and os.path.isfile(y_path)):
@@ -208,7 +215,7 @@ class OBD_Loader(DataLoader):
                 exit()
             # labels come first.
             try:
-                label = self.prepared_labels[data_info[0]]
+                label = self.prepared_labels[data_info['img_name']]
             except:
                 label = self._load_labels(y_path, data_info=data_info)
 
@@ -233,7 +240,7 @@ class OBD_Loader(DataLoader):
         if (x2 - x1) * (y2 - y1) < self.cfg.TRAIN.MIN_AREA: return False
         return True
 
-    def _load_labels(self, path, data_info=None, predicted_line=False, pass_obj=['_DontCare_', ]):
+    def _load_labels(self, path, data_info=None, predicted_line=False, pass_obj=[]):
         """
         Parse the labels from file.
 
@@ -349,6 +356,13 @@ class OBD_Loader(DataLoader):
 
         return bbs
 
+    def _prepare_multiszie(self):
+        self.gs = 32
+        imgsz_min, imgsz_max = self.cfg.TRAIN.MULTI_SCALE_SIZE
+        self.grid_min, self.grid_max = imgsz_min // self.gs, imgsz_max // self.gs
+        self.imgsz_min, self.imgsz_max = int(self.grid_min * self.gs), int(self.grid_max * self.gs)
+        self.img_size = imgsz_max  # initialize with max size
+
     def collate_fun(self, batch):
         '''
         collate_fn：如何取样本的，我们可以定义自己的函数来准确地实现想要的功能
@@ -364,9 +378,18 @@ class OBD_Loader(DataLoader):
             try:
                 label[:, 0] = i
             except:
-                print(infos[i])
+                print('collate fun error！！！：', infos[i])
         try:
             labels = torch.cat(labels, 0)
         except:
             print(labels, infos)
+
+        if self.cfg.TRAIN.MULTI_SCALE and self.is_training:
+            img_size = self.img_size
+            if random.random() > 0.5:  #  adjust img_size (67% - 150%) every 1 batch
+                img_size = random.randrange(self.grid_min, self.grid_max + 1) * self.gs
+            sf = img_size / max(imgs.shape[2:])  # scale factor
+            if sf != 1:
+                ns = [math.ceil(x * sf / self.gs) * self.gs for x in imgs.shape[2:]]  # new shape (stretched to 32-multiple)
+                imgs = torch.nn.functional.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
         return imgs, labels, list(infos)

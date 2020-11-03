@@ -20,7 +20,8 @@ class DataLoaderFactory:
             trainLoader = DataLoader(dataset=train_data,
                                      batch_size=self.cfg.TRAIN.BATCH_SIZE,
                                      sampler=sampler,
-                                     pin_memory=True,
+                                     shuffle=shuffle,
+                                     pin_memory=True,  # 这样将内存的Tensor转义到GPU的显存就会更快一些
                                      num_workers=self.args.number_works,
                                      collate_fn=train_data.collate_fun,
                                      )
@@ -40,7 +41,7 @@ class DataLoaderFactory:
         datas = []
         for i, da in enumerate(data):
             try:
-                datas.append(da.to(self.cfg.TRAIN.DEVICE, non_blocking=True))
+                datas.append(da.to(self.cfg.TRAIN.DEVICE))
             except:
                 datas.append(da)
         return datas

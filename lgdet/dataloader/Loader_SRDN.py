@@ -1,13 +1,8 @@
 from torch.utils.data import DataLoader
-from util.util_read_label_xml import _read_label_voc
-import os
-import torch
 import numpy as np
 import cv2
-from PIL import Image
 import random
-from util.util_CCPD import _crop_licience_plante
-from util.util_JPEG_compression import Jpegcompress2
+from lgdet.util.util_JPEG_compression import Jpegcompress2
 from torchvision import transforms as T
 from torch.utils.data._utils.collate import default_collate
 from prefetch_generator import BackgroundGenerator

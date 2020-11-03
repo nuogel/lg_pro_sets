@@ -1,6 +1,4 @@
-import torch
-import math
-from util.util_audio import Util_Audio
+from lgdet.util.util_audio import Util_Audio
 
 
 class Score:

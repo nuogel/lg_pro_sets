@@ -153,6 +153,7 @@ items| value
 model|yolo_tiny
 batch size|4
 gpu|nvidia-2080ti
+number_works|~
 
 dataloader only| 0 number works| 8 number works| 
 ---|---|---
