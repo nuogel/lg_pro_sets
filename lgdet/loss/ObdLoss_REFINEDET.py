@@ -6,12 +6,6 @@ import numpy as np
 
 
 class Detect_RefineDet():
-    """At test time, Detect is the final layer of SSD.  Decode location preds,
-    apply non-maximum suppression to location predictions based on conf
-    scores and threshold to a top_k number of output predictions for both
-    confidence score and locations.
-    """
-
     def __init__(self, cfg):
         self.num_classes = cfg.TRAIN.CLASSES_NUM
         self.top_k = 1000
@@ -20,15 +14,6 @@ class Detect_RefineDet():
         self.variance = [0.1, 0.2]
 
     def forward(self, predicts):
-        """
-        Args:
-            loc_data: (tensor) Loc preds from loc layers
-                Shape: [batch,num_priors*4]
-            conf_data: (tensor) Shape: Conf preds from conf layers
-                Shape: [batch*num_priors,num_classes]
-            prior_data: (tensor) Prior boxes and variances from priorbox layers
-                Shape: [1,num_priors,4]
-        """
         arm_loc_data, arm_conf_data, odm_loc_data, odm_conf_data, prior_data = predicts
 
         arm_conf_data = torch.softmax(arm_conf_data.view(arm_conf_data.size(0), -1, 2), -1)

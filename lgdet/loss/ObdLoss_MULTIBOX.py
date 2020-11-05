@@ -8,25 +8,12 @@ import numpy as np
 
 class MULTIBOXLOSS():
     def __init__(self, cfg):
-        """Implement SSD Multibox Loss.
-
-        Basically, Multibox loss combines classification loss
-         and Smooth L1 regression loss.
-        """
         self.cfg = cfg
         self.num_cls = self.cfg.TRAIN.CLASSES_NUM
         self.neg_iou_threshold = 0.5
         self.neg_pos_ratio = 3  # 3:1
 
     def Loss_Call(self, predictions, targets, kwargs):
-        """Compute classification loss and smooth l1 loss.
-
-        Args:
-            confidence (batch_size, num_priors, num_classes): class predictions.
-            locations (batch_size, num_priors, 4): predicted locations.
-            labels (batch_size, num_priors): real labels of all the priors.
-            boxes (batch_size, num_priors, 4): real boxes corresponding all the priors.
-        """
         confidence, predicted_locations, anchors_xywh = predictions
         batchsize = predicted_locations.shape[0]
         gt_images, gt_labels, infos = targets
@@ -68,19 +55,6 @@ class MULTIBOXLOSS():
         return {'total_loss': total_loss, 'metrics': metrics}
 
     def _hard_negative_mining(self, loss, labels, neg_pos_ratio):
-        """
-        It used to suppress the presence of a large number of negative prediction.
-        It works on image level not batch level.
-        For any example/image, it keeps all the positive predictions and
-         cut the number of negative predictions to make sure the ratio
-         between the negative examples and positive examples is no more
-         the given ratio for an image.
-
-        Args:
-            loss (N, num_priors): the loss for each example.
-            labels (N, num_priors): the labels.
-            neg_pos_ratio:  the ratio between the negative examples and positive examples.
-        """
         pos_mask = labels < self.num_cls
         num_pos = pos_mask.long().sum(dim=1, keepdim=True)
         num_neg = num_pos * neg_pos_ratio
@@ -91,18 +65,7 @@ class MULTIBOXLOSS():
         neg_mask = orders < num_neg
         return pos_mask | neg_mask
 
-    def _assign_priors(self, gt_boxes, gt_labels, corner_form_priors,
-                       iou_threshold):
-        """Assign ground truth boxes and targets to priors.
-
-        Args:
-            gt_boxes (num_targets, 4): ground truth boxes.
-            gt_labels (num_targets): labels of targets.
-            priors (num_priors, 4): corner form priors
-        Returns:
-            boxes (num_priors, 4): real values for priors.
-            labels (num_priros): labels for priors.
-        """
+    def _assign_priors(self, gt_boxes, gt_labels, corner_form_priors, iou_threshold):
         # size: num_priors x num_targets
         ious = iou_xywh(corner_form_priors, gt_boxes, type='N2N')
         # size: num_priors

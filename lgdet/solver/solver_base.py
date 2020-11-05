@@ -99,7 +99,7 @@ class BaseSolver(object):
 
         if self.cfg.TRAIN.LR_SCHEDULE == 'cos':
             print('using cos LambdaLR lr_scheduler')
-            lf = lambda x: (((1 + math.cos(x * math.pi / self.cfg.TRAIN.EPOCH_SIZE)) / 2) ** 1.0) * 0.99 + 0.01  # ==0.05 cosine the last lr = 0.05xlr_start
+            lf = lambda x: (((1 + math.cos(x * math.pi / self.cfg.TRAIN.EPOCH_SIZE)) / 2) ** 1.0) * 0.95 + 0.05  # ==0.05 cosine the last lr = 0.05xlr_start
             self.scheduler = lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lf, last_epoch=self.epoch_last - 1)
             # Plot lr schedule
             plot_lr = 0
@@ -191,7 +191,7 @@ class BaseSolver(object):
             torch.save(saved_dict, checkpoint_path)
         print('checkpoint is saved')
 
-    def _load_checkpoint(self, model, checkpoint, device, pre_trained=False):
+    def _load_checkpoint(self, model, checkpoint, device, pre_trained):
         new_dic = OrderedDict()
         checkpoint = torch.load(checkpoint, map_location=device)
         state_dict = checkpoint['state_dict']
@@ -200,7 +200,7 @@ class BaseSolver(object):
                 k = k.replace('module.', '')
             new_dic[k] = v
         model.load_state_dict(new_dic)
-        if pre_trained:
+        if pre_trained not in [0, None, False, '']:
             last_epoch = 0
             optimizer_dict = None
             global_step = 0

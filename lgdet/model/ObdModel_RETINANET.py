@@ -295,13 +295,26 @@ from ..registry import MODELS
 @MODELS.registry()
 class RETINANET(nn.Module):
     def __init__(self, cfg):
-        num_classes = cfg.TRAIN.CLASSES_NUM + 1  #:set last one as background
-        block = Bottleneck  # or BasicBlock   Bottleneck
-        _resnet50 = [3, 4, 6, 3]
-        _resnet101 = [3, 4, 23, 3]
-        layers = _resnet50
-        self.inplanes = 64
         super(RETINANET, self).__init__()
+        num_classes = cfg.TRAIN.CLASSES_NUM  # + 1  #:set last one as background
+        resnet_name = 'resnet18'
+        if resnet_name == 'resnet18':
+            block = BasicBlock
+            layers = [2, 2, 2, 2]
+        elif resnet_name == 'resnet34':
+            block = BasicBlock
+            layers = [3, 4, 6, 3]
+        elif resnet_name == 'resnet50':
+            block = Bottleneck
+            layers = [3, 4, 6, 3]
+        elif resnet_name == 'resnet101':
+            block = Bottleneck
+            layers = [3, 4, 23, 3]
+        elif resnet_name == 'resnet152':
+            block = Bottleneck
+            layers = [3, 8, 36, 3]
+
+        self.inplanes = 64
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
@@ -331,23 +344,24 @@ class RETINANET(nn.Module):
 
         self.clipBoxes = ClipBoxes()
 
-        # for m in self.modules():
-        #     if isinstance(m, nn.Conv2d):
-        #         n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-        #         m.weight.data.normal_(0, math.sqrt(2. / n))
-        #     elif isinstance(m, nn.BatchNorm2d):
-        #         m.weight.data.fill_(1)
-        #         m.bias.data.zero_()
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
+            elif isinstance(m, nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
 
-        # prior = 0.01
-        #
-        # self.classificationModel.output.weight.data.fill_(0)
-        # self.classificationModel.output.bias.data.fill_(-math.log((1.0 - prior) / prior))
-        #
-        # self.regressionModel.output.weight.data.fill_(0)
-        # self.regressionModel.output.bias.data.fill_(0)
-        #
-        # self.freeze_bn()
+        prior = 0.01
+
+        self.classificationModel.output.weight.data.fill_(0)
+        self.classificationModel.output.bias.data.fill_(-math.log((1.0 - prior) / prior))
+
+        self.regressionModel.output.weight.data.fill_(0)
+        self.regressionModel.output.bias.data.fill_(0)
+        print('loading pre-trained backbone: ', resnet_name)
+        self.load_state_dict(model_zoo.load_url(model_urls[resnet_name], model_dir='saved/checkpoint'), strict=False)
+        self.freeze_bn()
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
@@ -390,58 +404,3 @@ class RETINANET(nn.Module):
         anchors = self.anchors(args['input_x'])
 
         return classification, location, anchors
-
-
-def resnet18(num_classes, pretrained=False, **kwargs):
-    """Constructs a ResNet-18 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(num_classes, BasicBlock, [2, 2, 2, 2], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet18'], model_dir='.'), strict=False)
-    return model
-
-
-def resnet34(num_classes, pretrained=False, **kwargs):
-    """Constructs a ResNet-34 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(num_classes, BasicBlock, [3, 4, 6, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet34'], model_dir='.'), strict=False)
-    return model
-
-
-def resnet50(num_classes, pretrained=False, **kwargs):
-    """Constructs a ResNet-50 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(num_classes, Bottleneck, [3, 4, 6, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet50'], model_dir='.'), strict=False)
-    return model
-
-
-def resnet101(num_classes, pretrained=False, **kwargs):
-    """Constructs a ResNet-101 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(num_classes, Bottleneck, [3, 4, 23, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet101'], model_dir='.'), strict=False)
-    return model
-
-
-def resnet152(num_classes, pretrained=False, **kwargs):
-    """Constructs a ResNet-152 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(num_classes, Bottleneck, [3, 8, 36, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet152'], model_dir='.'), strict=False)
-    return model

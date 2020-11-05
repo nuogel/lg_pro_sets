@@ -9,7 +9,7 @@ I found that the mistake is the weights initiation. ——LuoGeng 2020.02.27.
 
 
 def weights_init(Modle, cfg):
-    if cfg.TRAIN.MODEL in ['SRDN', 'srdn', ]:
+    if cfg.TRAIN.MODEL in ['SRDN', 'srdn', 'retinanet']:
         torch.manual_seed(123)
     else:
         for m in Modle.modules():

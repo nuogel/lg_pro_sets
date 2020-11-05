@@ -67,7 +67,7 @@ class Solver(BaseSolver):
 
         self.scheduler.step()
         if self.ema: self.ema.update_attr(self.model)
-        if not self.cfg.TEST.ONE_TEST: self._save_checkpoint()
+        self._save_checkpoint()
 
     def _test_an_epoch(self, epoch):
         if not self.cfg.TEST.ONE_TEST:
