@@ -18,8 +18,11 @@ class RETINANETLOSS():
         self.cfg = cfg
         self.device = cfg.TRAIN.DEVICE
         self.num_cls = self.cfg.TRAIN.CLASSES_NUM
+        self.neg_pos_ratio = 3
         self.neg_iou_threshold = 0.5
-        self.focalloss = FocalLoss(reduction='none')
+        self.focalloss = FocalLoss()
+        self.becloss = torch.nn.BCELoss(reduction='sum')
+        self.use_hard_mining = 0 # use BCEloss
 
     def Loss_Call(self, predictions, targets, kwargs):
         """Compute classification loss and smooth l1 loss.
@@ -50,40 +53,35 @@ class RETINANETLOSS():
         gt_loc = torch.stack(gt_loc, dim=0)
         gt_cls = torch.stack(gt_cls, dim=0)
         pos_idx = torch.stack(pos_idx, dim=0)
-
         pos_num = pos_idx.sum()
-        ignore_mask = gt_cls == -1
+        if self.use_hard_mining:
+            with torch.no_grad():
+                loss = -F.log_softmax(pre_cls, dim=-1)[..., -1]  # -1 reprsent the background
+                mask = self._hard_negative_mining(loss, pos_idx, self.neg_pos_ratio)
+            cls_loss = self.becloss(pre_cls[mask], gt_cls[mask]) / pos_num
 
-        # cls_loss = self.focalloss(pre_cls, gt_cls, logist=True)
-        alpha_factor = torch.ones(gt_cls.shape).to(self.device) * 0.25
-        alpha_factor = torch.where(torch.eq(gt_cls, 1.), alpha_factor, 1. - alpha_factor)
-        focal_weight = torch.where(torch.eq(gt_cls, 1.), 1. - pre_cls, pre_cls)
-        focal_weight = alpha_factor * torch.pow(focal_weight, 2)
-        bce = F.binary_cross_entropy(pre_cls, gt_cls, reduction='none')
-        cls_loss = focal_weight * bce
-        cls_loss = cls_loss[~ignore_mask].sum()/pos_num
+        else:
+            cls_loss = self.focalloss(pre_cls, gt_cls, logist=False, reduction='sum') / pos_num
 
         pre_loc = pre_loc[pos_idx, :].reshape(-1, 4)
         gt_loc = gt_loc[pos_idx, :].reshape(-1, 4)
+        loc_loss = F.smooth_l1_loss(pre_loc, gt_loc, reduction='sum') / pos_num
 
-        loc_loss = F.smooth_l1_loss(pre_loc, gt_loc)
-
-        # num_pos = gt_loc.size(0)
-        total_loss = loc_loss + cls_loss
+        total_loss = (loc_loss + cls_loss)
 
         # metrics:
-        cls_p = (pre_cls[pos_idx].argmax(-1) == gt_cls[pos_idx].argmax(-1)).float().mean().item()
-        obj_sc = pre_cls[pos_idx].max(-1)[0].mean().item()
-        obj_t = (pre_cls[pos_idx].max(-1)[0] > self.cfg.TEST.SCORE_THRESH).float().mean().item()
-        nob_sc = pre_cls[~pos_idx].max(-1)[0].mean().item()
-        nob_t = (pre_cls[~pos_idx].max(-1)[0] > self.cfg.TEST.SCORE_THRESH).float().mean().item()
+        cls_p = (pre_cls[pos_idx][..., :-1].argmax(-1) == gt_cls[pos_idx][..., :-1].argmax(-1)).float().mean().item()
+        obj_sc = pre_cls[pos_idx][..., :-1].max(-1)[0].mean().item()
+        obj_t = (pre_cls[pos_idx][..., :-1].max(-1)[0] > self.cfg.TEST.SCORE_THRESH).float().mean().item()
+        nob_sc = pre_cls[~pos_idx][..., :-1].max(-1)[0].mean().item()
+        nob_t = (pre_cls[~pos_idx][..., :-1].max(-1)[0] > self.cfg.TEST.SCORE_THRESH).float().sum().item()
 
         metrics = {
-            'cls_p': cls_p,
             'obj_sc': obj_sc,
-            'obj>t': obj_t,
             'nob_sc': nob_sc,
+            'obj>t': obj_t,
             'nob>t': nob_t,
+            'cls_p': cls_p,
 
             'cls_loss': cls_loss.item(),
             'loc_loss': loc_loss.item(),
@@ -102,12 +100,13 @@ class RETINANETLOSS():
         best_target_per_prior.index_fill_(0, best_prior_per_target_index, 2)  # fill 2>1.
         # size: num_priors
 
-        gt_cls = torch.ones_like(pre_cls) * -1
-        gt_cls[torch.lt(best_target_per_prior, 0.4), :] = 0
+        gt_cls = torch.zeros_like(pre_cls)
         pos_idx = torch.ge(best_target_per_prior, 0.5)
+        neg_idx = ~pos_idx
+        gt_cls[neg_idx, -1] = 1  # background set to one hot [0, ..., 1]
         assigned_annotations = gt_labels[best_target_per_prior_index]
 
-        gt_cls[pos_idx, :] = 0
+        # gt_cls[pos_idx, :] = 0
         gt_cls[pos_idx, assigned_annotations[pos_idx].long()] = 1
         gt_loc = gt_boxes[best_target_per_prior_index]
         return gt_cls, gt_loc, pos_idx
@@ -117,3 +116,12 @@ class RETINANETLOSS():
                                    torch.log(xywh_boxes[..., 2:] / xywh_priors[..., 2:]) / 0.2
                                    ], dim=- 1)
         return encode_target
+
+    def _hard_negative_mining(self, loss, pos_idx, neg_pos_ratio):
+        num_pos = pos_idx.long().sum(dim=1, keepdim=True)
+        num_neg = num_pos * neg_pos_ratio
+        loss[pos_idx] = 0.
+        _, indexes = loss.sort(dim=1, descending=True)
+        _, orders = indexes.sort(dim=1)
+        neg_mask = orders < num_neg
+        return pos_idx | neg_mask

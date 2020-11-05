@@ -295,8 +295,8 @@ from ..registry import MODELS
 @MODELS.registry()
 class RETINANET(nn.Module):
     def __init__(self, cfg):
-        num_classes = cfg.TRAIN.CLASSES_NUM  # +1 :set last one as background
-        block = Bottleneck  # or BasicBlock
+        num_classes = cfg.TRAIN.CLASSES_NUM + 1  #:set last one as background
+        block = Bottleneck  # or BasicBlock   Bottleneck
         _resnet50 = [3, 4, 6, 3]
         _resnet101 = [3, 4, 23, 3]
         layers = _resnet50
@@ -331,23 +331,23 @@ class RETINANET(nn.Module):
 
         self.clipBoxes = ClipBoxes()
 
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
-            elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
+        # for m in self.modules():
+        #     if isinstance(m, nn.Conv2d):
+        #         n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+        #         m.weight.data.normal_(0, math.sqrt(2. / n))
+        #     elif isinstance(m, nn.BatchNorm2d):
+        #         m.weight.data.fill_(1)
+        #         m.bias.data.zero_()
 
-        prior = 0.01
-
-        self.classificationModel.output.weight.data.fill_(0)
-        self.classificationModel.output.bias.data.fill_(-math.log((1.0 - prior) / prior))
-
-        self.regressionModel.output.weight.data.fill_(0)
-        self.regressionModel.output.bias.data.fill_(0)
-
-        self.freeze_bn()
+        # prior = 0.01
+        #
+        # self.classificationModel.output.weight.data.fill_(0)
+        # self.classificationModel.output.bias.data.fill_(-math.log((1.0 - prior) / prior))
+        #
+        # self.regressionModel.output.weight.data.fill_(0)
+        # self.regressionModel.output.bias.data.fill_(0)
+        #
+        # self.freeze_bn()
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None

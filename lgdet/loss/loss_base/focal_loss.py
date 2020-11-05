@@ -37,13 +37,12 @@ def obj_noobj_loss_metrics(all_loss, obj_mask, reduction, split_loss):
 
 class FocalLoss(nn.Module):
 
-    def __init__(self, alpha=0.25, gamma=2, reduction='sum'):
+    def __init__(self, alpha=0.25, gamma=2):
         super().__init__()
         self.alpha = alpha
         self.gamma = gamma
-        self.reduction = reduction
 
-    def forward(self, pred, target, logist=False):
+    def forward(self, pred, target, logist=False, reduction='mean'):
         if logist:
             ce = F.binary_cross_entropy_with_logits(pred, target, reduction='none')
         else:
@@ -51,9 +50,9 @@ class FocalLoss(nn.Module):
         alpha = target * self.alpha + (1. - target) * (1. - self.alpha)
         pt = torch.where(target == 1, pred, 1 - pred)
         all_loss = alpha * (1. - pt) ** self.gamma * ce
-        if self.reduction == 'sum':
+        if reduction == 'sum':
             all_loss = torch.sum(all_loss)
-        elif self.reduction == 'mean':
+        elif reduction == 'mean':
             all_loss = torch.mean(all_loss)
         return all_loss
 

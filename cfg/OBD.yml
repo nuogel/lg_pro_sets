@@ -29,7 +29,7 @@ TRAIN:
   MIN_AREA: 10 #0 #100 #400 #
   #[H,W]
   #[384, 960] #[416, 416] #[512, 768] # [1024,1920] #[720,1024]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
-  IMG_SIZE: [416, 416]
+  IMG_SIZE: [384, 960]
   MULTI_SCALE: 0
   MULTI_SCALE_SIZE: [320, 640] #(320-640)//32
 
@@ -42,7 +42,7 @@ TRAIN:
   # optimizer:
   OPTIMIZER: 'adam' #'SGD' #
   LR_START: 0.001
-  LR_SCHEDULE: 'lr' #'cos'
+  LR_SCHEDULE: 'cos' #'cos'
   STEP_LR: 50
   WARM_UP_STEP: 100
   BETAS_ADAM: 0.9
@@ -68,7 +68,7 @@ TEST:
 
   # NMS:
   NMS_TYPE: 'SOFT_NMS'#'NMS'#
-  SCORE_THRESH: 0.6
+  SCORE_THRESH: 0.7
   IOU_THRESH: 0.5
   SOFNMS_THETA: 0.5
 
@@ -81,7 +81,7 @@ TEST:
   TEST_ONLY: 0
 
   ONE_TEST: 1
-  ONE_TEST_TRAIN_STEP: 100
+  ONE_TEST_TRAIN_STEP: 200
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
       ['000009', 'kitti/training/images/000009.png', 'kitti/training/labels/000009.xml']

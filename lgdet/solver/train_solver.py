@@ -41,7 +41,7 @@ class Solver(BaseSolver):
         # time5 = time.time()
         for step, train_data in enumerate(Pbar):
             if self.global_step < self.cfg.TRAIN.WARM_UP_STEP:
-                self.optimizer = self._set_warmup_lr(self.optimizer)
+                self._set_warmup_lr()
             train_data = self.DataFun.to_devce(train_data)
             # forward process
             predict = self.model.forward(input_x=train_data[0], input_y=train_data[1], input_data=train_data,
@@ -67,7 +67,7 @@ class Solver(BaseSolver):
 
         self.scheduler.step()
         if self.ema: self.ema.update_attr(self.model)
-        self._save_checkpoint()
+        if not self.cfg.TEST.ONE_TEST: self._save_checkpoint()
 
     def _test_an_epoch(self, epoch):
         if not self.cfg.TEST.ONE_TEST:
