@@ -11,6 +11,7 @@ from ..registry import DATALOADERS
 from lgdet.util.util_lg_transformer import LgTransformer
 import lmdb
 import pickle
+import tqdm
 import math
 
 
@@ -122,6 +123,8 @@ class OBD_Loader(DataLoader):
             if self.one_test: index = 0
             data_info = self.dataset_infos[index]
             img, _label = self._read_datas(data_info)  # labels: (x1, y1, x2, y2) & must be absolutely labels.
+            if self.dataset_infos[index]['label'] == 'not_load':
+                self.dataset_infos[index]['label'] = _label
             index = random.randint(0, len(self.dataset_infos) - 1)
             if not self.is_training and not _label:  # for test
                 break
@@ -167,10 +170,15 @@ class OBD_Loader(DataLoader):
         if self.one_test:
             dataset_txt = one_name
         data_infos = []
-        for data_line in dataset_txt:
+        pre_load_labels = 0
+        tqd = tqdm.tqdm(dataset_txt)
+        for data_line in tqd:
             x_path = os.path.join(self.cfg.PATH.INPUT_PATH, data_line[1])
             y_path = os.path.join(self.cfg.PATH.INPUT_PATH, data_line[2])
-            label_i = self._load_labels(y_path, data_info=data_line)
+            if pre_load_labels:
+                label_i = self._load_labels(y_path, data_info=data_line)
+            else:
+                label_i = 'not_load'
             data_infos.append({'img_name': data_line[0],
                                'img_path': x_path,
                                'lab_path': y_path,
@@ -205,6 +213,7 @@ class OBD_Loader(DataLoader):
                     continue
                 if not self._is_finedata(bbx): continue
                 label.append([self.cls2idx[self.class_name[cls_name]], bbx[0], bbx[1], bbx[2], bbx[3]])
+
         else:
             x_path = data_info['img_path']
             y_path = data_info['lab_path']

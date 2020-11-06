@@ -95,6 +95,7 @@ class BaseSolver(object):
 
         if self.args.lr_continue:
             self.optimizer.param_groups[0]['lr'] = self.args.lr_continue
+            self.optimizer.param_groups[0]['initial_lr'] = self.args.lr_continue
         self.learning_rate = self.optimizer.param_groups[0]['lr']
 
         if self.cfg.TRAIN.LR_SCHEDULE == 'cos':
@@ -189,7 +190,7 @@ class BaseSolver(object):
             checkpoint_path = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoints/' + self.cfg.TRAIN.MODEL, path_i + '.pkl')
             os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
             torch.save(saved_dict, checkpoint_path)
-        print('checkpoint is saved')
+            print('checkpoint is saved:', checkpoint_path)
 
     def _load_checkpoint(self, model, checkpoint, device, pre_trained):
         new_dic = OrderedDict()
@@ -200,6 +201,12 @@ class BaseSolver(object):
                 k = k.replace('module.', '')
             new_dic[k] = v
         model.load_state_dict(new_dic)
+        # try:
+        #     model.load_state_dict(new_dic)
+        # except:
+        #     print('checkpont is not correct! trying strick=False')
+        #     model.load_state_dict(new_dic, strict=False)
+
         if pre_trained not in [0, None, False, '']:
             last_epoch = 0
             optimizer_dict = None

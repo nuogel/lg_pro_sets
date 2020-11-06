@@ -297,7 +297,7 @@ class RETINANET(nn.Module):
     def __init__(self, cfg):
         super(RETINANET, self).__init__()
         num_classes = cfg.TRAIN.CLASSES_NUM  # + 1  #:set last one as background
-        resnet_name = 'resnet18'
+        resnet_name = 'resnet50'
         if resnet_name == 'resnet18':
             block = BasicBlock
             layers = [2, 2, 2, 2]
