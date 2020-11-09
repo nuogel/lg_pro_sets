@@ -35,8 +35,9 @@ class BaseSolver(object):
         # init model:
         if self.args.checkpoint not in [0, '0', 'None', 'no', 'none', "''"]:
             if self.args.checkpoint in [1, '1']: self.args.checkpoint = os.path.join(self.cfg.PATH.TMP_PATH + 'checkpoints/' + self.cfg.TRAIN.MODEL, 'now.pkl')
-            self.model, self.epoch_last, self.optimizer_dict, self.global_step = self._load_checkpoint(self.model, self.args.checkpoint, self.cfg.TRAIN.DEVICE,
-                                                                                                       self.args.pre_trained)
+            self.model, self.epoch_last, self.optimizer_dict, self.optimizer_type, self.global_step = self._load_checkpoint(self.model, self.args.checkpoint,
+                                                                                                                            self.cfg.TRAIN.DEVICE,
+                                                                                                                            self.args.pre_trained)
             self.cfg.writer.tbX_reStart(self.epoch_last)
         else:
             weights_init(self.model, self.cfg)
@@ -68,7 +69,7 @@ class BaseSolver(object):
         self.lossfun = get_loss_class(self.cfg.BELONGS, self.cfg.TRAIN.MODEL)(self.cfg)
 
     def _get_optimizer(self):
-        opt_type = self.cfg.TRAIN.OPTIMIZER
+        opt_type = self.cfg.TRAIN.OPTIMIZER.lower()
         learning_rate = self.args.lr
         # model_parameters = filter(lambda p: p.requires_grad, self.model.parameters())
 
@@ -80,9 +81,9 @@ class BaseSolver(object):
         #         pa_conv += [v]  # apply weight_decay
         #     else:
         #         pa_others += [v]  # all else
-        if opt_type == 'adam' or opt_type == 'Adam':
+        if opt_type == 'adam':
             self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=5e-4)
-        elif opt_type == 'sgd' or opt_type == 'SGD':
+        elif opt_type == 'sgd':
             self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=0.937, weight_decay=5e-4)
         else:
             self.cfg.logger.error('NO such a optimizer: ' + str(opt_type))
@@ -90,9 +91,9 @@ class BaseSolver(object):
         # self.optimizer.add_param_group({'params': pa_bias})  # add pa_bias (biases)
         # del pa_others, pa_conv, pa_bias
 
-        if self.optimizer_dict:
+        if self.optimizer_dict and opt_type == self.optimizer_type:
             self.optimizer.load_state_dict(self.optimizer_dict)
-
+        self.optimizer.param_groups[0]['initial_lr'] = learning_rate
         if self.args.lr_continue:
             self.optimizer.param_groups[0]['lr'] = self.args.lr_continue
             self.optimizer.param_groups[0]['initial_lr'] = self.args.lr_continue
@@ -180,9 +181,10 @@ class BaseSolver(object):
 
     def _save_checkpoint(self):
         _model = self.ema.ema if self.ema else self.model
-        saved_dict = {'state_dict': _model.state_dict(),
-                      'epoch': self.epoch,
+        saved_dict = {'epoch': self.epoch,
+                      'state_dict': _model.state_dict(),
                       'optimizer': self.optimizer.state_dict(),
+                      'optimizer_type': self.cfg.TRAIN.OPTIMIZER.lower(),
                       'global_step': self.global_step}
 
         path_list = [str(self.epoch), 'now']
@@ -211,8 +213,10 @@ class BaseSolver(object):
             last_epoch = 0
             optimizer_dict = None
             global_step = 0
+            optimizer_type = self.cfg.TRAIN.OPTIMIZER.lower()
         else:
             last_epoch = checkpoint['epoch']
             optimizer_dict = checkpoint['optimizer']
+            optimizer_type = checkpoint['optimizer_type']
             global_step = checkpoint['global_step']
-        return model, last_epoch, optimizer_dict, global_step
+        return model, last_epoch, optimizer_dict, optimizer_type, global_step

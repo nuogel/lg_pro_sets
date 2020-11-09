@@ -101,11 +101,13 @@ class YoloLoss:
         lcls, lbox, lobj = [torch.FloatTensor([0]).to(self.device) for _ in range(3)]
 
         pre_obj, pre_cls, pre_loc_xy, pre_loc_wh, pre_relative_box = self.parsepredict._parse_yolo_predict_fmap(f_map, f_id)
-        tcls, tbox, indices, indices_ignore, anchors = self.build_targets(pre_obj, labels, f_id)  # targets
-        B, C, H, W = pre_obj.shape
-        tobj = torch.zeros_like(pre_obj)  # target obj
-        num_target = anchors.shape[0]  # number of targets
-        loss_ratio = {'box': 1, 'cls': 1, 'obj': 1, 'noobj': 1}
+        with torch.no_grad():
+            tcls, tbox, indices, indices_ignore, anchors = self.build_targets(pre_obj, labels, f_id)  # targets
+            B, C, H, W = pre_obj.shape
+            tobj = torch.zeros_like(pre_obj)  # target obj
+            num_target = anchors.shape[0]  # number of targets
+            loss_ratio = {'box': 1, 'cls': 1, 'obj': 1, 'noobj': 1}
+
         if num_target:
             pre_cls, pre_xy, pre_wh = [i[indices] for i in [pre_cls, pre_loc_xy, pre_loc_wh]]
             t_cls = torch.zeros_like(pre_cls)  # targets
