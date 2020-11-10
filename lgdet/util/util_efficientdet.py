@@ -417,7 +417,7 @@ class ClassificationModel(nn.Module):
         self.conv4 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1)
         self.act4 = nn.ReLU()
         self.output = nn.Conv2d(feature_size, num_anchors * num_classes, kernel_size=3, padding=1)
-        self.output_act = nn.Sigmoid()
+        # self.output_act = nn.Sigmoid()
 
     def forward(self, x):
         out = self.conv1(x)
@@ -429,7 +429,7 @@ class ClassificationModel(nn.Module):
         out = self.conv4(out)
         out = self.act4(out)
         out = self.output(out)
-        out = self.output_act(out)
+        # out = self.output_act(out)
         # out is B x C x W x H, with C = n_classes + n_anchors
         out1 = out.permute(0, 2, 3, 1)
         batch_size, width, height, channels = out1.shape

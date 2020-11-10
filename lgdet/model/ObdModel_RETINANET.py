@@ -220,7 +220,7 @@ class RegressionModel(nn.Module):
         self.conv4 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1)
         self.act4 = nn.ReLU()
 
-        self.output = nn.Conv2d(feature_size, num_anchors * 4, kernel_size=3, padding=1)
+        self.header = nn.Conv2d(feature_size, num_anchors * 4, kernel_size=3, padding=1)
 
     def forward(self, x):
         out = self.conv1(x)
@@ -235,7 +235,7 @@ class RegressionModel(nn.Module):
         out = self.conv4(out)
         out = self.act4(out)
 
-        out = self.output(out)
+        out = self.header(out)
 
         # out is B x C x W x H, with C = 4*num_anchors
         out = out.permute(0, 2, 3, 1)
@@ -262,7 +262,7 @@ class ClassificationModel(nn.Module):
         self.conv4 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1)
         self.act4 = nn.ReLU()
 
-        self.output = nn.Conv2d(feature_size, num_anchors * num_classes, kernel_size=3, padding=1)
+        self.header = nn.Conv2d(feature_size, num_anchors * num_classes, kernel_size=3, padding=1)
 
     def forward(self, x):
         out = self.conv1(x)
@@ -277,7 +277,7 @@ class ClassificationModel(nn.Module):
         out = self.conv4(out)
         out = self.act4(out)
 
-        out = self.output(out)
+        out = self.header(out)
 
         # out is B x C x W x H, with C = n_classes + n_anchors
         out1 = out.permute(0, 2, 3, 1)
@@ -335,8 +335,8 @@ class RETINANET(nn.Module):
 
         self.fpn = PyramidFeatures(fpn_sizes[0], fpn_sizes[1], fpn_sizes[2])
 
-        self.regressionModel = RegressionModel(256)
-        self.classificationModel = ClassificationModel(256, num_classes=num_classes)
+        self.regression = RegressionModel(256)
+        self.classifier = ClassificationModel(256, num_classes=num_classes)
 
         self.anchors = Anchors()
 
@@ -344,21 +344,6 @@ class RETINANET(nn.Module):
 
         self.clipBoxes = ClipBoxes()
 
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
-            elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
-
-        prior = 0.01
-
-        self.classificationModel.output.weight.data.fill_(0)
-        self.classificationModel.output.bias.data.fill_(-math.log((1.0 - prior) / prior))
-
-        self.regressionModel.output.weight.data.fill_(0)
-        self.regressionModel.output.bias.data.fill_(0)
         print('loading pre-trained backbone: ', resnet_name)
         self.load_state_dict(model_zoo.load_url(model_urls[resnet_name], model_dir='saved/checkpoint'), strict=False)
         self.freeze_bn()
@@ -399,8 +384,8 @@ class RETINANET(nn.Module):
 
         features = self.fpn([x2, x3, x4])
 
-        classification = torch.cat([self.classificationModel(feature) for feature in features], dim=1)
-        location = torch.cat([self.regressionModel(feature) for feature in features], dim=1)
+        classification = torch.cat([self.classifier(feature) for feature in features], dim=1)
+        location = torch.cat([self.regression(feature) for feature in features], dim=1)
         anchors = self.anchors(args['input_x'])
 
         return classification, location, anchors

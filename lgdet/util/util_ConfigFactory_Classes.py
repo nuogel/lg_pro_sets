@@ -1,4 +1,3 @@
-
 def get_score_class(belongs):
     if belongs == 'VID': belongs = 'OBD'
     class_name = 'Score_' + str(belongs).upper()
@@ -26,7 +25,7 @@ def get_loss_class(belongs, modelname):
     if modelname[:4] == 'yolo':
         from lgdet.loss.ObdLoss_YOLO import YoloLoss
         return YoloLoss
-    elif modelname in ['ssdvgg', 'efficientdet']:
+    elif modelname in ['ssdvgg']:
         from lgdet.loss.ObdLoss_MULTIBOX import MULTIBOXLOSS
         return MULTIBOXLOSS
     elif belongs == 'SRDN':
@@ -45,7 +44,7 @@ def get_loss_class(belongs, modelname):
             'fcos': FCOSLOSS,
             'refinedet': REFINEDETLOSS,
             'retinanet': RETINANETLOSS,
-
+            'efficientdet': RETINANETLOSS,
             # ASR
             'rnn': RnnLoss,
             'ctc': RnnLoss,

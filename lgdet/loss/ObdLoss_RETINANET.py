@@ -41,6 +41,8 @@ class RETINANETLOSS():
             pos_neg_mask = pos_mask | neg_mask
             gt_loc = gt_loc[pos_mask, :].reshape(-1, 4)
             pos_num = pos_mask.sum().float()
+            if pos_num==0:
+                print('no positive box')
 
         # cls_loss, pos_loss, neg_loss = self.focalloss(pre_cls, gt_cls, pos_mask, neg_mask, reduction='sum') #FOCALLOSS_LG
         cls_loss = self.focalloss(pre_cls[pos_neg_mask], gt_cls[pos_neg_mask], logist=False, reduction='sum')

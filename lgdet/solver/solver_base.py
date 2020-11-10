@@ -83,6 +83,8 @@ class BaseSolver(object):
         #         pa_others += [v]  # all else
         if opt_type == 'adam':
             self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=5e-4)
+        elif opt_type == 'adamw':
+            self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=learning_rate)  # weight_decay=1e-2
         elif opt_type == 'sgd':
             self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=0.937, weight_decay=5e-4)
         else:
