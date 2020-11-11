@@ -9,6 +9,9 @@ from lgdet.model.ObdModel_EFFICIENTNET_GN import EfficientNet as EffNet
 from lgdet.util.util_efficientdet2 import MemoryEfficientSwish, Swish, Conv2dStaticSamePadding, MaxPool2dStaticSamePadding
 from lgdet.util.util_anchor_maker import Anchors
 
+'''
+efficientdet with GN(nn.GroupNorm), not BN.
+'''
 
 def nms(dets, thresh):
     return nms_torch(dets[:, :4], dets[:, 4], thresh)
@@ -524,7 +527,6 @@ class EFFICIENTDET(nn.Module):
 
         self.backbone_net = EfficientNet(self.backbone_compound_coef[compound_coef], load_weights)
 
-        self.load_state_dict(torch.load('saved/checkpoint/efficientdet-d0.pth'))
 
     def freeze_bn(self):
         for m in self.modules():

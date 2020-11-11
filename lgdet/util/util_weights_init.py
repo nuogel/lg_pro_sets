@@ -11,15 +11,15 @@ I found that the mistake is the weights initiation. ——LuoGeng 2020.02.27.
 
 
 def weights_init(Modle, cfg):
-    if cfg.TRAIN.MODEL in ['SRDN', 'srdn', 'retinanet']:
+    if cfg.TRAIN.MODEL in ['SRDN', 'srdn', 'retinanet', ]:
         torch.manual_seed(123)
     else:
         for name, m in Modle.named_modules():
             if isinstance(m, torch.nn.Conv2d):
-                if 'conv_list' in name or "header" in name:
-                    variance_scaling_(m.weight.data)
-                else:
-                    torch.nn.init.kaiming_normal_(m.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
+                # if 'conv_list' in name or "header" in name:
+                variance_scaling_(m.weight.data)
+                # else:
+                #     torch.nn.init.kaiming_normal_(m.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
 
                 if m.bias is not None:
                     if "classifier.header" in name:

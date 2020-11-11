@@ -17,6 +17,8 @@ class RETINANETLOSS():
 
     def Loss_Call(self, predictions, targets, kwargs):  # predictions with sigmoid()
         pre_cls, pre_loc, anc_xywh = predictions
+        pre_cls = torch.clamp(pre_cls, 1e-4, 1.0 - 1e-4)
+
         with torch.no_grad():
             batchsize = pre_loc.shape[0]
             _, gt_labels, infos = targets
