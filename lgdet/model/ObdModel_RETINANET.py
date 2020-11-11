@@ -220,7 +220,7 @@ class RegressionModel(nn.Module):
         self.conv4 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1)
         self.act4 = nn.ReLU()
 
-        self.header = nn.Conv2d(feature_size, num_anchors * 4, kernel_size=3, padding=1)
+        self.output = nn.Conv2d(feature_size, num_anchors * 4, kernel_size=3, padding=1)
 
     def forward(self, x):
         out = self.conv1(x)
@@ -235,7 +235,7 @@ class RegressionModel(nn.Module):
         out = self.conv4(out)
         out = self.act4(out)
 
-        out = self.header(out)
+        out = self.output(out)
 
         # out is B x C x W x H, with C = 4*num_anchors
         out = out.permute(0, 2, 3, 1)
@@ -262,7 +262,7 @@ class ClassificationModel(nn.Module):
         self.conv4 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1)
         self.act4 = nn.ReLU()
 
-        self.header = nn.Conv2d(feature_size, num_anchors * num_classes, kernel_size=3, padding=1)
+        self.output = nn.Conv2d(feature_size, num_anchors * num_classes, kernel_size=3, padding=1)
 
     def forward(self, x):
         out = self.conv1(x)
@@ -277,7 +277,7 @@ class ClassificationModel(nn.Module):
         out = self.conv4(out)
         out = self.act4(out)
 
-        out = self.header(out)
+        out = self.output(out)
 
         # out is B x C x W x H, with C = n_classes + n_anchors
         out1 = out.permute(0, 2, 3, 1)
@@ -285,8 +285,8 @@ class ClassificationModel(nn.Module):
         batch_size, width, height, channels = out1.shape
 
         out2 = out1.view(batch_size, width, height, self.num_anchors, self.num_classes)
-
-        return out2.contiguous().view(x.shape[0], -1, self.num_classes)
+        out2 = out2.contiguous().view(x.shape[0], -1, self.num_classes)
+        return out2
 
 
 from ..registry import MODELS
@@ -335,8 +335,8 @@ class RETINANET(nn.Module):
 
         self.fpn = PyramidFeatures(fpn_sizes[0], fpn_sizes[1], fpn_sizes[2])
 
-        self.regression = RegressionModel(256)
-        self.classifier = ClassificationModel(256, num_classes=num_classes)
+        self.regressionModel = RegressionModel(256)
+        self.classificationModel = ClassificationModel(256, num_classes=num_classes)
 
         self.anchors = Anchors()
 
@@ -384,8 +384,10 @@ class RETINANET(nn.Module):
 
         features = self.fpn([x2, x3, x4])
 
-        classification = torch.cat([self.classifier(feature) for feature in features], dim=1)
-        location = torch.cat([self.regression(feature) for feature in features], dim=1)
+        classification = torch.cat([self.classificationModel(feature) for feature in features], dim=1)
+        location = torch.cat([self.regressionModel(feature) for feature in features], dim=1)
         anchors = self.anchors(args['input_x'])
+
+        classification = classification.sigmoid()
 
         return classification, location, anchors

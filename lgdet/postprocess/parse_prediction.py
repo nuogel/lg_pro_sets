@@ -34,35 +34,10 @@ class ParsePredict:
             'refinedet': self._parse_refinedet_predict,
             'efficientdet': self._parse_multibox_predict,
             'ssdvgg': self._parse_multibox_predict,
-            'retinanet':self._parse_multibox_predict
+            'retinanet': self._parse_multibox_predict
         }
 
         labels_predict = PARSEDICT[self.cfg.TRAIN.MODEL](f_maps)
-
-        return labels_predict
-
-    def predict2labels(self, labels_predict, data_infos):
-        labels_predict = self.transformer.decode_pad2size(labels_predict, data_infos)  # absolute labels
-
-        return labels_predict
-
-    def _parse_multi_boxes(self, pre_score, pre_loc, xywh2x1y1x2y2=True):
-
-        labels_predict = []
-        for batch_n in range(pre_score.shape[0]):
-            pre_score_max = pre_score[batch_n].max(-1)
-            pre_score_i = pre_score_max[0]
-            pre_class_i = pre_score_max[1]
-            pre_loc_i = pre_loc[batch_n]
-
-            index = pre_score_i > self.cfg.TEST.SCORE_THRESH
-
-            _pre_score = pre_score_i[index]
-            _pre_class = pre_class_i[index]
-            _pre_loc = pre_loc_i[index]
-
-            labels = self.NMS.forward(_pre_score, _pre_class, _pre_loc, xywh2x1y1x2y2)
-            labels_predict.append(labels)
 
         return labels_predict
 
@@ -221,22 +196,35 @@ class ParsePredict:
 
     def _parse_multibox_predict(self, predicts):
         pre_score, pre_loc, anchors_xywh = predicts
-        pre_score = torch.sigmoid(pre_score)  # conf preds
+        # pre_score = torch.sigmoid(pre_score)  # conf preds
         pre_loc_xywh = self._decode_bboxes(pre_loc, anchors_xywh)
         labels_predict = self._parse_multi_boxes(pre_score, pre_loc_xywh)
+        return labels_predict
+
+    def _parse_multi_boxes(self, pre_score, pre_loc, xywh2x1y1x2y2=True):
+
+        labels_predict = []
+        for batch_n in range(pre_score.shape[0]):
+            pre_score_max = pre_score[batch_n].max(-1)
+            pre_score_i = pre_score_max[0]
+            pre_class_i = pre_score_max[1]
+            pre_loc_i = pre_loc[batch_n]
+
+            index = pre_score_i > self.cfg.TEST.SCORE_THRESH
+            num_pos = index.sum()
+            _pre_score = pre_score_i[index]
+            _pre_class = pre_class_i[index]
+            _pre_loc = pre_loc_i[index]
+
+            labels = self.NMS.forward(_pre_score, _pre_class, _pre_loc, xywh2x1y1x2y2)
+            labels_predict.append(labels)
+
         return labels_predict
 
     def _parse_refinedet_predict(self, predicts):
         detecte = Detect_RefineDet(self.cfg)
         pre_score, pre_loc = detecte.forward(predicts)
         pre_loc_xywh = xyxy2xywh(pre_loc)
-        labels_predict = self._parse_multi_boxes(pre_score, pre_loc_xywh)
-
-        return labels_predict
-
-    def _parse_efficientdet_predict(self, predicts):
-        pre_score, pre_loc_xyxy = predicts
-        pre_loc_xywh = xyxy2xywh(pre_loc_xyxy)
         labels_predict = self._parse_multi_boxes(pre_score, pre_loc_xywh)
         return labels_predict
 
@@ -323,41 +311,7 @@ class ParsePredict:
 
         return labels_predict
 
+    def predict2labels(self, labels_predict, data_infos):
+        labels_predict = self.transformer.decode_pad2size(labels_predict, data_infos)  # absolute labels
 
-class DecodeBBox(nn.Module):
-
-    def __init__(self, mean=None, std=None):
-        super(DecodeBBox, self).__init__()
-        if mean is None:
-            self.mean = torch.from_numpy(np.array([0, 0, 0, 0]).astype(np.float32))
-        else:
-            self.mean = mean
-        if std is None:
-            self.std = torch.from_numpy(np.array([0.1, 0.1, 0.2, 0.2]).astype(np.float32))
-        else:
-            self.std = std
-
-    def forward(self, predicts, anchors):
-        a_width = anchors[:, :, 2] - anchors[:, :, 0]
-        a_height = anchors[:, :, 3] - anchors[:, :, 1]
-        ctr_x = anchors[:, :, 0] + 0.5 * a_width
-        ctr_y = anchors[:, :, 1] + 0.5 * a_height
-
-        dx = predicts[:, :, 0] * self.std[0] + self.mean[0]
-        dy = predicts[:, :, 1] * self.std[1] + self.mean[1]
-        dw = predicts[:, :, 2] * self.std[2] + self.mean[2]
-        dh = predicts[:, :, 3] * self.std[3] + self.mean[3]
-
-        pred_ctr_x = ctr_x + dx * a_width
-        pred_ctr_y = ctr_y + dy * a_height
-        pred_w = torch.exp(dw) * a_width
-        pred_h = torch.exp(dh) * a_height
-
-        pred_boxes_x1 = pred_ctr_x - 0.5 * pred_w
-        pred_boxes_y1 = pred_ctr_y - 0.5 * pred_h
-        pred_boxes_x2 = pred_ctr_x + 0.5 * pred_w
-        pred_boxes_y2 = pred_ctr_y + 0.5 * pred_h
-
-        pred_boxes = torch.stack([pred_boxes_x1, pred_boxes_y1, pred_boxes_x2, pred_boxes_y2], dim=2)
-
-        return pred_boxes
+        return labels_predict

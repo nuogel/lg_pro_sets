@@ -35,7 +35,10 @@ def weights_init(Modle, cfg):
                     m.bias_ih_l0.data.zero_()
                 if m.bias_hh_l0 is not None:
                     m.bias_hh_l0.data.zero_()
-            elif isinstance(m, torch.nn.BatchNorm2d) or isinstance(m, torch.nn.GroupNorm) or isinstance(m, torch.nn.SyncBatchNorm):
+            elif isinstance(m, torch.nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
+            elif isinstance(m, torch.nn.GroupNorm) or isinstance(m, torch.nn.SyncBatchNorm):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
             elif isinstance(m, torch.nn.Linear):

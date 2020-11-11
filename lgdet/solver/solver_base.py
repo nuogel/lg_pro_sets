@@ -55,10 +55,10 @@ class BaseSolver(object):
         if self.is_training:
             self.model.train()
         else:
-            if not self.cfg.TEST.ONE_TEST:
-                self.model.eval()
-            else:
+            if self.cfg.TEST.ONE_TEST:
                 self.model.train()
+            else:
+                self.model.eval()
 
         self.model = self.model.to(self.cfg.TRAIN.DEVICE)
 
@@ -89,6 +89,7 @@ class BaseSolver(object):
             self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=0.937, weight_decay=5e-4)
         else:
             self.cfg.logger.error('NO such a optimizer: ' + str(opt_type))
+        print('using: ', opt_type)
         # self.optimizer.add_param_group({'params': pa_conv, 'weight_decay': 0.0005})  # add pa_conv with weight_decay
         # self.optimizer.add_param_group({'params': pa_bias})  # add pa_bias (biases)
         # del pa_others, pa_conv, pa_bias

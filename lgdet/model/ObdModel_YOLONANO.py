@@ -106,7 +106,7 @@ class FCA(nn.Module):
             nn.Linear(channels, hidden_channels, bias=False),
             nn.ReLU6(inplace=True),
             nn.Linear(hidden_channels, channels, bias=False),
-            nn.Sigmoid()
+            # nn.Sigmoid()
         )
 
     def forward(self, x):
