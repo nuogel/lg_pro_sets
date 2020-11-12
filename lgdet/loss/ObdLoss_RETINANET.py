@@ -34,27 +34,23 @@ class RETINANETLOSS():
                 gt_cls.append(_gt_cls)
                 pos_mask.append(_pos_mask)
                 neg_mask.append(_neg_mask)
-            gt_loc = torch.stack(gt_loc, dim=0)
-            gt_cls = torch.stack(gt_cls, dim=0)
-            pos_mask = torch.stack(pos_mask, dim=0)
-            neg_mask = torch.stack(neg_mask, dim=0)
+            [gt_loc, gt_cls, pos_mask, neg_mask] = [torch.stack(xx, dim=0) for xx in [gt_loc, gt_cls, pos_mask, neg_mask]]
             pos_neg_mask = pos_mask | neg_mask
             gt_loc = gt_loc[pos_mask, :].reshape(-1, 4)
             pos_num = pos_mask.sum().float()
-            if pos_num == 0:
-                print('no positive box')
 
-        # cls_loss, pos_loss, neg_loss = self.focalloss(pre_cls, gt_cls, pos_mask, neg_mask, reduction='sum') #FOCALLOSS_LG
+        # cls_loss, pos_loss, neg_loss = self.focalloss(pre_cls, gt_cls, pos_mask, neg_mask, reduction='sum')  # FOCALLOSS_LG
         cls_loss = self.focalloss(pre_cls[pos_neg_mask], gt_cls[pos_neg_mask], logist=False, reduction='sum')
         pre_loc = pre_loc[pos_mask, :].reshape(-1, 4)
         loc_loss = F.smooth_l1_loss(pre_loc, gt_loc, reduction='none')
         loc_loss = loc_loss.mean(-1).sum()
 
-        # pos_loss /= pos_num
-        # neg_loss /= pos_num
+        # pos_loss /= pos_num/self.num_cls
+        # neg_loss /= (pos_num)
         cls_loss /= pos_num
         loc_loss /= pos_num
         total_loss = cls_loss + loc_loss
+        # total_loss = pos_loss + neg_loss + loc_loss
 
         # metrics:
         with torch.no_grad():
@@ -72,6 +68,7 @@ class RETINANETLOSS():
                 'nob>t': neg_t,
                 'cls_p': cls_p,
                 'cls_loss': cls_loss.item(),
+                # 'pos_loss': pos_loss.item(),
                 # 'neg_loss': neg_loss.item(),
                 'loc_loss': loc_loss.item(),
             }
@@ -85,22 +82,23 @@ class RETINANETLOSS():
         # 则这个最大IoU的Anchor也设为正样本。但是在遍历COCO数据集后发现，这种情况非常少见，
         # 因此我们不使用第一条Anchor分配规则。这样相当于这部分object没有用于训练，
         # 但由于数量很少，对模型的性能表现不会产生影响。
-        # best_prior_per_target, best_prior_per_target_index = ious.max(0)
-        # for target_index, prior_index in enumerate(best_prior_per_target_index):
-        # best_target_per_prior_index[prior_index] = target_index
-        # #2.0 is used to make sure every target has a prior assigned
-        # best_target_per_prior.index_fill_(0, best_prior_per_target_index, 2)  # fill 2>1.
-        # # size: num_priors
+        best_prior_per_target, best_prior_per_target_index = ious.max(0)
+        for target_index, prior_index in enumerate(best_prior_per_target_index):
+            best_target_per_prior_index[prior_index] = target_index
+        # 2.0 is used to make sure every target has a prior assigned
+        best_target_per_prior.index_fill_(0, best_prior_per_target_index, 1.)  # fill 2>1.
+        # size: num_priors
 
         gt_cls = torch.zeros_like(pre_cls)
         pos_mask = best_target_per_prior > 0.5
         neg_mask = best_target_per_prior < 0.4
 
+        best_target_per_prior_index_pose = best_target_per_prior_index[pos_mask]
         # gt_cls[neg_mask, -1] = 1  # background set to one hot [0, ..., 1]
-        assigned_annotations = gt_labels[best_target_per_prior_index]
+        assigned_annotations = gt_labels[best_target_per_prior_index_pose]
 
         # gt_cls[pos_mask, :] = 0
-        gt_cls[pos_mask, assigned_annotations[pos_mask].long()] = 1
+        gt_cls[pos_mask, assigned_annotations.long()] = 1
         gt_loc = gt_boxes[best_target_per_prior_index]
         return gt_cls, gt_loc, pos_mask, neg_mask
 

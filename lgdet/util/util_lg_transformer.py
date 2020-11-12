@@ -353,7 +353,7 @@ class LgTransformer:
         # cv2 inplace normalization does not accept uint8
         assert img.dtype != np.uint8
         mean = np.float64(mean.reshape(1, -1))
-        stdinv = 1 / np.float64(std.reshape(1, -1))
+        stdinv = 1. / np.float64(std.reshape(1, -1))
         if to_rgb:
             cv2.cvtColor(img, cv2.COLOR_BGR2RGB, img)  # inplace
         cv2.subtract(img, mean, img)  # inplace

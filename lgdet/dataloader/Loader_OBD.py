@@ -30,10 +30,8 @@ class OBD_Loader(DataLoader):
         self.cls2idx = dict(zip(cfg.TRAIN.CLASSES, range(cfg.TRAIN.CLASSES_NUM)))
         self.write_images = self.cfg.TRAIN.WRITE_IMAGES
         self.lgtransformer = LgTransformer(self.cfg)
-        self.dataset_infos = self._load_labels2memery(dataset, self.one_name)
         if self.cfg.TRAIN.MULTI_SCALE:
             self._prepare_multiszie()
-
         if self.cfg.TRAIN.USE_LMDB:
             mod = 'train' if self.is_training else 'val'
             lmdb_path = self.cfg.PATH.LMDB_PATH.format(mod)
@@ -42,6 +40,9 @@ class OBD_Loader(DataLoader):
             db_label = env.open_db('label'.encode())
             self.txn_image = env.begin(write=False, db=db_image)
             self.txn_label = env.begin(write=False, db=db_label)
+        pre_load_labels = 1
+        if pre_load_labels:print('pre-loading labels to disc...')
+        self.dataset_infos = self._load_labels2memery(dataset, self.one_name, pre_load_labels)
 
     def __len__(self):
         if self.one_test:
@@ -51,6 +52,7 @@ class OBD_Loader(DataLoader):
                 length = 1
         else:
             length = len(self.dataset_infos)
+            # length = 24
         return length
 
     def __getitem__(self, index):
@@ -94,8 +96,12 @@ class OBD_Loader(DataLoader):
             img_write = _show_img(show_img, _label.numpy(), cfg=self.cfg, show_time=-1)[0]
             self.cfg.writer.tbX_addImage('GT_' + data_info['img_name'], img_write)
             self.write_images -= 1
+
+        img = torch.from_numpy(img).permute(2, 0, 1)  # C, H, W
+
         assert len(img) > 0, 'img length is error'
         assert len(label) > 0, 'lab length is error'
+
         return img, label, data_info  # only need the labels  label_after[x1y1x2y2]
 
     def _set_group_flag(self):  # LG: this is important
@@ -136,54 +142,24 @@ class OBD_Loader(DataLoader):
         self.dataset_txt = dataset
         self.is_training = is_training
 
-    def pre_load_data_infos(self):
-        if 'COCO' in self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
-            from lgdet.util.util_load_coco import COCODataset
-            if self.is_training:
-                annfile = os.path.join(self.cfg.PATH.INPUT_PATH, 'annotations/instances_train2017.json')
-            else:
-                annfile = os.path.join(self.cfg.PATH.INPUT_PATH, 'annotations/instances_val2017.json')
-            self.coco = COCODataset(ann_file=annfile, cfg=self.cfg)
-
-            self.data_infos = []
-            self.flag = np.zeros(len(self), dtype=np.uint8)
-            for i, datainfo in enumerate(self.dataset_txt):
-                img_info, ann_info = self.coco.prepare_data(datainfo[0])
-                bboxes = self._read_labels(datainfo[2], datainfo)
-                self.data_infos.append({'img_name': datainfo[0],
-                                        'img_path': datainfo[1],
-                                        'lab_path': datainfo[2],
-                                        'img_info': img_info,
-                                        'ann_info': ann_info,
-                                        'bboxes': bboxes})
-                if img_info['width'] / img_info['height'] > 1:
-                    self.flag[i] = 1
-        else:
-            self.data_infos = []
-            for datainfo in self.dataset_txt:
-                self.data_infos.append({'imgname': datainfo[0],
-                                        'imgpath': datainfo[1],
-                                        'labpath': datainfo[2]})
-
-    def _load_labels2memery(self, dataset_txt, one_name):
-        print('prepare loading labels to memery...')
+    def _load_labels2memery(self, dataset_txt, one_name, pre_load_labels):
         if self.one_test:
             dataset_txt = one_name
         data_infos = []
-        pre_load_labels = 0
         tqd = tqdm.tqdm(dataset_txt)
         for data_line in tqd:
             x_path = os.path.join(self.cfg.PATH.INPUT_PATH, data_line[1])
             y_path = os.path.join(self.cfg.PATH.INPUT_PATH, data_line[2])
+            this_data_info = {'img_name': data_line[0],
+                              'img_path': x_path,
+                              'lab_path': y_path,
+                              }
             if pre_load_labels:
-                label_i = self._load_labels(y_path, data_info=data_line)
+                label_i = self._load_labels(data_info=this_data_info)
             else:
                 label_i = 'not_load'
-            data_infos.append({'img_name': data_line[0],
-                               'img_path': x_path,
-                               'lab_path': y_path,
-                               'label': label_i
-                               })
+            this_data_info['label'] = label_i
+            data_infos.append(this_data_info)
         return data_infos
 
     def _read_datas(self, data_info):
@@ -192,44 +168,29 @@ class OBD_Loader(DataLoader):
         :param image: if there is a image ,the just return the image.
         :return: images, labels, image_size
         '''
+
+        x_path = data_info['img_path']
+        y_path = data_info['lab_path']
+        if self.print_path:
+            print(x_path, '<--->', y_path)
+
         if self.cfg.TRAIN.USE_LMDB:
             img_name = data_info['img_name']
-
-            try:
-                image_bin = self.txn_image.get(img_name.encode())
-                label_bin = self.txn_label.get(img_name.encode())
-            except:
-                print(data_info, 'faild in lmdb loader')
+            image_bin = self.txn_image.get(img_name.encode())
             image_buf = np.frombuffer(image_bin, dtype=np.uint8)
             img = cv2.imdecode(image_buf, cv2.IMREAD_COLOR)
-
-            label_infos = pickle.loads(label_bin)
-            bboxes = label_infos['bboxes']
-            cls_names = label_infos['cls_names']
-            label = []
-            for i, bbx in enumerate(bboxes):
-                cls_name = cls_names[i]
-                if self.class_name[cls_name] not in self.class_name:
-                    continue
-                if not self._is_finedata(bbx): continue
-                label.append([self.cls2idx[self.class_name[cls_name]], bbx[0], bbx[1], bbx[2], bbx[3]])
-
         else:
-            x_path = data_info['img_path']
-            y_path = data_info['lab_path']
-            if self.print_path:
-                print(x_path, '<--->', y_path)
             if not (os.path.isfile(x_path) and os.path.isfile(y_path)):
                 print('ERROR, NO SUCH A FILE.', x_path, '<--->', y_path)
                 exit()
-            # labels come first.
-            try:
-                label = self.prepared_labels[data_info['img_name']]
-            except:
-                label = self._load_labels(y_path, data_info=data_info)
-
-            # then add the images.
             img = cv2.imread(x_path)
+
+        # load labels
+        try:
+            label = data_info['label']
+        except:
+            label = self._load_labels(data_info=data_info)
+
         if label == [[]] or label == []:
             print('loader obd :none label at:', data_info)
             label = None
@@ -249,7 +210,22 @@ class OBD_Loader(DataLoader):
         if (x2 - x1) * (y2 - y1) < self.cfg.TRAIN.MIN_AREA: return False
         return True
 
-    def _load_labels(self, path, data_info=None, predicted_line=False, pass_obj=[]):
+    def _load_lmdb_label_from_name(self, data_info):
+        img_name = data_info['img_name']
+        label_bin = self.txn_label.get(img_name.encode())
+        label_infos = pickle.loads(label_bin)
+        bboxes = label_infos['bboxes']
+        cls_names = label_infos['cls_names']
+        label = []
+        for i, bbx in enumerate(bboxes):
+            cls_name = cls_names[i]
+            if self.class_name[cls_name] not in self.class_name:
+                continue
+            if not self._is_finedata(bbx): continue
+            label.append([self.cls2idx[self.class_name[cls_name]], bbx[0], bbx[1], bbx[2], bbx[3]])
+        return label
+
+    def _load_labels(self, data_info=None, predicted_line=False, pass_obj=[]):
         """
         Parse the labels from file.
 
@@ -258,9 +234,32 @@ class OBD_Loader(DataLoader):
         :param path: the path of file that need to parse.
         :return:lists of the classes and the key points============ [x1, y1, x2, y2].
         """
-        bbs = []
 
-        if os.path.basename(path).split('.')[-1] == 'txt' and not predicted_line:
+        bbs = []
+        path = data_info['lab_path']
+
+        if self.cfg.TRAIN.USE_LMDB:
+            bbs = self._load_lmdb_label_from_name(data_info)
+
+        elif os.path.basename(path).split('.')[-1] == 'xml' and not predicted_line:
+            tree = ET.parse(path)
+            root = tree.getroot()
+            for obj in root.findall('object'):
+                cls_name = obj.find('name').text
+                if cls_name not in self.class_name:
+                    print(cls_name, 'is passed')
+                    continue
+                if self.class_name[cls_name] in pass_obj:
+                    continue
+                bbox = obj.find('bndbox')
+                box_x1 = float(bbox.find('xmin').text)
+                box_y1 = float(bbox.find('ymin').text)
+                box_x2 = float(bbox.find('xmax').text)
+                box_y2 = float(bbox.find('ymax').text)
+                if not self._is_finedata([box_x1, box_y1, box_x2, box_y2]): continue
+                bbs.append([self.cls2idx[self.class_name[cls_name]], box_x1, box_y1, box_x2, box_y2])
+
+        elif os.path.basename(path).split('.')[-1] == 'txt' and not predicted_line:
             file_open = open(path, 'r')
             for line in file_open.readlines():
                 if 'UCAS_AOD' in self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
@@ -323,32 +322,7 @@ class OBD_Loader(DataLoader):
                     box_y2 = float(tmps[7])
                     if not self._is_finedata([box_x1, box_y1, box_x2, box_y2]): continue
                     bbs.append([self.cls2idx[self.class_name[tmps[0]]], box_x1, box_y1, box_x2, box_y2])
-        elif os.path.basename(path).split('.')[-1] == 'xml' and not predicted_line:
-            tree = ET.parse(path)
-            root = tree.getroot()
-            for obj in root.findall('object'):
-                cls_name = obj.find('name').text
-                if cls_name not in self.class_name:
-                    print(cls_name, 'is passed')
-                    continue
-                if self.class_name[cls_name] in pass_obj:
-                    continue
-                bbox = obj.find('bndbox')
-                box_x1 = float(bbox.find('xmin').text)
-                box_y1 = float(bbox.find('ymin').text)
-                box_x2 = float(bbox.find('xmax').text)
-                box_y2 = float(bbox.find('ymax').text)
-                if not self._is_finedata([box_x1, box_y1, box_x2, box_y2]): continue
-                bbs.append([self.cls2idx[self.class_name[cls_name]], box_x1, box_y1, box_x2, box_y2])
 
-        elif os.path.basename(path).split('.')[-1] == 'txt' and predicted_line:
-            f_path = open(path, 'r')
-            print(path)
-            for line in f_path.readlines():
-                tmp = line.split()
-                cls_name = tmp[0]
-                bbs.append([float(tmp[1]), self.cls2idx[self.class_name[cls_name]],
-                            [float(tmp[2]), float(tmp[3]), float(tmp[4]), float(tmp[5])]])
 
         elif 'COCO' in self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
             img_name = data_info[0].strip()
@@ -381,8 +355,9 @@ class OBD_Loader(DataLoader):
         :return:
         '''
         imgs, labels, infos = zip(*batch)
-        imgs = torch.from_numpy(np.asarray(imgs, np.float32))
-        imgs = imgs.permute(0, 3, 1, 2)
+        # imgs = torch.from_numpy(np.asarray(imgs, np.float32))
+        imgs = torch.stack(imgs, dim=0)
+        # imgs = torch.Tensor(np.asarray(imgs, np.float32))
         for i, label in enumerate(labels):
             try:
                 label[:, 0] = i
@@ -391,7 +366,7 @@ class OBD_Loader(DataLoader):
         try:
             labels = torch.cat(labels, 0)
         except:
-            print(labels, infos)
+            print('collate fun error！！！：', labels, infos)
 
         if self.cfg.TRAIN.MULTI_SCALE and self.is_training:
             img_size = self.img_size
@@ -402,3 +377,33 @@ class OBD_Loader(DataLoader):
                 ns = [math.ceil(x * sf / self.gs) * self.gs for x in imgs.shape[2:]]  # new shape (stretched to 32-multiple)
                 imgs = torch.nn.functional.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
         return imgs, labels, list(infos)
+
+#
+# def pre_load_data_infos(self):
+#     if 'COCO' in self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
+#         from lgdet.util.util_load_coco import COCODataset
+#         if self.is_training:
+#             annfile = os.path.join(self.cfg.PATH.INPUT_PATH, 'annotations/instances_train2017.json')
+#         else:
+#             annfile = os.path.join(self.cfg.PATH.INPUT_PATH, 'annotations/instances_val2017.json')
+#         self.coco = COCODataset(ann_file=annfile, cfg=self.cfg)
+#
+#         self.data_infos = []
+#         self.flag = np.zeros(len(self), dtype=np.uint8)
+#         for i, datainfo in enumerate(self.dataset_txt):
+#             img_info, ann_info = self.coco.prepare_data(datainfo[0])
+#             bboxes = self._read_labels(datainfo[2], datainfo)
+#             self.data_infos.append({'img_name': datainfo[0],
+#                                     'img_path': datainfo[1],
+#                                     'lab_path': datainfo[2],
+#                                     'img_info': img_info,
+#                                     'ann_info': ann_info,
+#                                     'bboxes': bboxes})
+#             if img_info['width'] / img_info['height'] > 1:
+#                 self.flag[i] = 1
+#     else:
+#         self.data_infos = []
+#         for datainfo in self.dataset_txt:
+#             self.data_infos.append({'imgname': datainfo[0],
+#                                     'imgpath': datainfo[1],
+#                                     'labpath': datainfo[2]})

@@ -16,12 +16,12 @@ TRAIN:
   EPOCH_SIZE: 300
   BATCH_BACKWARD_SIZE: 4  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO'
-  TRAIN_DATA_FROM_FILE: ['KITTI']
+  TRAIN_DATA_FROM_FILE: ['VOC']
   USE_LMDB: 0
 
   # data aug:
   MOSAIC: 0
-  DO_AUG: 1
+  DO_AUG: 0
   RESIZE: 1
   PADTOSIZE: 0
   RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
@@ -30,6 +30,7 @@ TRAIN:
   #[H,W]
   #[384, 960] #[416, 416] #[512, 768] # [1024,1920] #[720,1024]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
   IMG_SIZE: [512, 512]
+
   MULTI_SCALE: 0
   MULTI_SCALE_SIZE: [320, 640] #(320-640)//32
 

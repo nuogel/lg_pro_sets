@@ -15,13 +15,13 @@ class DataLoaderFactory:
 
         if train_dataset:
             train_data = build_from_cfg(DATALOADERS, self.cfg.BELONGS + '_Loader')(self.cfg, train_dataset, is_training=True)
-            sampler = GroupSampler(train_data, self.cfg.TRAIN.BATCH_SIZE) if shuffle is False else None
+            # sampler = GroupSampler(train_data, self.cfg.TRAIN.BATCH_SIZE) if shuffle is False else None
             if self.cfg.BELONGS == 'VID': shuffle = False
             trainLoader = DataLoader(dataset=train_data,
                                      batch_size=self.cfg.TRAIN.BATCH_SIZE,
-                                     sampler=sampler,
+                                     sampler=None,
                                      shuffle=shuffle,
-                                     pin_memory=True,  # 这样将内存的Tensor转义到GPU的显存就会更快一些
+                                     pin_memory=False,  # 这样将内存的Tensor转义到GPU的显存就会更快一些
                                      num_workers=self.args.number_works,
                                      collate_fn=train_data.collate_fun,
                                      )
