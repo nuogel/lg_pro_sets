@@ -543,7 +543,7 @@ class EFFICIENTDET(nn.Module):
 
         location = self.regressor(features)
         classification = self.classifier(features)
-        anchors_xywh = self.anchors(inputs)
+        anchors_xywh = self.anchors(inputs).to(self.device)
 
         classification = classification.sigmoid()
 

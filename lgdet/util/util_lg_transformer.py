@@ -233,12 +233,11 @@ class LgTransformer:
         return img_after, label, data_info
 
     def transpose(self, img, label):
-        img = np.asarray(img, dtype=np.float32)
-        nomalize = 1
-        if nomalize:
-            img = self.imnormalize(img, self.cfg.mean, self.cfg.std, to_rgb=True)
-        else:
-            img = img / 127. - 1.
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = np.asarray(img, dtype=np.float32) / 255.
+        img = (img - self.cfg.mean) / self.cfg.std
+        img = torch.from_numpy(img).permute(2, 0, 1)  # C, H, W
+
         if isinstance(label, list):
             for lab in label:  # add 0 for label
                 lab.insert(0, 0)

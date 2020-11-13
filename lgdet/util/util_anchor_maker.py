@@ -40,7 +40,8 @@ class Anchors(nn.Module):
             all_anchors = np.append(all_anchors, shifted_anchors, axis=0)
 
         # all_anchors = np.expand_dims(all_anchors, axis=0)
-        all_anchors_xywh = torch.from_numpy(all_anchors.astype(np.float32)).to(image.device) / image_shape[0]
+        all_anchors_xywh = torch.from_numpy(all_anchors.astype(np.float32)/ np.asarray([image_shape[1],image_shape[0],image_shape[1],image_shape[0]],dtype=np.float32)).to(image.device)
+
         return all_anchors_xywh
 
     def _generate_anchors(self, base_size=16, ratios=None, scales=None):

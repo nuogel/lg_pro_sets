@@ -50,10 +50,9 @@ def prepare_cfg(cfg, args, is_training=True):
         cfg.TRAIN.MULTI_SCALE = 0
         cfg.TRAIN.WARM_UP_STEP = 50
 
-        cfg.TEST.PADTOSIZE= 0
-        cfg.TEST.RESIZE= 1
+        cfg.TEST.PADTOSIZE = 0
+        cfg.TEST.RESIZE = 1
         cfg.TEST.MULTI_SCALE = 0
-
 
     try:
         if cfg.TEST.ONE_TEST:
@@ -154,8 +153,10 @@ def prepare_cfg(cfg, args, is_training=True):
 
 
 def common_cfg(cfg):
-    mean = np.asarray([123.675, 116.28, 103.53], np.float32)
-    std = np.asarray([58.395, 57.12, 57.375], np.float32)
+    mean = [0.485, 0.456, 0.406]  # RGB
+    std = [0.229, 0.224, 0.225]
+    mean = np.asarray(mean, np.float32)
+    std = np.asarray(std, np.float32)
     cfg.mean = mean
     cfg.std = std
     return cfg

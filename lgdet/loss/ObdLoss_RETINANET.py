@@ -1,9 +1,6 @@
-import torch.nn as nn
 import torch.nn.functional as F
 import torch
-import math
-from lgdet.util.util_iou import iou_xyxy, xywh2xyxy, xyxy2xywh, iou_xywh
-import numpy as np
+from lgdet.util.util_iou import xyxy2xywh, iou_xywh
 from lgdet.loss.loss_base.focal_loss import FocalLoss_lg, FocalLoss
 
 
@@ -17,6 +14,7 @@ class RETINANETLOSS():
 
     def Loss_Call(self, predictions, targets, kwargs):  # predictions with sigmoid()
         pre_cls, pre_loc, anc_xywh = predictions
+        # print(pre_cls.shape, pre_loc.shape, anc_xywh.shape)
         pre_cls = torch.clamp(pre_cls, 1e-4, 1.0 - 1e-4)
 
         with torch.no_grad():
@@ -89,7 +87,7 @@ class RETINANETLOSS():
         best_target_per_prior.index_fill_(0, best_prior_per_target_index, 1.)  # fill 2>1.
         # size: num_priors
 
-        gt_cls = torch.zeros_like(pre_cls)
+        gt_cls = torch.zeros_like(pre_cls).to(self.device)
         pos_mask = best_target_per_prior > 0.5
         neg_mask = best_target_per_prior < 0.4
 
@@ -98,6 +96,7 @@ class RETINANETLOSS():
         assigned_annotations = gt_labels[best_target_per_prior_index_pose]
 
         # gt_cls[pos_mask, :] = 0
+        # print(gt_cls.shape, gt_cls.device, pos_mask.shape,  pos_mask.device)
         gt_cls[pos_mask, assigned_annotations.long()] = 1
         gt_loc = gt_boxes[best_target_per_prior_index]
         return gt_cls, gt_loc, pos_mask, neg_mask

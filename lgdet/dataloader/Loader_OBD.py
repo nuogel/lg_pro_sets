@@ -41,7 +41,7 @@ class OBD_Loader(DataLoader):
             self.txn_image = env.begin(write=False, db=db_image)
             self.txn_label = env.begin(write=False, db=db_label)
         pre_load_labels = 1
-        if pre_load_labels:print('pre-loading labels to disc...')
+        if pre_load_labels: print('pre-loading labels to disc...')
         self.dataset_infos = self._load_labels2memery(dataset, self.one_name, pre_load_labels)
 
     def __len__(self):
@@ -81,24 +81,15 @@ class OBD_Loader(DataLoader):
         if self.cfg.TRAIN.RELATIVE_LABELS:
             img, label = self.lgtransformer.relative_label(img, label)
 
-        img, label = self.lgtransformer.transpose(img, label)
-
         if self.cfg.TRAIN.SHOW_INPUT > 0:
-            _img = img.copy()
-            _label = label.clone()
-            show_img = self.lgtransformer.imdenormalize(_img, self.cfg.mean, self.cfg.std, to_bgr=True)
-            _show_img(show_img, _label.numpy(), cfg=self.cfg, show_time=self.cfg.TRAIN.SHOW_INPUT, pic_path=data_info['lab_path'])
+            _show_img(img, label, cfg=self.cfg, show_time=self.cfg.TRAIN.SHOW_INPUT, pic_path=data_info['lab_path'])
 
         if self.write_images > 0 and self.is_training and not self.cfg.checkpoint:
-            _img = img.copy()
-            _label = label.clone()
-            show_img = self.lgtransformer.imdenormalize(_img, self.cfg.mean, self.cfg.std, to_bgr=True)
-            img_write = _show_img(show_img, _label.numpy(), cfg=self.cfg, show_time=-1)[0]
+            img_write = _show_img(img, label, cfg=self.cfg, show_time=-1)[0]
             self.cfg.writer.tbX_addImage('GT_' + data_info['img_name'], img_write)
             self.write_images -= 1
 
-        img = torch.from_numpy(img).permute(2, 0, 1)  # C, H, W
-
+        img, label = self.lgtransformer.transpose(img, label)
         assert len(img) > 0, 'img length is error'
         assert len(label) > 0, 'lab length is error'
 

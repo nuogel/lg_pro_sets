@@ -47,6 +47,7 @@ class BaseSolver(object):
             self.cfg.writer.clean_history_and_init_log()
 
         if len(self.device_ids) > 1:
+            print('using device id:', self.device_ids)
             self.model = torch.nn.DataParallel(self.model, device_ids=self.device_ids)
 
         if self.cfg.TRAIN.EMA:
