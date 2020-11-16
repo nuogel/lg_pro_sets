@@ -475,7 +475,7 @@ class EFFICIENTDET(nn.Module):
         self.cfg = cfg
         self.device = cfg.TRAIN.DEVICE
         compound_coef = 0  # efficientdet-i
-        print("using effident-", compound_coef)
+        print("using GN effident-", compound_coef)
         load_weights = False
         self.compound_coef = compound_coef
 
@@ -527,7 +527,6 @@ class EFFICIENTDET(nn.Module):
 
         self.backbone_net = EfficientNet(self.backbone_compound_coef[compound_coef], load_weights)
 
-        self.load_state_dict(torch.load('saved/checkpoint/efficientdet-d0.pth'))
 
     def freeze_bn(self):
         for m in self.modules():
@@ -544,7 +543,7 @@ class EFFICIENTDET(nn.Module):
 
         location = self.regressor(features)
         classification = self.classifier(features)
-        anchors_xywh = self.anchors(inputs)
+        anchors_xywh = self.anchors(inputs).to(self.device)
 
         classification = classification.sigmoid()
 

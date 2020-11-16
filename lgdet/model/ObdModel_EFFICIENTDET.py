@@ -2,16 +2,18 @@ import torch.nn as nn
 import torch
 from torchvision.ops.boxes import nms as nms_torch
 import numpy as np
-from lgdet.model.ObdModel_EFFICIENTNET_GN import EfficientNet as EffNet
+from lgdet.model.ObdModel_EFFICIENTNET import EfficientNet as EffNet
 # from efficientnet.utils import MemoryEfficientSwish, Swish
 # from efficientnet.utils_extra import Conv2dStaticSamePadding, MaxPool2dStaticSamePadding
 
 from lgdet.util.util_efficientdet2 import MemoryEfficientSwish, Swish, Conv2dStaticSamePadding, MaxPool2dStaticSamePadding
 from lgdet.util.util_anchor_maker import Anchors
+from lgdet.util.util_weights_init import weights_init
 
 '''
-efficientdet with GN(nn.GroupNorm), not BN.
+efficientdet with BN of Yet-Another-EfficientDet-Pytorch
 '''
+
 
 def nms(dets, thresh):
     return nms_torch(dets[:, :4], dets[:, 4], thresh)
@@ -39,8 +41,7 @@ class SeparableConvBlock(nn.Module):
         self.norm = norm
         if self.norm:
             # Warning: pytorch momentum is different from tensorflow's, momentum_pytorch = 1 - momentum_tensorflow
-            # self.bn = nn.BatchNorm2d(num_features=out_channels, momentum=0.01, eps=1e-3)
-            self.bn = nn.GroupNorm(num_groups=16, num_channels=out_channels)
+            self.bn = nn.BatchNorm2d(num_features=out_channels, momentum=0.01, eps=1e-3)
 
         self.activation = activation
         if self.activation:
@@ -113,20 +114,20 @@ class BiFPN(nn.Module):
         if self.first_time:
             self.p5_down_channel = nn.Sequential(
                 Conv2dStaticSamePadding(conv_channels[2], num_channels, 1),
-                nn.GroupNorm(num_groups=16, num_channels=num_channels)
+                nn.BatchNorm2d(num_channels, momentum=0.01, eps=1e-3),
             )
             self.p4_down_channel = nn.Sequential(
                 Conv2dStaticSamePadding(conv_channels[1], num_channels, 1),
-                nn.GroupNorm(num_groups=16, num_channels=num_channels)
+                nn.BatchNorm2d(num_channels, momentum=0.01, eps=1e-3),
             )
             self.p3_down_channel = nn.Sequential(
                 Conv2dStaticSamePadding(conv_channels[0], num_channels, 1),
-                nn.GroupNorm(num_groups=16, num_channels=num_channels)
+                nn.BatchNorm2d(num_channels, momentum=0.01, eps=1e-3),
             )
 
             self.p5_to_p6 = nn.Sequential(
                 Conv2dStaticSamePadding(conv_channels[2], num_channels, 1),
-                nn.GroupNorm(num_groups=16, num_channels=num_channels),
+                nn.BatchNorm2d(num_channels, momentum=0.01, eps=1e-3),
                 MaxPool2dStaticSamePadding(3, 2)
             )
             self.p6_to_p7 = nn.Sequential(
@@ -139,11 +140,11 @@ class BiFPN(nn.Module):
 
             self.p4_down_channel_2 = nn.Sequential(
                 Conv2dStaticSamePadding(conv_channels[1], num_channels, 1),
-                nn.GroupNorm(num_groups=16, num_channels=num_channels)
+                nn.BatchNorm2d(num_channels, momentum=0.01, eps=1e-3),
             )
             self.p5_down_channel_2 = nn.Sequential(
                 Conv2dStaticSamePadding(conv_channels[2], num_channels, 1),
-                nn.GroupNorm(num_groups=16, num_channels=num_channels)
+                nn.BatchNorm2d(num_channels, momentum=0.01, eps=1e-3),
             )
 
         # Weight
@@ -360,7 +361,7 @@ class Regressor(nn.Module):
         self.conv_list = nn.ModuleList(
             [SeparableConvBlock(in_channels, in_channels, norm=False, activation=False) for i in range(num_layers)])
         self.bn_list = nn.ModuleList(
-            [nn.ModuleList([nn.GroupNorm(num_groups=16, num_channels=in_channels) for i in range(num_layers)]) for j in
+            [nn.ModuleList([nn.BatchNorm2d(in_channels, momentum=0.01, eps=1e-3) for i in range(num_layers)]) for j in
              range(pyramid_levels)])
         self.header = SeparableConvBlock(in_channels, num_anchors * 4, norm=False, activation=False)
         self.swish = MemoryEfficientSwish() if not onnx_export else Swish()
@@ -397,7 +398,7 @@ class Classifier(nn.Module):
         self.conv_list = nn.ModuleList(
             [SeparableConvBlock(in_channels, in_channels, norm=False, activation=False) for i in range(num_layers)])
         self.bn_list = nn.ModuleList(
-            [nn.ModuleList([nn.GroupNorm(num_groups=16, num_channels=in_channels) for i in range(num_layers)]) for j in
+            [nn.ModuleList([nn.BatchNorm2d(in_channels, momentum=0.01, eps=1e-3) for i in range(num_layers)]) for j in
              range(pyramid_levels)])
         self.header = SeparableConvBlock(in_channels, num_anchors * num_classes, norm=False, activation=False)
         self.swish = MemoryEfficientSwish() if not onnx_export else Swish()
@@ -475,7 +476,7 @@ class EFFICIENTDET(nn.Module):
         self.cfg = cfg
         self.device = cfg.TRAIN.DEVICE
         compound_coef = 0  # efficientdet-i
-        print("using effident-", compound_coef)
+        print("using BN effident-", compound_coef)
         load_weights = False
         self.compound_coef = compound_coef
 
@@ -514,19 +515,24 @@ class EFFICIENTDET(nn.Module):
               for _ in range(self.fpn_cell_repeats[compound_coef])])
 
         self.num_classes = num_classes
-        self.regressor = Regressor(in_channels=self.fpn_num_filters[self.compound_coef], num_anchors=num_anchors,
-                                   num_layers=self.box_class_repeats[self.compound_coef],
-                                   pyramid_levels=self.pyramid_levels[self.compound_coef])
-        self.classifier = Classifier(in_channels=self.fpn_num_filters[self.compound_coef], num_anchors=num_anchors,
-                                     num_classes=num_classes,
-                                     num_layers=self.box_class_repeats[self.compound_coef],
-                                     pyramid_levels=self.pyramid_levels[self.compound_coef])
 
         self.anchors = Anchors(pyramid_levels=(torch.arange(self.pyramid_levels[self.compound_coef]) + 3).tolist(),
                                scales=scales, ratios=ratios)
 
         self.backbone_net = EfficientNet(self.backbone_compound_coef[compound_coef], load_weights)
+        self.regressor = Regressor(in_channels=self.fpn_num_filters[self.compound_coef], num_anchors=num_anchors,
+                                   num_layers=self.box_class_repeats[self.compound_coef],
+                                   pyramid_levels=self.pyramid_levels[self.compound_coef])
+        # ret = self.load_state_dict(torch.load('saved/checkpoint/efficientdet-d0.pth'), strict=False)
+        # # print(ret)
+        # # self.freeze_bn()
+        self.classifier = Classifier(in_channels=self.fpn_num_filters[self.compound_coef], num_anchors=num_anchors,
+                                     num_classes=num_classes,
+                                     num_layers=self.box_class_repeats[self.compound_coef],
+                                     pyramid_levels=self.pyramid_levels[self.compound_coef])
 
+        # weights_init(self.regressor, manual_seed=False)
+        weights_init(self.classifier, manual_seed=False)
 
     def freeze_bn(self):
         for m in self.modules():
@@ -543,7 +549,7 @@ class EFFICIENTDET(nn.Module):
 
         location = self.regressor(features)
         classification = self.classifier(features)
-        anchors_xywh = self.anchors(inputs).to(self.device)
+        anchors_xywh = self.anchors(inputs)
 
         classification = classification.sigmoid()
 

@@ -28,6 +28,7 @@ class Anchors(nn.Module):
 
     def forward(self, image):
         image_shape = image.shape[2:]
+        n, c, h, w = image.shape
         image_shape = np.array(image_shape)
         # 计算feature map 的size.
         image_shapes = [(image_shape + 2 ** x - 1) // (2 ** x) for x in self.pyramid_levels]
@@ -40,8 +41,9 @@ class Anchors(nn.Module):
             all_anchors = np.append(all_anchors, shifted_anchors, axis=0)
 
         # all_anchors = np.expand_dims(all_anchors, axis=0)
-        all_anchors_xywh = torch.from_numpy(all_anchors.astype(np.float32)/ np.asarray([image_shape[1],image_shape[0],image_shape[1],image_shape[0]],dtype=np.float32)).to(image.device)
-
+        all_anchors_xywh = torch.from_numpy(
+            all_anchors.astype(np.float32) / np.asarray([w, h, w, h], dtype=np.float32)).to(image.device)
+        all_anchors_xywh = all_anchors_xywh.unsqueeze(0).repeat([image.shape[0], 1, 1])  # for multi GPU
         return all_anchors_xywh
 
     def _generate_anchors(self, base_size=16, ratios=None, scales=None):
@@ -100,7 +102,6 @@ class Anchors(nn.Module):
         all_anchors = all_anchors.reshape((K * A, 4))
 
         return all_anchors
-
 
 
 if __name__ == '__main__':

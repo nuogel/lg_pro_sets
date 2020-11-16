@@ -40,7 +40,7 @@ class BaseSolver(object):
                                                                                                                             self.args.pre_trained)
             self.cfg.writer.tbX_reStart(self.epoch_last)
         else:
-            weights_init(self.model, self.cfg)
+            weights_init(self.model, self.cfg.manual_seed)
             self.optimizer_dict = None
             self.epoch_last = 0
             self.global_step = 0
@@ -206,12 +206,11 @@ class BaseSolver(object):
             if 'module.' == k[:7]:
                 k = k.replace('module.', '')
             new_dic[k] = v
-        model.load_state_dict(new_dic)
-        # try:
-        #     model.load_state_dict(new_dic)
-        # except:
-        #     print('checkpont is not correct! trying strick=False')
-        #     model.load_state_dict(new_dic, strict=False)
+        try:
+            ret = model.load_state_dict(new_dic, strict=False)
+            print(ret)
+        except RuntimeError as e:
+            print('Ignoring ' + str(e) + '"')
 
         if pre_trained not in [0, None, False, '']:
             last_epoch = 0

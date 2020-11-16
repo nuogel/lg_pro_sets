@@ -10,10 +10,11 @@ I found that the mistake is the weights initiation. ——LuoGeng 2020.02.27.
 '''
 
 
-def weights_init(Modle, cfg):
-    if cfg.TRAIN.MODEL in ['SRDN', 'srdn', 'retinanet', ]:
+def weights_init(Modle, manual_seed=False):
+    if manual_seed:
         torch.manual_seed(123)
     else:
+        print('initiating weight...')
         for name, m in Modle.named_modules():
             if isinstance(m, torch.nn.Conv2d):
                 # if 'conv_list' in name or "header" in name:

@@ -19,8 +19,8 @@ def fix_weight_name_mismatch(in_state_dict):
 
 
 if __name__ == '__main__':
-    ori_pth_f = 'weights/efficientnet-b0-355c32eb.pth'
-    out_pth_f = 'weights/effNet-b0.pth'
+    ori_pth_f = '../../saved/checkpoint/efficientnet-b0-355c32eb.pth'
+    out_pth_f = '../../saved/checkpoint/effNet-b0.pth'
     print('loading stat_dict')
     old_weight = torch.load(ori_pth_f)
 

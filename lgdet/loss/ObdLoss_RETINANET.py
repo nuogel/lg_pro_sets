@@ -26,8 +26,8 @@ class RETINANETLOSS():
                 lab = gt_i[..., 1].long()
                 box = gt_i[..., 2:]
                 box_xywh = xyxy2xywh(box)
-                _gt_cls, _gt_loc_xywh, _pos_mask, _neg_mask = self._assign_priors(pre_cls[i], box_xywh, lab, anc_xywh)
-                _gt_loc_xywh = self._encode_bbox(_gt_loc_xywh, anc_xywh)
+                _gt_cls, _gt_loc_xywh, _pos_mask, _neg_mask = self._assign_priors(pre_cls[i], box_xywh, lab, anc_xywh[i])
+                _gt_loc_xywh = self._encode_bbox(_gt_loc_xywh, anc_xywh[i])
                 gt_loc.append(_gt_loc_xywh)
                 gt_cls.append(_gt_cls)
                 pos_mask.append(_pos_mask)
@@ -103,6 +103,6 @@ class RETINANETLOSS():
 
     def _encode_bbox(self, xywh_boxes, xywh_priors):
         encode_target = torch.cat([(xywh_boxes[..., :2] - xywh_priors[..., :2]) / xywh_priors[..., 2:] / 0.1,
-                                   torch.log(xywh_boxes[..., 2:] / xywh_priors[..., 2:]) / 0.2
-                                   ], dim=- 1)
+                                   torch.log(xywh_boxes[..., 2:] / xywh_priors[..., 2:]) / 0.2],
+                                  dim=- 1)
         return encode_target
