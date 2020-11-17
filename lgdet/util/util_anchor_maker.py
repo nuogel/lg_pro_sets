@@ -8,19 +8,20 @@ class Anchors(nn.Module):
     :return anchors: [x y w h]
     '''
 
-    def __init__(self, pyramid_levels=None, strides=None, sizes=None, ratios=None, scales=None):
+    def __init__(self, pyramid_levels=None, strides=None, base_size=None, ratios=None, scales=None):
         super(Anchors, self).__init__()
         self.pyramid_levels = pyramid_levels
         self.strides = strides
-        self.sizes = sizes
+        self.base_size = base_size
         self.ratios = ratios
         self.scales = scales
+        self.base_size_ratio = 2  # lg: for small target to fit better anchors
         if self.pyramid_levels is None:
             self.pyramid_levels = [3, 4, 5, 6, 7]
         if self.strides is None:
             self.strides = [2 ** x for x in self.pyramid_levels]
-        if self.sizes is None:
-            self.sizes = [2 ** (x + 2) for x in self.pyramid_levels]
+        if self.base_size is None:
+            self.base_size = [2 ** (x + 2) for x in self.pyramid_levels]
         if self.ratios is None:
             self.ratios = np.array([0.5, 1, 2])
         if self.scales is None:
@@ -36,7 +37,7 @@ class Anchors(nn.Module):
         all_anchors = np.zeros((0, 4)).astype(np.float32)
 
         for idx, p in enumerate(self.pyramid_levels):
-            anchors = self._generate_anchors(base_size=self.sizes[idx], ratios=self.ratios, scales=self.scales)
+            anchors = self._generate_anchors(base_size=self.base_size[idx] / self.base_size_ratio, ratios=self.ratios, scales=self.scales)
             shifted_anchors = self._shift(image_shapes[idx], self.strides[idx], anchors)
             all_anchors = np.append(all_anchors, shifted_anchors, axis=0)
 

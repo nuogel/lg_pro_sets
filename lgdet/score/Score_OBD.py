@@ -197,7 +197,7 @@ class Score:
             # avoid divide by zero in case the first detection matches a difficult
             # ground truth
             prec = tp / (tp + fp + 1e-16)
-            ap[cls_i] = count_ap(rec, prec)
+            ap[cls_i] = count_ap(rec, prec, use_07_metric=False)
             precision[cls_i] = prec[-1]
             recall[cls_i] = rec[-1]
         return ap, precision, recall

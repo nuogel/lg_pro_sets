@@ -36,7 +36,7 @@ class Solver(BaseSolver):
     def _train_an_epoch(self, epoch):
         self.model.train()
         # count the step time, total time...
-        print(('\n[train] %8s|%5s|%7s|%9s|' + '%6s|' * 3) % ('model_n', 'epoch', 'g_step', 'l_rate', 'step_l', 'aver_l', 'others'))
+        print(('\n[train] %8s|%7s|%7s|%9s|' + '%6s|' * 3) % ('model_n', 'epoch', 'g_step', 'l_rate', 'step_l', 'aver_l', 'others'))
         Pbar = tqdm.tqdm(self.trainDataloader)
         # time5 = time.time()
         for step, train_data in enumerate(Pbar):

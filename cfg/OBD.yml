@@ -16,7 +16,7 @@ TRAIN:
   EPOCH_SIZE: 100
   BATCH_BACKWARD_SIZE: 4  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO'
-  TRAIN_DATA_FROM_FILE: ['KITTI']
+  TRAIN_DATA_FROM_FILE: ['VOC']
   USE_LMDB: 0
 
   # data aug:

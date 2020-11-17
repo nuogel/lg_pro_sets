@@ -105,7 +105,8 @@ class BaseSolver(object):
 
         if self.cfg.TRAIN.LR_SCHEDULE == 'cos':
             print('using cos LambdaLR lr_scheduler')
-            lf = lambda x: (((1 + math.cos(x * math.pi / self.cfg.TRAIN.EPOCH_SIZE)) / 2) ** 1.0) * 0.95 + 0.05  # ==0.05 cosine the last lr = 0.05xlr_start
+            finial_lr = 1e-5
+            lf = lambda x: (((1 + math.cos(x * math.pi / self.cfg.TRAIN.EPOCH_SIZE)) / 2)) * (1 - finial_lr) + finial_lr
             self.scheduler = lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lf, last_epoch=self.epoch_last - 1)
             # Plot lr schedule
             plot_lr = 0
@@ -165,9 +166,13 @@ class BaseSolver(object):
             metrics_info += k + ':' + '%.3f' % (self.metrics_ave[k] / (step + 1)) + '|'
         self.epoch_losses += total_loss.item()
 
-        info_base = (self.cfg.TRAIN.MODEL, epoch, self.global_step, '%0.6f' % self.optimizer.param_groups[0]['lr'],
-                     '%0.3f' % total_loss.item(), '%0.3f' % (self.epoch_losses / (step + 1)))
-        train_info = ('%16s|%5s|%7s|%9s|' + '%6s|' * 2) % info_base + ' '
+        info_base = (self.cfg.TRAIN.MODEL,
+                     str(epoch) + '/' + str(self.cfg.TRAIN.EPOCH_SIZE),
+                     self.global_step, '%0.6f' % self.optimizer.param_groups[0]['lr'],
+                     '%0.3f' % total_loss.item(),
+                     '%0.3f' % (self.epoch_losses / (step + 1)))
+
+        train_info = ('%16s|%7s|%7s|%9s|' + '%6s|' * 2) % info_base + ' '
         train_info += metrics_info
         if self.global_step % 1000 == 0:
             self.cfg.logger.info(train_info)
