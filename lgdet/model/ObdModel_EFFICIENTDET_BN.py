@@ -523,9 +523,9 @@ class EFFICIENTDET(nn.Module):
         self.regressor = Regressor(in_channels=self.fpn_num_filters[self.compound_coef], num_anchors=num_anchors,
                                    num_layers=self.box_class_repeats[self.compound_coef],
                                    pyramid_levels=self.pyramid_levels[self.compound_coef])
-        ret = self.load_state_dict(torch.load('saved/checkpoint/efficientdet-d0.pth'), strict=False)
-        print(ret)
-        self.freeze_bn()
+        # ret = self.load_state_dict(torch.load('saved/checkpoint/efficientdet-d0.pth'), strict=False)
+        # # print(ret)
+        # # self.freeze_bn()
         self.classifier = Classifier(in_channels=self.fpn_num_filters[self.compound_coef], num_anchors=num_anchors,
                                      num_classes=num_classes,
                                      num_layers=self.box_class_repeats[self.compound_coef],

@@ -85,7 +85,7 @@ class BaseSolver(object):
         if opt_type == 'adam':
             self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=5e-4)
         elif opt_type == 'adamw':
-            self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=learning_rate)  # weight_decay=1e-2
+            self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=1e-2)  # weight_decay=1e-2
         elif opt_type == 'sgd':
             self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=0.937, weight_decay=5e-4)
         else:
@@ -105,26 +105,27 @@ class BaseSolver(object):
 
         if self.cfg.TRAIN.LR_SCHEDULE == 'cos':
             print('using cos LambdaLR lr_scheduler')
-            finial_lr = 1e-5
+            finial_lr = 0.01
             lf = lambda x: (((1 + math.cos(x * math.pi / self.cfg.TRAIN.EPOCH_SIZE)) / 2)) * (1 - finial_lr) + finial_lr
             self.scheduler = lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lf, last_epoch=self.epoch_last - 1)
-            # Plot lr schedule
-            plot_lr = 0
-            if plot_lr:
-                y = []
-                for _ in range(0, self.cfg.TRAIN.EPOCH_SIZE):
-                    self.scheduler.step()
-                    y.append(self.optimizer.param_groups[0]['lr'])
-                plt.plot(y, '.-', label='LambdaLR')
-                plt.xlabel('epoch')
-                plt.ylabel('LR')
-                plt.tight_layout()
-                plt.show()
-                plt.savefig('LR.png')
-        else:
+        elif self.cfg.TRAIN.LR_SCHEDULE == 'step':
             print('using StepLR lr_scheduler ', self.cfg.TRAIN.STEP_LR)
             self.scheduler = lr_scheduler.StepLR(self.optimizer, step_size=self.cfg.TRAIN.STEP_LR, gamma=0.1)
-
+        elif self.cfg.TRAIN.LR_SCHEDULE == 'reduce':
+            factor, patience = 0.1, 3
+            print('using ReduceLROnPlateau lr_scheduler: factor%.1f, patience:%d' % (factor, patience))
+            self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=factor, patience=patience, verbose=True)
+        # Plot lr schedule
+        plot_lr = 0
+        if plot_lr:
+            y = []
+            for _ in range(0, self.cfg.TRAIN.EPOCH_SIZE):
+                if self.cfg.TRAIN.LR_SCHEDULE == 'reduce':
+                    self.scheduler.step(1.)
+                else:
+                    self.scheduler.step()
+                y.append(self.optimizer.param_groups[0]['lr'])
+            print(y)
         self.optimizer.zero_grad()
 
     def _set_warmup_lr(self):
@@ -201,7 +202,7 @@ class BaseSolver(object):
             checkpoint_path = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoints/' + self.cfg.TRAIN.MODEL, path_i + '.pkl')
             os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
             torch.save(saved_dict, checkpoint_path)
-            print('checkpoint is saved:', checkpoint_path)
+            # print('checkpoint is saved:', checkpoint_path)
 
     def _load_checkpoint(self, model, checkpoint, device, pre_trained):
         new_dic = OrderedDict()

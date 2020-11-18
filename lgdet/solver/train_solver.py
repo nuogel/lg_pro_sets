@@ -30,7 +30,7 @@ class Solver(BaseSolver):
             self.epoch = epoch
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch)
-            if epoch > -1 or self.cfg.TEST.ONE_TEST:
+            if epoch > 50 or self.cfg.TEST.ONE_TEST:
                 self._test_an_epoch(epoch)
 
     def _train_an_epoch(self, epoch):
@@ -65,7 +65,10 @@ class Solver(BaseSolver):
                 if self.ema: self.ema.update(self.model)
             Pbar.set_description(train_info)
 
-        self.scheduler.step()
+        if self.cfg.TRAIN.LR_SCHEDULE == 'reduce':
+            self.scheduler.step(self.epoch_losses / (step + 1))
+        else:
+            self.scheduler.step()
         if self.ema: self.ema.update_attr(self.model)
         self._save_checkpoint()
 
