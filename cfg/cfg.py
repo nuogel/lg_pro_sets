@@ -12,7 +12,7 @@ def prepare_cfg(cfg, args, is_training=True):
     print('torch version: ', torch.__version__)
     print('torch.version.cuda: ', torch.version.cuda)
 
-    if cfg.TRAIN.MODEL in ['SRDN', 'srdn', 'retinanet']:  # , 'efficientdet']:
+    if cfg.TRAIN.MODEL in ['SRDN', 'srdn']:  # , 'efficientdet']:
         cfg.manual_seed = True
     else:
         cfg.manual_seed = False

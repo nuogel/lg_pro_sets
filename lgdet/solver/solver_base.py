@@ -8,7 +8,7 @@ from lgdet.dataloader.DataLoaderFactory import DataLoaderFactory
 from lgdet.registry import MODELS, LOSSES, SCORES, build_from_cfg
 from lgdet.util.util_weights_init import weights_init
 from lgdet.util.util_get_dataset_from_file import _read_train_test_dataset
-from collections import OrderedDict
+from lgdet.util.util_load_save_checkpoint import _load_checkpoint, _save_checkpoint, _load_pretrained
 from lgdet.metrics.ema import ModelEMA
 import math
 from matplotlib import pyplot as plt
@@ -30,20 +30,30 @@ class BaseSolver(object):
         self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)
 
     def _get_model(self):
-        self.ema = 0
         self.model = build_from_cfg(MODELS, str(self.cfg.TRAIN.MODEL).upper())(self.cfg)
+        self.optimizer_dict = None
+        self.epoch_last = 0
+        self.global_step = 0
         # init model:
         if self.args.checkpoint not in [0, '0', 'None', 'no', 'none', "''"]:
             if self.args.checkpoint in [1, '1']: self.args.checkpoint = os.path.join(self.cfg.PATH.TMP_PATH + 'checkpoints/' + self.cfg.TRAIN.MODEL, 'now.pkl')
-            self.model, self.epoch_last, self.optimizer_dict, self.optimizer_type, self.global_step = self._load_checkpoint(self.model, self.args.checkpoint,
-                                                                                                                            self.cfg.TRAIN.DEVICE,
-                                                                                                                            self.args.pre_trained)
-            self.cfg.writer.tbX_reStart(self.epoch_last)
+            print('loading checkpoint:', self.args.checkpoint)
+            self.model, self.epoch_last, self.optimizer_dict, self.optimizer_type, self.global_step = _load_checkpoint(self.model,
+                                                                                                                       self.args.checkpoint,
+                                                                                                                       self.cfg.TRAIN.DEVICE)
+            if self.is_training: self.cfg.writer.tbX_reStart(self.epoch_last)
+        elif self.args.pre_trained:
+            if self.args.pre_trained in [1, '1']:
+                self.args.pre_trained = os.path.join(self.cfg.PATH.TMP_PATH + 'checkpoints/' + self.cfg.TRAIN.MODEL, 'now.pkl')
+                print('loading pre_trained:', self.args.pre_trained)
+                self.model = _load_pretrained(self.model, self.args.pre_trained, self.cfg.TRAIN.DEVICE)
+            elif self.args.pre_trained in [2, '2']:
+                print('loading pre_trained from model itself')
+
+            self.cfg.writer.clean_history_and_init_log()
+
         else:
             weights_init(self.model, self.cfg.manual_seed)
-            self.optimizer_dict = None
-            self.epoch_last = 0
-            self.global_step = 0
             self.cfg.writer.clean_history_and_init_log()
 
         if len(self.device_ids) > 1:
@@ -190,42 +200,4 @@ class BaseSolver(object):
         return total_loss, train_info
 
     def _save_checkpoint(self):
-        _model = self.ema.ema if self.ema else self.model
-        saved_dict = {'epoch': self.epoch,
-                      'state_dict': _model.state_dict(),
-                      'optimizer': self.optimizer.state_dict(),
-                      'optimizer_type': self.cfg.TRAIN.OPTIMIZER.lower(),
-                      'global_step': self.global_step}
-
-        path_list = [str(self.epoch), 'now']
-        for path_i in path_list:
-            checkpoint_path = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoints/' + self.cfg.TRAIN.MODEL, path_i + '.pkl')
-            os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
-            torch.save(saved_dict, checkpoint_path)
-            # print('checkpoint is saved:', checkpoint_path)
-
-    def _load_checkpoint(self, model, checkpoint, device, pre_trained):
-        new_dic = OrderedDict()
-        checkpoint = torch.load(checkpoint, map_location=device)
-        state_dict = checkpoint['state_dict']
-        for k, v in state_dict.items():
-            if 'module.' == k[:7]:
-                k = k.replace('module.', '')
-            new_dic[k] = v
-        try:
-            ret = model.load_state_dict(new_dic, strict=False)
-            print(ret)
-        except RuntimeError as e:
-            print('Ignoring ' + str(e) + '"')
-
-        if pre_trained not in [0, None, False, '']:
-            last_epoch = 0
-            optimizer_dict = None
-            global_step = 0
-            optimizer_type = self.cfg.TRAIN.OPTIMIZER.lower()
-        else:
-            last_epoch = checkpoint['epoch']
-            optimizer_dict = checkpoint['optimizer']
-            optimizer_type = checkpoint['optimizer_type']
-            global_step = checkpoint['global_step']
-        return model, last_epoch, optimizer_dict, optimizer_type, global_step
+        _save_checkpoint(self)

@@ -9,6 +9,7 @@ from lgdet.model.ObdModel_EFFICIENTNET import EfficientNet as EffNet
 from lgdet.util.util_efficientdet2 import MemoryEfficientSwish, Swish, Conv2dStaticSamePadding, MaxPool2dStaticSamePadding
 from lgdet.util.util_anchor_maker import Anchors
 from lgdet.util.util_weights_init import weights_init
+import math
 
 '''
 efficientdet with BN of Yet-Another-EfficientDet-Pytorch
@@ -473,24 +474,23 @@ class EFFICIENTDET(nn.Module):
     def __init__(self, cfg):
         super(EFFICIENTDET, self).__init__()
         num_classes = cfg.TRAIN.CLASSES_NUM  # +1 :set last one as background
+        self.num_classes = num_classes
         self.cfg = cfg
         self.device = cfg.TRAIN.DEVICE
         compound_coef = 0  # efficientdet-i
         print("using BN effident-", compound_coef)
         load_weights = False
         self.compound_coef = compound_coef
-
         self.backbone_compound_coef = [0, 1, 2, 3, 4, 5, 6, 6, 7]
         self.fpn_cell_repeats = [3, 4, 5, 6, 7, 7, 8, 8, 8]
         self.fpn_num_filters = [64, 88, 112, 160, 224, 288, 384, 384, 384]
-        input_sizes = [512, 640, 768, 896, 1024, 1280, 1280, 1536, 1536]
+        # input_sizes = [512, 640, 768, 896, 1024, 1280, 1280, 1536, 1536]
         self.box_class_repeats = [3, 3, 3, 4, 4, 4, 5, 5, 5]
         self.pyramid_levels = [5, 5, 5, 5, 5, 5, 5, 5, 6]
         self.anchor_scale = [4., 4., 4., 4., 4., 4., 4., 5., 4.]
-
         scales = np.array([2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)])
         ratios = np.array([0.5, 1, 2])
-
+        num_anchors = len(ratios) * len(scales)
         conv_channel_coef = {
             # the channels of P3/P4/P5.
             0: [40, 112, 320],
@@ -503,9 +503,6 @@ class EFFICIENTDET(nn.Module):
             7: [72, 200, 576],
             8: [80, 224, 640],
         }
-
-        num_anchors = len(ratios) * len(scales)
-
         self.bifpn = nn.Sequential(
             *[BiFPN(self.fpn_num_filters[self.compound_coef],
                     conv_channel_coef[compound_coef],
@@ -514,25 +511,23 @@ class EFFICIENTDET(nn.Module):
                     use_p8=compound_coef > 7)
               for _ in range(self.fpn_cell_repeats[compound_coef])])
 
-        self.num_classes = num_classes
-
         self.anchors = Anchors(pyramid_levels=(torch.arange(self.pyramid_levels[self.compound_coef]) + 3).tolist(),
                                scales=scales, ratios=ratios)
-
         self.backbone_net = EfficientNet(self.backbone_compound_coef[compound_coef], load_weights)
         self.regressor = Regressor(in_channels=self.fpn_num_filters[self.compound_coef], num_anchors=num_anchors,
                                    num_layers=self.box_class_repeats[self.compound_coef],
                                    pyramid_levels=self.pyramid_levels[self.compound_coef])
-        # ret = self.load_state_dict(torch.load('saved/checkpoint/efficientdet-d0.pth'), strict=False)
-        # # print(ret)
-        # # self.freeze_bn()
+
         self.classifier = Classifier(in_channels=self.fpn_num_filters[self.compound_coef], num_anchors=num_anchors,
                                      num_classes=num_classes,
                                      num_layers=self.box_class_repeats[self.compound_coef],
                                      pyramid_levels=self.pyramid_levels[self.compound_coef])
 
-        # weights_init(self.regressor, manual_seed=False)
-        weights_init(self.classifier, manual_seed=False)
+        # weights_init(self, manual_seed=False)
+
+        # ret = self.load_state_dict(torch.load('saved/checkpoint/efficientdet-d0.pth'), strict=False)
+        # # print(ret)
+        # # self.freeze_bn()
 
     def freeze_bn(self):
         for m in self.modules():
@@ -549,7 +544,7 @@ class EFFICIENTDET(nn.Module):
 
         location = self.regressor(features)
         classification = self.classifier(features)
-        anchors_xywh = self.anchors(inputs)
+        anchors_xywh = self.anchors(args['input_x'])
 
         classification = classification.sigmoid()
 

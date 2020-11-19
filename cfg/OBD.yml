@@ -13,7 +13,7 @@ TRAIN:
   #yolov3  ssdvgg  retinanet yolonano  yolov2 yolov3_tiny_shufflenet refinedet efficientdet yolov3_tiny_mobilenet yolov3_tiny_squeezenet fcos
   MODEL: efficientdet
   EMA: 0
-  EPOCH_SIZE: 100
+  EPOCH_SIZE: 1000
   BATCH_BACKWARD_SIZE: 4  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO'
   TRAIN_DATA_FROM_FILE: ['VOC']
@@ -41,7 +41,7 @@ TRAIN:
   WRITER: 'tensorboardX'
 
   # optimizer:
-  OPTIMIZER: 'adamw' #'SGD' #adam #adamw
+  OPTIMIZER: 'adam' #'SGD' #adam #adamw
   LR_START: 0.001
   LR_SCHEDULE: 'reduce'  #'cos' #'reduce'# 'lr'
   STEP_LR: 50
@@ -69,19 +69,19 @@ TEST:
 
   # NMS:
   NMS_TYPE: 'SOFT_NMS'#'NMS'#
-  SCORE_THRESH: 0.5
+  SCORE_THRESH: 0.4
   IOU_THRESH: 0.5
   SOFNMS_THETA: 0.5
 
-  PADTOSIZE: 0
-  RESIZE: 1
+  PADTOSIZE: 1
+  RESIZE: 0
   IMG_BLOCK: 0
   SAVE_LABELS: 0
   SHOW_TIMES: 100000
 
   TEST_ONLY: 0
 
-  ONE_TEST: 0
+  ONE_TEST: 1
   ONE_TEST_TRAIN_STEP: 200
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [

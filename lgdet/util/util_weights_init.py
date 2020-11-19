@@ -17,29 +17,29 @@ def weights_init(Modle, manual_seed=False):
         print('initiating weight...')
         for name, m in Modle.named_modules():
             if isinstance(m, torch.nn.Conv2d):
-                # if 'conv_list' in name or "header" in name:
-                variance_scaling_(m.weight.data)
-                # else:
-                #     torch.nn.init.kaiming_normal_(m.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
-
-                if m.bias is not None:
-                    if "classifier.header" in name:
-                        bias_value = -np.log((1 - 0.01) / 0.01)
-                        torch.nn.init.constant_(m.bias, bias_value)
-                    else:
+                if "classifier.header" in name:
+                    prior = 0.01
+                    m.weight.data.fill_(0)
+                    if m.bias is not None:
+                        m.bias.data.fill_(-math.log((1.0 - prior) / prior))
+                elif "regressor.header" in name:
+                    m.weight.data.fill_(0)
+                    if m.bias is not None:
+                        m.bias.data.fill_(0)
+                else:
+                    variance_scaling_(m.weight.data)
+                    # torch.nn.init.kaiming_normal_(m.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
+                    if m.bias is not None:
                         m.bias.data.zero_()
 
-            elif isinstance(m, torch.nn.RNN) or isinstance(m, torch.nn.LSTM) or isinstance(m, torch.nn.GRU):
+            elif isinstance(m, (torch.nn.RNN, torch.nn.LSTM, torch.nn.GRU)):
                 torch.nn.init.kaiming_normal_(m.weight_ih_l0, a=0, mode='fan_in', nonlinearity='leaky_relu')
                 torch.nn.init.kaiming_normal_(m.weight_hh_l0, a=0, mode='fan_in', nonlinearity='leaky_relu')
                 if m.bias_ih_l0 is not None:
                     m.bias_ih_l0.data.zero_()
                 if m.bias_hh_l0 is not None:
                     m.bias_hh_l0.data.zero_()
-            elif isinstance(m, torch.nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
-            elif isinstance(m, torch.nn.GroupNorm) or isinstance(m, torch.nn.SyncBatchNorm):
+            elif isinstance(m, (torch.nn.BatchNorm2d, torch.nn.GroupNorm, torch.nn.SyncBatchNorm)):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
             elif isinstance(m, torch.nn.Linear):

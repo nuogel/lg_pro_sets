@@ -26,8 +26,9 @@ def main():
     exit_code = 0
     files = 'one_name'
 
-    # files = 'datasets/OBD_idx_stores/VOC/VOC_train.txt' #'datasets/OBD_idx_stores/COCO/COCO_train.txt'#
-    files = 'datasets/OBD_idx_stores/KITTI/KITTI_test.txt'
+    # files = 'datasets/OBD_idx_stores/VOC/VOC_test.txt'
+    # #'datasets/OBD_idx_stores/COCO/COCO_train.txt'#
+    # files = 'datasets/OBD_idx_stores/KITTI/KITTI_test.txt'
     score = False
     args = _parse_arguments()
     cfg = parse_yaml(args)

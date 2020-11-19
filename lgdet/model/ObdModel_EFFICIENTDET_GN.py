@@ -8,6 +8,7 @@ from lgdet.model.ObdModel_EFFICIENTNET_GN import EfficientNet as EffNet
 
 from lgdet.util.util_efficientdet2 import MemoryEfficientSwish, Swish, Conv2dStaticSamePadding, MaxPool2dStaticSamePadding
 from lgdet.util.util_anchor_maker import Anchors
+from lgdet.util.util_weights_init import weights_init, variance_scaling_
 
 '''
 efficientdet with GN(nn.GroupNorm), not BN.
@@ -526,6 +527,7 @@ class EFFICIENTDET(nn.Module):
                                scales=scales, ratios=ratios)
 
         self.backbone_net = EfficientNet(self.backbone_compound_coef[compound_coef], load_weights)
+        self.init_weights(self)
 
 
     def freeze_bn(self):
@@ -556,3 +558,20 @@ class EFFICIENTDET(nn.Module):
             print(ret)
         except RuntimeError as e:
             print('Ignoring ' + str(e) + '"')
+
+    def init_weights(self, model):
+        for name, module in model.named_modules():
+            if isinstance(module, nn.Conv2d):
+                if "conv_list" in name or "header" in name:
+                    variance_scaling_(module.weight.data)
+                else:
+                    nn.init.kaiming_uniform_(module.weight.data)
+                if module.bias is not None:
+                    if "classifier.header" in name:
+                        bias_value = -np.log((1 - 0.01) / 0.01)
+                        torch.nn.init.constant_(module.bias, bias_value)
+                    else:
+                        module.bias.data.zero_()
+            elif isinstance(module, (torch.nn.BatchNorm2d, torch.nn.GroupNorm, torch.nn.SyncBatchNorm)):
+                module.weight.data.fill_(1)
+                module.bias.data.zero_()

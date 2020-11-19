@@ -15,7 +15,7 @@ class RETINANETLOSS():
     def Loss_Call(self, predictions, targets, kwargs):  # predictions with sigmoid()
         pre_cls, pre_loc, anc_xywh = predictions
         # print(pre_cls.shape, pre_loc.shape, anc_xywh.shape)
-        pre_cls = torch.clamp(pre_cls, 1e-4, 1.0 - 1e-4)
+        # pre_cls = torch.clamp(pre_cls, 1e-5, 1.0 - 1e-4)
 
         with torch.no_grad():
             batchsize = pre_loc.shape[0]
@@ -40,13 +40,12 @@ class RETINANETLOSS():
         # cls_loss, pos_loss, neg_loss = self.focalloss(pre_cls, gt_cls, pos_mask, neg_mask, reduction='sum')  # FOCALLOSS_LG
         cls_loss = self.focalloss(pre_cls[pos_neg_mask], gt_cls[pos_neg_mask], logist=False, reduction='sum')
         pre_loc = pre_loc[pos_mask, :].reshape(-1, 4)
-        loc_loss = F.smooth_l1_loss(pre_loc, gt_loc, reduction='none')
-        loc_loss = loc_loss.mean(-1).sum()
+        loc_loss = F.smooth_l1_loss(pre_loc, gt_loc)*50  #
+        # loc_loss = loc_loss.mean(-1).sum()
 
         # pos_loss /= pos_num/self.num_cls
         # neg_loss /= (pos_num)
         cls_loss /= pos_num
-        loc_loss /= pos_num
         total_loss = cls_loss + loc_loss
         # total_loss = pos_loss + neg_loss + loc_loss
 
@@ -88,8 +87,8 @@ class RETINANETLOSS():
         # size: num_priors
 
         gt_cls = torch.zeros_like(pre_cls).to(self.device)
-        pos_mask = best_target_per_prior > 0.5
-        neg_mask = best_target_per_prior < 0.4
+        pos_mask = best_target_per_prior >= 0.5 # official is 0.5 ,but the rest will not that good for nms.
+        neg_mask = best_target_per_prior < 0.5 # official is 0.4 ,but the rest will not that good for nms.
 
         best_target_per_prior_index_pose = best_target_per_prior_index[pos_mask]
         # gt_cls[neg_mask, -1] = 1  # background set to one hot [0, ..., 1]

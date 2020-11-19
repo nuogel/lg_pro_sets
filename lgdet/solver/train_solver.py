@@ -23,9 +23,6 @@ class Solver(BaseSolver):
     def train(self):
         """Train the network.
         """
-        info = 'loading checkpoint: %s, last lr:%s, last epoch:%s' % (self.args.checkpoint, self.learning_rate, self.epoch_last)
-        print(info)
-        self.cfg.logger.info(info)
         for epoch in range(self.epoch_last, self.cfg.TRAIN.EPOCH_SIZE):
             self.epoch = epoch
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
@@ -62,14 +59,14 @@ class Solver(BaseSolver):
             if self.global_step % self.cfg.TRAIN.BATCH_BACKWARD_SIZE == 0:
                 self.optimizer.step()
                 self.optimizer.zero_grad()
-                if self.ema: self.ema.update(self.model)
+                if self.cfg.TRAIN.EMA: self.ema.update(self.model)
             Pbar.set_description(train_info)
 
         if self.cfg.TRAIN.LR_SCHEDULE == 'reduce':
             self.scheduler.step(self.epoch_losses / (step + 1))
         else:
             self.scheduler.step()
-        if self.ema: self.ema.update_attr(self.model)
+        if self.cfg.TRAIN.EMA: self.ema.update_attr(self.model)
         self._save_checkpoint()
 
     def _test_an_epoch(self, epoch):
@@ -83,7 +80,7 @@ class Solver(BaseSolver):
                 break
             test_data = self.DataFun.to_devce(train_data)
             if test_data[0] is None: continue
-            if self.ema:
+            if self.cfg.TRAIN.EMA:
                 predict = self.ema.ema(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)
             else:
                 predict = self.model(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)

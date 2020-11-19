@@ -1,9 +1,11 @@
 import torch.nn as nn
 import numpy as np
 import torch
+from torch.nn import functional as F
 import math
 import torch.utils.model_zoo as model_zoo
 from lgdet.util.util_anchor_maker import Anchors
+from .aid_Models.ResNet import build_resnet
 
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
@@ -155,58 +157,49 @@ class ClipBoxes(nn.Module):
         return boxes
 
 
-class PyramidFeatures(nn.Module):
-    def __init__(self, C3_size, C4_size, C5_size, feature_size=256):
-        super(PyramidFeatures, self).__init__()
+class fpn(nn.Module):
+    def __init__(self, channels_of_fetures, channel_out=256):
+        """
+        fpn,特征金字塔
+        :param channels_of_fetures: list,输入层的通道数,必须与输入特征图相对应
+        :param channel_out:
+        """
+        super(fpn, self).__init__()
+        self.channels_of_fetures = channels_of_fetures
 
-        # upsample C5 to get P5 from the FPN paper
-        self.P5_1 = nn.Conv2d(C5_size, feature_size, kernel_size=1, stride=1, padding=0)
-        self.P5_upsampled = nn.Upsample(scale_factor=2, mode='nearest')
-        self.P5_2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, stride=1, padding=1)
+        self.lateral_conv1 = nn.Conv2d(channels_of_fetures[2], channel_out, kernel_size=1, stride=1, padding=0)
+        self.lateral_conv2 = nn.Conv2d(channels_of_fetures[1], channel_out, kernel_size=1, stride=1, padding=0)
+        self.lateral_conv3 = nn.Conv2d(channels_of_fetures[0], channel_out, kernel_size=1, stride=1, padding=0)
 
-        # add P5 elementwise to C4
-        self.P4_1 = nn.Conv2d(C4_size, feature_size, kernel_size=1, stride=1, padding=0)
-        self.P4_upsampled = nn.Upsample(scale_factor=2, mode='nearest')
-        self.P4_2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, stride=1, padding=1)
+        self.top_down_conv1 = nn.Conv2d(channel_out, channel_out, kernel_size=3, stride=1, padding=1)
+        self.top_down_conv2 = nn.Conv2d(channel_out, channel_out, kernel_size=3, stride=1, padding=1)
+        self.top_down_conv3 = nn.Conv2d(channel_out, channel_out, kernel_size=3, stride=1, padding=1)
 
-        # add P4 elementwise to C3
-        self.P3_1 = nn.Conv2d(C3_size, feature_size, kernel_size=1, stride=1, padding=0)
-        self.P3_2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, stride=1, padding=1)
+    def forward(self, features):
+        """
 
-        # "P6 is obtained via a 3x3 stride-2 conv on C5"
-        self.P6 = nn.Conv2d(C5_size, feature_size, kernel_size=3, stride=2, padding=1)
+        :param features:
+        :return:
+        """
+        c3, c4, c5 = features
 
-        # "P7 is computed by applying ReLU followed by a 3x3 stride-2 conv on P6"
-        self.P7_1 = nn.ReLU()
-        self.P7_2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, stride=2, padding=1)
+        p5 = self.lateral_conv1(c5)  # 19
+        p4 = self.lateral_conv2(c4)  # 38
+        p3 = self.lateral_conv3(c3)  # 75
 
-    def forward(self, inputs):
-        C3, C4, C5 = inputs
+        p4 = F.interpolate(input=p5, size=(p4.size(2), p4.size(3)), mode="nearest") + p4
+        p3 = F.interpolate(input=p4, size=(p3.size(2), p3.size(3)), mode="nearest") + p3
 
-        P5_x = self.P5_1(C5)
-        P5_upsampled_x = self.P5_upsampled(P5_x)
-        P5_x = self.P5_2(P5_x)
+        p5 = self.top_down_conv1(p5)
+        p4 = self.top_down_conv1(p4)
+        p3 = self.top_down_conv1(p3)
 
-        P4_x = self.P4_1(C4)
-        P4_x = P5_upsampled_x + P4_x
-        P4_upsampled_x = self.P4_upsampled(P4_x)
-        P4_x = self.P4_2(P4_x)
-
-        P3_x = self.P3_1(C3)
-        P3_x = P3_x + P4_upsampled_x
-        P3_x = self.P3_2(P3_x)
-
-        P6_x = self.P6(C5)
-
-        P7_x = self.P7_1(P6_x)
-        P7_x = self.P7_2(P7_x)
-
-        return [P3_x, P4_x, P5_x, P6_x, P7_x]
+        return p3, p4, p5
 
 
-class RegressionModel(nn.Module):
+class regressor(nn.Module):
     def __init__(self, num_features_in, num_anchors=9, feature_size=256):
-        super(RegressionModel, self).__init__()
+        super(regressor, self).__init__()
 
         self.conv1 = nn.Conv2d(num_features_in, feature_size, kernel_size=3, padding=1)
         self.act1 = nn.ReLU()
@@ -220,7 +213,7 @@ class RegressionModel(nn.Module):
         self.conv4 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1)
         self.act4 = nn.ReLU()
 
-        self.output = nn.Conv2d(feature_size, num_anchors * 4, kernel_size=3, padding=1)
+        self.header = nn.Conv2d(feature_size, num_anchors * 4, kernel_size=3, padding=1)
 
     def forward(self, x):
         out = self.conv1(x)
@@ -235,7 +228,7 @@ class RegressionModel(nn.Module):
         out = self.conv4(out)
         out = self.act4(out)
 
-        out = self.output(out)
+        out = self.header(out)
 
         # out is B x C x W x H, with C = 4*num_anchors
         out = out.permute(0, 2, 3, 1)
@@ -243,9 +236,9 @@ class RegressionModel(nn.Module):
         return out.contiguous().view(out.shape[0], -1, 4)
 
 
-class ClassificationModel(nn.Module):
+class classifier(nn.Module):
     def __init__(self, num_features_in, num_anchors=9, num_classes=80, prior=0.01, feature_size=256):
-        super(ClassificationModel, self).__init__()
+        super(classifier, self).__init__()
 
         self.num_classes = num_classes
         self.num_anchors = num_anchors
@@ -262,7 +255,7 @@ class ClassificationModel(nn.Module):
         self.conv4 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1)
         self.act4 = nn.ReLU()
 
-        self.output = nn.Conv2d(feature_size, num_anchors * num_classes, kernel_size=3, padding=1)
+        self.header = nn.Conv2d(feature_size, num_anchors * num_classes, kernel_size=3, padding=1)
 
     def forward(self, x):
         out = self.conv1(x)
@@ -277,7 +270,7 @@ class ClassificationModel(nn.Module):
         out = self.conv4(out)
         out = self.act4(out)
 
-        out = self.output(out)
+        out = self.header(out)
 
         # out is B x C x W x H, with C = n_classes + n_anchors
         out1 = out.permute(0, 2, 3, 1)
@@ -297,56 +290,39 @@ class RETINANET(nn.Module):
     def __init__(self, cfg):
         super(RETINANET, self).__init__()
         num_classes = cfg.TRAIN.CLASSES_NUM  # + 1  #:set last one as background
-        resnet_name = 'resnet50'
-        if resnet_name == 'resnet18':
-            block = BasicBlock
-            layers = [2, 2, 2, 2]
-        elif resnet_name == 'resnet34':
-            block = BasicBlock
-            layers = [3, 4, 6, 3]
-        elif resnet_name == 'resnet50':
-            block = Bottleneck
-            layers = [3, 4, 6, 3]
-        elif resnet_name == 'resnet101':
-            block = Bottleneck
-            layers = [3, 4, 23, 3]
-        elif resnet_name == 'resnet152':
-            block = Bottleneck
-            layers = [3, 8, 36, 3]
+        resnet = 'resnet50'
+        expansion_list = {
+            'resnet18': 1,
+            'resnet34': 1,
+            'resnet50': 4,
+            'resnet101': 4,
+            'resnet152': 4,
+        }
+        assert resnet in expansion_list
 
-        self.inplanes = 64
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
-        self.bn1 = nn.BatchNorm2d(64)
-        self.relu = nn.ReLU(inplace=True)
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 64, layers[0])
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
-
-        if block == BasicBlock:
-            fpn_sizes = [self.layer2[layers[1] - 1].conv2.out_channels, self.layer3[layers[2] - 1].conv2.out_channels,
-                         self.layer4[layers[3] - 1].conv2.out_channels]
-        elif block == Bottleneck:
-            fpn_sizes = [self.layer2[layers[1] - 1].conv3.out_channels, self.layer3[layers[2] - 1].conv3.out_channels,
-                         self.layer4[layers[3] - 1].conv3.out_channels]
-        else:
-            raise ValueError(f"Block type {block} not understood")
-
-        self.fpn = PyramidFeatures(fpn_sizes[0], fpn_sizes[1], fpn_sizes[2])
-
-        self.regressionModel = RegressionModel(256)
-        self.classificationModel = ClassificationModel(256, num_classes=num_classes)
-
+        self.backbone = build_resnet(resnet, pretrained=True)
+        self.freeze_bn()
+        expansion = expansion_list[resnet]
+        self.fpn = fpn(channels_of_fetures=[128 * expansion, 256 * expansion, 512 * expansion])
+        self.regressor = regressor(256)
+        self.classifier = classifier(256, num_classes=num_classes)
         self.anchors = Anchors()
-
         self.regressBoxes = BBoxTransform()
-
         self.clipBoxes = ClipBoxes()
 
-        print('loading pre-trained backbone: ', resnet_name)
-        self.load_state_dict(model_zoo.load_url(model_urls[resnet_name], model_dir='saved/checkpoint'), strict=False)
-        self.freeze_bn()
+        for m in (self.fpn, self.regressor, self.classifier):
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
+            elif isinstance(m, nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
+
+        prior = 0.01
+        self.classifier.header.weight.data.fill_(0)
+        self.classifier.header.bias.data.fill_(-math.log((1.0 - prior) / prior))
+        self.regressor.header.weight.data.fill_(0)
+        self.regressor.header.bias.data.fill_(0)
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
@@ -372,20 +348,12 @@ class RETINANET(nn.Module):
 
     def forward(self, **args):
         x = args['input_x']
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
-        x = self.maxpool(x)
+        c3, c4, c5, p6, p7 = self.backbone(x)  # resnet输出五层特征图
+        p3, p4, p5 = self.fpn([c3, c4, c5])  # 前三层特征图进FPN
+        features = [p3, p4, p5, p6, p7]
 
-        x1 = self.layer1(x)
-        x2 = self.layer2(x1)
-        x3 = self.layer3(x2)
-        x4 = self.layer4(x3)
-
-        features = self.fpn([x2, x3, x4])
-
-        classification = torch.cat([self.classificationModel(feature) for feature in features], dim=1)
-        location = torch.cat([self.regressionModel(feature) for feature in features], dim=1)
+        classification = torch.cat([self.classifier(feature) for feature in features], dim=1)
+        location = torch.cat([self.regressor(feature) for feature in features], dim=1)
         anchors = self.anchors(args['input_x'])
 
         classification = classification.sigmoid()

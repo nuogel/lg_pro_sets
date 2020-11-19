@@ -82,10 +82,10 @@ class OBD_Loader(DataLoader):
             img, label = self.lgtransformer.relative_label(img, label)
 
         if self.cfg.TRAIN.SHOW_INPUT > 0:
-            _show_img(img, label, cfg=self.cfg, show_time=self.cfg.TRAIN.SHOW_INPUT, pic_path=data_info['lab_path'])
+            _show_img(img.copy(), label.copy(), cfg=self.cfg, show_time=self.cfg.TRAIN.SHOW_INPUT, pic_path=data_info['lab_path'])
 
         if self.write_images > 0 and self.is_training and not self.cfg.checkpoint:
-            img_write = _show_img(img, label, cfg=self.cfg, show_time=-1)[0]
+            img_write = _show_img(img.copy(), label.copy(), cfg=self.cfg, show_time=-1)[0]
             self.cfg.writer.tbX_addImage('GT_' + data_info['img_name'], img_write)
             self.write_images -= 1
 
