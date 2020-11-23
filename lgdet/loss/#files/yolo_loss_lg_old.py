@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from lgdet.util.util_iou import iou_xywh
 from lgdet.util.util_get_cls_names import _get_class_names
-from lgdet.postprocess.parse_prediction import ParsePredict
+from lgdet.postprocess.parse_factory import ParsePredict
 
 
 class YoloLoss:

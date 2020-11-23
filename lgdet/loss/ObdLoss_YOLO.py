@@ -2,7 +2,7 @@
 import torch
 import numpy as np
 from lgdet.util.util_iou import _iou_wh, bbox_GDCiou, xywh2xyxy, iou_xyxy
-from lgdet.postprocess.parse_prediction import ParsePredict
+from lgdet.postprocess.parse_factory import ParsePredict
 
 from lgdet.loss.loss_base.focal_loss import FocalLoss, FocalLoss_lg
 from lgdet.loss.loss_base.ghm_loss import GHMC
@@ -38,7 +38,7 @@ class YoloLoss:
         self.alpha = 0.25
         self.gamma = 2
         self.Focalloss = FocalLoss(alpha=self.alpha, gamma=self.gamma)
-        self.Focalloss_lg = FocalLoss_lg(alpha=self.alpha, gamma=self.gamma, reduction=self.reduction)
+        self.Focalloss_lg = FocalLoss_lg(alpha=self.alpha, gamma=self.gamma)
         self.ghm = GHMC(use_sigmoid=True)
 
         self.multiply_area_scale = 0
@@ -100,7 +100,7 @@ class YoloLoss:
         metrics = {}
         lcls, lbox, lobj = [torch.FloatTensor([0]).to(self.device) for _ in range(3)]
 
-        pre_obj, pre_cls, pre_loc_xy, pre_loc_wh, pre_relative_box = self.parsepredict._parse_yolo_predict_fmap(f_map, f_id)
+        pre_obj, pre_cls, pre_loc_xy, pre_loc_wh, pre_relative_box = self.parsepredict.parser._parse_yolo_predict_fmap(f_map, f_id)
         with torch.no_grad():
             tcls, tbox, indices, indices_ignore, anchors = self.build_targets(pre_obj, labels, f_id)  # targets
             B, C, H, W = pre_obj.shape

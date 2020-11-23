@@ -24,8 +24,8 @@ class MULTIBOXLOSS():
             lab = gt_i[..., 1].long()
             box = gt_i[..., 2:]
             box_xywh = xyxy2xywh(box)
-            _gt_loc_xywh, _labels = self._assign_priors(box_xywh, lab, anc_xywh, self.neg_iou_threshold)
-            _gt_loc_xywh = self._encode_bbox(_gt_loc_xywh, anc_xywh)
+            _gt_loc_xywh, _labels = self._assign_priors(box_xywh, lab, anc_xywh[i], self.neg_iou_threshold)
+            _gt_loc_xywh = self._encode_bbox(_gt_loc_xywh, anc_xywh[i])
             encode_target.append(_gt_loc_xywh)
             labels.append(_labels)
         encode_target = torch.stack(encode_target, dim=0)

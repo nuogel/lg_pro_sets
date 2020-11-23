@@ -14,7 +14,7 @@ def _parse_arguments():
     parser.add_argument('--model', type=str, help='yml_path')
     parser.add_argument('--checkpoint', '--cp', default=1
                         , help='Path to the checkpoint to be loaded to the model')
-    parser.add_argument('--batch_size', '--bz', default=1, type=int, help='batch size')
+    parser.add_argument('--batch_size', '--bz', default=2, type=int, help='batch size')
     parser.add_argument('--gpu', help='number works of dataloader')
     parser.add_argument('--number_works', '--nw', default=0, type=int, help='number works of dataloader')
     parser.add_argument('--debug', '--d', action='store_true', default=False, help='Enable verbose info')
@@ -32,7 +32,7 @@ def main():
     score = False
     args = _parse_arguments()
     cfg = parse_yaml(args)
-    test = Test[cfg.BELONGS](cfg, args, train=False)
+    test = Test[cfg.BELONGS](cfg, args, train=None)
     test.test_run(files)
     if score:
         test.score(txt_info=files, pre_path=cfg.PATH.GENERATE_LABEL_SAVE_PATH)

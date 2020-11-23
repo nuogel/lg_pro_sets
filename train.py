@@ -45,7 +45,7 @@ def main():
     # except:
     #     print('warning: please do not close this, saving checkpoints......')
     #     solver._save_checkpoint()
-    # return exit_code
+    return exit_code
 
 
 if __name__ == '__main__':

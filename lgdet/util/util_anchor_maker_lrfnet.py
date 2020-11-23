@@ -4,9 +4,6 @@ import torch.backends.cudnn as cudnn
 from math import sqrt as sqrt
 from itertools import product as product
 
-if torch.cuda.is_available():
-    torch.set_default_tensor_type('torch.cuda.FloatTensor')
-
 COCO_300 = {
     'feature_maps': [38, 19, 10, 5, 3, 1],
 
@@ -70,7 +67,8 @@ class PriorBox(object):
             if v <= 0:
                 raise ValueError('Variances must be greater than 0')
 
-    def forward(self):
+    def forward(self, images):
+        n, c, h, w = images.shape
         mean = []
         for k, f in enumerate(self.feature_maps):
             for i, j in product(range(f), repeat=2):
@@ -93,7 +91,9 @@ class PriorBox(object):
             # a = 1
 
         # back to torch land
-        output = torch.Tensor(mean).view(-1, 4)
+        all_anchors_xywh = torch.Tensor(mean).view(-1, 4)
         if self.clip:
-            output.clamp_(max=1, min=0)
-        return output
+            all_anchors_xywh.clamp_(max=1, min=0)
+
+        all_anchors_xywh = all_anchors_xywh.unsqueeze(0).repeat([n, 1, 1])  # for multi GPU
+        return all_anchors_xywh

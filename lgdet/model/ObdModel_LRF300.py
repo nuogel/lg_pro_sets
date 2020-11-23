@@ -3,6 +3,7 @@ import torch.nn as nn
 import os
 import torch.nn.functional as F
 from lgdet.util.util_anchor_maker_lrfnet import PriorBox, COCO_300
+from lgdet.util.util_load_save_checkpoint import _load_pretrained
 
 
 def vgg(cfg, i, batch_norm=False):
@@ -219,6 +220,8 @@ class LRF300(nn.Module):
         super(LRF300, self).__init__()
         self.num_classes = cfg.TRAIN.CLASSES_NUM + 1  #:set last one as background
         size = 300
+        self.device = cfg.TRAIN.DEVICE
+
         self.size = size
         base_size = {
             '300': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
@@ -285,10 +288,8 @@ class LRF300(nn.Module):
         self.loc = nn.ModuleList(head[0])
         self.conf = nn.ModuleList(head[1])
 
-        anchor = PriorBox(COCO_300)
-        self.anchors = anchor.forward()
-
-        self.load_weights('saved/checkpoint/LRF_vgg_COCO_300.pth')
+        self.anchor = PriorBox(COCO_300)
+        # _load_pretrained(self, 'saved/checkpoint/LRF_vgg_COCO_300.pth', self.device)
 
     def forward(self, **args):
         x = args['input_x']
@@ -400,15 +401,8 @@ class LRF300(nn.Module):
 
         loc = loc.view(loc.size(0), -1, 4)
         conf = conf.view(conf.size(0), -1, self.num_classes)
+        anchors_xywh = self.anchor.forward(args['input_x']).to(self.device)
+
         if args['is_training'] == False:
             conf = conf.softmax(-1)
-        return conf, loc, self.anchors
-
-    def load_weights(self, base_file):
-        other, ext = os.path.splitext(base_file)
-        if ext == '.pkl' or '.pth':
-            print('Loading weights into state dict...')
-            self.load_state_dict(torch.load(base_file), strict=False)
-            print('Finished!')
-        else:
-            print('Sorry only .pth and .pkl files supported.')
+        return conf, loc, anchors_xywh

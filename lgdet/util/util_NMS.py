@@ -12,7 +12,26 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         self.iou_thresh = cfg.TEST.IOU_THRESH
         self.class_range = range(cfg.TRAIN.CLASSES_NUM)
 
-    def forward(self, pre_score=None, pre_class=None, pre_loc=None, xywh2x1y1x2y2=None):
+    def forward(self, pre_score, pre_loc, xywh2x1y1x2y2=True):
+        labels_predict = []
+        for batch_n in range(pre_score.shape[0]):
+            pre_score_max = pre_score[batch_n].max(-1)
+            pre_score_i = pre_score_max[0]
+            pre_class_i = pre_score_max[1]
+            pre_loc_i = pre_loc[batch_n]
+
+            index = pre_score_i > self.cfg.TEST.SCORE_THRESH
+            num_pos = index.sum()
+            _pre_score = pre_score_i[index]
+            _pre_class = pre_class_i[index]
+            _pre_loc = pre_loc_i[index]
+
+            labels = self._nms(_pre_score, _pre_class, _pre_loc, xywh2x1y1x2y2)
+            labels_predict.append(labels)
+
+        return labels_predict
+
+    def _nms(self, pre_score=None, pre_class=None, pre_loc=None, xywh2x1y1x2y2=None):
         if self.cfg.TEST.NMS_TYPE in ['soft_nms', 'SOFT_NMS']:
             keep = self.NMS_Soft(pre_score, pre_class, pre_loc)
         else:

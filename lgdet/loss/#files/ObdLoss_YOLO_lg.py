@@ -2,7 +2,7 @@
 import torch
 import numpy as np
 from lgdet.util.util_iou import iou_xywh, xywh2xyxy, iou_xyxy
-from lgdet.postprocess.parse_prediction import ParsePredict
+from lgdet.postprocess.parse_factory import ParsePredict
 from lgdet.util.util_loss import FocalLoss, FocalLoss_lg
 
 '''

@@ -19,7 +19,7 @@ class Score:
         self.false_positive = {}
         self.pre_scores = {}
         try:
-            from lgdet.postprocess.parse_prediction import ParsePredict
+            from lgdet.postprocess.parse_factory import ParsePredict
         except:
             print("no ParsePredict")
         else:

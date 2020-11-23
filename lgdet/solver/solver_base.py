@@ -1,18 +1,16 @@
 import os
 import torch
 from torch.optim import lr_scheduler
-from lgdet.util.util_ConfigFactory_Classes import get_loss_class, get_score_class
+from lgdet.factory_classes import get_loss_class, get_score_class
 from lgdet.util.util_prepare_device import load_device
 from cfg.cfg import prepare_cfg
 from lgdet.dataloader.DataLoaderFactory import DataLoaderFactory
-from lgdet.registry import MODELS, LOSSES, SCORES, build_from_cfg
+from lgdet.registry import MODELS, build_from_cfg
 from lgdet.util.util_weights_init import weights_init
 from lgdet.util.util_get_dataset_from_file import _read_train_test_dataset
 from lgdet.util.util_load_save_checkpoint import _load_checkpoint, _save_checkpoint, _load_pretrained
 from lgdet.metrics.ema import ModelEMA
 import math
-from matplotlib import pyplot as plt
-import time
 
 
 class BaseSolver(object):
@@ -20,7 +18,7 @@ class BaseSolver(object):
         self.is_training = train
         self._get_configs(cfg, args)
         self._get_model()
-        self._get_dataloader()
+        self._get_dataloader(train)
         self.epoch = 0
         self.metrics_ave = {}
         self.epoch_losses = 0
@@ -112,7 +110,7 @@ class BaseSolver(object):
         # del pa_others, pa_conv, pa_bias
 
         if self.optimizer_dict and opt_type == self.optimizer_type:
-            self.optimizer.param_groups = self.optimizer_dict
+            self.optimizer.state_dict = self.optimizer_dict
         self.optimizer.param_groups[0]['initial_lr'] = learning_rate
         if self.args.lr_continue:
             self.optimizer.param_groups[0]['lr'] = self.args.lr_continue
@@ -147,19 +145,20 @@ class BaseSolver(object):
     def _set_warmup_lr(self):
         self.optimizer.param_groups[0]['lr'] = self.learning_rate / self.cfg.TRAIN.WARM_UP_STEP * (self.global_step + 1)
 
-    def _get_dataloader(self):
+    def _get_dataloader(self, is_training):
         """
         Get the self.model, learning_rate, epoch_last, train_set, test_set.
         :return: learning_rate, epoch_last, train_set, test_set.
         """
         self.DataFun = DataLoaderFactory(self.cfg, self.args)
         #  load the last data set
-        train_set, test_set = _read_train_test_dataset(self.cfg)
-        print('train set:', train_set[0], '\n', 'test set:', test_set[0])
-        txt = 'train set:{}; test set:{}'.format(len(train_set), len(test_set))
-        print(txt)
-        self.cfg.logger.info(txt)
-        self.trainDataloader, self.testDataloader = self.DataFun.make_dataset(train_set, test_set)
+        if is_training != None:
+            train_set, test_set = _read_train_test_dataset(self.cfg)
+            print('train set:', train_set[0], '\n', 'test set:', test_set[0])
+            txt = 'train set:{}; test set:{}'.format(len(train_set), len(test_set))
+            print(txt)
+            self.cfg.logger.info(txt)
+            self.trainDataloader, self.testDataloader = self.DataFun.make_dataset(train_set, test_set)
 
     def _calculate_loss(self, predict, dataset, **kwargs):
         metrics_info = ''

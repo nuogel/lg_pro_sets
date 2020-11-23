@@ -8,7 +8,7 @@ import os
 import torch
 import cv2
 import glob
-from lgdet.postprocess.parse_prediction import ParsePredict
+from lgdet.postprocess.parse_factory import ParsePredict
 from lgdet.util.util_show_img import _show_img
 from lgdet.util.util_parse_SR_img import parse_Tensor_img
 from lgdet.util.util_img_block import img_cut
@@ -34,7 +34,7 @@ class TestBase(BaseSolver):
         :return:
         """
         dataset = self.prase_file(file_s)
-        DataSet = self.DataFun.make_dataset(None, dataset)[1]
+        DataSet = self.DataFun.make_dataset(train_dataset=None, test_dataset=dataset)[1]
         self.test_backbone(DataSet)
 
     def prase_file(self, file_s):

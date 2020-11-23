@@ -3,7 +3,7 @@ import torch
 import math
 import numpy as np
 from lgdet.util.util_get_cls_names import _get_class_names
-from lgdet.postprocess.parse_prediction import ParsePredict
+from lgdet.postprocess.parse_factory import ParsePredict
 
 '''
 with the new yolo loss, in 56 images, loss is 0.18 and map is 0.2.and the test show wrong bboxes.
