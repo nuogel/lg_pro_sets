@@ -2,10 +2,83 @@ import torch
 import torch.nn as nn
 import os
 import torch.nn.functional as F
+from lgdet.util.util_anchor_maker_lrfnet import PriorBox, COCO_300
+
+
+def vgg(cfg, i, batch_norm=False):
+    layers = []
+    in_channels = i
+    for v in cfg:
+        if v == 'M':
+            layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+        elif v == 'C':
+            layers += [nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)]
+        else:
+            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
+            if batch_norm:
+                layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=False)]
+            else:
+                layers += [conv2d, nn.ReLU(inplace=False)]
+            in_channels = v
+    pool5 = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
+    conv6 = nn.Conv2d(512, 1024, kernel_size=3, padding=6, dilation=6)
+    conv7 = nn.Conv2d(1024, 1024, kernel_size=1)
+    layers += [pool5, conv6,
+               nn.ReLU(inplace=False), conv7, nn.ReLU(inplace=False)]
+    return layers
+
+
+def multibox(size, vgg, extra_layers, cfg, num_classes):
+    loc_layers = []
+    conf_layers = []
+    vgg_source = [1, -2]
+    for k, v in enumerate(vgg_source):
+        if k == 0:
+            loc_layers += [nn.Conv2d(512,
+                                     cfg[k] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(512,
+                                      cfg[k] * num_classes, kernel_size=3, padding=1)]
+        else:
+            loc_layers += [nn.Conv2d(vgg[v].out_channels,
+                                     cfg[k] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(vgg[v].out_channels,
+                                      cfg[k] * num_classes, kernel_size=3, padding=1)]
+    i = 2
+    indicator = 3
+
+    for k, v in enumerate(extra_layers):
+        if (k < indicator + 1 and k % 2 == 0) or (k > indicator + 1 and k % 2 != 0):
+            loc_layers += [nn.Conv2d(v.out_channels, cfg[i]
+                                     * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(v.out_channels, cfg[i]
+                                      * num_classes, kernel_size=3, padding=1)]
+            i += 1
+
+    return vgg, extra_layers, (loc_layers, conf_layers)
+
+
+def add_extras(size, cfg, i, batch_norm=False):
+    # Extra layers added to VGG for feature scaling
+    layers = []
+    in_channels = i
+    flag = False
+    for k, v in enumerate(cfg):
+        if in_channels != 'S':
+            if v == 'S':
+                if in_channels == 256 and size == 512:
+                    layers += [One_Three_Conv(in_channels, cfg[k + 1], stride=2), nn.ReLU(inplace=False)]
+                else:
+                    layers += [One_Three_Conv(in_channels, cfg[k + 1], stride=2), nn.ReLU(inplace=False)]
+        in_channels = v
+    layers += [ConvBlock(256, 128, kernel_size=1, stride=1)]
+    layers += [ConvBlock(128, 256, kernel_size=3, stride=1)]
+    layers += [ConvBlock(256, 128, kernel_size=1, stride=1)]
+    layers += [ConvBlock(128, 256, kernel_size=3, stride=1)]
+    return layers
 
 
 class LDS(nn.Module):
-    def __init__(self,):
+    def __init__(self, ):
         super(LDS, self).__init__()
         self.pool1 = nn.MaxPool2d(kernel_size=(2, 2), stride=2, padding=0)
         self.pool2 = nn.MaxPool2d(kernel_size=(2, 2), stride=2, padding=0)
@@ -41,10 +114,10 @@ class LSN_init(nn.Module):
         self.out_channels = out_planes
         inter_planes = out_planes // 4
         self.part_a = nn.Sequential(
-                ConvBlock(in_planes, inter_planes, kernel_size=(3, 3), stride=stride, padding=1),
-                ConvBlock(inter_planes, inter_planes, kernel_size=1, stride=1),
-                ConvBlock(inter_planes, inter_planes, kernel_size=(3, 3), stride=stride, padding=1)
-                )
+            ConvBlock(in_planes, inter_planes, kernel_size=(3, 3), stride=stride, padding=1),
+            ConvBlock(inter_planes, inter_planes, kernel_size=1, stride=1),
+            ConvBlock(inter_planes, inter_planes, kernel_size=(3, 3), stride=stride, padding=1)
+        )
         self.part_b = ConvBlock(inter_planes, out_planes, kernel_size=1, stride=1, relu=False)
 
     def forward(self, x):
@@ -85,9 +158,9 @@ class One_Three_Conv(nn.Module):
         self.out_channels = out_planes
         inter_planes = in_planes // 4
         self.single_branch = nn.Sequential(
-                ConvBlock(in_planes, inter_planes, kernel_size=1, stride=1),
-                ConvBlock(inter_planes, out_planes, kernel_size=(3, 3), stride=stride, padding=1, relu=False)
-                )
+            ConvBlock(in_planes, inter_planes, kernel_size=1, stride=1),
+            ConvBlock(inter_planes, out_planes, kernel_size=(3, 3), stride=stride, padding=1, relu=False)
+        )
 
     def forward(self, x):
         out = self.single_branch(x)
@@ -122,7 +195,11 @@ class Ds_Conv(nn.Module):
         return out
 
 
-class LRFNet(nn.Module):
+from ..registry import MODELS
+
+
+@MODELS.registry()
+class LRF300(nn.Module):
     """LRFNet for object detection
     The network is based on the SSD architecture.
     Each multibox layer branches into
@@ -138,12 +215,26 @@ class LRFNet(nn.Module):
         head: "multibox head" consists of loc and conf conv layers
     """
 
-    def __init__(self, phase, size, base, extras, head, num_classes):
-        super(LRFNet, self).__init__()
-        self.phase = phase
-        self.num_classes = num_classes
+    def __init__(self, cfg):
+        super(LRF300, self).__init__()
+        self.num_classes = cfg.TRAIN.CLASSES_NUM + 1  #:set last one as background
+        size = 300
         self.size = size
+        base_size = {
+            '300': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
+                    512, 512, 512]}
 
+        extras_size = {
+            '300': [1024, 'S', 512, 'S', 256]}
+
+        mbox_size = {
+            '300': [6, 6, 6, 6, 4, 4]}
+
+        base, extras, head = multibox(size,
+                                      vgg(base_size[str(size)], 3),
+                                      add_extras(size, extras_size[str(size)], 1024),
+                                      mbox_size[str(size)],
+                                      self.num_classes)
         # vgg network
         self.base = nn.ModuleList(base)
 
@@ -193,10 +284,14 @@ class LRFNet(nn.Module):
         self.extras = nn.ModuleList(extras)
         self.loc = nn.ModuleList(head[0])
         self.conf = nn.ModuleList(head[1])
-        if self.phase == 'test':
-            self.softmax = nn.Softmax()
 
-    def forward(self, x):
+        anchor = PriorBox(COCO_300)
+        self.anchors = anchor.forward()
+
+        self.load_weights('saved/checkpoint/LRF_vgg_COCO_300.pth')
+
+    def forward(self, **args):
+        x = args['input_x']
         """Applies network layers and ops on input image(s) x.
 
         Args:
@@ -303,117 +398,17 @@ class LRFNet(nn.Module):
         loc = torch.cat([o.view(o.size(0), -1) for o in loc], 1)
         conf = torch.cat([o.view(o.size(0), -1) for o in conf], 1)
 
-        if self.phase == "test":
-            output = (
-                loc.view(loc.size(0), -1, 4),                   # loc preds
-                self.softmax(conf.view(-1, self.num_classes)),  # conf preds
-            )
-        else:
-            output = (
-                loc.view(loc.size(0), -1, 4),
-                conf.view(conf.size(0), -1, self.num_classes),
-            )
-        return output
+        loc = loc.view(loc.size(0), -1, 4)
+        conf = conf.view(conf.size(0), -1, self.num_classes)
+        if args['is_training'] == False:
+            conf = conf.softmax(-1)
+        return conf, loc, self.anchors
 
     def load_weights(self, base_file):
         other, ext = os.path.splitext(base_file)
         if ext == '.pkl' or '.pth':
             print('Loading weights into state dict...')
-            self.load_state_dict(torch.load(base_file))
+            self.load_state_dict(torch.load(base_file), strict=False)
             print('Finished!')
         else:
             print('Sorry only .pth and .pkl files supported.')
-
-
-def vgg(cfg, i, batch_norm=False):
-    layers = []
-    in_channels = i
-    for v in cfg:
-        if v == 'M':
-            layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
-        elif v == 'C':
-            layers += [nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)]
-        else:
-            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
-            if batch_norm:
-                layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=False)]
-            else:
-                layers += [conv2d, nn.ReLU(inplace=False)]
-            in_channels = v
-    pool5 = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
-    conv6 = nn.Conv2d(512, 1024, kernel_size=3, padding=6, dilation=6)
-    conv7 = nn.Conv2d(1024, 1024, kernel_size=1)
-    layers += [pool5, conv6,
-               nn.ReLU(inplace=False), conv7, nn.ReLU(inplace=False)]
-    return layers
-
-base = {
-    '300': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
-            512, 512, 512]}
-
-
-def add_extras(size, cfg, i, batch_norm=False):
-    # Extra layers added to VGG for feature scaling
-    layers = []
-    in_channels = i
-    flag = False
-    for k, v in enumerate(cfg):
-        if in_channels != 'S':
-            if v == 'S':
-                if in_channels == 256 and size == 512:
-                    layers += [One_Three_Conv(in_channels, cfg[k+1], stride=2), nn.ReLU(inplace=False)]
-                else:
-                    layers += [One_Three_Conv(in_channels, cfg[k+1], stride=2), nn.ReLU(inplace=False)]
-        in_channels = v
-    layers += [ConvBlock(256, 128, kernel_size=1,stride=1)]
-    layers += [ConvBlock(128, 256, kernel_size=3,stride=1)]
-    layers += [ConvBlock(256, 128, kernel_size=1,stride=1)]
-    layers += [ConvBlock(128, 256, kernel_size=3,stride=1)]
-    return layers
-
-
-extras = {
-    '300': [1024, 'S', 512, 'S', 256]}
-
-
-def multibox(size, vgg, extra_layers, cfg, num_classes):
-    loc_layers = []
-    conf_layers = []
-    vgg_source = [1, -2]
-    for k, v in enumerate(vgg_source):
-        if k == 0:
-            loc_layers += [nn.Conv2d(512,
-                                 cfg[k] * 4, kernel_size=3, padding=1)]
-            conf_layers +=[nn.Conv2d(512,
-                                 cfg[k] * num_classes, kernel_size=3, padding=1)]
-        else:
-            loc_layers += [nn.Conv2d(vgg[v].out_channels,
-                                 cfg[k] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(vgg[v].out_channels,
-                        cfg[k] * num_classes, kernel_size=3, padding=1)]
-    i = 2
-    indicator = 3
-
-    for k, v in enumerate(extra_layers):
-        if (k < indicator+1 and k % 2 == 0) or (k > indicator+1 and k % 2 != 0):
-            loc_layers += [nn.Conv2d(v.out_channels, cfg[i]
-                                 * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(v.out_channels, cfg[i]
-                                  * num_classes, kernel_size=3, padding=1)]
-            i += 1
-
-    return vgg, extra_layers, (loc_layers, conf_layers)
-
-
-mbox = {
-    '300': [6, 6, 6, 6, 4, 4]}
-
-
-def build_net(phase, size=300, num_classes=81):
-    if size != 300:
-        print("Error: The input image size is not supported!")
-        return
-
-    return LRFNet(phase, size, *multibox(size, vgg(base[str(size)], 3),
-                                add_extras(size, extras[str(size)], 1024),
-                                mbox[str(size)], num_classes), num_classes)

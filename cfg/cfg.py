@@ -120,10 +120,10 @@ def prepare_cfg(cfg, args, is_training=True):
 
     cfg.TRAIN.ANCHORS = anchor_yolov3
     if cfg.TEST.ONE_TEST:
-        if cfg.TEST.ONE_NAME != []:
-            cfg.TRAIN.BATCH_SIZE = len(cfg.TEST.ONE_NAME)
-        else:
-            cfg.TRAIN.BATCH_SIZE = 1
+        # if cfg.TEST.ONE_NAME != []:
+        #     cfg.TRAIN.BATCH_SIZE = len(cfg.TEST.ONE_NAME)
+        # else:
+        cfg.TRAIN.BATCH_SIZE = args.batch_size
         cfg.TRAIN.BATCH_BACKWARD_SIZE = 1
 
     if 'yolov3_tiny' in cfg.TRAIN.MODEL and ('KITTI' in cfg.TRAIN.TRAIN_DATA_FROM_FILE):

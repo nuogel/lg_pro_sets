@@ -47,7 +47,7 @@ def _save_checkpoint(self):
     _model = self.ema.ema if self.cfg.TRAIN.EMA else self.model
     saved_dict = {'epoch': self.epoch,
                   'state_dict': _model.state_dict(),
-                  'optimizer': self.optimizer.state_dict(),
+                  'optimizer': self.optimizer.param_groups,
                   'optimizer_type': self.cfg.TRAIN.OPTIMIZER.lower(),
                   'global_step': self.global_step}
 

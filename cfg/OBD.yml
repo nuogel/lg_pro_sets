@@ -10,10 +10,10 @@ PATH:
   GENERATE_LABEL_SAVE_PATH: 'tmp/predicted_labels/'
 
 TRAIN:
-  #yolov3  ssdvgg  retinanet yolonano  yolov2 yolov3_tiny_shufflenet refinedet efficientdet yolov3_tiny_mobilenet yolov3_tiny_squeezenet fcos
-  MODEL: efficientdet
+  # lrf300 yolov3  ssdvgg  retinanet yolonano  yolov2 yolov3_tiny_shufflenet refinedet efficientdet yolov3_tiny_mobilenet yolov3_tiny_squeezenet fcos
+  MODEL: lrf300
   EMA: 0
-  EPOCH_SIZE: 1000
+  EPOCH_SIZE: 500
   BATCH_BACKWARD_SIZE: 4  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO'
   TRAIN_DATA_FROM_FILE: ['VOC']
@@ -29,7 +29,7 @@ TRAIN:
   MIN_AREA: 10 #0 #100 #400 #
   #[H,W]
   #[384, 960] #[416, 416] #[512, 768] # [1024,1920] #[720,1024]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
-  IMG_SIZE: [512, 512]
+  IMG_SIZE: [300, 300]
 
   MULTI_SCALE: 0
   MULTI_SCALE_SIZE: [320, 640] #(320-640)//32
@@ -69,7 +69,7 @@ TEST:
 
   # NMS:
   NMS_TYPE: 'SOFT_NMS'#'NMS'#
-  SCORE_THRESH: 0.4
+  SCORE_THRESH: 0.7
   IOU_THRESH: 0.5
   SOFNMS_THETA: 0.5
 
@@ -81,8 +81,8 @@ TEST:
 
   TEST_ONLY: 0
 
-  ONE_TEST: 1
-  ONE_TEST_TRAIN_STEP: 200
+  ONE_TEST: 0
+  ONE_TEST_TRAIN_STEP: 100
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
     #  ['000000000009.jpg', 'coco/imgs/train2017/000000000009.jpg', 'coco/labels/train2017_xml/000000000009.xml']

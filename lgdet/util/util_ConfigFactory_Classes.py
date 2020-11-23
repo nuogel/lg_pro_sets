@@ -25,7 +25,7 @@ def get_loss_class(belongs, modelname):
     if modelname[:4] == 'yolo':
         from lgdet.loss.ObdLoss_YOLO import YoloLoss
         return YoloLoss
-    elif modelname in ['ssdvgg']:
+    elif modelname in ['ssdvgg', 'lrf300', 'lrf500']:
         from lgdet.loss.ObdLoss_MULTIBOX import MULTIBOXLOSS
         return MULTIBOXLOSS
     elif belongs == 'SRDN':

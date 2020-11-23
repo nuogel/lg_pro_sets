@@ -14,8 +14,8 @@ class MULTIBOXLOSS():
         self.neg_pos_ratio = 3  # 3:1
 
     def Loss_Call(self, predictions, targets, kwargs):
-        confidence, predicted_locations, anchors_xywh = predictions
-        batchsize = predicted_locations.shape[0]
+        pre_cls, pre_loc, anc_xywh = predictions
+        batchsize = pre_loc.shape[0]
         gt_images, gt_labels, infos = targets
 
         encode_target, labels = [], []
@@ -24,34 +24,54 @@ class MULTIBOXLOSS():
             lab = gt_i[..., 1].long()
             box = gt_i[..., 2:]
             box_xywh = xyxy2xywh(box)
-            _gt_loc_xywh, _labels = self._assign_priors(box_xywh, lab, anchors_xywh, self.neg_iou_threshold)
-            _gt_loc_xywh = self._encode_bbox(_gt_loc_xywh, anchors_xywh)
+            _gt_loc_xywh, _labels = self._assign_priors(box_xywh, lab, anc_xywh, self.neg_iou_threshold)
+            _gt_loc_xywh = self._encode_bbox(_gt_loc_xywh, anc_xywh)
             encode_target.append(_gt_loc_xywh)
             labels.append(_labels)
         encode_target = torch.stack(encode_target, dim=0)
         labels = torch.stack(labels, dim=0)
-        num_classes = confidence.size(2)
+        num_classes = pre_cls.size(2)
         with torch.no_grad():
             # derived from cross_entropy=sum(log(p))
-            loss = -F.log_softmax(confidence, dim=-1)[:, :, -1]  # -1 reprsent the background
+            loss = -F.log_softmax(pre_cls, dim=-1)[:, :, -1]  # -1 reprsent the background
             mask = self._hard_negative_mining(loss, labels, self.neg_pos_ratio)
 
-        input_c = confidence[mask].reshape(-1, num_classes)
-        target_c = labels[mask]
-        classification_loss = F.cross_entropy(input_c, target_c)
+        input_c = pre_cls[mask].reshape(-1, num_classes)
+        gt_cls = labels[mask]
+        cls_loss = F.cross_entropy(input_c, gt_cls, reduction='sum')  # F.cross_entropy函数时，程序会自动先对out进行softmax，再log，最后再计算nll_loss。
         pos_mask = labels < self.num_cls
-        predicted_locations = predicted_locations[pos_mask, :].reshape(-1, 4)
+        pre_loc = pre_loc[pos_mask, :].reshape(-1, 4)
         encode_target = encode_target[pos_mask, :].reshape(-1, 4)
 
-        loc_loss = F.smooth_l1_loss(predicted_locations, encode_target)
+        loc_loss = F.smooth_l1_loss(pre_loc, encode_target, reduction='sum')
 
-        # num_pos = encode_target.size(0)
-        loc_loss = loc_loss
-        class_loss = classification_loss
-        total_loss = loc_loss + class_loss
+        pos_num = pos_mask.sum()
+        loc_loss = loc_loss / pos_num
+        cls_loss = cls_loss / pos_num
+        total_loss = loc_loss + cls_loss
 
-        metrics = {'loc_loss': loc_loss.item(),
-                   'cls_loss': class_loss.item()}
+        # metrics:
+        with torch.no_grad():
+            pre_cls = pre_cls.softmax(-1)[..., :-1]
+            cls_p = (pre_cls[pos_mask].argmax(-1) == labels[pos_mask]).float().mean().item()
+            pos_sc = pre_cls[pos_mask].max(-1)[0].mean().item()
+            pos_t = (pre_cls[pos_mask].max(-1)[0] > self.cfg.TEST.SCORE_THRESH).float().mean().item()
+            neg_sc = pre_cls[~pos_mask].max(-1)[0].mean().item()
+            neg_t = (pre_cls[~pos_mask].max(-1)[0] > self.cfg.TEST.SCORE_THRESH).float().sum().item()
+
+            metrics = {
+                'pos_num': pos_num.item(),
+                'pos_sc': pos_sc,
+                'neg_sc': neg_sc,
+                'obj>t': pos_t,
+                'nob>t': neg_t,
+                'cls_p': cls_p,
+                'cls_loss': cls_loss.item(),
+                # 'pos_loss': pos_loss.item(),
+                # 'neg_loss': neg_loss.item(),
+                'loc_loss': loc_loss.item(),
+            }
+
         return {'total_loss': total_loss, 'metrics': metrics}
 
     def _hard_negative_mining(self, loss, labels, neg_pos_ratio):

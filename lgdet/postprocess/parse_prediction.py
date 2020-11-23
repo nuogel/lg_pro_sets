@@ -34,7 +34,9 @@ class ParsePredict:
             'refinedet': self._parse_refinedet_predict,
             'efficientdet': self._parse_multibox_predict,
             'ssdvgg': self._parse_multibox_predict,
-            'retinanet': self._parse_multibox_predict
+            'retinanet': self._parse_multibox_predict,
+            'lrf500': self._parse_multibox_predict,
+            'lrf300': self._parse_multibox_predict,
         }
 
         labels_predict = PARSEDICT[self.cfg.TRAIN.MODEL](f_maps)
@@ -194,9 +196,10 @@ class ParsePredict:
 
         return labels_predict
 
-    def _parse_multibox_predict(self, predicts):
+    def _parse_multibox_predict(self, predicts, softmax=False):
         pre_score, pre_loc, anchors_xywh = predicts
-        # pre_score = torch.sigmoid(pre_score)  # conf preds
+        if softmax:
+            pre_score = pre_score.softmax(-1)  # conf preds
         pre_loc_xywh = self._decode_bboxes(pre_loc, anchors_xywh)
         labels_predict = self._parse_multi_boxes(pre_score, pre_loc_xywh)
         return labels_predict

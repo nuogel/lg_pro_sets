@@ -452,3 +452,12 @@ def build_net(phase, size=512, num_classes=81):
     return LRFNet(phase, size, *multibox(size, vgg(base[str(size)], 3),
                                 add_extras(size, extras[str(size)], 1024),
                                 mbox[str(size)], num_classes), num_classes)
+
+
+if __name__ == '__main__':
+    phase = 'train'
+    size = 512
+    model = build_net(phase=phase, size=size, num_classes=21)
+    img = torch.rand([1, 3, size, size])
+    output = model(img)
+    print(output.shape)

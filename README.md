@@ -25,6 +25,8 @@ This is a PyTorch implementation of ASR/ TTS / OBD / SR /DENORSE /TRACK /FLOW
     SSDVGG
     EFFICIENTDTE
     EFFICIENTNET
+    LRF300
+    LRF512
 #### SR:
     SRCNN
     FSRCNN
@@ -167,8 +169,16 @@ train without dataloader| 7it/s|7it/s(same)
 dataloader+forward&backward|3.5it/s|6.8it/s
 forward only|19it/s| the same
 
-that means the backward waste a lot of time.
+result：the backward waste a lot of time.
 
+
+### pre-trained or not 
+model | data set| epochs| lr schedule| MAP |F-score
+---|---|---|---|---|---
+lrf300|VOC2017|230|reduce| 32.5%| 0.457
+lrf300|VOC2017|80|reduce |56%|0.688
+
+result: the model with pre-trained weight is much better than with weight initiation schedule.
 ### Problems
 1、when I train YOLOV3 with  voc2007 with focal loss, the obj loss is not going down, it seems that the gradient vanished.
  

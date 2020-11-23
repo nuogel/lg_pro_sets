@@ -47,9 +47,9 @@ class OBD_Loader(DataLoader):
     def __len__(self):
         if self.one_test:
             if self.is_training:
-                length = int(self.cfg.TEST.ONE_TEST_TRAIN_STEP)
+                length = int(self.cfg.TEST.ONE_TEST_TRAIN_STEP)*self.cfg.TRAIN.BATCH_SIZE
             else:
-                length = 1
+                length = self.cfg.TRAIN.BATCH_SIZE
         else:
             length = len(self.dataset_infos)
             # length = 24

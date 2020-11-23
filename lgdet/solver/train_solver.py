@@ -27,7 +27,7 @@ class Solver(BaseSolver):
             self.epoch = epoch
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch)
-            if epoch > 50 or self.cfg.TEST.ONE_TEST:
+            if epoch > 0 or self.cfg.TEST.ONE_TEST:
                 self._test_an_epoch(epoch)
 
     def _train_an_epoch(self, epoch):

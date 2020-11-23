@@ -41,7 +41,8 @@ class BaseSolver(object):
             self.model, self.epoch_last, self.optimizer_dict, self.optimizer_type, self.global_step = _load_checkpoint(self.model,
                                                                                                                        self.args.checkpoint,
                                                                                                                        self.cfg.TRAIN.DEVICE)
-            if self.is_training: self.cfg.writer.tbX_reStart(self.epoch_last)
+            if self.is_training:
+                self.cfg.writer.tbX_reStart(self.epoch_last)
         elif self.args.pre_trained:
             if self.args.pre_trained in [1, '1']:
                 self.args.pre_trained = os.path.join(self.cfg.PATH.TMP_PATH + 'checkpoints/' + self.cfg.TRAIN.MODEL, 'now.pkl')
@@ -49,12 +50,17 @@ class BaseSolver(object):
                 self.model = _load_pretrained(self.model, self.args.pre_trained, self.cfg.TRAIN.DEVICE)
             elif self.args.pre_trained in [2, '2']:
                 print('loading pre_trained from model itself')
-
-            self.cfg.writer.clean_history_and_init_log()
+            else:
+                print('loading pre_trained:', self.args.pre_trained)
+                self.model = _load_pretrained(self.model, self.args.pre_trained, self.cfg.TRAIN.DEVICE)
+            if self.is_training:
+                self.cfg.writer.clean_history_and_init_log()
 
         else:
+
             weights_init(self.model, self.cfg.manual_seed)
-            self.cfg.writer.clean_history_and_init_log()
+            if self.is_training:
+                self.cfg.writer.clean_history_and_init_log()
 
         if len(self.device_ids) > 1:
             print('using device id:', self.device_ids)
@@ -106,7 +112,7 @@ class BaseSolver(object):
         # del pa_others, pa_conv, pa_bias
 
         if self.optimizer_dict and opt_type == self.optimizer_type:
-            self.optimizer.load_state_dict(self.optimizer_dict)
+            self.optimizer.param_groups = self.optimizer_dict
         self.optimizer.param_groups[0]['initial_lr'] = learning_rate
         if self.args.lr_continue:
             self.optimizer.param_groups[0]['lr'] = self.args.lr_continue
@@ -122,9 +128,9 @@ class BaseSolver(object):
             print('using StepLR lr_scheduler ', self.cfg.TRAIN.STEP_LR)
             self.scheduler = lr_scheduler.StepLR(self.optimizer, step_size=self.cfg.TRAIN.STEP_LR, gamma=0.1)
         elif self.cfg.TRAIN.LR_SCHEDULE == 'reduce':
-            factor, patience = 0.1, 3
+            factor, patience, min_lr = 0.1, 3, 1e-6
             print('using ReduceLROnPlateau lr_scheduler: factor%.1f, patience:%d' % (factor, patience))
-            self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=factor, patience=patience, verbose=True)
+            self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=factor, patience=patience, min_lr=min_lr, verbose=True)
         # Plot lr schedule
         plot_lr = 0
         if plot_lr:
