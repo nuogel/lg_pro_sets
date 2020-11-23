@@ -23,8 +23,10 @@ This is a PyTorch implementation of ASR/ TTS / OBD / SR /DENORSE /TRACK /FLOW
     RefineDet
     MobileNetV3
     SSDVGG
-    EFFICIENTDTE
-    EFFICIENTNET
+    EfficientDet(BN)
+    EfficientDet(GN)
+    EfficientNet
+    RetinaNet
     LRF300
     LRF512
 #### SR:
@@ -52,17 +54,30 @@ This is a PyTorch implementation of ASR/ TTS / OBD / SR /DENORSE /TRACK /FLOW
 #### Runtime environment
 you need to install all the environment before you enjoy this code.
 ```
-pytorch
-numpy
-pandas
 torch
 torchvision
+tensorflow
+matplotlib
+scikit-image
+keras
+opencv
+opencv-contrib-python
+pyyaml
+tensorboard
+scikit-learn
+shapely
+imgaug
+python-Levenshtein
+librosa
+lmdb
+colorlog
+python_speech_features
+prefetch_generator
+munch
 ...
 conda install -c conda-forge imgaug 
 ```
--------------------------
-Notice:
-if python-Levenshtein failed，then try Pipy, python-Levenshtein-wheels.
+Notice:if python-Levenshtein failed，then try Pipy, python-Levenshtein-wheels.
 
 
 #### Training Dataset
