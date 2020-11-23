@@ -11,7 +11,7 @@ PATH:
 
 TRAIN:
   # lrf300 yolov3  ssdvgg  retinanet yolonano  yolov2 yolov3_tiny_shufflenet refinedet efficientdet yolov3_tiny_mobilenet yolov3_tiny_squeezenet fcos
-  MODEL: yolov3
+  MODEL: lrf300
   EMA: 0
   EPOCH_SIZE: 500
   BATCH_BACKWARD_SIZE: 4  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
@@ -29,7 +29,7 @@ TRAIN:
   MIN_AREA: 10 #0 #100 #400 #
   #[H,W]
   #[384, 960] #[416, 416] #[512, 768] # [1024,1920] #[720,1024]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
-  IMG_SIZE: [512, 512]
+  IMG_SIZE: [300, 300]
 
   MULTI_SCALE: 0
   MULTI_SCALE_SIZE: [320, 640] #(320-640)//32
@@ -81,7 +81,7 @@ TEST:
 
   TEST_ONLY: 0
 
-  ONE_TEST: 1
+  ONE_TEST: 0
   ONE_TEST_TRAIN_STEP: 100
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
