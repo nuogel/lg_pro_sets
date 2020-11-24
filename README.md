@@ -191,7 +191,7 @@ result：the backward waste a lot of time.
 model | data set| epochs| lr schedule| MAP |F-score
 ---|---|---|---|---|---
 lrf300|VOC2017|230|reduce| 32.5%| 0.457
-lrf300|VOC2017|80|reduce |56%|0.688
+lrf300|VOC2017|80|reduce |58%|0.69
 
 result: the model with pre-trained weight is much better than with weight initiation schedule.
 ### Problems

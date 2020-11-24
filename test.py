@@ -14,6 +14,8 @@ def _parse_arguments():
     parser.add_argument('--model', type=str, help='yml_path')
     parser.add_argument('--checkpoint', '--cp', default=1
                         , help='Path to the checkpoint to be loaded to the model')
+    parser.add_argument('--pre_trained', '--pt', default=0
+                        , help='Epoch of continue training')
     parser.add_argument('--batch_size', '--bz', default=2, type=int, help='batch size')
     parser.add_argument('--gpu', help='number works of dataloader')
     parser.add_argument('--number_works', '--nw', default=0, type=int, help='number works of dataloader')
@@ -24,10 +26,10 @@ def _parse_arguments():
 def main():
     """Run the script."""
     exit_code = 0
-    files = 'one_name'
+    # files = 'one_name'
 
     # files = 'datasets/OBD_idx_stores/VOC/VOC_test.txt'
-    # #'datasets/OBD_idx_stores/COCO/COCO_train.txt'#
+    files = 'datasets/OBD_idx_stores/COCO/COCO_test.txt'  #
     # files = 'datasets/OBD_idx_stores/KITTI/KITTI_test.txt'
     score = False
     args = _parse_arguments()

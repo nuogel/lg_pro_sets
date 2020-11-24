@@ -1,9 +1,8 @@
 import torch
 import torch.nn as nn
-import os
 import torch.nn.functional as F
-from lgdet.util.util_anchor_maker_lrfnet import PriorBox, COCO_300
-from lgdet.util.util_load_save_checkpoint import _load_pretrained
+import os
+from lgdet.util.util_anchor_maker_lrfnet import PriorBox, COCO_512
 
 
 def vgg(cfg, i, batch_norm=False):
@@ -29,6 +28,24 @@ def vgg(cfg, i, batch_norm=False):
     return layers
 
 
+def add_extras(size, cfg, i, batch_norm=False):
+    # Extra layers added to VGG for feature scaling
+    layers = []
+    in_channels = i
+    flag = False
+    for k, v in enumerate(cfg):
+        if in_channels != 'S':
+            if v == 'S':
+                if in_channels == 256 and size == 512:
+                    layers += [One_Three_Conv(in_channels, cfg[k + 1], stride=2), nn.ReLU(inplace=False)]
+                else:
+                    layers += [One_Three_Conv(in_channels, cfg[k + 1], stride=2), nn.ReLU(inplace=False)]
+        in_channels = v
+    layers += [ConvBlock(256, 128, kernel_size=1, stride=1)]
+    layers += [ConvBlock(128, 256, kernel_size=4, stride=1, padding=1)]
+    return layers
+
+
 def multibox(size, vgg, extra_layers, cfg, num_classes):
     loc_layers = []
     conf_layers = []
@@ -45,37 +62,27 @@ def multibox(size, vgg, extra_layers, cfg, num_classes):
             conf_layers += [nn.Conv2d(vgg[v].out_channels,
                                       cfg[k] * num_classes, kernel_size=3, padding=1)]
     i = 2
-    indicator = 3
+    indicator = 5
 
     for k, v in enumerate(extra_layers):
-        if (k < indicator + 1 and k % 2 == 0) or (k > indicator + 1 and k % 2 != 0):
+        if k < indicator - 2 and k % 2 == 0:
             loc_layers += [nn.Conv2d(v.out_channels, cfg[i]
                                      * 4, kernel_size=3, padding=1)]
             conf_layers += [nn.Conv2d(v.out_channels, cfg[i]
                                       * num_classes, kernel_size=3, padding=1)]
             i += 1
 
+        elif k > indicator - 1 and k % 2 != 0:
+            loc_layers += [nn.Conv2d(256, cfg[i]
+                                     * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(256, cfg[i]
+                                      * num_classes, kernel_size=3, padding=1)]
+            i += 1
+
+        else:
+            pass
+
     return vgg, extra_layers, (loc_layers, conf_layers)
-
-
-def add_extras(size, cfg, i, batch_norm=False):
-    # Extra layers added to VGG for feature scaling
-    layers = []
-    in_channels = i
-    flag = False
-    for k, v in enumerate(cfg):
-        if in_channels != 'S':
-            if v == 'S':
-                if in_channels == 256 and size == 512:
-                    layers += [One_Three_Conv(in_channels, cfg[k + 1], stride=2), nn.ReLU(inplace=False)]
-                else:
-                    layers += [One_Three_Conv(in_channels, cfg[k + 1], stride=2), nn.ReLU(inplace=False)]
-        in_channels = v
-    layers += [ConvBlock(256, 128, kernel_size=1, stride=1)]
-    layers += [ConvBlock(128, 256, kernel_size=3, stride=1)]
-    layers += [ConvBlock(256, 128, kernel_size=1, stride=1)]
-    layers += [ConvBlock(128, 256, kernel_size=3, stride=1)]
-    return layers
 
 
 class LDS(nn.Module):
@@ -83,7 +90,7 @@ class LDS(nn.Module):
         super(LDS, self).__init__()
         self.pool1 = nn.MaxPool2d(kernel_size=(2, 2), stride=2, padding=0)
         self.pool2 = nn.MaxPool2d(kernel_size=(2, 2), stride=2, padding=0)
-        self.pool3 = nn.MaxPool2d(kernel_size=(2, 2), stride=2, padding=1)
+        self.pool3 = nn.MaxPool2d(kernel_size=(2, 2), stride=2, padding=0)
 
     def forward(self, x):
         x_pool1 = self.pool1(x)
@@ -142,6 +149,7 @@ class LSN_later(nn.Module):
 
 
 class IBN(nn.Module):
+
     def __init__(self, out_planes, bn=True):
         super(IBN, self).__init__()
         self.out_channels = out_planes
@@ -200,11 +208,11 @@ from ..registry import MODELS
 
 
 @MODELS.registry()
-class LRF300(nn.Module):
+class LRF512(nn.Module):
     def __init__(self, cfg):
-        super(LRF300, self).__init__()
+        super(LRF512, self).__init__()
         self.num_classes = cfg.TRAIN.CLASSES_NUM + 1  #:set last one as background
-        size = 300
+        size = 512
         self.device = cfg.TRAIN.DEVICE
         self.size = size
         base_size = {'300': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M', 512, 512, 512],
@@ -228,36 +236,43 @@ class LRF300(nn.Module):
         self.Norm2 = Relu_Conv(1024, 1024, stride=1)
         self.Norm3 = Relu_Conv(512, 512, stride=1)
         self.Norm4 = Relu_Conv(256, 256, stride=1)
+        self.Norm5 = Relu_Conv(256, 256, stride=1)
 
         # convs for generate the lsn features
         self.icn1 = LSN_init(3, 512, stride=1)
         self.icn2 = LSN_later(128, 1024, stride=2)
         self.icn3 = LSN_later(256, 512, stride=2)
+        self.icn4 = LSN_later(128, 256, stride=2)
 
         # convs with s=2 to downsample the features
         self.dsc1 = Ds_Conv(512, 1024, stride=2, padding=(1, 1))
         self.dsc2 = Ds_Conv(1024, 512, stride=2, padding=(1, 1))
         self.dsc3 = Ds_Conv(512, 256, stride=2, padding=(1, 1))
+        self.dsc4 = Ds_Conv(256, 256, stride=2, padding=(1, 1))
 
         # convs to reduce the feature dimensions of current level
         self.agent1 = ConvBlock(512, 256, kernel_size=1, stride=1)
         self.agent2 = ConvBlock(1024, 512, kernel_size=1, stride=1)
         self.agent3 = ConvBlock(512, 256, kernel_size=1, stride=1)
+        self.agent4 = ConvBlock(256, 128, kernel_size=1, stride=1)
 
         # convs to reduce the feature dimensions of other levels
         self.proj1 = ConvBlock(1024, 128, kernel_size=1, stride=1)
         self.proj2 = ConvBlock(512, 128, kernel_size=1, stride=1)
         self.proj3 = ConvBlock(256, 128, kernel_size=1, stride=1)
+        self.proj4 = ConvBlock(256, 128, kernel_size=1, stride=1)
 
         # convs to reduce the feature dimensions of other levels
-        self.convert1 = ConvBlock(384, 256, kernel_size=1)
-        self.convert2 = ConvBlock(256, 512, kernel_size=1)
-        self.convert3 = ConvBlock(128, 256, kernel_size=1)
+        self.convert1 = ConvBlock(512, 256, kernel_size=1)
+        self.convert2 = ConvBlock(384, 512, kernel_size=1)
+        self.convert3 = ConvBlock(256, 256, kernel_size=1)
+        self.convert4 = ConvBlock(128, 128, kernel_size=1)
 
         # convs to merge the features of the current and higher level features
         self.merge1 = ConvBlock(512, 512, kernel_size=3, stride=1, padding=1)
         self.merge2 = ConvBlock(1024, 1024, kernel_size=3, stride=1, padding=1)
         self.merge3 = ConvBlock(512, 512, kernel_size=3, stride=1, padding=1)
+        self.merge4 = ConvBlock(256, 256, kernel_size=3, stride=1, padding=1)
 
         self.ibn1 = IBN(512, bn=True)
         self.ibn2 = IBN(1024, bn=True)
@@ -268,8 +283,7 @@ class LRF300(nn.Module):
         self.loc = nn.ModuleList(head[0])
         self.conf = nn.ModuleList(head[1])
 
-        self.anchor = PriorBox(COCO_300)
-        # _load_pretrained(self, 'saved/checkpoint/LRF_vgg_COCO_300.pth', self.device)
+        self.anchor = PriorBox(COCO_512)
 
     def forward(self, **args):
         x = args['input_x']
@@ -304,9 +318,12 @@ class LRF300(nn.Module):
                 x_pool3_skip, x_pool3_icn = self.icn3(x_pool2_skip)
                 w = self.Norm3(self.dsc2(p) + x * x_pool3_icn)
             elif k == 2:
-                q = self.Norm4(self.dsc3(w) + x)
-                sources.append(q)
-            elif k == 5 or k == 7:
+                x_pool4_skip, x_pool4_icn = self.icn4(x_pool3_skip)
+                q = self.Norm4(self.dsc3(w) + x * x_pool4_icn)
+            elif k == 4:
+                o = self.Norm5(self.dsc4(q) + x)
+                sources.append(o)
+            elif k == 7 or k == 9:
                 sources.append(x)
             else:
                 pass
@@ -315,12 +332,14 @@ class LRF300(nn.Module):
         tmp1 = self.proj1(p)
         tmp2 = self.proj2(w)
         tmp3 = self.proj3(q)
+        tmp4 = self.proj4(o)
 
         # The conv4_3 level
-        proj1 = F.upsample(tmp1, size=(38, 38), mode='bilinear')
-        proj2 = F.upsample(tmp2, size=(38, 38), mode='bilinear')
-        proj3 = F.upsample(tmp3, size=(38, 38), mode='bilinear')
-        proj = torch.cat([proj1, proj2, proj3], dim=1)
+        proj1 = F.upsample(tmp1, scale_factor=2, mode='bilinear')
+        proj2 = F.upsample(tmp2, scale_factor=4, mode='bilinear')
+        proj3 = F.upsample(tmp3, scale_factor=8, mode='bilinear')
+        proj4 = F.upsample(tmp4, scale_factor=16, mode='bilinear')
+        proj = torch.cat([proj1, proj2, proj3, proj4], dim=1)
 
         agent1 = self.agent1(s)
         convert1 = self.convert1(proj)
@@ -329,9 +348,10 @@ class LRF300(nn.Module):
         new_sources.append(pred1)
 
         # The fc_7 level
-        proj2 = F.upsample(tmp2, size=(19, 19), mode='bilinear')
-        proj3 = F.upsample(tmp3, size=(19, 19), mode='bilinear')
-        proj = torch.cat([proj2, proj3], dim=1)
+        proj2 = F.upsample(tmp2, scale_factor=2, mode='bilinear')
+        proj3 = F.upsample(tmp3, scale_factor=4, mode='bilinear')
+        proj4 = F.upsample(tmp4, scale_factor=8, mode='bilinear')
+        proj = torch.cat([proj2, proj3, proj4], dim=1)
 
         agent2 = self.agent2(p)
         convert2 = self.convert2(proj)
@@ -340,14 +360,25 @@ class LRF300(nn.Module):
         new_sources.append(pred2)
 
         # The conv8 level
-        proj3 = F.upsample(tmp3, size=(10, 10), mode='bilinear')
-        proj = proj3
+        proj3 = F.upsample(tmp3, scale_factor=2, mode='bilinear')
+        proj4 = F.upsample(tmp4, scale_factor=4, mode='bilinear')
+        proj = torch.cat([proj3, proj4], dim=1)
 
         agent3 = self.agent3(w)
         convert3 = self.convert3(proj)
         pred3 = torch.cat([agent3, convert3], dim=1)
         pred3 = self.merge3(pred3)
         new_sources.append(pred3)
+
+        # The conv9 level
+        proj4 = F.upsample(tmp4, scale_factor=2, mode='bilinear')
+        proj = proj4
+
+        agent4 = self.agent4(q)
+        convert4 = self.convert4(proj)
+        pred4 = torch.cat([agent4, convert4], dim=1)
+        pred4 = self.merge4(pred4)
+        new_sources.append(pred4)
 
         for prediction in sources:
             new_sources.append(prediction)
@@ -363,7 +394,6 @@ class LRF300(nn.Module):
         loc = loc.view(loc.size(0), -1, 4)
         conf = conf.view(conf.size(0), -1, self.num_classes)
         anchors_xywh = self.anchor.forward(args['input_x']).to(self.device)
-
         if args['is_training'] == False:
             conf = conf.softmax(-1)
         return conf, loc, anchors_xywh

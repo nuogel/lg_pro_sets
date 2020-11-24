@@ -14,7 +14,7 @@ def weights_init(Modle, manual_seed=False):
     if manual_seed:
         torch.manual_seed(123)
     else:
-        print('initiating weight...')
+        print('initiating weight with lg_init')
         for name, m in Modle.named_modules():
             if isinstance(m, torch.nn.Conv2d):
                 if "classifier.header" in name:
@@ -27,8 +27,8 @@ def weights_init(Modle, manual_seed=False):
                     if m.bias is not None:
                         m.bias.data.fill_(0)
                 else:
-                    variance_scaling_(m.weight.data)
-                    # torch.nn.init.kaiming_normal_(m.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
+                    # variance_scaling_(m.weight.data)
+                    torch.nn.init.kaiming_normal_(m.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
                     if m.bias is not None:
                         m.bias.data.zero_()
 

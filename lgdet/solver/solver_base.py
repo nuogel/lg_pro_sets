@@ -41,7 +41,7 @@ class BaseSolver(object):
                                                                                                                        self.cfg.TRAIN.DEVICE)
             if self.is_training:
                 self.cfg.writer.tbX_reStart(self.epoch_last)
-        elif self.args.pre_trained:
+        elif self.args.pre_trained not in [0, '0', 'None', 'no', 'none', "''"]:
             if self.args.pre_trained in [1, '1']:
                 self.args.pre_trained = os.path.join(self.cfg.PATH.TMP_PATH + 'checkpoints/' + self.cfg.TRAIN.MODEL, 'now.pkl')
                 print('loading pre_trained:', self.args.pre_trained)

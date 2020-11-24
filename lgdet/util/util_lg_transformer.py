@@ -238,6 +238,11 @@ class LgTransformer:
         img = (img - self.cfg.mean) / self.cfg.std
         img = torch.from_numpy(img).permute(2, 0, 1)  # C, H, W
 
+        # rgb_means = (104, 117, 123)
+        # img = img - rgb_means
+        # img = np.asarray(img, dtype=np.float32)
+        # img = torch.from_numpy(img).permute(2, 0, 1)  # C, H, W
+
         if isinstance(label, list):
             for lab in label:  # add 0 for label
                 lab.insert(0, 0)

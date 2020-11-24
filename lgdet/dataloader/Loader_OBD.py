@@ -40,14 +40,17 @@ class OBD_Loader(DataLoader):
             db_label = env.open_db('label'.encode())
             self.txn_image = env.begin(write=False, db=db_image)
             self.txn_label = env.begin(write=False, db=db_label)
-        pre_load_labels = 1
-        if pre_load_labels: print('pre-loading labels to disc...')
+        if is_training is None:
+            pre_load_labels = 0
+        else:
+            pre_load_labels = 1
+            print('pre-loading labels to disc...')
         self.dataset_infos = self._load_labels2memery(dataset, self.one_name, pre_load_labels)
 
     def __len__(self):
         if self.one_test:
             if self.is_training:
-                length = int(self.cfg.TEST.ONE_TEST_TRAIN_STEP)*self.cfg.TRAIN.BATCH_SIZE
+                length = int(self.cfg.TEST.ONE_TEST_TRAIN_STEP) * self.cfg.TRAIN.BATCH_SIZE
             else:
                 length = self.cfg.TRAIN.BATCH_SIZE
         else:
@@ -174,7 +177,7 @@ class OBD_Loader(DataLoader):
             if not (os.path.isfile(x_path) and os.path.isfile(y_path)):
                 print('ERROR, NO SUCH A FILE.', x_path, '<--->', y_path)
                 exit()
-            img = cv2.imread(x_path)
+            img = cv2.imread(x_path, cv2.IMREAD_COLOR)
 
         # load labels
         try:

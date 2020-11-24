@@ -26,8 +26,8 @@ class ParsePredict:
             'efficientdet': ParsePredict_multibox,
             'ssdvgg': ParsePredict_multibox,
             'retinanet': ParsePredict_multibox,
-            'lrf500': ParsePredict_multibox,
             'lrf300': ParsePredict_multibox,
+            'lrf512': ParsePredict_multibox,
         }
         self.transformer = LgTransformer(self.cfg)
 

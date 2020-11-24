@@ -35,8 +35,7 @@ def prepare_cfg(cfg, args, is_training=True):
             cfg.TRAIN.EMA = args.ema
         if args.test_only:
             cfg.TEST.TEST_ONLY = args.test_only
-    else:
-        args.pre_trained = 0
+
 
     cfg.checkpoint = args.checkpoint
     cfg = common_cfg(cfg)

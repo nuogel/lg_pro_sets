@@ -1,282 +1,222 @@
+from .head import ClsCntRegHead
+from .fpn_neck import FPN
+from lgdet.model.aid_Models.resnet import resnet50
 import torch.nn as nn
+from .loss import GenTargets, LOSS, coords_fmap2orig
 import torch
-import math
+from .config import DefaultConfig
 
 
-def resnet50(pretrained=False, **kwargs):
-    """Constructs a ResNet-50 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    # model = ResNet([3, 4, 6, 3], **kwargs) # original model
-    model = ResNet([1, 1, 2, 2, 2, 1], **kwargs)
-
-    if pretrained:
-        print('please add pretrained weight.')
-        # model.load_state_dict(torch.load(model.modelPath))
-    return model
-
-
-def resnet101(pretrained=False, **kwargs):
-    """Constructs a ResNet-101 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet([3, 4, 23, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(torch.load(model.modelPath))
-    return model
-
-
-class ResNet(nn.Module):
-    """
-    block: A sub module
-    """
-
-    def __init__(self, layers, num_classes=1000, model_path="model.pkl"):
-        super(ResNet, self).__init__()
-        self.inplanes = 64
-        self.modelPath = model_path
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
-                               bias=False)
-        self.bn1 = nn.BatchNorm2d(64)
-        self.relu = nn.ReLU(inplace=True)
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.stack1 = self.make_stack(64, layers[0])
-        self.stack2 = self.make_stack(128, layers[1], stride=2)
-        self.stack3 = self.make_stack(256, layers[2], stride=2)
-        self.stack4 = self.make_stack(512, layers[3], stride=2)
-        self.stack5 = self.make_stack(512, layers[4], stride=2)
-        self.stack6 = self.make_stack(512, layers[5], stride=2)
-
-        self.avgpool = nn.AvgPool2d(7, stride=1)
-        self.fc = nn.Linear(512 * Bottleneck.expansion, num_classes)
-        # initialize parameters
-        # self.init_param()
-
-    # def init_param(self):
-    #     # The following is initialization
-    #     for m in self.modules():
-    #         if isinstance(m, nn.Conv2d):
-    #             n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-    #             m.weight.data.normal_(0, math.sqrt(2. / n))
-    #         elif isinstance(m, nn.BatchNorm2d):
-    #             m.weight.data.fill_(1)
-    #             m.bias.data.zero_()
-    #         elif isinstance(m, nn.Linear):
-    #             n = m.weight.shape[0] * m.weight.shape[1]
-    #             m.weight.data.normal_(0, math.sqrt(2. / n))
-    #             m.bias.data.zero_()
-
-    def make_stack(self, planes, blocks, stride=1):
-        downsample = None
-        layers = []
-
-        if stride != 1 or self.inplanes != planes * Bottleneck.expansion:
-            downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, planes * Bottleneck.expansion,
-                          kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(planes * Bottleneck.expansion),
-            )
-
-        layers.append(Bottleneck(self.inplanes, planes, stride, downsample))
-        self.inplanes = planes * Bottleneck.expansion
-        for i in range(1, blocks):
-            layers.append(Bottleneck(self.inplanes, planes))
-
-        return nn.Sequential(*layers)
-
-    def forward(self, x):  # [N ,3, 384, 960] 800 1024
-        x = self.conv1(x)  # [N ,3, 192, 480] 400 512
-        x = self.bn1(x)  # [N ,3, 192, 480] 400 512
-        # print(self.bn1.running_mean)
-        # print(self.bn1.running_var)
-        x = self.relu(x)  # [N ,64, 192, 480]400 512
-        x = self.maxpool(x)  # [N ,64, 96, 240]200 256
-
-        x = self.stack1(x)  # [N ,256, 96, 240]200 256
-        x = self.stack2(x)  # [N ,512, 48, 120]100 128
-        c3 = x
-        x = self.stack3(x)  # [N ,1024, 24, 60]50 64
-        c4 = x
-        x = self.stack4(x)  # [N ,2048, 12, 30]25 32
-        c5 = x
-        x = self.stack5(x)  # [N ,2048, 12, 30]25 32
-        c6 = x
-        x = self.stack6(x)  # [N ,2048, 12, 30]25 32
-        c7 = x
-        return c3, c4, c5, c6, c7
-
-
-class Bottleneck(nn.Module):
-    expansion = 1
-
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
-        super(Bottleneck, self).__init__()
-        self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.conv3 = nn.Conv2d(planes, planes * 1, kernel_size=1, bias=False)
-        self.bn3 = nn.BatchNorm2d(planes * 1)
-        self.relu = nn.ReLU(inplace=True)
-        self.downsample = downsample
-        self.stride = stride
-
-    def forward(self, x):
-        residual = x
-
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-
-        out = self.conv2(out)
-        out = self.bn2(out)
-        out = self.relu(out)
-
-        out = self.conv3(out)
-        out = self.bn3(out)
-
-        if self.downsample is not None:
-            residual = self.downsample(x)
-
-        out += residual
-        out = self.relu(out)
-
-        return out
-
-
-class FPN(nn.Module):
-    def __init__(self):
-        super(FPN, self).__init__()
-        self.resnet50 = resnet50()
-        self.c5upsamping = nn.Upsample(scale_factor=2, mode='bilinear')
-        self.p54 = self.conv2d_bn_relu(768, 256)
-        self.c4upsamping = nn.Upsample(scale_factor=2, mode='bilinear')
-        self.p43 = self.conv2d_bn_relu(384, 128)
-
-    def conv2d_bn_relu(self, in_channel, out_channel):
-        return nn.Sequential(nn.Conv2d(in_channel, out_channel, kernel_size=1),
-                              nn.BatchNorm2d(out_channel),
-                              nn.ReLU(inplace=True))
-    
-    def forward(self, x):
-        c3, c4, p5, p6, p7 = self.resnet50(x)
-        # TODO: add the upsamping codes.
-        up54 = self.c5upsamping(p5)
-        p54_cat = torch.cat([up54, c4], 1)
-        p4 = self.p54(p54_cat)
-        
-        up43 = self.c4upsamping(p4)
-        p43_cat = torch.cat([up43, c3], 1)
-        p3 = self.p43(p43_cat)
-
-        return p3, p4, p5, p6, p7
-
-from ..registry import MODELS
-
-
-@MODELS.registry()
 class FCOS(nn.Module):
-    def __init__(self):
-        super(FCOS, self).__init__()
-        self.power = torch.pow
-        self.fpn = FPN()
+    def __init__(self, config=None):
+        super().__init__()
+        if config is None:
+            config = DefaultConfig
+        self.backbone = resnet50(pretrained=config.pretrained, if_include_top=False)
+        self.fpn = FPN(config.fpn_out_channels, use_p5=config.use_p5)
+        self.head = ClsCntRegHead(config.fpn_out_channels, config.class_num,
+                                  config.use_GN_head, config.cnt_on_reg, config.prior)
+        self.config = config
 
-        # never use a list to contain functions.
+    def train(self, mode=True):
+        '''
+        set module training mode, and frozen bn
+        '''
+        super().train(mode=True)
 
-        # self.cls_shape = [nn.Conv2d(128, 256, kernel_size=1),
-        #                          nn.Conv2d(256, 256, kernel_size=1),
-        #                          nn.Conv2d(512, 256, kernel_size=1),
-        #                          nn.Conv2d(512, 256, kernel_size=1),
-        #                          nn.Conv2d(512, 256, kernel_size=1)]
-        # self.loc_shape = [nn.Conv2d(128, 256, kernel_size=1),
-        #                   nn.Conv2d(256, 256, kernel_size=1),
-        #                   nn.Conv2d(512, 256, kernel_size=1),
-        #                   nn.Conv2d(512, 256, kernel_size=1),
-        #                   nn.Conv2d(512, 256, kernel_size=1),]
-        self.cls_shape0 = self.in_256_out_cnn(128, 4)
-        self.cls_shape1 = self.in_256_out_cnn(256, 4)
-        self.cls_shape2 = self.in_256_out_cnn(512, 4)
-        self.cls_shape3 = self.in_256_out_cnn(512, 4)
-        self.cls_shape4 = self.in_256_out_cnn(512, 4)
-        self.cls_shape = [self.cls_shape0,
-                          self.cls_shape1,
-                          self.cls_shape2,
-                          self.cls_shape3,
-                          self.cls_shape4]
+        def freeze_bn(module):
+            if isinstance(module, nn.BatchNorm2d):
+                module.eval()
+            classname = module.__class__.__name__
+            if classname.find('BatchNorm') != -1:
+                for p in module.parameters(): p.requires_grad = False
 
-        self.center_shape0 = self.in_256_out_cnn(128, 1)
-        self.center_shape1 = self.in_256_out_cnn(256, 1)
-        self.center_shape2 = self.in_256_out_cnn(512, 1)
-        self.center_shape3 = self.in_256_out_cnn(512, 1)
-        self.center_shape4 = self.in_256_out_cnn(512, 1)
-        self.center_shape = [self.center_shape0,
-                             self.center_shape1,
-                             self.center_shape2,
-                             self.center_shape3,
-                             self.center_shape4]
-
-        self.loc_shape0 = self.in_256_out_cnn(128, 4)
-        self.loc_shape1 = self.in_256_out_cnn(256, 4)
-        self.loc_shape2 = self.in_256_out_cnn(512, 4)
-        self.loc_shape3 = self.in_256_out_cnn(512, 4)
-        self.loc_shape4 = self.in_256_out_cnn(512, 4)
-        self.loc_shape = [self.loc_shape0,
-                          self.loc_shape1,
-                          self.loc_shape2,
-                          self.loc_shape3,
-                          self.loc_shape4]
-
-    def in_256_out_cnn(self, in_channel, out_channel):
-        return nn.Sequential(nn.Conv2d(in_channel, 256, kernel_size=1),
-                              nn.BatchNorm2d(256),
-                              nn.ReLU(inplace=True),
-                              nn.Conv2d(256, out_channel, kernel_size=1),
-                             )
-
+        if self.config.freeze_bn:
+            self.apply(freeze_bn)
+            print("INFO===>success frozen BN")
+        if self.config.freeze_stage_1:
+            self.backbone.freeze_stages(1)
+            print("INFO===>success frozen backbone stage1")
 
     def forward(self, x):
-
-        x = self.fpn(x)
-        feature_all = []
-        for i in range(len(x)):
-            feature_one = []
-            x_i = x[i]
-            x_cls = self.cls_shape[i](x_i)  #
-            feature_one.append(x_cls)
-
-            x_center = self.center_shape[i](x_i)
-            feature_one.append(x_center)
-
-            x_loc = self.loc_shape[i](x_i)
-            feature_one.append(x_loc)
-
-            feature_all.append(feature_one)
-        return feature_all
-
-    def weights_init(self):
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                # n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                # m.weight.data.normal_(0, math.sqrt(2. / n))
-                # if m.bias is not None:
-                #     m.bias.data.zero_()
-                weight = m.weight
-                torch.nn.init.kaiming_normal_(weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
-                if m.bias is not None:
-                    m.bias.data.zero_()
-            elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
-            elif isinstance(m, nn.Linear):
-                m.weight.data.normal_(0, 0.01)
-                m.bias.data.zero_()
+        '''
+        Returns
+        list [cls_logits,cnt_logits,reg_preds]
+        cls_logits  list contains five [batch_size,class_num,h,w]
+        cnt_logits  list contains five [batch_size,1,h,w]
+        reg_preds   list contains five [batch_size,4,h,w]
+        '''
+        C3, C4, C5 = self.backbone(x)
+        all_P = self.fpn([C3, C4, C5])
+        cls_logits, cnt_logits, reg_preds = self.head(all_P)
+        return [cls_logits, cnt_logits, reg_preds]
 
 
-if __name__ == "__main__":
-    for i in range(100):
-        img = torch.rand((2, 800, 1024, 3)).cuda()
-        model = FCOS().cuda()
-        x_cls, x_center, x_loc = model.forward(img)
-        print(x_cls.shape, x_center.shape, x_loc.shape)
+class DetectHead(nn.Module):
+    def __init__(self, score_threshold, nms_iou_threshold, max_detection_boxes_num, strides, config=None):
+        super().__init__()
+        self.score_threshold = score_threshold
+        self.nms_iou_threshold = nms_iou_threshold
+        self.max_detection_boxes_num = max_detection_boxes_num
+        self.strides = strides
+        if config is None:
+            self.config = DefaultConfig
+        else:
+            self.config = config
+
+    def forward(self, inputs):
+        '''
+        inputs  list [cls_logits,cnt_logits,reg_preds]
+        cls_logits  list contains five [batch_size,class_num,h,w]
+        cnt_logits  list contains five [batch_size,1,h,w]
+        reg_preds   list contains five [batch_size,4,h,w]
+        '''
+        cls_logits, coords = self._reshape_cat_out(inputs[0], self.strides)  # [batch_size,sum(_h*_w),class_num]
+        cnt_logits, _ = self._reshape_cat_out(inputs[1], self.strides)  # [batch_size,sum(_h*_w),1]
+        reg_preds, _ = self._reshape_cat_out(inputs[2], self.strides)  # [batch_size,sum(_h*_w),4]
+
+        cls_preds = cls_logits.sigmoid_()
+        cnt_preds = cnt_logits.sigmoid_()
+
+        coords = coords.cuda() if torch.cuda.is_available() else coords
+
+        cls_scores, cls_classes = torch.max(cls_preds, dim=-1)  # [batch_size,sum(_h*_w)]
+        if self.config.add_centerness:
+            cls_scores = torch.sqrt(cls_scores * (cnt_preds.squeeze(dim=-1)))  # [batch_size,sum(_h*_w)]
+        cls_classes = cls_classes + 1  # [batch_size,sum(_h*_w)]
+
+        boxes = self._coords2boxes(coords, reg_preds)  # [batch_size,sum(_h*_w),4]
+
+        # select topk
+        max_num = min(self.max_detection_boxes_num, cls_scores.shape[-1])
+        topk_ind = torch.topk(cls_scores, max_num, dim=-1, largest=True, sorted=True)[1]  # [batch_size,max_num]
+        _cls_scores = []
+        _cls_classes = []
+        _boxes = []
+        for batch in range(cls_scores.shape[0]):
+            _cls_scores.append(cls_scores[batch][topk_ind[batch]])  # [max_num]
+            _cls_classes.append(cls_classes[batch][topk_ind[batch]])  # [max_num]
+            _boxes.append(boxes[batch][topk_ind[batch]])  # [max_num,4]
+        cls_scores_topk = torch.stack(_cls_scores, dim=0)  # [batch_size,max_num]
+        cls_classes_topk = torch.stack(_cls_classes, dim=0)  # [batch_size,max_num]
+        boxes_topk = torch.stack(_boxes, dim=0)  # [batch_size,max_num,4]
+        assert boxes_topk.shape[-1] == 4
+        return self._post_process([cls_scores_topk, cls_classes_topk, boxes_topk])
+
+    def _post_process(self, preds_topk):
+        '''
+        cls_scores_topk [batch_size,max_num]
+        cls_classes_topk [batch_size,max_num]
+        boxes_topk [batch_size,max_num,4]
+        '''
+        _cls_scores_post = []
+        _cls_classes_post = []
+        _boxes_post = []
+        cls_scores_topk, cls_classes_topk, boxes_topk = preds_topk
+        for batch in range(cls_classes_topk.shape[0]):
+            mask = cls_scores_topk[batch] >= self.score_threshold
+            _cls_scores_b = cls_scores_topk[batch][mask]  # [?]
+            _cls_classes_b = cls_classes_topk[batch][mask]  # [?]
+            _boxes_b = boxes_topk[batch][mask]  # [?,4]
+            nms_ind = self.batched_nms(_boxes_b, _cls_scores_b, _cls_classes_b, self.nms_iou_threshold)
+            _cls_scores_post.append(_cls_scores_b[nms_ind])
+            _cls_classes_post.append(_cls_classes_b[nms_ind])
+            _boxes_post.append(_boxes_b[nms_ind])
+        scores, classes, boxes = torch.stack(_cls_scores_post, dim=0), torch.stack(_cls_classes_post, dim=0), torch.stack(_boxes_post, dim=0)
+
+        return scores, classes, boxes
+
+    @staticmethod
+    def box_nms(boxes, scores, thr):
+        '''
+        boxes: [?,4]
+        scores: [?]
+        '''
+        if boxes.shape[0] == 0:
+            return torch.zeros(0, device=boxes.device).long()
+        assert boxes.shape[-1] == 4
+        x1, y1, x2, y2 = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
+        areas = (x2 - x1 + 1) * (y2 - y1 + 1)
+        order = scores.sort(0, descending=True)[1]
+        keep = []
+        while order.numel() > 0:
+            if order.numel() == 1:
+                i = order.item()
+                keep.append(i)
+                break
+            else:
+                i = order[0].item()
+                keep.append(i)
+
+            xmin = x1[order[1:]].clamp(min=float(x1[i]))
+            ymin = y1[order[1:]].clamp(min=float(y1[i]))
+            xmax = x2[order[1:]].clamp(max=float(x2[i]))
+            ymax = y2[order[1:]].clamp(max=float(y2[i]))
+            inter = (xmax - xmin).clamp(min=0) * (ymax - ymin).clamp(min=0)
+            iou = inter / (areas[i] + areas[order[1:]] - inter)
+            idx = (iou <= thr).nonzero().squeeze()
+            if idx.numel() == 0:
+                break
+            order = order[idx + 1]
+        return torch.LongTensor(keep)
+
+    def batched_nms(self, boxes, scores, idxs, iou_threshold):
+
+        if boxes.numel() == 0:
+            return torch.empty((0,), dtype=torch.int64, device=boxes.device)
+        # strategy: in order to perform NMS independently per class.
+        # we add an offset to all the boxes. The offset is dependent
+        # only on the class idx, and is large enough so that boxes
+        # from different classes do not overlap
+        max_coordinate = boxes.max()
+        offsets = idxs.to(boxes) * (max_coordinate + 1)
+        boxes_for_nms = boxes + offsets[:, None]
+        keep = self.box_nms(boxes_for_nms, scores, iou_threshold)
+        return keep
+
+    def _coords2boxes(self, coords, offsets):
+        '''
+        Args
+        coords [sum(_h*_w),2]
+        offsets [batch_size,sum(_h*_w),4] ltrb
+        '''
+        x1y1 = coords[None, :, :] - offsets[..., :2]
+        x2y2 = coords[None, :, :] + offsets[..., 2:]  # [batch_size,sum(_h*_w),2]
+        boxes = torch.cat([x1y1, x2y2], dim=-1)  # [batch_size,sum(_h*_w),4]
+        return boxes
+
+    def _reshape_cat_out(self, inputs, strides):
+        '''
+        Args
+        inputs: list contains five [batch_size,c,_h,_w]
+        Returns
+        out [batch_size,sum(_h*_w),c]
+        coords [sum(_h*_w),2]
+        '''
+        batch_size = inputs[0].shape[0]
+        c = inputs[0].shape[1]
+        out = []
+        coords = []
+        for pred, stride in zip(inputs, strides):
+            pred = pred.permute(0, 2, 3, 1)
+            coord = coords_fmap2orig(pred, stride).to(device=pred.device)
+            pred = torch.reshape(pred, [batch_size, -1, c])
+            out.append(pred)
+            coords.append(coord)
+        return torch.cat(out, dim=1), torch.cat(coords, dim=0)
+
+
+class ClipBoxes(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, batch_imgs, batch_boxes):
+        batch_boxes = batch_boxes.clamp_(min=0)
+        h, w = batch_imgs.shape[2:]
+        batch_boxes[..., [0, 2]] = batch_boxes[..., [0, 2]].clamp_(max=w - 1)
+        batch_boxes[..., [1, 3]] = batch_boxes[..., [1, 3]].clamp_(max=h - 1)
+        return batch_boxes
+
+
+
+
