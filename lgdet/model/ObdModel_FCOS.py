@@ -1,9 +1,9 @@
-from .head import ClsCntRegHead
-from .fpn_neck import FPN
-from lgdet.model.aid_Models.resnet import resnet50
-import torch.nn as nn
-from .loss import GenTargets, LOSS, coords_fmap2orig
 import torch
+import torch.nn as nn
+from lgdet.model.aid_models.fcos.head import ClsCntRegHead
+from lgdet.model.aid_models.fcos.fpn_neck import FPN
+from lgdet.model.aid_models.resnet import resnet50
+from lgdet.loss.loss import coords_fmap2orig
 from .config import DefaultConfig
 
 

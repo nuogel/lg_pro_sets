@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 from collections import OrderedDict
-from lgdet.model.aid_Models.DARKNET import DarkNet
+from lgdet.model.aid_models.DARKNET import DarkNet
 from ..registry import MODELS
 
 

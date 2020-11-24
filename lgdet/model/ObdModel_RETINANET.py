@@ -5,7 +5,7 @@ from torch.nn import functional as F
 import math
 import torch.utils.model_zoo as model_zoo
 from lgdet.util.util_anchor_maker import Anchors
-from .aid_Models.ResNet import build_resnet
+from .aid_models.ResNet import build_resnet
 
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',

@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 from lgdet.util.util_wap_FLOW import warp
 from lgdet.model.FlowModel_FLOW_FGFA import FLOW_FGFA
-from lgdet.model.aid_Models.Model_YOLOV2_backbone import YOLOV2_backbone
+from lgdet.model.aid_models.Model_YOLOV2_backbone import YOLOV2_backbone
 
 
 class EmbedNet(nn.Module):
