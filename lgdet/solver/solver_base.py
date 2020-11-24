@@ -3,7 +3,7 @@ import torch
 from torch.optim import lr_scheduler
 from lgdet.factory_classes import get_loss_class, get_score_class
 from lgdet.util.util_prepare_device import load_device
-from cfg.cfg import prepare_cfg
+from lgdet.config.cfg import prepare_cfg
 from lgdet.dataloader.DataLoaderFactory import DataLoaderFactory
 from lgdet.registry import MODELS, build_from_cfg
 from lgdet.util.util_weights_init import weights_init

@@ -16,7 +16,7 @@ def _parse_arguments():
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--pre_trained', '--pt', default=0
                         , help='Epoch of continue training')
-    parser.add_argument('--batch_size', '--bz', default=2, type=int, help='batch size')
+    parser.add_argument('--batch_size', '--bz', default=1, type=int, help='batch size')
     parser.add_argument('--gpu', help='number works of dataloader')
     parser.add_argument('--number_works', '--nw', default=0, type=int, help='number works of dataloader')
     parser.add_argument('--debug', '--d', action='store_true', default=False, help='Enable verbose info')

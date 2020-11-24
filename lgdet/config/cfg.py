@@ -36,7 +36,6 @@ def prepare_cfg(cfg, args, is_training=True):
         if args.test_only:
             cfg.TEST.TEST_ONLY = args.test_only
 
-
     cfg.checkpoint = args.checkpoint
     cfg = common_cfg(cfg)
 
@@ -154,6 +153,33 @@ def prepare_cfg(cfg, args, is_training=True):
     except:
         print('cfg.py trying get class number and classes faild.')
 
+    ## config for FCOS:
+    # backbone
+    if cfg.TRAIN.MODEL == 'fcos':
+        cfg.TRAIN.RELATIVE_LABELS = 0
+    cfg.pretrained = True
+    cfg.freeze_stage_1 = True
+    cfg.freeze_bn = True
+
+    # fpn
+    cfg.fpn_out_channels = 256
+    cfg.use_p5 = True
+
+    # head
+    cfg.class_num = 80
+    cfg.use_GN_head = True
+    cfg.prior = 0.01
+    cfg.add_centerness = True
+    cfg.cnt_on_reg = True
+
+    # training
+    cfg.strides = [8, 16, 32, 64, 128]
+    cfg.limit_range = [[-1, 64], [64, 128], [128, 256], [256, 512], [512, 999999]]
+
+    # inference
+    cfg.score_threshold = 0.5
+    cfg.nms_iou_threshold = 0.5
+    cfg.max_detection_boxes_num = 1000
     return cfg, args
 
 

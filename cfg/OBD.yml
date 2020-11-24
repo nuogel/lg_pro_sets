@@ -10,8 +10,8 @@ PATH:
   GENERATE_LABEL_SAVE_PATH: 'tmp/predicted_labels/'
 
 TRAIN:
-  # lrf300  lrf512 yolov3  ssdvgg  retinanet yolonano  yolov2 yolov3_tiny_shufflenet refinedet efficientdet yolov3_tiny_mobilenet yolov3_tiny_squeezenet fcos
-  MODEL: lrf512
+  # lrf300 fcos lrf512 yolov3  ssdvgg  retinanet yolonano  yolov2 yolov3_tiny_shufflenet refinedet efficientdet yolov3_tiny_mobilenet yolov3_tiny_squeezenet fcos
+  MODEL: fcos
   EMA: 0
   EPOCH_SIZE: 500
   BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.

@@ -182,6 +182,8 @@ class OBD_Loader(DataLoader):
         # load labels
         try:
             label = data_info['label']
+            if label == 'not_load':
+                label = self._load_labels(data_info=data_info)
         except:
             label = self._load_labels(data_info=data_info)
 
@@ -349,18 +351,7 @@ class OBD_Loader(DataLoader):
         :return:
         '''
         imgs, labels, infos = zip(*batch)
-        # imgs = torch.from_numpy(np.asarray(imgs, np.float32))
         imgs = torch.stack(imgs, dim=0)
-        # imgs = torch.Tensor(np.asarray(imgs, np.float32))
-        for i, label in enumerate(labels):
-            try:
-                label[:, 0] = i
-            except:
-                print('collate fun error！！！：', infos[i])
-        try:
-            labels = torch.cat(labels, 0)
-        except:
-            print('collate fun error！！！：', labels, infos)
 
         if self.cfg.TRAIN.MULTI_SCALE and self.is_training:
             img_size = self.img_size
@@ -370,7 +361,41 @@ class OBD_Loader(DataLoader):
             if sf != 1:
                 ns = [math.ceil(x * sf / self.gs) * self.gs for x in imgs.shape[2:]]  # new shape (stretched to 32-multiple)
                 imgs = torch.nn.functional.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
+
+        labels = self.collect_fun_normal(labels, infos)
+
         return imgs, labels, list(infos)
+
+    def collect_fun_normal(self, labels, infos):
+        for i, label in enumerate(labels):
+            try:
+                label[:, 0] = i
+            except:
+                print('collate fun error！！！：', infos[i])
+        try:
+            labels = torch.cat(labels, 0)
+        except:
+            print('collate fun error！！！：', labels, infos)
+        return labels
+
+    def collect_fun_fcos(self, labels, infos):  # not use
+        pad_boxes_list = []
+        pad_classes_list = []
+        max_num = 0
+        for i, label in enumerate(labels):
+            n = label.shape[0]
+            if n > max_num: max_num = n
+
+        for i, label in enumerate(labels):
+            box = label[..., 2:]
+            cls = label[..., 1]
+            pad_boxes_list.append(torch.nn.functional.pad(box, (0, 0, 0, max_num - label.shape[0]), value=-1))
+            pad_classes_list.append(torch.nn.functional.pad(cls, (0, max_num - cls.shape[0]), value=-1))
+
+        batch_boxes = torch.stack(pad_boxes_list)
+        batch_classes = torch.stack(pad_classes_list)
+
+        return batch_boxes, batch_classes
 
 #
 # def pre_load_data_infos(self):
