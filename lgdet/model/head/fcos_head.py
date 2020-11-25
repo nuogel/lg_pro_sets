@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 import math
-from lgdet.loss.ObdLoss_FCOS import coords_fmap2orig
+from lgdet.loss.loss_fcos import coords_fmap2orig
 
 
 class ScaleExp(nn.Module):

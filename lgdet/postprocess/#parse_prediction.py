@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from lgdet.util.util_NMS import NMS
-from lgdet.loss.ObdLoss_REFINEDET import Detect_RefineDet
+from lgdet.loss.loss_refinedet import Detect_RefineDet
 from lgdet.util.util_iou import xyxy2xywh
 from lgdet.util.util_lg_transformer import LgTransformer
 

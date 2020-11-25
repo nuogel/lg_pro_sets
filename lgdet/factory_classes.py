@@ -23,23 +23,23 @@ def get_score_class(belongs):
 
 def get_loss_class(belongs, modelname):
     if modelname[:4] == 'yolo':
-        from lgdet.loss.ObdLoss_YOLO import YoloLoss
+        from lgdet.loss.loss_yolo import YoloLoss
         return YoloLoss
     elif modelname in ['ssdvgg', 'lrf300', 'lrf512']:
-        from lgdet.loss.ObdLoss_MULTIBOX import MULTIBOXLOSS
+        from lgdet.loss.loss_multibox import MULTIBOXLOSS
         return MULTIBOXLOSS
     elif belongs == 'SRDN':
-        from lgdet.loss.SrDnLoss import SRDNLOSS
+        from lgdet.loss.loss_srdn import SRDNLOSS
         return SRDNLOSS
     else:
-        from lgdet.loss.ObdLoss_FCOS import FCOSLOSS
-        from lgdet.loss.AsrLoss_CTC import RnnLoss
-        from lgdet.loss.AsrLoss_SEQ2SEQ import SEQ2SEQLOSS
-        from lgdet.loss.ObdLoss_REFINEDET import REFINEDETLOSS
-        from lgdet.loss.OcrLoss_PAN import PANLoss
-        from lgdet.loss.FlowLoss import FlowLoss
-        from lgdet.loss.AsrLoss_TACOTRON import TACOTRONLOSS
-        from lgdet.loss.ObdLoss_RETINANET import RETINANETLOSS
+        from lgdet.loss.loss_fcos import FCOSLOSS
+        from lgdet.loss.loss_ctc import RnnLoss
+        from lgdet.loss.loss_seq2seq import SEQ2SEQLOSS
+        from lgdet.loss.loss_refinedet import REFINEDETLOSS
+        from lgdet.loss.loss_pan import PANLoss
+        from lgdet.loss.loss_flow import FlowLoss
+        from lgdet.loss.loss_tacotron import TACOTRONLOSS
+        from lgdet.loss.loss_retinanet import RETINANETLOSS
         loss_dict = {
             'fcos': FCOSLOSS,
             'refinedet': REFINEDETLOSS,
