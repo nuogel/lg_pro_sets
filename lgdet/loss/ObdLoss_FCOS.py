@@ -298,7 +298,7 @@ class FCOSLOSS(nn.Module):
         self.config = config
         self.make_target = GenTargets(strides=config.strides, limit_range=config.limit_range)
 
-    def reshape_targets(self,B, targets):
+    def reshape_targets(self, B, targets):
         pad_boxes_list = []
         pad_classes_list = []
 
@@ -311,7 +311,7 @@ class FCOSLOSS(nn.Module):
         for i in range(B):
             gt_i = labels[labels[..., 0] == i]
             box = gt_i[..., 2:]
-            cls = gt_i[..., 1].long()
+            cls = gt_i[..., 1].long() + 1
             pad_boxes_list.append(torch.nn.functional.pad(box, (0, 0, 0, max_num - box.shape[0]), value=-1))
             pad_classes_list.append(torch.nn.functional.pad(cls, (0, max_num - cls.shape[0]), value=-1))
 
@@ -319,9 +319,6 @@ class FCOSLOSS(nn.Module):
         batch_classes = torch.stack(pad_classes_list)
 
         return batch_boxes, batch_classes
-
-
-
 
     def Loss_Call(self, predictions, targets, kwargs):
         '''

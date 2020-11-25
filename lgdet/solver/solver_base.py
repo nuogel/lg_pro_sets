@@ -200,8 +200,7 @@ class BaseSolver(object):
                 w_dict['metrics/' + k] = v / (step + 1)
             self.cfg.writer.tbX_write(w_dict=w_dict)
 
-        if torch.isnan(total_loss) or total_loss.item() == float("inf") or total_loss.item() == -float("inf"):
-            self.cfg.logger.error("received an nan/inf loss:", dataset[-1])
+
         return total_loss, train_info
 
     def _save_checkpoint(self):

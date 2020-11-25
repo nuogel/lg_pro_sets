@@ -24,6 +24,21 @@ def weight_discard_module():
     torch.save(new_dic, new_path)
     print('saved to ', new_path)
 
+def weight_reshape():
+    checkpoint = '/media/lg/SSD_WorkSpace/LG/GitHub/lg_pro_sets/saved/checkpoint/fcos_voc_77.8.pkl'
+    name = os.path.basename(checkpoint).split('.')[0]
+    new_path = os.path.join(os.path.dirname(checkpoint), name + '_new.pkl')
+    new_dic = OrderedDict()
+    state_dict = torch.load(checkpoint)
+    old_name = 'fcos_body.'
+    new_name = ''
+    for k, v in state_dict.items():
+        if old_name in k:
+            k = k.replace(old_name, new_name)
+        new_dic[k] = v
+    torch.save(new_dic, new_path)
+    print('saved to ', new_path)
 
 if __name__ == '__main__':
-    weight_discard_module()
+    # weight_discard_module()
+    weight_reshape()

@@ -12,41 +12,38 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         self.iou_thresh = cfg.TEST.IOU_THRESH
         self.class_range = range(cfg.TRAIN.CLASSES_NUM)
 
-    def forward(self, pre_score, pre_loc, xywh2x1y1x2y2=True):
+    def forward(self, pre_score, pre_loc, xywh2xyxy=True):
         labels_predict = []
         for batch_n in range(pre_score.shape[0]):
             pre_score_max = pre_score[batch_n].max(-1)
-            pre_score_i = pre_score_max[0]
-            pre_class_i = pre_score_max[1]
-            pre_loc_i = pre_loc[batch_n]
+            _pre_score = pre_score_max[0]
+            _pre_class = pre_score_max[1]
+            _pre_loc = pre_loc[batch_n]
 
-            index = pre_score_i > self.cfg.TEST.SCORE_THRESH
+            index = _pre_score > self.cfg.TEST.SCORE_THRESH
             num_pos = index.sum()
-            _pre_score = pre_score_i[index]
-            _pre_class = pre_class_i[index]
-            _pre_loc = pre_loc_i[index]
+            _pre_score = _pre_score[index]
+            _pre_class = _pre_class[index]
+            _pre_loc = _pre_loc[index]
 
-            labels = self._nms(_pre_score, _pre_class, _pre_loc, xywh2x1y1x2y2)
+            max_detection_boxes_num = 100
+            score_sort = _pre_score.sort(descending=True)
+            score_idx = score_sort[1][:max_detection_boxes_num]
+            _pre_score = _pre_score[score_idx]
+            _pre_class = _pre_class[score_idx]
+            _pre_loc = _pre_loc[score_idx]
+
+            labels = self._nms(_pre_score, _pre_class, _pre_loc, xywh2xyxy)
             labels_predict.append(labels)
 
         return labels_predict
 
-    def _nms(self, pre_score=None, pre_class=None, pre_loc=None, xywh2x1y1x2y2=None):
-        if self.cfg.TEST.NMS_TYPE in ['soft_nms', 'SOFT_NMS']:
-            keep = self.NMS_Soft(pre_score, pre_class, pre_loc)
-        else:
-            keep = self.NMS_Greedy(pre_score, pre_class, pre_loc)
-
-        labels_out = self.nms2labels(keep, pre_score, pre_class, pre_loc, xywh2x1y1x2y2)
-
-        return labels_out
-
-    def nms2labels(self, keep, pre_score, pre_class, pre_loc, xywh2x1y1x2y2):
+    def nms2labels(self, keep, pre_score, pre_class, pre_loc, xywh2xyxy):
         labels_out = []
         for keep_idx in keep:
             box = pre_loc[keep_idx]
             box = box.squeeze()
-            if xywh2x1y1x2y2:
+            if xywh2xyxy:
                 boxx1 = max(0, box[0] - box[2] / 2)
                 boxy1 = max(0, box[1] - box[3] / 2)
                 boxx2 = max(0, box[0] + box[2] / 2)
@@ -59,6 +56,16 @@ class NMS:  # TODO: dubug the for ...in each NMS.
             pre_score_out = pre_score[keep_idx].item()
             class_out = pre_class[keep_idx].item()
             labels_out.append([pre_score_out, class_out, boxx1, boxy1, boxx2, boxy2])
+        return labels_out
+
+    def _nms(self, pre_score=None, pre_class=None, pre_loc=None, xywh2xyxy=None):
+        if self.cfg.TEST.NMS_TYPE in ['soft_nms', 'SOFT_NMS']:
+            keep = self.NMS_Soft(pre_score, pre_class, pre_loc)
+        else:
+            keep = self.NMS_Greedy(pre_score, pre_class, pre_loc)
+
+        labels_out = self.nms2labels(keep, pre_score, pre_class, pre_loc, xywh2xyxy)
+
         return labels_out
 
     def NMS_Greedy(self, pre_score, pre_class, pre_loc):
@@ -74,8 +81,7 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         # print('using Greedy NMS')
 
         score_sort = pre_score.sort(descending=True)  # sort the scores.
-
-        score_idx = score_sort[1][score_sort[0] > self.score_thresh]  # find the scores>0.7(thresh)
+        score_idx = score_sort[1]
 
         keep = []
         for i in self.class_range:  # with different classess.

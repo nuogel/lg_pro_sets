@@ -86,6 +86,7 @@ class DetectHead(nn.Module):
         self.max_detection_boxes_num = max_detection_boxes_num
         self.strides = strides
         self.config = config
+        self.device = self.config.TRAIN.DEVICE
 
     def forward(self, inputs):
         '''
@@ -101,30 +102,32 @@ class DetectHead(nn.Module):
         cls_preds = cls_logits.sigmoid_()
         cnt_preds = cnt_logits.sigmoid_()
 
-        coords = coords.cuda() if torch.cuda.is_available() else coords
+        coords = coords.to(self.device)
 
-        cls_scores, cls_classes = torch.max(cls_preds, dim=-1)  # [batch_size,sum(_h*_w)]
+        # cls_scores, cls_classes = torch.max(cls_preds, dim=-1)  # [batch_size,sum(_h*_w)]
         if self.config.add_centerness:
-            cls_scores = torch.sqrt(cls_scores * (cnt_preds.squeeze(dim=-1)))  # [batch_size,sum(_h*_w)]
-        cls_classes = cls_classes + 1  # [batch_size,sum(_h*_w)]
+            cls_preds = torch.sqrt(cls_preds * cnt_preds)  # [batch_size,sum(_h*_w)]
+        # cls_classes = cls_classes + 1  # [batch_size,sum(_h*_w)]
 
-        boxes = self._coords2boxes(coords, reg_preds)  # [batch_size,sum(_h*_w),4]
+        boxes_x1y1x2y2 = self._coords2boxes(coords, reg_preds)  # [batch_size,sum(_h*_w),4]
 
-        # select topk
-        max_num = min(self.max_detection_boxes_num, cls_scores.shape[-1])
-        topk_ind = torch.topk(cls_scores, max_num, dim=-1, largest=True, sorted=True)[1]  # [batch_size,max_num]
-        _cls_scores = []
-        _cls_classes = []
-        _boxes = []
-        for batch in range(cls_scores.shape[0]):
-            _cls_scores.append(cls_scores[batch][topk_ind[batch]])  # [max_num]
-            _cls_classes.append(cls_classes[batch][topk_ind[batch]])  # [max_num]
-            _boxes.append(boxes[batch][topk_ind[batch]])  # [max_num,4]
-        cls_scores_topk = torch.stack(_cls_scores, dim=0)  # [batch_size,max_num]
-        cls_classes_topk = torch.stack(_cls_classes, dim=0)  # [batch_size,max_num]
-        boxes_topk = torch.stack(_boxes, dim=0)  # [batch_size,max_num,4]
-        assert boxes_topk.shape[-1] == 4
-        return self._post_process([cls_scores_topk, cls_classes_topk, boxes_topk])
+        return cls_preds, boxes_x1y1x2y2
+        # # select topk
+        # max_num = min(self.max_detection_boxes_num, cls_scores.shape[-1])
+        # topk_ind = torch.topk(cls_scores, max_num, dim=-1, largest=True, sorted=True)[1]  # [batch_size,max_num]
+        # _cls_scores = []
+        # _cls_classes = []
+        # _boxes = []
+        # for batch in range(cls_scores.shape[0]):
+        #     _cls_scores.append(cls_scores[batch][topk_ind[batch]])  # [max_num]
+        #     _cls_classes.append(cls_classes[batch][topk_ind[batch]])  # [max_num]
+        #     _boxes.append(boxes[batch][topk_ind[batch]])  # [max_num,4]
+        # cls_scores_topk = torch.stack(_cls_scores, dim=0)  # [batch_size,max_num]
+        # cls_classes_topk = torch.stack(_cls_classes, dim=0)  # [batch_size,max_num]
+        # boxes_topk = torch.stack(_boxes, dim=0)  # [batch_size,max_num,4]
+        # assert boxes_topk.shape[-1] == 4
+        #
+        # return self._post_process([cls_scores_topk, cls_classes_topk, boxes_topk])
 
     def _post_process(self, preds_topk):
         '''
@@ -229,13 +232,4 @@ class DetectHead(nn.Module):
         return torch.cat(out, dim=1), torch.cat(coords, dim=0)
 
 
-class ClipBoxes(nn.Module):
-    def __init__(self):
-        super().__init__()
 
-    def forward(self, batch_imgs, batch_boxes):
-        batch_boxes = batch_boxes.clamp_(min=0)
-        h, w = batch_imgs.shape[2:]
-        batch_boxes[..., [0, 2]] = batch_boxes[..., [0, 2]].clamp_(max=w - 1)
-        batch_boxes[..., [1, 3]] = batch_boxes[..., [1, 3]].clamp_(max=h - 1)
-        return batch_boxes

@@ -148,9 +148,9 @@ def prepare_cfg(cfg, args, is_training=True):
         for k, v in class_dict.items():
             if v not in class_names:
                 class_names.append(v)
-        cfg.TRAIN.CLASSES_NUM = len(class_names)
+        cfg.TRAIN.CLASSES_NUM = 80 #len(class_names)
         cfg.TRAIN.CLASSES = class_names
-    except:
+    except EnvironmentError:
         print('cfg.py trying get class number and classes faild.')
 
     ## config for FCOS:
@@ -166,7 +166,6 @@ def prepare_cfg(cfg, args, is_training=True):
     cfg.use_p5 = True
 
     # head
-    cfg.class_num = 80
     cfg.use_GN_head = True
     cfg.prior = 0.01
     cfg.add_centerness = True

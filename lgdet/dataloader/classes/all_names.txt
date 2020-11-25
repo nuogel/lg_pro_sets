@@ -41,8 +41,8 @@ Tram,Tram
 Misc,Misc
 DontCare,DontCare
 
- #VOC_CLASSES
 
+ #VOC_CLASSES
 car,car
 person,person
 aeroplane,aeroplane
@@ -63,6 +63,27 @@ sheep,sheep
 sofa,sofa
 train,train,
 tvmonitor,tvmonitor
+
+aeroplane,
+bicycle,
+bird,
+boat,
+bottle,
+bus,
+car,
+cat,
+chair,
+cow,
+diningtable,
+dog,
+horse,
+motorbike,
+person,
+pottedplant,
+sheep,
+sofa,
+train,
+tvmonitor,
 
 
 car,car

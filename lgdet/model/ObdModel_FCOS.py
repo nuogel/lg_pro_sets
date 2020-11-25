@@ -1,8 +1,7 @@
-import torch
 import torch.nn as nn
-from lgdet.model.aid_models.fcos.head import ClsCntRegHead
-from lgdet.model.aid_models.fcos.fpn_neck import FPN
-from lgdet.model.aid_models.resnet import resnet50
+from lgdet.model.head.fcos_head import ClsCntRegHead
+from lgdet.model.neck.fpn_neck import FPN
+from lgdet.model.backbone.resnet import resnet50
 
 from ..registry import MODELS
 
@@ -11,9 +10,10 @@ from ..registry import MODELS
 class FCOS(nn.Module):
     def __init__(self, config=None):
         super().__init__()
+        self.num_classes = config.TRAIN.CLASSES_NUM
         self.backbone = resnet50(pretrained=config.pretrained, if_include_top=False)
         self.fpn = FPN(config.fpn_out_channels, use_p5=config.use_p5)
-        self.head = ClsCntRegHead(config.fpn_out_channels, config.class_num,
+        self.head = ClsCntRegHead(config.fpn_out_channels, self.num_classes,
                                   config.use_GN_head, config.cnt_on_reg, config.prior)
         self.config = config
 
