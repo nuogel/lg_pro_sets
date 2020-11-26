@@ -30,6 +30,7 @@ class OBD_Loader(DataLoader):
         self.cls2idx = dict(zip(cfg.TRAIN.CLASSES, range(cfg.TRAIN.CLASSES_NUM)))
         self.write_images = self.cfg.TRAIN.WRITE_IMAGES
         self.lgtransformer = LgTransformer(self.cfg)
+        self.keep_difficult = False
         if self.cfg.TRAIN.MULTI_SCALE:
             self._prepare_multiszie()
         if self.cfg.TRAIN.USE_LMDB:
@@ -230,7 +231,6 @@ class OBD_Loader(DataLoader):
         :param path: the path of file that need to parse.
         :return:lists of the classes and the key points============ [x1, y1, x2, y2].
         """
-
         bbs = []
         path = data_info['lab_path']
 
@@ -241,12 +241,20 @@ class OBD_Loader(DataLoader):
             tree = ET.parse(path)
             root = tree.getroot()
             for obj in root.findall('object'):
+                try:
+                    difficult = int(obj.find('difficult').text) == 1
+                except:
+                    difficult = False
+                if not self.keep_difficult and difficult:
+                    continue
+
                 cls_name = obj.find('name').text
                 if cls_name not in self.class_name:
                     print(cls_name, 'is passed')
                     continue
                 if self.class_name[cls_name] in pass_obj:
                     continue
+
                 bbox = obj.find('bndbox')
                 box_x1 = float(bbox.find('xmin').text)
                 box_y1 = float(bbox.find('ymin').text)
