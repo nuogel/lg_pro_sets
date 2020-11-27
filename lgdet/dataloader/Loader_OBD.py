@@ -78,6 +78,10 @@ class OBD_Loader(DataLoader):
         if (self.cfg.TRAIN.PADTOSIZE and self.is_training) or (self.cfg.TEST.PADTOSIZE and not self.is_training):
             img, label, data_info = self.lgtransformer.pad_to_size(img, label, data_info, new_shape=self.cfg.TRAIN.IMG_SIZE, auto=False, scaleup=False)
 
+        # resize with max and min size ([800, 1333])
+        if (self.cfg.TRAIN.MAXMINSIZE and self.is_training) or (self.cfg.TEST.MAXMINSIZE and not self.is_training):
+            img, label, data_info = self.lgtransformer.resize_max_min_size(img, label, data_info, input_ksize=self.cfg.TRAIN.IMG_SIZE)
+
         # resize
         if (self.cfg.TRAIN.RESIZE and self.is_training) or (self.cfg.TEST.RESIZE and not self.is_training):
             img, label, data_info = self.lgtransformer.resize(img, label, self.cfg.TRAIN.IMG_SIZE, data_info)
@@ -359,8 +363,17 @@ class OBD_Loader(DataLoader):
         :return:
         '''
         imgs, labels, infos = zip(*batch)
-        imgs = torch.stack(imgs, dim=0)
 
+        h_list = [int(s.shape[1]) for s in imgs]
+        w_list = [int(s.shape[2]) for s in imgs]
+        max_h = np.array(h_list).max()
+        max_w = np.array(w_list).max()
+        pad_imgs = []
+        for i in range(len(imgs)):
+            img=imgs[i]
+            pad_imgs.append(torch.nn.functional.pad(img,(0,int(max_w-img.shape[2]),0,int(max_h-img.shape[1])),value=0.))
+
+        imgs = torch.stack(pad_imgs, dim=0)
         if self.cfg.TRAIN.MULTI_SCALE and self.is_training:
             img_size = self.img_size
             if random.random() > 0.5:  #  adjust img_size (67% - 150%) every 1 batch

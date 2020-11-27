@@ -1,6 +1,8 @@
 """IOU calculation between box1 and box2, box can be any shape."""
 import torch
 import math
+import numpy as np
+
 
 def _iou_mat_N2N_yolo(box1, box2):
     """
@@ -241,4 +243,30 @@ def _bbox_iou(box1, box2, x1y1x2y2=True):
 
     iou = inter_area / (b1_area + b2_area - inter_area + 1e-16)
 
+    return iou
+
+
+def _iou_np(cubes_a, cubes_b):
+    """
+    numpy 计算IoU
+    :param cubes_a: [N,(x1,y1,x2,y2)]
+    :param cubes_b: [M,(x1,y1,x2,y2)]
+    :return:  IoU [N,M]
+    """
+    # expands dim
+    cubes_a = np.expand_dims(cubes_a, axis=1)  # [N,1,4]
+    cubes_b = np.expand_dims(cubes_b, axis=0)  # [1,M,4]
+    overlap = np.maximum(0.0,
+                         np.minimum(cubes_a[..., 2:], cubes_b[..., 2:]) -
+                         np.maximum(cubes_a[..., :2], cubes_b[..., :2]))  # [N,M,(w,h)]
+
+    # overlap
+    overlap = np.prod(overlap, axis=-1)  # [N,M]
+
+    # compute area
+    area_a = np.prod(cubes_a[..., 2:] - cubes_a[..., :2], axis=-1)
+    area_b = np.prod(cubes_b[..., 2:] - cubes_b[..., :2], axis=-1)
+
+    # compute iou
+    iou = overlap / (area_a + area_b - overlap)
     return iou

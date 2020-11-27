@@ -43,26 +43,6 @@ DontCare,DontCare
 
 
  #VOC_CLASSES
-car,car
-person,person
-aeroplane,aeroplane
-bicycle,bicycle
-bird,bird
-boat,boat
-bottle,bottle
-bus,bus
-cat,cat
-chair,chair
-cow,cow
-diningtable,diningtable
-dog,dog
-horse,horse
-motorbike,motorbike
-pottedplant,pottedplant
-sheep,sheep
-sofa,sofa
-train,train,
-tvmonitor,tvmonitor
 
 aeroplane,
 bicycle,
@@ -85,10 +65,6 @@ sofa,
 train,
 tvmonitor,
 
-
-car,car
-person,person
-bus,car
 
 # BDD100
 bus,

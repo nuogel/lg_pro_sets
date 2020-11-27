@@ -36,6 +36,7 @@ def prepare_cfg(cfg, args, is_training=True):
         if args.test_only:
             cfg.TEST.TEST_ONLY = args.test_only
 
+    cfg.TEST.MAP_FSCORE = args.map_fscore
     cfg.checkpoint = args.checkpoint
     cfg = common_cfg(cfg)
 
@@ -148,7 +149,7 @@ def prepare_cfg(cfg, args, is_training=True):
         for k, v in class_dict.items():
             if v not in class_names:
                 class_names.append(v)
-        cfg.TRAIN.CLASSES_NUM = 80 #len(class_names)
+        cfg.TRAIN.CLASSES_NUM = 80  # len(class_names)
         cfg.TRAIN.CLASSES = class_names
     except EnvironmentError:
         print('cfg.py trying get class number and classes faild.')

@@ -1,6 +1,6 @@
 from lgdet.loss.loss_refinedet import Detect_RefineDet
 from lgdet.util.util_iou import xyxy2xywh
-from lgdet.util.util_NMS import NMS
+from lgdet.util.util_nms.util_nms_python import NMS
 import torch
 
 

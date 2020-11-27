@@ -1,7 +1,7 @@
 """Parse the predictions."""
 
 from lgdet.model.head.fcos_head import DetectHead
-from lgdet.util.util_NMS import NMS
+from lgdet.util.util_nms.util_nms_python import NMS
 from lgdet.util.util_iou import xyxy2xywh
 
 

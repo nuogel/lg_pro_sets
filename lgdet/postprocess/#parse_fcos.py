@@ -1,6 +1,6 @@
 """Parse the predictions."""
 import torch
-from lgdet.util.util_NMS import NMS
+from lgdet.util.util_nms.util_nms_python import NMS
 from lgdet.util.util_lg_transformer import LgTransformer
 
 

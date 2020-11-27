@@ -9,7 +9,7 @@ At the end, we will get the weight file of the net.
 """
 import tqdm
 from .solver_base import BaseSolver
-import time
+import torch
 
 
 class Solver(BaseSolver):
@@ -28,7 +28,8 @@ class Solver(BaseSolver):
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch)
             if epoch > 0 or self.cfg.TEST.ONE_TEST:
-                self._validate_an_epoch(epoch)
+                with torch.no_grad():
+                    self._validate_an_epoch(epoch)
 
     def _train_an_epoch(self, epoch):
         self.model.train()

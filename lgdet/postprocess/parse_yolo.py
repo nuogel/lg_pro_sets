@@ -1,8 +1,7 @@
 """Parse the predictions."""
 import torch
 import numpy as np
-from lgdet.util.util_lg_transformer import LgTransformer
-from lgdet.util.util_NMS import NMS
+from lgdet.util.util_nms.util_nms_python import NMS
 
 
 class ParsePredict_yolo:

@@ -1,7 +1,14 @@
 import torch
 import numpy as np
-from lgdet.util.util_iou import iou_xywh, iou_xyxy
+from lgdet.util.util_iou import iou_xywh, iou_xyxy, xywh2xyxy as _xywh2xyxy
 from torchvision.ops import nms
+
+try:
+    from lgdet.util.util_nms.nms_wrapper import nms as _nms_cython
+
+    nms_cython_ok = 1
+except:
+    nms_cython_ok = 0
 
 
 class NMS:  # TODO: dubug the for ...in each NMS.
@@ -11,8 +18,25 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         self.theta = cfg.TEST.SOFNMS_THETA
         self.iou_thresh = cfg.TEST.IOU_THRESH
         self.class_range = range(cfg.TRAIN.CLASSES_NUM)
+        if nms_cython_ok and self.cfg.TEST.USE_MNS_CYTHON:
+            self.use_nms_cython = True
+            print('use nms-cython')
+        else:
+            self.use_nms_cython = False
+            print('use nms-lg')
+        self.max_detection_boxes_num = 100
+        self.st = self.cfg.TEST.SCORE_THRESH
+        if not self.cfg.TEST.NMS_TYPE:  # 1-fscore
+            self.st = 0.05  # count map score thresh is <0.05
+            self.max_detection_boxes_num = 100
 
     def forward(self, pre_score, pre_loc, xywh2xyxy=True):
+        if self.use_nms_cython:
+            return self.nms_cython(pre_score, pre_loc, xywh2xyxy)
+        else:
+            return self.nms_lg(pre_score, pre_loc, xywh2xyxy)
+
+    def nms_lg(self, pre_score, pre_loc, xywh2xyxy=True):
         labels_predict = []
         for batch_n in range(pre_score.shape[0]):
             pre_score_max = pre_score[batch_n].max(-1)
@@ -20,15 +44,13 @@ class NMS:  # TODO: dubug the for ...in each NMS.
             _pre_class = pre_score_max[1]
             _pre_loc = pre_loc[batch_n]
 
-            index = _pre_score > self.cfg.TEST.SCORE_THRESH
-            num_pos = index.sum()
+            index = _pre_score > self.st
             _pre_score = _pre_score[index]
             _pre_class = _pre_class[index]
             _pre_loc = _pre_loc[index]
 
-            max_detection_boxes_num = 100
             score_sort = _pre_score.sort(descending=True)
-            score_idx = score_sort[1][:max_detection_boxes_num]
+            score_idx = score_sort[1][:self.max_detection_boxes_num]
             _pre_score = _pre_score[score_idx]
             _pre_class = _pre_class[score_idx]
             _pre_loc = _pre_loc[score_idx]
@@ -38,8 +60,37 @@ class NMS:  # TODO: dubug the for ...in each NMS.
 
         return labels_predict
 
+    def nms_cython(self, pre_score, pre_loc, xywh2xyxy=True):
+        labels_predict = []
+        for batch_n in range(pre_score.shape[0]):
+            pred_i = []
+            scores = pre_score[batch_n]
+            boxes = pre_loc[batch_n]
+            if xywh2xyxy:
+                boxes = _xywh2xyxy(boxes)
+            for j in self.class_range:
+                inds = (scores[:, j] > self.st)
+                if inds.sum() == 0:
+                    continue
+                c_bboxes = boxes[inds].cpu().detach().numpy()
+                c_scores = scores[inds, j].cpu().detach().numpy()
+                c_dets = np.hstack((c_bboxes, c_scores[:, np.newaxis])).astype(np.float32, copy=False)
+                cpu = False
+                keep = _nms_cython(c_dets, 0.5, force_cpu=cpu)
+                keep = keep[:self.max_detection_boxes_num]
+                c_dets = c_dets[keep, :]
+                c_dets_reshap = c_dets.copy()
+                c_dets_reshap[..., 0] = c_dets[..., -1]
+                c_dets_reshap[..., 1:] = c_dets[..., :4]
+                c_dets_reshap = np.insert(c_dets_reshap, 1, j, 1)
+                pred_i.append(c_dets_reshap)
+            pred_i = np.concatenate(pred_i)
+            labels_predict.append(pred_i)
+        return labels_predict
+
     def nms2labels(self, keep, pre_score, pre_class, pre_loc, xywh2xyxy):
         labels_out = []
+        pre_loc = pre_loc.cpu().detach().numpy()
         for keep_idx in keep:
             box = pre_loc[keep_idx]
             box = box.squeeze()

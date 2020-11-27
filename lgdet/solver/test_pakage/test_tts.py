@@ -1,0 +1,35 @@
+"""
+Test.py is used for marking things with the weight file which we trained.
+
+With a box outside of thing and with a label of what it is ,
+and with it's score at the left top of the box.
+"""
+from lgdet.util.util_time_stamp import Time
+from lgdet.util.util_audio import Util_Audio
+from lgdet.solver.test_pakage._test_base import TestBase
+
+
+class Test_TTS(TestBase):
+    def __init__(self, cfg, args, train):
+        super(Test_TTS, self).__init__(cfg, args, train)
+        self.util_audio = Util_Audio(cfg)
+
+    def test_backbone(self, DataSet):
+        """Test."""
+        loader = iter(DataSet)
+        timer = Time()
+        self.model.encoder.eval()
+        self.model.postnet.eval()
+        for i in range(DataSet.__len__()):
+            test_data = next(loader)
+            timer.time_start()
+            test_data = self.DataFun.to_devce(test_data)
+            predicted = self.model.forward(input_x=test_data[0], input_data=test_data, is_training=False)
+            mel_outputs, linear_outputs, alignments = predicted
+            linear_output = linear_outputs[0].cpu().data.numpy()
+            # Predicted audio signal
+            waveform = self.util_audio._inv_spectrogram(linear_output.T)
+            self.util_audio.save_wav(waveform, 'dst_wav_path.wav')
+
+
+

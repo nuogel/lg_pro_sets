@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import random
 import math
+from torchvision import transforms
 
 
 class LgTransformer:
@@ -41,16 +42,16 @@ class LgTransformer:
                 x1b, y1b, x2b, y2b = 0, 0, min(w, x2a - x1a), min(y2a - y1a, h)
 
             img4[y1a:y2a, x1a:x2a] = img[y1b:y2b, x1b:x2b]  # img4[ymin:ymax, xmin:xmax]
-            padw = x1a - x1b
-            padh = y1a - y1b
+            pad_w = x1a - x1b
+            pad_h = y1a - y1b
 
             # Labels
             labels = lab.copy()
             if lab.size > 0:  # Normalized xywh to pixel xyxy format
-                labels[:, 1] = r * lab[:, 1] + padw
-                labels[:, 2] = r * lab[:, 2] + padh
-                labels[:, 3] = r * lab[:, 3] + padw
-                labels[:, 4] = r * lab[:, 4] + padh
+                labels[:, 1] = r * lab[:, 1] + pad_w
+                labels[:, 2] = r * lab[:, 2] + pad_h
+                labels[:, 3] = r * lab[:, 3] + pad_w
+                labels[:, 4] = r * lab[:, 4] + pad_h
             labels4.append(labels)
 
         # Concat/clip labels
@@ -146,32 +147,32 @@ class LgTransformer:
         # Compute padding
         ratio = r, r  # width, height ratios
         new_unpad = int(round(shape[1] * r)), int(round(shape[0] * r))
-        padw, padh = new_shape[1] - new_unpad[0], new_shape[0] - new_unpad[1]  # wh padding
+        pad_w, pad_h = new_shape[1] - new_unpad[0], new_shape[0] - new_unpad[1]  # wh padding
         if auto:  # minimum rectangle
-            padw, padh = np.mod(padw, 64), np.mod(padh, 64)  # wh padding
+            pad_w, pad_h = np.mod(pad_w, 64), np.mod(pad_h, 64)  # wh padding
         elif scaleFill:  # stretch
-            padw, padh = 0.0, 0.0
+            pad_w, pad_h = 0.0, 0.0
             new_unpad = new_shape
             ratio = new_shape[0] / shape[1], new_shape[1] / shape[0]  # width, height ratios
 
-        padw /= 2  # divide padding into 2 sides
-        padh /= 2
+        pad_w /= 2  # divide padding into 2 sides
+        pad_h /= 2
 
         if shape[::-1] != new_unpad:  # resize
             img = cv2.resize(img, new_unpad, interpolation=cv2.INTER_LINEAR)
-        top, bottom = int(round(padh - 0.1)), int(round(padh + 0.1))
-        left, right = int(round(padw - 0.1)), int(round(padw + 0.1))
+        top, bottom = int(round(pad_h - 0.1)), int(round(pad_h + 0.1))
+        left, right = int(round(pad_w - 0.1)), int(round(pad_w + 0.1))
         img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
 
         labels = label.copy()
-        labels[:, 1] = ratio[0] * label[:, 1] + padw
-        labels[:, 2] = ratio[1] * label[:, 2] + padh
-        labels[:, 3] = ratio[0] * label[:, 3] + padw
-        labels[:, 4] = ratio[1] * label[:, 4] + padh
+        labels[:, 1] = ratio[0] * label[:, 1] + pad_w
+        labels[:, 2] = ratio[1] * label[:, 2] + pad_h
+        labels[:, 3] = ratio[0] * label[:, 3] + pad_w
+        labels[:, 4] = ratio[1] * label[:, 4] + pad_h
 
         data_info['img_raw_size(h,w)'] = shape
-        data_info['ratio'] = ratio  # new/old
-        data_info['padding(w,h)'] = (padw, padh)
+        data_info['ratio(w,h)'] = ratio  # new/old
+        data_info['padding(w,h)'] = (pad_w, pad_h)
         data_info['size_now(h,w)'] = img.shape[:2]
 
         return img, labels, data_info
@@ -190,17 +191,17 @@ class LgTransformer:
                 pre_labels_out.append([])
             else:
                 pre_label = torch.Tensor(pre_labels[i])
-                ratio = data_info['ratio']  # new/old
-                padw, padh = data_info['padding(w,h)']
+                ratio = data_info['ratio(w,h)']  # new/old
+                pad_w, pad_h = data_info['padding(w,h)']
                 if self.cfg.TRAIN.RELATIVE_LABELS:
                     shapeh, shapew = data_info['size_now(h,w)']
                 else:
                     shapeh, shapew = 1, 1
                 labels = pre_label.clone()
-                labels[:, 2] = pre_label[:, 2] / ratio[0] * shapew - padw  # absolute labels.
-                labels[:, 3] = pre_label[:, 3] / ratio[1] * shapeh - padh
-                labels[:, 4] = pre_label[:, 4] / ratio[0] * shapew - padw
-                labels[:, 5] = pre_label[:, 5] / ratio[1] * shapeh - padh
+                labels[:, 2] = (pre_label[:, 2] * shapew - pad_w) / ratio[0]  # absolute labels.
+                labels[:, 3] = (pre_label[:, 3] * shapeh - pad_h) / ratio[1]
+                labels[:, 4] = (pre_label[:, 4] * shapew - pad_w) / ratio[0]
+                labels[:, 5] = (pre_label[:, 5] * shapeh - pad_h) / ratio[1]
                 pre_labels_out.append(labels)
         return pre_labels_out
 
@@ -221,56 +222,94 @@ class LgTransformer:
         return img_after, label_after
 
     def resize(self, img, label, size, data_info):
+        '''
+
+        :param img:
+        :param label: [cls, x1, y1, x2, y2]
+        :param size:
+        :param data_info:
+        :return:
+        '''
+
         img_after = cv2.resize(img, (size[1], size[0]))
         img_size = img.shape
         ratio = size[1] / img_size[1], size[0] / img_size[0]  # (W,H)
-        for lab in label:
-            lab[1] *= ratio[0]
-            lab[2] *= ratio[1]
-            lab[3] *= ratio[0]
-            lab[4] *= ratio[1]
+        label[:, [1, 3]] = label[:, [1, 3]] * ratio[0]
+        label[:, [2, 4]] = label[:, [2, 4]] * ratio[1]
 
-        data_info['ratio'] = ratio
+        data_info['ratio(w,h)'] = ratio
         data_info['padding(w,h)'] = (0, 0)
         data_info['size_now(h,w)'] = img_after.shape[:2]
         return img_after, label, data_info
 
+    def resize_max_min_size(self, img, label, data_info, input_ksize=[800, 1333]):
+        '''
+        resize img and blabel
+        Returns
+        img_paded: input_ksize
+        blabel: [None,4]
+        '''
+        min_side, max_side = input_ksize
+        h, w, _ = img.shape
+
+        smallest_side = min(w, h)
+        largest_side = max(w, h)
+        scale = min_side / smallest_side
+        if largest_side * scale > max_side:
+            scale = max_side / largest_side
+        nw, nh = int(scale * w), int(scale * h)
+        img_resized = cv2.resize(img, (nw, nh))
+
+        pad_w = 32 - nw % 32
+        pad_h = 32 - nh % 32
+
+        pad_w /= 2  # divide padding into 2 sides
+        pad_h /= 2
+
+        # img_paded = np.zeros(shape=[nh + pad_h, nw + pad_w, 3], dtype=np.uint8)
+        # img_paded[:nh, :nw, :] = img_resized
+
+        top, bottom = int(round(pad_h - 0.1)), int(round(pad_h + 0.1))
+        left, right = int(round(pad_w- 0.1)), int(round(pad_w + 0.1))
+        img_paded = cv2.copyMakeBorder(img_resized, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(114, 114, 114))  # add border
+
+        data_info['ratio(w,h)'] = (scale, scale)
+        data_info['padding(w,h)'] = (pad_w, pad_h)
+        data_info['size_now(h,w)'] = img_paded.shape[:2]
+        if label is None:
+            pass
+        else:
+            label[:, [1, 3]] = label[:, [1, 3]] * scale
+            label[:, [2, 4]] = label[:, [2, 4]] * scale
+
+        return img_paded, label, data_info
+
     def transpose(self, img, label):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = np.asarray(img, dtype=np.float32) / 255.
-        img = (img - self.cfg.mean) / self.cfg.std
+        # img = (img - self.cfg.mean) / self.cfg.std
         img = torch.from_numpy(img).permute(2, 0, 1)  # C, H, W
-
-        # rgb_means = (104, 117, 123)
-        # img = img - rgb_means
-        # img = np.asarray(img, dtype=np.float32)
-        # img = torch.from_numpy(img).permute(2, 0, 1)  # C, H, W
+        img = transforms.Normalize(self.cfg.mean, self.cfg.std, inplace=True)(img)
 
         if isinstance(label, list):
-            for lab in label:  # add 0 for label
-                lab.insert(0, 0)
-            label = torch.Tensor(label)
-        if isinstance(label, np.ndarray):
-            label = np.insert(label, 0, 0, 1)
-            label = torch.from_numpy(label)
+            label = np.asarray(label, np.float32)
+
+        label = np.insert(label, 0, 0, 1)
+        label = torch.from_numpy(label)
         return img, label
 
     def relative_label(self, img, label):
-        # RELATIVE LABELS:
+        # RELATIVE LABELS:# x1y1x2y2
+        if label is None:
+            return img, label
+
         h, w, c = img.shape
         if isinstance(label, list):
-            if not label:
-                label = None
-            else:  # x1y1x2y2
-                for lab in label:
-                    lab[1] /= w
-                    lab[2] /= h
-                    lab[3] /= w
-                    lab[4] /= h
-        if isinstance(label, np.ndarray):
-            mask = np.asarray([1, w, h, w, h], np.float32)
-            label = label / mask
+            label = np.asarray(label, np.float32)
+        mask = np.asarray([1, w, h, w, h], np.float32)
+        label = label / mask
         return img, label
+
     #
     # def rescale_size(self, old_size, scale, return_scale=False):
     #     """Calculate the new size to be rescaled to."""

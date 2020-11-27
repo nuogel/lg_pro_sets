@@ -32,10 +32,10 @@ class FCOS(nn.Module):
 
         if self.config.freeze_bn:
             self.apply(freeze_bn)
-            print("INFO===>success frozen BN")
+            print("success frozen BN")
         if self.config.freeze_stage_1:
             self.backbone.freeze_stages(1)
-            print("INFO===>success frozen backbone stage1")
+            print("success frozen backbone stage1")
 
     def forward(self, **args):
         x = args['input_x']

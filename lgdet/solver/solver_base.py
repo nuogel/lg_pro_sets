@@ -155,7 +155,7 @@ class BaseSolver(object):
         if is_training != None:
             train_set, test_set = _read_train_test_dataset(self.cfg)
             print('train set:', train_set[0], '\n', 'test set:', test_set[0])
-            txt = 'train set:{}; test set:{}'.format(len(train_set), len(test_set))
+            txt = 'train set:{};test  set:{}'.format(len(train_set), len(test_set))
             print(txt)
             self.cfg.logger.info(txt)
             self.trainDataloader, self.testDataloader = self.DataFun.make_dataset(train_set, test_set)
@@ -200,6 +200,8 @@ class BaseSolver(object):
                 w_dict['metrics/' + k] = v / (step + 1)
             self.cfg.writer.tbX_write(w_dict=w_dict)
 
+        if torch.isnan(total_loss) or total_loss.item() == float("inf") or total_loss.item() == -float("inf"):
+            self.cfg.logger.error("received an nan/inf loss:", dataset[-1])
 
         return total_loss, train_info
 

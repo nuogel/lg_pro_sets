@@ -1,4 +1,4 @@
-from lgdet.util.util_NMS import NMS
+from lgdet.util.util_nms.util_nms_python import NMS
 import torch
 
 def NMS_block(predicts, cfg):
