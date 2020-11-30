@@ -18,7 +18,7 @@ def _parse_arguments():
     parser.add_argument('--model', type=str, help='yml_path')
     parser.add_argument('--checkpoint', '--cp', default=1
                         , help='Path to the checkpoint to be loaded to the model')
-    parser.add_argument('--pre_trained', '--pt', default=0#'saved/checkpoint/fcos_voc_77_new.pkl'
+    parser.add_argument('--pre_trained', '--pt', default=2  # 'saved/checkpoint/fcos_voc_77_new.pkl'
                         , help='Epoch of continue training')
     parser.add_argument('--batch_size', '--bz', default=1, type=int, help='batch size')
     parser.add_argument('--gpu', help='number works of dataloader')

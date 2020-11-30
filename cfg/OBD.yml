@@ -29,8 +29,8 @@ TRAIN:
   AREAR_RATIO: 0.1 #0 #
   MIN_AREA: 10 #0 #100 #400 #
   #[H,W]
-  #[384, 960] #[416, 416] #[512, 768] # [1024,1920] #[720,1024]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
-  IMG_SIZE: [512, 512]
+  #[384, 960] #[416, 416] #[512, 768] # [1024,1920] #[800,1333]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
+  IMG_SIZE: [800,1333]
 
   MULTI_SCALE: 0
   MULTI_SCALE_SIZE: [320, 640] #(320-640)//32
@@ -39,7 +39,7 @@ TRAIN:
   WATCH_METIRICS: 1
   WRITE_IMAGES: 20
   WRITER: 'tensorboardX'
-  SHOW_INPUT: 10000 # # -1  #
+  SHOW_INPUT: -1  #10000 # #
 
   # optimizer:
   OPTIMIZER: 'adam' #'SGD' #adam #adamw
@@ -76,9 +76,9 @@ TEST:
   IOU_THRESH: 0.4
   SOFNMS_THETA: 0.5
 
-  PADTOSIZE: 1
+  PADTOSIZE: 0
   RESIZE: 0
-  MAXMINSIZE: 0
+  MAXMINSIZE: 1
 
   IMG_BLOCK: 0
   SAVE_LABELS: 0

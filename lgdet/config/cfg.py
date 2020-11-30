@@ -36,7 +36,8 @@ def prepare_cfg(cfg, args, is_training=True):
         if args.test_only:
             cfg.TEST.TEST_ONLY = args.test_only
 
-    cfg.TEST.MAP_FSCORE = args.map_fscore
+        cfg.TEST.MAP_FSCORE = args.map_fscore
+
     cfg.checkpoint = args.checkpoint
     cfg = common_cfg(cfg)
 

@@ -97,13 +97,8 @@ def _show_img(imgs, labels_out=None, img_in=None, save_labels=False, pic_path=No
 
         else:
             img_now = img_raw
-            img_now = cv2.putText(img_now,
-                                  'no bounding boxes ...',
-                                  (10, 10),
-                                  fontFace=cv2.FONT_HERSHEY_COMPLEX,
-                                  fontScale=0.4,
-                                  color=(0, 0, 255),
-                                  thickness=1)
+            img_now = cv2.putText(img_now, 'no bounding boxes ...', (10, 10), fontFace=cv2.FONT_HERSHEY_COMPLEX,
+                                  fontScale=0.4, color=(0, 0, 255), thickness=1)
 
         if save_labels:
             if pic_path is None:
@@ -122,11 +117,17 @@ def _show_img(imgs, labels_out=None, img_in=None, save_labels=False, pic_path=No
             print('saved labels to :', label_path)
 
         if show_time:
-            print('showing pic:', pic_path)
-            if img_now.shape[1] > 1800:
-                img_now = cv2.resize(img_now, None, fx=0.8, fy=0.8)
-            cv2.imshow('img', img_now)
-            cv2.waitKey(show_time)
+            try:
+                print('showing pic:', pic_path)
+                if img_now.shape[1] > 1800:
+                    img_now = cv2.resize(img_now, None, fx=0.8, fy=0.8)
+                cv2.imshow('img', img_now)
+                cv2.waitKey(show_time)
+            except:
+                save_path = 'output/' + os.path.basename(pic_path)
+                print('can not show img ,so we saved it to: ', save_path)
+                os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                cv2.imwrite(save_path, img_now)
 
             # cv2.destroyAllWindows()
         imgs_out.append(img_now)
