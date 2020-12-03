@@ -27,7 +27,10 @@ def _load_pretrained(model, pre_trained, device):
     try:
         state_dict = checkpoint['state_dict']
     except:
-        state_dict = checkpoint
+        try:
+            state_dict = checkpoint['model']
+        except:
+            state_dict = checkpoint
 
     for k, v in state_dict.items():
         if 'module.' == k[:7]:

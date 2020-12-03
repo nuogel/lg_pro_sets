@@ -23,8 +23,6 @@ class OBD_Loader(DataLoader):
         self.is_training = is_training
         self.one_test = cfg.TEST.ONE_TEST
         self.one_name = cfg.TEST.ONE_NAME
-        self.train_batch_num = 100
-        self.test_batch_num = 1
         self.class_name = _get_class_names(cfg.PATH.CLASSES_PATH)
         self.print_path = self.cfg.TRAIN.SHOW_TRAIN_NAMES
         self.cls2idx = dict(zip(cfg.TRAIN.CLASSES, range(cfg.TRAIN.CLASSES_NUM)))

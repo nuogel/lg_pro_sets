@@ -5,7 +5,7 @@ def _get_class_names(path):
     :return:
     '''
     classes = dict()
-    class_f = open(path, 'r')
+    class_f = open(path, 'r', encoding='utf-8')
     for line in class_f.readlines():
         tmp = line.strip().split(',')
         try:

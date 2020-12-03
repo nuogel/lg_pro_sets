@@ -38,10 +38,16 @@ class DataLoaderFactory:
         return trainLoader, testLoader
 
     def to_devce(self, data):
-        datas = []
         for i, da in enumerate(data):
-            try:
-                datas.append(da.to(self.cfg.TRAIN.DEVICE))
-            except:
-                datas.append(da)
-        return datas
+            if isinstance(da, (list, tuple)):
+                for j, da_j in enumerate(da):
+                    try:
+                        data[i][j] = data[i][j].to(self.cfg.TRAIN.DEVICE)
+                    except:
+                        pass
+            else:
+                try:
+                    data[i] = data[i].to(self.cfg.TRAIN.DEVICE)
+                except:
+                    pass
+        return data

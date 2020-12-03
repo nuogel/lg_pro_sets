@@ -34,7 +34,7 @@ class BaseSolver(object):
         self.global_step = 0
         # init model:
         if self.args.checkpoint not in [0, '0', 'None', 'no', 'none', "''"]:
-            if self.args.checkpoint in [1, '1']: self.args.checkpoint = os.path.join(self.cfg.PATH.TMP_PATH + 'checkpoints/' + self.cfg.TRAIN.MODEL, 'now.pkl')
+            if self.args.checkpoint in [1, '1']: self.args.checkpoint = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoints', self.cfg.TRAIN.MODEL, 'now.pkl')
             print('loading checkpoint:', self.args.checkpoint)
             self.model, self.epoch_last, self.optimizer_dict, self.optimizer_type, self.global_step = _load_checkpoint(self.model,
                                                                                                                        self.args.checkpoint,
@@ -154,7 +154,7 @@ class BaseSolver(object):
         #  load the last data set
         if is_training != None:
             train_set, test_set = _read_train_test_dataset(self.cfg)
-            print('train set:', train_set[0], '\n', 'test set:', test_set[0])
+            print('train set:', train_set[0], '\ntest  set:', test_set[0])
             txt = 'train set:{};test  set:{}'.format(len(train_set), len(test_set))
             print(txt)
             self.cfg.logger.info(txt)

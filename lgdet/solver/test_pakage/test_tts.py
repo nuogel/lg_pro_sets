@@ -5,14 +5,16 @@ With a box outside of thing and with a label of what it is ,
 and with it's score at the left top of the box.
 """
 from lgdet.util.util_time_stamp import Time
-from lgdet.util.util_audio import Util_Audio
+from lgdet.util.util_audio.util_audio import Util_Audio
+from lgdet.util.util_audio.util_tacotron_audio import TacotronSTFT
 from lgdet.solver.test_pakage._test_base import TestBase
 
 
 class Test_TTS(TestBase):
     def __init__(self, cfg, args, train):
         super(Test_TTS, self).__init__(cfg, args, train)
-        self.util_audio = Util_Audio(cfg)
+        self.audio = Util_Audio(cfg)
+        self.stft = TacotronSTFT(cfg.TRAIN)
 
     def test_backbone(self, DataSet):
         """Test."""
@@ -24,12 +26,11 @@ class Test_TTS(TestBase):
             test_data = next(loader)
             timer.time_start()
             test_data = self.DataFun.to_devce(test_data)
-            predicted = self.model.forward(input_x=test_data[0], input_data=test_data, is_training=False)
-            mel_outputs, linear_outputs, alignments = predicted
-            linear_output = linear_outputs[0].cpu().data.numpy()
-            # Predicted audio signal
-            waveform = self.util_audio._inv_spectrogram(linear_output.T)
-            self.util_audio.save_wav(waveform, 'dst_wav_path.wav')
-
-
-
+            predicted = self.model(input_x=test_data[0], input_data=test_data, is_training=False)
+            _, mels, _, _, mel_lengths = predicted
+            for i, mel in enumerate(mels):
+                mel = mel.cpu()[..., :mel_lengths[i]]
+                wav_txt = test_data[-1][i][-1]
+                waveform = self.stft.in_mel_to_wav(mel)
+                wav_path = 'output/tested/' + wav_txt + '.wav'
+                self.audio.write_wav(waveform, wav_path)

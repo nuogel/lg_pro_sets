@@ -1,4 +1,5 @@
-from lgdet.util.util_audio import Util_Audio
+from lgdet.util.util_audio.util_audio import Util_Audio
+from lgdet.util.util_audio.util_tacotron_audio import TacotronSTFT
 
 
 class Score:
@@ -7,28 +8,22 @@ class Score:
         self.rate_all = 0.
         self.rate_batch = 0.
         self.batches = 0.
-        self.util_audio = Util_Audio(cfg)
+        self.audio = Util_Audio(cfg)
+        self.stft = TacotronSTFT(cfg.TRAIN)
 
     def init_parameters(self):
         self.rate_all = 0.
         self.rate_batch = 0.
         self.batches = 0.
 
-    def cal_score(self, predict, dataset):
-        mel_outputs, linear_outputs, attn = predict
-        self.rate_batch = 0.
-        print('batch NO:', self.batches)
-        self.batches += 1
-
-        for batch_i in range(linear_outputs.shape[0]):
-            self.rate_batch += 0
-
-            linear_output = linear_outputs[batch_i].cpu().data.numpy()
-            # Predicted audio signal
-            signal = self.util_audio.inv_spectrogram(linear_output.T)
-            self.util_audio.save_wav(signal, "step{}_predicted.wav".format(batch_i))
-
+    def cal_score(self, predicted, dataset):
+        _, mels, _, _, mel_lengths = predicted
+        for i, mel in enumerate(mels):
+            mel = mel.cpu()[..., :mel_lengths[i]]
+            waveform = self.stft.in_mel_to_wav(mel)
+            wav_path ='output/predicted/%d.wav' % (i)
+            self.audio.write_wav(waveform, wav_path)
 
     def score_out(self):
-        score = self.rate_all / self.batches
+        score = self.rate_all / (self.batches + 1e-6)
         return score, None

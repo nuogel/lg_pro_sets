@@ -12,7 +12,7 @@ from lgdet.util.util_yml_parse import parse_yaml
 
 def _parse_arguments():
     parser = ArgumentParser()
-    parser.add_argument('--type', default='OBD', type=str, help='yml_path')
+    parser.add_argument('--type', default='TTS', type=str, help='yml_path')
     parser.add_argument('--model', type=str, help='yml_path')
     parser.add_argument('--checkpoint', '--cp', default=0
                         , help='Path to the checkpoint to be loaded to the model')
@@ -24,12 +24,13 @@ def _parse_arguments():
     parser.add_argument('--score_thresh', '--st', type=float, help='score_thresh')
     parser.add_argument('--ema', default=0, type=int, help='ema')
     parser.add_argument('--gpu', help='number works of dataloader')
-    parser.add_argument('--pre_trained', '--pt', default=2, help='Epoch of continue training')
+    parser.add_argument('--pre_trained', '--pt', default=2
+                        , help='Epoch of continue training')
     parser.add_argument('--map_fscore', '--mf', default=0, type=int, help='map-0; fcore-1')
 
     parser.add_argument('--epoch_continue', default=None, type=int, help='Epoch of continue training')
     parser.add_argument('--debug', '--d', action='store_true', default=False, help='Enable verbose info')
-    parser.add_argument('--test_only', '--to', default=1, type=bool, help='test only')
+    parser.add_argument('--test_only', '--to', default=0, type=bool, help='test only')
     return parser.parse_args()
 
 

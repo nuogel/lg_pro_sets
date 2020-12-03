@@ -1,29 +1,35 @@
 import torch
-from lgdet.util.util_audio import Util_Audio
+from lgdet.util.util_audio.util_audio import Util_Audio
+from lgdet.util.util_audio.util_tacotron_audio import TacotronSTFT
+import numpy as np
 
 
 class TACOTRONLOSS:
     def __init__(self, cfg):
         self.cfg = cfg
+        self.device = cfg.TRAIN.DEVICE
         self.loss_l1 = torch.nn.L1Loss()
-        self.util_audio = Util_Audio(cfg)
+        self.mseloss = torch.nn.MSELoss()
+        self.bcelogistloss = torch.nn.BCEWithLogitsLoss()
+        self.audio = Util_Audio(cfg)
+        self.stft = TacotronSTFT(cfg.TRAIN)
 
-    def Loss_Call(self, pre, train_data, kwargs):
+    def Loss_Call(self, predicted, train_data, kwargs):
         epoch = kwargs['epoch']
-        step = kwargs['step']
-
-        x, input_lengths, mel, y = train_data
-        mel_outputs, linear_outputs, attn = pre
-
-        mel_loss = self.loss_l1(mel_outputs, mel)
-        n_priority_freq = int(3000 / (self.cfg.TRAIN.sample_rate * 0.5) * self.cfg.TRAIN.num_freq)
-        linear_loss = 0.5 * self.loss_l1(linear_outputs, y) + \
-                      0.5 * self.loss_l1(linear_outputs[:, :, :n_priority_freq], y[:, :, :n_priority_freq])
-
-        if (step + 1) % 25 == 0:
-            linear_output = linear_outputs[0].cpu().data.numpy()
-            # Predicted audio signal
-            waveform = self.util_audio._inv_spectrogram(linear_output.T)
-            self.util_audio.save_wav(waveform, 'pred%d-%d_wav_path.wav' % (epoch, step))
-
-        return {'mel_loss': mel_loss / self.cfg.TRAIN.BATCH_SIZE, 'linear_loss': linear_loss / self.cfg.TRAIN.BATCH_SIZE}
+        global_step = kwargs['global_step']
+        mel_out_before, mel_out_after, gate_out, _ = predicted
+        mel_target, gate_target = [xi.to(self.device) for xi in train_data[1]]
+        mel_loss = self.mseloss(mel_out_before, mel_target) + self.mseloss(mel_out_after, mel_target)
+        gate_loss = self.bcelogistloss(gate_out.view(-1, 1), gate_target.view(-1, 1))
+        total_loss = mel_loss + gate_loss
+        metrics = {'mel_loss': mel_loss,
+                   'gate_loss': gate_loss}
+        if (global_step + 1) % 1000 == 0:
+            length = train_data[0][3][0]
+            mel_out_after = mel_out_after.cpu()[0][..., :length]
+            mel_target = mel_target.cpu()[0][..., :length]
+            waveform = self.stft.in_mel_to_wav(mel_target)
+            self.audio.write_wav(waveform, 'output/%d-%d_target.wav' % (epoch, global_step))
+            waveform = self.stft.in_mel_to_wav(mel_out_after)
+            self.audio.write_wav(waveform, 'output/%d-%d_pred.wav' % (epoch, global_step))
+        return {'total_loss': total_loss, 'metrics': metrics}

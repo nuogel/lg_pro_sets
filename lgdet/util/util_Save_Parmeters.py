@@ -79,13 +79,12 @@ class TxbLogger:
 
     def _write_cfg(self, epoch=0):
         try:
-            f = open(self.cfg.PATH.CLASSES_PATH, 'r')
-        except:
-            pass
-        else:
+            f = open(self.cfg.PATH.CLASSES_PATH, 'r', encoding='utf-8')
             lines = f.read().replace('\n', ' ||\t ')
             lines = lines.replace(',', ' <-> ')
             self.tbX_writer.add_text('class_dict', lines, epoch)
+        except:
+            pass
         config_path = 'cfg/' + self.cfg.BELONGS + '.yml'
         config_lines = open(config_path, 'r').read().replace('\n', '\n\n')
         self.tbX_writer.add_text('config', config_lines, epoch)

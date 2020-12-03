@@ -52,7 +52,7 @@ def get_loss_class(belongs, modelname):
             'PAN': PANLoss,
             'flow_fgfa': FlowLoss,
             # TTS
-            'tacotron': TACOTRONLOSS,
+            'tacotron2': TACOTRONLOSS,
         }
         return loss_dict[modelname]
 
