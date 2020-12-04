@@ -31,11 +31,13 @@ class TTS_Loader(BaseLoader):
             mel = None
         txt_seq = self.audio.text_to_sequence(txt)
         len_seq = len(txt_seq)
-
-        return txt_seq, mel, len_seq, data_info
+        group = [(txt_seq, mel, len_seq, data_info)]  # for i in range(speakers)
+        return group
 
     def collate_fun(self, batch):
         """Create batch"""
+        batch = [sample for group in batch for sample in group]
+
         # Right zero-pad all one-hot text sequences to max input length
         seq_lens, ids_sorted_decreasing = torch.sort(
             torch.IntTensor([len(x[0]) for x in batch]),
@@ -62,7 +64,7 @@ class TTS_Loader(BaseLoader):
                 mel = batch[ids_sorted_decreasing[i]][1]
                 target_lengths[i] = mel.shape[1]
                 gates[i, mel.shape[1] - 1:] = 1
-                padded_mel = np.pad(mel, [(0, 0), (0, max_target_len - mel.shape[1])], mode='constant', constant_values=0)
+                padded_mel = np.pad(mel, [(0, 0), (0, max_target_len - mel.shape[1])], mode='constant', constant_values=-4)
                 targets.append(padded_mel)
                 reduced_mel = padded_mel[:, ::self.cfg.TRAIN.n_frames_per_step]
                 reduced_targets.append(reduced_mel)

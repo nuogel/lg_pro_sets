@@ -18,7 +18,8 @@ class Score:
     def init_parameters(self):
         self.score.init_parameters()
 
-    def cal_score(self, pre_labels, gt_labels=None, from_net=True):
+    def cal_score(self, pre_labels, test_data=None, from_net=True):
+        gt_labels = test_data[1]
         self.score.cal_score(pre_labels, gt_labels, from_net)
 
     def score_out(self):

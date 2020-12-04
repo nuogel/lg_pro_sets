@@ -20,8 +20,6 @@ class Test_TTS(TestBase):
         """Test."""
         loader = iter(DataSet)
         timer = Time()
-        self.model.encoder.eval()
-        self.model.postnet.eval()
         for i in range(DataSet.__len__()):
             test_data = next(loader)
             timer.time_start()

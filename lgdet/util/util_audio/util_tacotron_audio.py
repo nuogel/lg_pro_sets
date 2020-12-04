@@ -86,5 +86,5 @@ class TacotronSTFT(torch.nn.Module):
 
     def in_mel_to_wav(self, mel):
         mag = self.inv_mel_spectrogram(mel)
-        wav = self.griffin_lim(mag)
+        wav = self.griffin_lim(mag, n_iters=50)
         return wav

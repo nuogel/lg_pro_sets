@@ -535,6 +535,15 @@ class TACOTRON2(nn.Module):
                                p_decoder_dropout)
         self.postnet = Postnet(n_mels, postnet_embedding_dim, postnet_kernel_size, postnet_n_convolutions)
 
+        self._init_bn(self)
+
+    def _init_bn(self, module):
+        if isinstance(module, torch.nn.modules.batchnorm._BatchNorm):
+            if module.affine:
+                module.weight.data.uniform_()
+        for child in module.children():
+            self._init_bn(child)
+
     def parse_outputs(self, outputs, target_lengths=None):
         if self.mask_padding and target_lengths is not None:
             mask = ~get_mask_from_lengths(target_lengths)

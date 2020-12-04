@@ -53,7 +53,7 @@ def prepare_cfg(cfg, args, is_training=True):
         cfg.TRAIN.USE_LMDB = 0
         cfg.TRAIN.MOSAIC = 0
         cfg.TRAIN.MULTI_SCALE = 0
-        cfg.TRAIN.WARM_UP_STEP = 50
+        cfg.TRAIN.WARM_UP_STEP = 0
 
         cfg.TEST.PADTOSIZE = 0
         cfg.TEST.RESIZE = 1

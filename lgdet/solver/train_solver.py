@@ -85,7 +85,6 @@ class Solver(BaseSolver):
                 predict = self.ema.ema(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)
             else:
                 predict = self.model(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)
-            if self.cfg.BELONGS in ['OBD']: test_data = test_data[1]
             self.score.cal_score(predict, test_data)
             Pbar.set_description('[valid]')
 

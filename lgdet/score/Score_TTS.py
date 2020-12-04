@@ -20,8 +20,9 @@ class Score:
         _, mels, _, _, mel_lengths = predicted
         for i, mel in enumerate(mels):
             mel = mel.cpu()[..., :mel_lengths[i]]
+            txt = dataset[-1][i][1]
             waveform = self.stft.in_mel_to_wav(mel)
-            wav_path ='output/predicted/%d.wav' % (i)
+            wav_path ='output/predicted/%s.wav' % (txt)
             self.audio.write_wav(waveform, wav_path)
 
     def score_out(self):

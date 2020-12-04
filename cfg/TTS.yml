@@ -23,7 +23,7 @@ TRAIN:
   EMA: 0
   WARM_UP_STEP: 100
   BETAS_ADAM: 0.9
-  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY: 5e-4
   # [loc_loss, obj_loss]
   LOSSTYPE: ['mse', 'ghm'] #  giou focalloss mse bce
   EPOCH_CONTINUE: None
@@ -103,8 +103,8 @@ TRAIN:
 TEST:
   TEST_ONLY: 0 #FALSE #
 
-  ONE_TEST: 0 #
-  ONE_TEST_TRAIN_STEP: 100
+  ONE_TEST: 1 #
+  ONE_TEST_TRAIN_STEP: 1000
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
   ['BZNSYP/waves/000001.wav', '卡尔普陪外孙玩滑梯。']

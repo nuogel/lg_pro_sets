@@ -24,6 +24,7 @@ def weight_discard_module():
     torch.save(new_dic, new_path)
     print('saved to ', new_path)
 
+
 def weight_reshape():
     checkpoint = '/media/lg/SSD_WorkSpace/LG/GitHub/lg_pro_sets/saved/checkpoint/fcos_voc_77.8.pkl'
     name = os.path.basename(checkpoint).split('.')[0]
@@ -39,6 +40,25 @@ def weight_reshape():
     torch.save(new_dic, new_path)
     print('saved to ', new_path)
 
+
+def decode_weight_lg():
+    checkpoint = '/media/lg/SSD_WorkSpace/LG/GitHub/lg_pro_sets/tmp/checkpoints/tacotron2/now.pkl'
+    state_dict = torch.load(checkpoint)
+
+    name = os.path.basename(checkpoint).split('.')[0]
+    new_path = os.path.join(os.path.dirname(checkpoint), name + '_new.pkl')
+
+    model = state_dict['state_dict']
+
+    new_dic = {
+        'model': model,
+        'epoch': 10
+    }
+    torch.save(new_dic, new_path)
+    print('saved to ', new_path)
+
+
 if __name__ == '__main__':
     # weight_discard_module()
-    weight_reshape()
+    # weight_reshape()
+    decode_weight_lg()

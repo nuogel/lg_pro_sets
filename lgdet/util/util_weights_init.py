@@ -12,7 +12,7 @@ I found that the mistake is the weights initiation. ——LuoGeng 2020.02.27.
 
 def weights_init(Modle, manual_seed=False):
     if manual_seed:
-        torch.manual_seed(123)
+        torch.manual_seed(1234)
     else:
         print('initiating weight with lg_init')
         for name, m in Modle.named_modules():
