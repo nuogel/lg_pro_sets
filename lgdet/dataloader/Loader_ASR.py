@@ -1,5 +1,5 @@
 from .loader_base import BaseLoader
-from lgdet.util.util_audio.util_audio import Util_Audio
+from lgdet.util.util_audio.util_audio import Audio
 from ..registry import DATALOADERS
 
 
@@ -7,7 +7,7 @@ from ..registry import DATALOADERS
 class ASR_Loader(BaseLoader):
     def __init__(self, cfg, dataset, is_training):
         super(ASR_Loader, self).__init__(cfg, dataset, is_training)
-        self.audio = Util_Audio(cfg.TRAIN)
+        self.audio = Audio(cfg.TRAIN)
 
     def __getitem__(self, index):
         if self.one_test:

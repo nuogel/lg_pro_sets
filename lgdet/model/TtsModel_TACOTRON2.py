@@ -13,7 +13,7 @@ sys.path.append(abspath(dirname(__file__) + '/../'))
 
 def get_mask_from_lengths(lengths):
     max_len = torch.max(lengths).item()
-    ids = torch.arange(0, max_len, out=torch.cuda.IntTensor(max_len))
+    ids = torch.arange(0, max_len, out=torch.IntTensor(max_len).to(lengths.device))
     mask = ids < lengths.unsqueeze(1)
     return mask
 
@@ -244,8 +244,9 @@ class Decoder(nn.Module):
                  attention_location_kernel_size,
                  prenet_dim, decoder_rnn_dim,
                  max_decoder_steps, gate_threshold,
-                 decoder_n_lstms, p_decoder_dropout):
+                 decoder_n_lstms, p_decoder_dropout, cfg):
         super(Decoder, self).__init__()
+        self.device = cfg.TRAIN.DEVICE
         self.n_mels = n_mels
         self.n_frames_per_step = n_frames_per_step
         self.encoder_embedding_dim = encoder_embedding_dim
@@ -280,10 +281,10 @@ class Decoder(nn.Module):
         B = memory.size(0)
         MAX_TIME = memory.size(1)
 
-        self.h0 = torch.zeros(B, self.decoder_rnn_dim).cuda()
-        self.c0 = torch.zeros(B, self.decoder_rnn_dim).cuda()
-        self.h1 = torch.zeros(B, self.decoder_rnn_dim).cuda()
-        self.c1 = torch.zeros(B, self.decoder_rnn_dim).cuda()
+        self.h0 = torch.zeros(B, self.decoder_rnn_dim).to(self.device)
+        self.c0 = torch.zeros(B, self.decoder_rnn_dim).to(self.device)
+        self.h1 = torch.zeros(B, self.decoder_rnn_dim).to(self.device)
+        self.c1 = torch.zeros(B, self.decoder_rnn_dim).to(self.device)
 
         # if inference:
         #     self.h0 = self.h0.half()
@@ -419,7 +420,7 @@ class Decoder(nn.Module):
 
         mel_lengths = torch.zeros([memory.size(0)], dtype=torch.int32)
         if torch.cuda.is_available():
-            mel_lengths = mel_lengths.cuda()
+            mel_lengths = mel_lengths.to(self.device)
 
         mel_outputs, gate_outputs, alignments = [], [], []
         frame = memory.new(memory.size(0), self.n_mels).zero_()
@@ -517,7 +518,7 @@ class TACOTRON2(nn.Module):
         postnet_kernel_size = cfg.TRAIN.postnet_kernel_size
         postnet_n_convolutions = cfg.TRAIN.postnet_n_convolutions
         self.label_dict = torch.load(cfg.PATH.CLASSES_PATH)
-        self.n_symbols = len(self.label_dict)*speaker_num
+        self.n_symbols = len(self.label_dict) * speaker_num
         self.elapsed_epochs = 0
         self.n_frames_per_step = n_frames_per_step
         self.embedding = nn.Embedding(self.n_symbols, symbols_embedding_dim)
@@ -532,7 +533,7 @@ class TACOTRON2(nn.Module):
                                prenet_dim, decoder_rnn_dim,
                                max_decoder_steps,
                                gate_threshold, decoder_n_lstms,
-                               p_decoder_dropout)
+                               p_decoder_dropout, cfg=cfg)
         self.postnet = Postnet(n_mels, postnet_embedding_dim, postnet_kernel_size, postnet_n_convolutions)
 
         self._init_bn(self)

@@ -8,7 +8,7 @@ import lws
 from nnmnkwii.preprocessing import preemphasis, inv_preemphasis
 
 
-class Util_Audio:
+class Audio:
     def __init__(self, cfg):
         self.cfg = cfg
 
@@ -105,7 +105,7 @@ if __name__ == '__main__':
 
     _mel_basis = None
 
-    ua = Util_Audio(cfg)
+    ua = Audio(cfg)
     wav = ua.read_wav(wav_path)
     mel = ua.melspectrogram(wav)
     # voice1 = ua.inv_spectrogram1(mel)

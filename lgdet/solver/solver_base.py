@@ -86,16 +86,6 @@ class BaseSolver(object):
     def _get_optimizer(self):
         opt_type = self.cfg.TRAIN.OPTIMIZER.lower()
         learning_rate = self.args.lr
-        # model_parameters = filter(lambda p: p.requires_grad, self.model.parameters())
-
-        # pa_others, pa_conv, pa_bias = [], [], []  # optimizer parameter groups
-        # for k, v in dict(self.model.named_parameters()).items():
-        #     if '.bias' in k:
-        #         pa_bias += [v]  # biases
-        #     elif 'conv' in k:
-        #         pa_conv += [v]  # apply weight_decay
-        #     else:
-        #         pa_others += [v]  # all else
         if opt_type == 'adam':
             self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=float(self.cfg.TRAIN.WEIGHT_DECAY))
         elif opt_type == 'adamw':
@@ -105,10 +95,6 @@ class BaseSolver(object):
         else:
             self.cfg.logger.error('NO such a optimizer: ' + str(opt_type))
         print('using: ', opt_type)
-        # self.optimizer.add_param_group({'params': pa_conv, 'weight_decay': 0.0005})  # add pa_conv with weight_decay
-        # self.optimizer.add_param_group({'params': pa_bias})  # add pa_bias (biases)
-        # del pa_others, pa_conv, pa_bias
-
         if self.optimizer_dict and opt_type == self.optimizer_type:
             self.optimizer.state_dict = self.optimizer_dict
         self.optimizer.param_groups[0]['initial_lr'] = learning_rate
@@ -119,8 +105,9 @@ class BaseSolver(object):
 
         if self.cfg.TRAIN.LR_SCHEDULE == 'cos':
             print('using cos LambdaLR lr_scheduler')
-            finial_lr = 0.01
-            lf = lambda x: (((1 + math.cos(x * math.pi / self.cfg.TRAIN.EPOCH_SIZE)) / 2)) * (1 - finial_lr) + finial_lr
+            finial_lr = 1e-5
+            alpha = finial_lr / self.optimizer.param_groups[0]['initial_lr']
+            lf = lambda x: (0.5 * (1 + math.cos(x * math.pi / self.cfg.TRAIN.EPOCH_SIZE))) * (1 - alpha) + alpha
             self.scheduler = lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lf, last_epoch=self.epoch_last - 1)
         elif self.cfg.TRAIN.LR_SCHEDULE == 'step':
             print('using StepLR lr_scheduler ', self.cfg.TRAIN.STEP_LR)

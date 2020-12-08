@@ -2,7 +2,7 @@ import os
 import torch
 import numpy as np
 from .loader_base import BaseLoader
-from lgdet.util.util_audio.util_audio import Util_Audio
+from lgdet.util.util_audio.util_audio import Audio
 from lgdet.util.util_audio.util_tacotron_audio import TacotronSTFT
 from ..registry import DATALOADERS
 
@@ -11,7 +11,7 @@ from ..registry import DATALOADERS
 class TTS_Loader(BaseLoader):
     def __init__(self, cfg, dataset, is_training):
         super(TTS_Loader, self).__init__(cfg, dataset, is_training)
-        self.audio = Util_Audio(cfg)
+        self.audio = Audio(cfg)
         self.stft = TacotronSTFT(cfg.TRAIN)
 
     def __getitem__(self, index):
@@ -83,5 +83,8 @@ class TTS_Loader(BaseLoader):
         x = [seqs, seq_lens, reduced_targets, target_lengths]
         y = [targets, gates]
 
-        data_infos = [x[-1] for x in batch]
+        data_infos = []
+        for i in range(len(ids_sorted_decreasing)):
+            info = batch[ids_sorted_decreasing[i]][3]
+            data_infos.append(info)
         return x, y, num_frames, data_infos

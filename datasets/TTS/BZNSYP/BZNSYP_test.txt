@@ -1,4 +1,4 @@
-BZNSYP/waves/000001.wav┣┫卡尔普陪外孙玩滑梯。
-BZNSYP/waves/000002.wav┣┫假语村言别再拥抱我。
-BZNSYP/waves/000003.wav┣┫宝马配挂跛骡鞍，貂蝉怨枕董翁榻。
-BZNSYP/waves/000004.wav┣┫邓小平与撒切尔会晤。
+BZNSYP_16K/waves/000001.wav┣┫卡尔普陪外孙玩滑梯。
+BZNSYP_16K/waves/000002.wav┣┫假语村言别再拥抱我。
+BZNSYP_16K/waves/000003.wav┣┫宝马配挂跛骡鞍，貂蝉怨枕董翁榻。
+BZNSYP_16K/waves/000004.wav┣┫邓小平与撒切尔会晤。

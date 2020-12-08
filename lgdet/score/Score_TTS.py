@@ -1,4 +1,4 @@
-from lgdet.util.util_audio.util_audio import Util_Audio
+from lgdet.util.util_audio.util_audio import Audio
 from lgdet.util.util_audio.util_tacotron_audio import TacotronSTFT
 
 
@@ -8,7 +8,7 @@ class Score:
         self.rate_all = 0.
         self.rate_batch = 0.
         self.batches = 0.
-        self.audio = Util_Audio(cfg)
+        self.audio = Audio(cfg)
         self.stft = TacotronSTFT(cfg.TRAIN)
 
     def init_parameters(self):
@@ -22,7 +22,7 @@ class Score:
             mel = mel.cpu()[..., :mel_lengths[i]]
             txt = dataset[-1][i][1]
             waveform = self.stft.in_mel_to_wav(mel)
-            wav_path ='output/predicted/%s.wav' % (txt)
+            wav_path ='output/valid/%s.wav' % (txt)
             self.audio.write_wav(waveform, wav_path)
 
     def score_out(self):

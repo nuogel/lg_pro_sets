@@ -21,7 +21,7 @@ TRAIN:
   LR_SCHEDULE: 'cos' #'reduce'# 'lr''reduce'  #
   STEP_LR: 50
   EMA: 0
-  WARM_UP_STEP: 100
+  WARM_UP_STEP: 1000
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 5e-4
   # [loc_loss, obj_loss]
@@ -75,7 +75,7 @@ TRAIN:
   decoder_rnn_dim: 1024
   prenet_dim: 256
   max_decoder_steps: 1000
-  gate_threshold: 0.5
+  gate_threshold: 0.6
   decoder_n_lstms: 2
   p_decoder_dropout: 0.1
   # postnet
@@ -103,7 +103,7 @@ TRAIN:
 TEST:
   TEST_ONLY: 0 #FALSE #
 
-  ONE_TEST: 1 #
+  ONE_TEST: 0 #
   ONE_TEST_TRAIN_STEP: 1000
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [

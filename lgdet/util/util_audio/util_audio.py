@@ -7,12 +7,16 @@ from scipy.io import wavfile
 import torch
 from pypinyin import lazy_pinyin, Style
 import os
+from matplotlib import pyplot as plt
+from scipy.fftpack import fft,ifft
 
-
-class Util_Audio:
-    def __init__(self, cfg):
-        self.cfg = cfg.TRAIN
-        self.label_dict = torch.load(cfg.PATH.CLASSES_PATH)
+class Audio:
+    def __init__(self, cfg, test=False):
+        if not test:
+            self.cfg = cfg.TRAIN
+            self.label_dict = torch.load(cfg.PATH.CLASSES_PATH)
+        else:
+            self.cfg = cfg
 
     def load_wav(self, path):
         return librosa.load(path, sr=self.cfg.sample_rate)[0]
@@ -40,99 +44,29 @@ class Util_Audio:
     def _stft(self, y):
         return librosa.stft(y=y, n_fft=self.cfg.n_fft, hop_length=self.cfg.hop_length, win_length=self.cfg.win_length)
 
+    def _fft(self, y):
+        return fft(x=y)
+
     def _istft(self, y):
         return librosa.istft(y, hop_length=self.cfg.hop_length, win_length=self.cfg.win_length)
 
-    def get_spectrograms(self, fpath):
-        '''Returns normalized log(melspectrogram) and log(magnitude) from `sound_file`.
-        Args:
-          sound_file: A string. The full path of a sound file.
+    def _amp_to_db(self, x):
+        min_level = np.exp(self.cfg.min_db / 20 * np.log(10))
+        return 20 * np.log10(np.maximum(min_level, x))
 
-        Returns:
-          mel: A 2d array of shape (T, n_mels) <- Transposed
-          mag: A 2d array of shape (T, 1+n_fft/2) <- Transposed
-     '''
-        # Loading sound file
-        y, sample_rate = librosa.load(fpath, sr=self.cfg.sample_rate)
+    def _db_to_amp(self, x):
+        return np.power(10.0, x * 0.05)
 
-        # Trimming
-        y, _ = librosa.effects.trim(y, top_db=self.cfg.top_db)
-
-        # Preemphasis
-        y = np.append(y[0], y[1:] - self.cfg.preemphasis * y[:-1])
-
-        # stft
-        linear = librosa.stft(y=y,
-                              n_fft=self.cfg.n_fft,
-                              hop_length=self.cfg.hop_length,
-                              win_length=self.cfg.win_length)
-
-        # magnitude spectrogram
-        mag = np.abs(linear)  # (1+n_fft//2, T)
-
-        # mel spectrogram
-        mel_basis = librosa.filters.mel(sample_rate, self.cfg.n_fft, self.cfg.n_mels)  # (n_mels, 1+n_fft//2)
+    def _liner2mel(self, mag):
+        mel_basis = librosa.filters.mel(self.cfg.sample_rate, self.cfg.n_fft, self.cfg.n_mels)  # (n_mels, 1+n_fft//2)
         mel = np.dot(mel_basis, mag)  # (n_mels, t)
+        return mel
 
-        # to decibel
-        mel = 20 * np.log10(np.maximum(1e-5, mel))
-        mag = 20 * np.log10(np.maximum(1e-5, mag))
+    def _normalize(self, S):  # to [0, 1]
+        return np.clip((S - self.cfg.ref_db - self.cfg.min_db) / (-self.cfg.min_db), 0, 1)
 
-        # normalize
-        mel = np.clip((mel - self.cfg.ref_db + self.cfg.max_db) / self.cfg.max_db, 1e-8, 1)
-        mag = np.clip((mag - self.cfg.ref_db + self.cfg.max_db) / self.cfg.max_db, 1e-8, 1)
-
-        # Transpose
-        mel = mel.T.astype(np.float32)  # (T, n_mels)
-        mag = mag.T.astype(np.float32)  # (T, 1+n_fft//2)
-
-        return mel, mag
-
-    def melspectrogram2wav(self, mel):
-        '''# Generate wave file from spectrogram'''
-        # transpose
-        mel = mel.T
-
-        # de-noramlize
-        mel = (np.clip(mel, 0, 1) * self.cfg.max_db) - self.cfg.max_db + self.cfg.ref_db
-
-        # to amplitude
-        mel = np.power(10.0, mel * 0.05)
-        m = self._mel_to_linear_matrix()
-        mag = np.dot(m, mel)
-
-        # wav reconstruction
-        wav = self.griffin_lim(mag)
-
-        # de-preemphasis
-        wav = signal.lfilter([1], [1, -self.cfg.preemphasis], wav)
-
-        # trim
-        wav, _ = librosa.effects.trim(wav)
-
-        return wav.astype(np.float32)
-
-    def magspectrogram2wav(self, mag):
-        '''# Generate wave file from spectrogram'''
-        # transpose
-        mag = mag.T
-
-        # de-noramlize
-        mag = (np.clip(mag, 0, 1) * self.cfg.max_db) - self.cfg.max_db + self.cfg.ref_db
-
-        # to amplitude
-        mag = np.power(10.0, mag * 0.05)
-
-        # wav reconstruction
-        wav = self.griffin_lim(mag)
-
-        # de-preemphasis
-        wav = signal.lfilter([1], [1, -self.cfg.preemphasis], wav)
-
-        # trim
-        wav, _ = librosa.effects.trim(wav)
-
-        return wav.astype(np.float32)
+    def _denormalize(self, S):
+        return (np.clip(S, 0, 1) * (-self.cfg.min_db)) + self.cfg.min_db + self.cfg.ref_db
 
     def _mel_to_linear_matrix(self):
         m = librosa.filters.mel(self.cfg.sample_rate, self.cfg.n_fft, self.cfg.n_mels)
@@ -140,26 +74,6 @@ class Util_Audio:
         p = np.matmul(m, m_t)
         d = [1.0 / x if np.abs(x) > 1.0e-8 else x for x in np.sum(p, axis=0)]
         return np.matmul(m_t, np.diag(d))
-
-    def griffin_lim(self, spectrogram):
-        '''Applies Griffin-Lim's raw.
-        '''
-        X_best = copy.deepcopy(spectrogram)
-        for i in range(50):
-            X_t = self._invert_spectrogram(X_best)
-            est = librosa.stft(X_t, self.cfg.n_fft, self.cfg.hop_length, win_length=self.cfg.win_length)
-            phase = est / np.maximum(1e-8, np.abs(est))
-            X_best = spectrogram * phase
-        X_t = self._invert_spectrogram(X_best)
-        y = np.real(X_t)
-
-        return y
-
-    def _invert_spectrogram(self, spectrogram):
-        '''
-        spectrogram: [f, t]
-        '''
-        return librosa.istft(spectrogram, self.cfg.hop_length, win_length=self.cfg.win_length, window="hann")
 
     def _dc_notch_filter(self, wav):
         # code from speex
@@ -182,6 +96,112 @@ class Util_Audio:
             num_list.append(dict_label['。'])
         return num_list
 
+    def _show_wav(self, wavs, names):
+        for i, wav in enumerate(wavs):
+            plt.subplot(421 + i)
+            x1 = np.linspace(0, len(wav) - 1, len(wav))
+            plt.plot(x1, wav)
+            plt.title(names[i])
+        plt.show()
+
+    def griffin_lim(self, spectrogram):
+        '''Applies Griffin-Lim's raw.
+        '''
+        X_best = copy.deepcopy(spectrogram)
+        for i in range(50):
+            X_t = self._istft(X_best)
+            est = librosa.stft(X_t, self.cfg.n_fft, self.cfg.hop_length, win_length=self.cfg.win_length)
+            phase = est / np.maximum(1e-8, np.abs(est))
+            X_best = spectrogram * phase
+        X_t = self._istft(X_best)
+        y = np.real(X_t)
+
+        return y
+
+    def show_wav_details(self, fpath):
+        # Loading sound file
+        wavs = []
+        names = []
+        wav = self.load_wav(fpath)
+        wavs.append(wav)
+        names.append('raw wav')
+
+        # Trimming
+        wav = self.trim_silence(wav)
+        wavs.append(wav)
+        names.append('Trimming')
+
+        # Preemphasis
+        wav_em = self.preemphasize(wav)
+        wavs.append(wav_em)
+        names.append('Preemphasis')
+
+        # stft
+        fft_y = self._fft(wav)
+        wavs.append(fft_y)
+        names.append('fft')
+
+        # magnitude spectrogram
+        mag = np.abs(fft_y)  # (1+n_fft//2, T)
+        wavs.append(mag)
+        names.append('magnitude spectrogram(abs(fft))')
+
+        normalization_y = mag / len(mag)  # 归一化处理（双边频谱）
+        wavs.append(normalization_y)
+        names.append('normalization(mag/N)')
+
+        angle_y = np.angle(fft_y)
+        wavs.append(angle_y)
+        names.append('angel spectrogram')
+
+        self._show_wav(wavs, names)
+
+    def mel_spectrogram(self, fpath):
+        '''Returns normalized log(melspectrogram) and log(magnitude) from `sound_file`.
+        Args:
+          sound_file: A string. The full path of a sound file.
+
+        Returns:
+          mel: A 2d array of shape (T, n_mels) <- Transposed
+          mag: A 2d array of shape (T, 1+n_fft/2) <- Transposed
+     '''
+        # Loading sound file
+        wav = self.load_wav(fpath)
+        # Trimming
+        wav = self.trim_silence(wav)
+        # Preemphasis
+        wav = self.preemphasize(wav)
+        # stft
+        linear = self._stft(wav)
+        # magnitude spectrogram
+        mag = np.abs(linear)  # (1+n_fft//2, T)
+        # mel spectrogram
+        mel = self._liner2mel(mag)
+        # to decibel
+        mel = self._amp_to_db(mel)
+        # normalize
+        mel = self._normalize(mel)
+        # mel = np.clip((mel - self.cfg.ref_db + self.cfg.max_db) / self.cfg.max_db, 1e-8, 1)
+        return mel  # , mag
+
+    def inv_mel_spectrogram(self, mel):
+        '''# Generate wave file from spectrogram'''
+        # transpose
+        # de-noramlize
+        mel = self._denormalize(mel)
+        # mel = (np.clip(mel, 0, 1) * self.cfg.max_db) - self.cfg.max_db + self.cfg.ref_db
+        # to amplitude
+        mel = self._db_to_amp(mel)
+        m = self._mel_to_linear_matrix()
+        mag = np.dot(m, mel)
+        # wav reconstruction
+        wav = self.griffin_lim(mag)
+        # de-preemphasis
+        wav = self.de_emphasize(wav)
+        # trim
+        wav = self.trim_silence(wav)
+        return wav.astype(np.float32)
+
     def text_to_sequence(self, text):
         text = text.strip().replace('“', '').replace('”', '').replace(',', '，')
         text2 = self._txt2num2(self.label_dict, text)
@@ -190,14 +210,15 @@ class Util_Audio:
 
 
 if __name__ == '__main__':
-    wav_path = '/home/lg/datasets/BZNSYP_kedaTTS/waves/0_000001.wav'
-    from lgdet.util.reference.util_voice import cfg
+    wav_path = '/media/lg/DataSet_E/datasets/BZNSYP_16K/waves/000001.wav'
+    from lgdet.util.util_audio import cfg
 
     _mel_basis = None
 
-    ua = Util_Audio(cfg)
-    mel, mag = ua.get_spectrograms(wav_path)
+    audio = Audio(cfg, test=True)
+    audio.show_wav_details(wav_path)
+    mel = audio.mel_spectrogram(wav_path)
     # voice1 = ua.inv_spectrogram1(mel)
-    voice2 = ua.melspectrogram2wav(mel)
+    wav = audio.inv_mel_spectrogram(mel)
     # ua.write_wav(voice1, 'voice1.wav')
-    ua.write_wav(voice2, 'voice2.wav')
+    audio.write_wav(wav, '/media/lg/SSD_WorkSpace/LG/GitHub/lg_pro_sets/output/voice2.wav')

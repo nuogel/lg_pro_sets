@@ -5,7 +5,7 @@ With a box outside of thing and with a label of what it is ,
 and with it's score at the left top of the box.
 """
 from lgdet.util.util_time_stamp import Time
-from lgdet.util.util_audio.util_audio import Util_Audio
+from lgdet.util.util_audio.util_audio import Audio
 from lgdet.util.util_audio.util_tacotron_audio import TacotronSTFT
 from lgdet.solver.test_pakage._test_base import TestBase
 
@@ -13,7 +13,7 @@ from lgdet.solver.test_pakage._test_base import TestBase
 class Test_TTS(TestBase):
     def __init__(self, cfg, args, train):
         super(Test_TTS, self).__init__(cfg, args, train)
-        self.audio = Util_Audio(cfg)
+        self.audio = Audio(cfg)
         self.stft = TacotronSTFT(cfg.TRAIN)
 
     def test_backbone(self, DataSet):

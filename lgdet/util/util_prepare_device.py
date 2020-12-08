@@ -1,4 +1,5 @@
 import torch
+import os
 
 
 def load_device(cfg):
@@ -17,7 +18,9 @@ def load_device(cfg):
             n_gpu_use, n_gpu))
         n_gpu_use = n_gpu
     device_ids = device[:n_gpu_use]
-    device = torch.device('cuda:{}'.format(
-        device[0]) if n_gpu_use > 0 else 'cpu')
+    device = torch.device('cuda:{}'.format(device[0]) if n_gpu_use > 0 else 'cpu')
+
+    # str_gpu = ','.join([str(i) for i in cfg.TRAIN.GPU_NUM])
+    # os.environ["CUDA_VISIBLE_DEVICES"] = str_gpu
 
     return device, device_ids

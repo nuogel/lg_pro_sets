@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from lgdet.util.util_audio.util_audio import Util_Audio
+from lgdet.util.util_audio.util_audio import Audio
 from lgdet.util.util_audio.util_tacotron_audio import TacotronSTFT
 import numpy as np
 
@@ -11,7 +11,7 @@ class TACOTRONLOSS:
         self.device = cfg.TRAIN.DEVICE
         self.mseloss = torch.nn.MSELoss()
         self.bcelogistloss = torch.nn.BCEWithLogitsLoss()
-        self.audio = Util_Audio(cfg)
+        self.audio = Audio(cfg)
         self.stft = TacotronSTFT(cfg.TRAIN)
 
     def Loss_Call(self, predicted, train_data, kwargs):
@@ -25,13 +25,13 @@ class TACOTRONLOSS:
         total_loss = mel_loss + gate_loss
         metrics = {'mel_loss': mel_loss,
                    'gate_loss': gate_loss}
-        if (global_step) % 100 == 0:
+        if (global_step) % 10000 == 0:
             length = train_data[0][3][0]
-            txt = train_data[-1][0][1]
+            txt = train_data[3][0][1]
             mel_out_after = mel_out_after.cpu()[0][..., :length]
             mel_target = mel_target.cpu()[0][..., :length]
             waveform = self.stft.in_mel_to_wav(mel_target)
-            self.audio.write_wav(waveform, 'output/%s_gt.wav' % (txt))
+            self.audio.write_wav(waveform, 'output/train/%s_gt.wav' % (txt))
             waveform = self.stft.in_mel_to_wav(mel_out_after)
-            self.audio.write_wav(waveform, 'output/%s_pre.wav' % (txt))
+            self.audio.write_wav(waveform, 'output/train/%s_pre.wav' % (txt))
         return {'total_loss': total_loss, 'metrics': metrics}
