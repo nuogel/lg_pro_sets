@@ -218,6 +218,7 @@ if __name__ == '__main__':
     audio = Audio(cfg, test=True)
     audio.show_wav_details(wav_path)
     mel = audio.mel_spectrogram(wav_path)
+    torch.save(mel, './mel.mel')
     # voice1 = ua.inv_spectrogram1(mel)
     wav = audio.inv_mel_spectrogram(mel)
     # ua.write_wav(voice1, 'voice1.wav')

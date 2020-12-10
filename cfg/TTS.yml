@@ -12,7 +12,7 @@ TRAIN:
   MODEL: tacotron2  #   #
   EPOCH_SIZE: 100
   BATCH_SIZE: 4
-  TRAIN_DATA_FROM_FILE: ['BZNSYP']
+  TRAIN_DATA_FROM_FILE: ['BZNSYP_XF', 'ASHELL1_XF']
   BATCH_BACKWARD_SIZE: 1
 
   # optimizer:
@@ -49,12 +49,12 @@ TRAIN:
   max_db: 100
   ref_db: 20
   min_db:  -100
-  fmin:  50   # Set this to 75 if your speaker is male! if female, 125 should help taking off noise. (To test depending on dataset)
+  fmin:  75   # Set this to 75 if your speaker is male! if female, 125 should help taking off noise. (To test depending on dataset)
   fmax:  7600
 
   trim_fft_size: 512
   trim_hop_size: 128
-  trim_top_db: 60
+  trim_top_db: 50
 
   use_memory_mask: False
 
