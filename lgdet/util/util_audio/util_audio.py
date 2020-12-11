@@ -211,6 +211,7 @@ class Audio:
 
 if __name__ == '__main__':
     wav_path = '/media/lg/DataSet_E/datasets/BZNSYP_16K/waves/000001.wav'
+    wav_path = '/media/lg/SSD_WorkSpace/LG/TTS/waveglow_nvidia/output/wav/000001.wav_synthesis.wav'
     from lgdet.util.util_audio import cfg
 
     _mel_basis = None

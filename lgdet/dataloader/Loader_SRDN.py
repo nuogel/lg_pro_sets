@@ -7,7 +7,7 @@ from torchvision import transforms as T
 from torch.utils.data._utils.collate import default_collate
 from prefetch_generator import BackgroundGenerator
 from lgdet.util.util_data_aug import Dataaug
-
+import os
 from ..registry import DATALOADERS
 
 
@@ -17,7 +17,7 @@ class SRDN_Loader(DataLoader):
     Load data with DataLoader.
     """
 
-    def __init__(self, cfg):
+    def __init__(self, cfg, dataset, is_training):
         super(SRDN_Loader, self).__init__(object)
         self.cfg = cfg
         self.one_test = cfg.TEST.ONE_TEST
@@ -28,6 +28,8 @@ class SRDN_Loader(DataLoader):
         self.transform_toTensor = T.ToTensor()
         self.Data_aug = Dataaug(self.cfg)
         self.collate_fun = default_collate
+        self.dataset_txt = dataset
+        self.is_training = is_training
 
     def __len__(self):
         if self.one_test:
@@ -66,15 +68,12 @@ class SRDN_Loader(DataLoader):
         '''
         return BackgroundGenerator(super().__iter__())
 
-    def _add_dataset(self, dataset, is_training):
-        self.dataset_txt = dataset
-        self.is_training = is_training
-
     def _target_prepare(self, **kwargs):
         id = kwargs['filename']
         if id[2] in ["", ' ', "none", "None"]:
             return 0
-        target = cv2.imread(id[2])  # read faster than Image.open
+        _path = os.path.join(self.cfg.PATH.INPUT_PATH, id[2])
+        target = cv2.imread(_path)  # read faster than Image.open
 
         if target is None:
             print(id, 'image is None!!')
@@ -94,7 +93,8 @@ class SRDN_Loader(DataLoader):
                 input = cv2.resize(input, (self.cfg.TRAIN.IMG_SIZE[1] // self.cfg.TRAIN.UPSCALE_FACTOR,  # SR model 使用
                                            self.cfg.TRAIN.IMG_SIZE[0] // self.cfg.TRAIN.UPSCALE_FACTOR))
         else:
-            input = cv2.imread(id[1])
+            _path = os.path.join(self.cfg.PATH.INPUT_PATH, id[1])
+            input = cv2.imread(_path)
 
         if self.cfg.TRAIN.INPUT_TRANSFORM:  # and self.is_training and not self.cfg.TRAIN.TARGET_TRANSFORM:
             # add the augmentation ...

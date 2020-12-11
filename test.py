@@ -16,7 +16,7 @@ def _parse_arguments():
     parser.add_argument('--type', default='TTS'  # SR_DN
                         , type=str, help='yml_path')
     parser.add_argument('--model', type=str, help='yml_path')
-    parser.add_argument('--checkpoint', '--cp', default='tmp/checkpoints/tacotron2/99.pkl'
+    parser.add_argument('--checkpoint', '--cp', default=1
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--pre_trained', '--pt', default=2  # 'saved/checkpoint/fcos_voc_77_new.pkl'
                         , help='Epoch of continue training')

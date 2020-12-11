@@ -8,6 +8,7 @@ from lgdet.util.util_time_stamp import Time
 from lgdet.util.util_audio.util_audio import Audio
 from lgdet.util.util_audio.util_tacotron_audio import TacotronSTFT
 from lgdet.solver.test_pakage._test_base import TestBase
+import torch
 
 
 class Test_TTS(TestBase):
@@ -29,6 +30,7 @@ class Test_TTS(TestBase):
             for i, mel in enumerate(mels):
                 mel = mel.cpu()[..., :mel_lengths[i]]
                 wav_txt = test_data[-1][i][-1]
+                torch.save(mel, 'output/tested/' + wav_txt + '.wav.pt')
                 waveform = self.stft.in_mel_to_wav(mel)
                 wav_path = 'output/tested/' + wav_txt + '.wav'
                 self.audio.write_wav(waveform, wav_path)

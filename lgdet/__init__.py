@@ -14,6 +14,8 @@ from .model.ObdModel_EFFICIENTNET import EfficientNet
 from .model.ObdModel_SSDVGG import SSDVGG
 from .model.ObdModel_RETINANET import RETINANET
 
+from .model.SrdnModel_EDSR import EDSR
+
 from .model.TtsModel_TACOTRON2 import TACOTRON2
 
 
@@ -23,3 +25,4 @@ from .score.Score_OBD import Score
 
 from .dataloader.Loader_OBD import OBD_Loader
 from .dataloader.Loader_TTS import TTS_Loader
+from .dataloader.Loader_SRDN import SRDN_Loader
