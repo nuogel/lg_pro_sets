@@ -37,7 +37,7 @@ def main():
     # files = 'datasets/OBD_idx_stores/VOC/VOC_test.txt'
     # files = 'datasets/OBD_idx_stores/COCO/COCO_test.txt'  #
     # files = 'datasets/OBD_idx_stores/KITTI/KITTI_test.txt'
-    files = 'datasets/TTS/BZNSYP/BZNSYP_test.txt'
+    # files = 'datasets/TTS/BZNSYP/BZNSYP_test.txt'
     score = False
     args = _parse_arguments()
     cfg = parse_yaml(args)

@@ -17,9 +17,8 @@ class Score:
         self.batches = 0.
 
     def cal_score(self, predicted, dataset):
-        _, mels, _, _, mel_lengths = predicted
+        _, mels, _, _ = predicted
         for i, mel in enumerate(mels):
-            mel = mel.cpu()[..., :mel_lengths[i]]
             txt = dataset[-1][i][1]
             waveform = self.stft.in_mel_to_wav(mel)
             wav_path ='output/valid/%s.wav' % (txt)

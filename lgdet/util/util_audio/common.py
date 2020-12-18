@@ -1,19 +1,20 @@
+from scipy import signal
+from librosa.util import pad_center, tiny
+import librosa.util as librosa_util
+from scipy.signal import get_window
 import torch
 import numpy as np
 import torch.nn.functional as F
 from torch.autograd import Variable
-from scipy import signal
-from librosa.util import pad_center, tiny
-import torch
-import numpy as np
-import librosa.util as librosa_util
 from scipy.signal import get_window
+from librosa.util import pad_center, tiny
 
 
 class STFT(torch.nn.Module):
     """adapted from Prem Seetharaman's https://github.com/pseeth/pytorch-stft"""
 
-    def __init__(self, filter_length=1024, hop_length=256, win_length=1024, window='hann'):
+    def __init__(self, filter_length=800, hop_length=200, win_length=800,
+                 window='hann'):
         super(STFT, self).__init__()
         self.filter_length = filter_length
         self.hop_length = hop_length
@@ -28,7 +29,8 @@ class STFT(torch.nn.Module):
                                    np.imag(fourier_basis[:cutoff, :])])
 
         forward_basis = torch.FloatTensor(fourier_basis[:, None, :])
-        inverse_basis = torch.FloatTensor(np.linalg.pinv(scale * fourier_basis).T[:, None, :])
+        inverse_basis = torch.FloatTensor(
+            np.linalg.pinv(scale * fourier_basis).T[:, None, :])
 
         if window is not None:
             assert (filter_length >= win_length)
@@ -69,7 +71,8 @@ class STFT(torch.nn.Module):
         imag_part = forward_transform[:, cutoff:, :]
 
         magnitude = torch.sqrt(real_part ** 2 + imag_part ** 2)
-        phase = torch.autograd.Variable(torch.atan2(imag_part.data, real_part.data))
+        phase = torch.autograd.Variable(
+            torch.atan2(imag_part.data, real_part.data))
 
         return magnitude, phase
 
@@ -91,7 +94,8 @@ class STFT(torch.nn.Module):
             # remove modulation effects
             approx_nonzero_indices = torch.from_numpy(
                 np.where(window_sum > tiny(window_sum))[0])
-            window_sum = torch.autograd.Variable(torch.from_numpy(window_sum), requires_grad=False)
+            window_sum = torch.autograd.Variable(
+                torch.from_numpy(window_sum), requires_grad=False)
             window_sum = window_sum.cuda() if magnitude.is_cuda else window_sum
             inverse_transform[:, :, approx_nonzero_indices] /= window_sum[approx_nonzero_indices]
 
@@ -109,8 +113,8 @@ class STFT(torch.nn.Module):
         return reconstruction
 
 
-def window_sumsquare(window, n_frames, hop_length=256, win_length=1024,
-                     n_fft=1024, dtype=np.float32, norm=None):
+def window_sumsquare(window, n_frames, hop_length, win_length,
+                     n_fft, dtype=np.float32, norm=None):
     """
     # from librosa 0.6
     Compute the sum-square envelope of a window function at a given hop length.
@@ -161,14 +165,14 @@ def window_sumsquare(window, n_frames, hop_length=256, win_length=1024,
     return x
 
 
-def griffin_lim(magnitudes, stft_fn, n_iters=50, power=2):
+def griffin_lim(magnitudes, stft_fn, n_iters=30):
     """
     PARAMS
     ------
     magnitudes: spectrogram magnitudes
     stft_fn: STFT class with transform (STFT) and inverse (ISTFT) methods
     """
-    magnitudes = magnitudes.unsqueeze(0) ** power
+
     angles = np.angle(np.exp(2j * np.pi * np.random.rand(*magnitudes.size())))
     angles = angles.astype(np.float32)
     angles = torch.autograd.Variable(torch.from_numpy(angles))
@@ -177,7 +181,7 @@ def griffin_lim(magnitudes, stft_fn, n_iters=50, power=2):
     for i in range(n_iters):
         _, angles = stft_fn.transform(signal)
         signal = stft_fn.inverse(magnitudes, angles).squeeze(1)
-    return de_emphasize(signal.squeeze())
+    return signal
 
 
 def dynamic_range_compression(x, C=1, clip_val=1e-5):

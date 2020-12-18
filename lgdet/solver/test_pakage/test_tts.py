@@ -26,11 +26,11 @@ class Test_TTS(TestBase):
             timer.time_start()
             test_data = self.DataFun.to_devce(test_data)
             predicted = self.model(input_x=test_data[0], input_data=test_data, is_training=False)
-            _, mels, _, _, mel_lengths = predicted
+            _, mels, _, _ = predicted
             for i, mel in enumerate(mels):
-                mel = mel.cpu()[..., :mel_lengths[i]]
+                # mel = mel.cpu()[..., :mel_lengths[i]]
                 wav_txt = test_data[-1][i][-1]
                 torch.save(mel, 'output/tested/' + wav_txt + '.wav.pt')
                 waveform = self.stft.in_mel_to_wav(mel)
-                wav_path = 'output/tested/' + wav_txt + '.wav'
-                self.audio.write_wav(waveform, wav_path)
+                # wav_path = 'output/tested/' + wav_txt + '.wav'
+                # self.audio.write_wav(waveform, wav_path)

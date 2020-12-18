@@ -21,23 +21,27 @@ class TTS_Loader(BaseLoader):
             data_info = self.dataset_infos[index]
         [wav_path, txt] = data_info
         if self.is_training:
-            wav_raw = self.audio.load_wav(os.path.join(self.datapath, wav_path))
-            wav_trim = self.audio.trim_silence(wav_raw)
-            wav_emp = self.audio.preemphasize(wav_trim)
-            wav_emp_tensor = torch.FloatTensor(wav_emp.astype(np.float32))
-            mel = self.stft.mel_spectrogram(wav_emp_tensor.unsqueeze(0))
-            mel = mel.squeeze(0)
+            audio_norm = self.audio.load_wav(os.path.join(self.datapath, wav_path))
+            # wav_trim = self.audio.trim_silence(wav_raw)
+            # wav_emp = self.audio.preemphasize(wav_trim)
+            # wav_emp_tensor = torch.FloatTensor(wav_emp.astype(np.float32))
+            # mel = self.stft.mel_spectrogram(wav_emp_tensor.unsqueeze(0))
+            # mel = mel.squeeze(0)
+
+            audio_norm = torch.FloatTensor(audio_norm.astype(np.float32))
+            audio_norm = audio_norm.unsqueeze(0)
+            audio_norm = torch.autograd.Variable(audio_norm, requires_grad=False)
+            mel = self.stft.mel_spectrogram(audio_norm)
+            mel = torch.squeeze(mel, 0)
         else:
             mel = None
         txt_seq = self.audio.text_to_sequence(txt)
         len_seq = len(txt_seq)
-        group = [(txt_seq, mel, len_seq, data_info)]  # for i in range(speakers)
+        group = (txt_seq, mel, len_seq, data_info)  # for i in range(speakers)
         return group
 
     def collate_fun(self, batch):
         """Create batch"""
-        batch = [sample for group in batch for sample in group]
-
         # Right zero-pad all one-hot text sequences to max input length
         seq_lens, ids_sorted_decreasing = torch.sort(
             torch.IntTensor([len(x[0]) for x in batch]),

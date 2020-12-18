@@ -8,7 +8,8 @@ import torch
 from pypinyin import lazy_pinyin, Style
 import os
 from matplotlib import pyplot as plt
-from scipy.fftpack import fft,ifft
+from scipy.fftpack import fft, ifft
+
 
 class Audio:
     def __init__(self, cfg, test=False):
@@ -17,6 +18,7 @@ class Audio:
             self.label_dict = torch.load(cfg.PATH.CLASSES_PATH)
         else:
             self.cfg = cfg
+            self.label_dict = torch.load('/media/lg/SSD_WorkSpace/LG/GitHub/lg_pro_sets/lgdet/dataloader/classes/pinyin_dict.pth')
 
     def load_wav(self, path):
         return librosa.load(path, sr=self.cfg.sample_rate)[0]
@@ -83,15 +85,34 @@ class Audio:
         a = np.array([1, -2 * notch_radius, den])
         return signal.lfilter(b, a, wav)
 
+    def _lower_to_uper(self, txt):
+        for s in txt:
+            if s.islower():
+                s = s.uper()
+
+    # print('Ａ', 'Ａ'.upper(), 'Ａ'.lower(), 'Ａ'.lower().upper(), 'A', 'a')
+    # global SS
+    # SS=[]
+
     def _txt2num2(self, dict_label, txt):
         style = Style.TONE3
         txt_yj = lazy_pinyin(txt, style)
         num_list = []
         for txt_i in txt_yj:
-            try:
+            if not txt_i in dict_label:
+                for s in txt_i:
+                    s = s.upper()
+                    if not s in dict_label:
+                        # SS.append(s)
+                        # print(s, 'changed:\n', txt, '\n', txt.replace(s, '-'))
+                        # print(list(set(SS)))
+                        s = '-'
+                        num_list.append(dict_label[s])
+                    else:
+                        num_list.append(dict_label[s])
+            else:
                 num_list.append(dict_label[txt_i])
-            except:
-                pass
+
         if txt[-1] != '。':
             num_list.append(dict_label['。'])
         return num_list
@@ -203,24 +224,33 @@ class Audio:
         return wav.astype(np.float32)
 
     def text_to_sequence(self, text):
-        text = text.strip().replace('“', '').replace('”', '').replace(',', '，')
+        text = text.strip().replace('“', '').replace('”', '').replace(',', '，').replace(' ', '-')
         text2 = self._txt2num2(self.label_dict, text)
         text2.append(self.label_dict['~'])
         return text2
 
 
 if __name__ == '__main__':
+    txt_path = '/media/lg/SSD_WorkSpace/LG/GitHub/lg_pro_sets/datasets/TTS/ALL_XF/ALL_XF_train.txt'
+
     wav_path = '/media/lg/DataSet_E/datasets/BZNSYP_16K/waves/000001.wav'
     wav_path = '/media/lg/SSD_WorkSpace/LG/TTS/waveglow_nvidia/output/wav/000001.wav_synthesis.wav'
     from lgdet.util.util_audio import cfg
 
+    #
     _mel_basis = None
 
     audio = Audio(cfg, test=True)
-    audio.show_wav_details(wav_path)
-    mel = audio.mel_spectrogram(wav_path)
-    torch.save(mel, './mel.mel')
+    # audio.show_wav_details(wav_path)
+    # mel = audio.mel_spectrogram(wav_path)
+    # torch.save(mel, './mel.mel')
     # voice1 = ua.inv_spectrogram1(mel)
-    wav = audio.inv_mel_spectrogram(mel)
+    # wav = audio.inv_mel_spectrogram(mel)
     # ua.write_wav(voice1, 'voice1.wav')
-    audio.write_wav(wav, '/media/lg/SSD_WorkSpace/LG/GitHub/lg_pro_sets/output/voice2.wav')
+    # audio.write_wav(wav, '/media/lg/SSD_WorkSpace/LG/GitHub/lg_pro_sets/output/voice2.wav')
+    import tqdm
+    tqd = tqdm.tqdm(open(txt_path).readlines())
+    for i, line in enumerate(tqd):
+        tmp = line.strip().split('┣┫')
+        audio.text_to_sequence(tmp[-1])
+    print(list(set(SS)))

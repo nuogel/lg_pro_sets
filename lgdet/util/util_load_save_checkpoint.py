@@ -59,4 +59,4 @@ def _save_checkpoint(self):
         checkpoint_path = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoints/' + self.cfg.TRAIN.MODEL, path_i + '.pkl')
         os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
         torch.save(saved_dict, checkpoint_path)
-        # print('checkpoint is saved:', checkpoint_path)
+        print('checkpoint is saved:', checkpoint_path)

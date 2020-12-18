@@ -11,16 +11,21 @@ class TacotronSTFT(torch.nn.Module):
         self.n_mels = cfg.n_mels
         self.sample_rate = cfg.sample_rate
         self.stft_fn = STFT(cfg.n_fft, cfg.hop_length, cfg.win_length)
-        self.mel_basis = librosa.filters.mel(cfg.sample_rate, cfg.n_fft, cfg.n_mels, cfg.fmin, cfg.fmax)
-        self.inv_mel_basis = np.linalg.pinv(self.mel_basis)
-        self.mel_basis = torch.from_numpy(self.mel_basis).float()
-        self.inv_mel_basis = torch.from_numpy(self.inv_mel_basis).float()
+        mel_basis = librosa.filters.mel(cfg.sample_rate, cfg.n_fft, cfg.n_mels, cfg.fmin, cfg.fmax)
+        mel_basis = torch.from_numpy(mel_basis).float()
+        self.register_buffer('mel_basis', mel_basis)
+
+        inv_mel_basis = np.linalg.pinv(mel_basis)
+        inv_mel_basis = torch.from_numpy(inv_mel_basis).float()
+        self.register_buffer('inv_mel_basis', inv_mel_basis)
 
     def spectral_normalize(self, magnitudes):
-        return dynamic_range_compression(magnitudes)
+        output = dynamic_range_compression(magnitudes)
+        return output
 
     def spectral_de_normalize(self, magnitudes):
-        return dynamic_range_decompression(magnitudes)
+        output = dynamic_range_decompression(magnitudes)
+        return output
 
     def mel_spectrogram(self, y):
         """Computes mel-spectrograms from a batch of waves
@@ -30,10 +35,10 @@ class TacotronSTFT(torch.nn.Module):
 
         RETURNS
         -------
-        mel_output: torch.FloatTensor of shape (B, n_mels, T)
+        mel_output: torch.FloatTensor of shape (B, n_mel_channels, T)
         """
-        # assert(torch.min(y.data) >= -1)
-        # assert(torch.max(y.data) <= 1)
+        assert(torch.min(y.data) >= -1)
+        assert(torch.max(y.data) <= 1)
 
         magnitudes, phases = self.stft_fn.transform(y)
         magnitudes = magnitudes.data
@@ -73,8 +78,8 @@ class TacotronSTFT(torch.nn.Module):
             _, angles = self.stft_fn.transform(signal)
             signal = self.stft_fn.inverse(magnitudes, angles).squeeze(1)
         signal = signal.squeeze()
-        wav = self.de_emphasize(signal)
-        return wav
+        # wav = self.de_emphasize(signal)
+        return signal
 
     def de_emphasize(self, wav, preemphasis=0.97):
         return signal.lfilter([1], [1, -preemphasis], wav)
