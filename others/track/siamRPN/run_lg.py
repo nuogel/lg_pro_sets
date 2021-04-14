@@ -1,4 +1,4 @@
-from .siamrpn import TrackerSiamRPN
+from siamrpn import TrackerSiamRPN
 import cv2
 import os
 import numpy as np
@@ -55,7 +55,8 @@ def load_imglst(img_dir):
 
 if __name__ == '__main__':
     OTB100 = 0
-    LG = 1
+    VOT2016=1
+    LG = 0
 
     if OTB100:
         dataset = 'E:/datasets/TRACK/OTB100/BlurCar2/'
@@ -65,6 +66,15 @@ if __name__ == '__main__':
         bbox_lst = load_bbox(os.path.join(dataset + '/groundtruth_rect.txt'), 0, dataformat=0)
         x1, y1, w, h = bbox_lst[0]
         roi = (x1, y1, w, h)
+    elif VOT2016:
+        dataset = 'F:\datasets\\track\\vot2016\\bag'
+        save_directory = './'
+        show_result = 1
+        img_list = load_imglst(dataset)
+        bbox_lst = load_bbox(os.path.join(dataset + '/groundtruth.txt'), 0, dataformat=1)
+        box1 = bbox_lst[0]
+        x1,y1,x2,y2=box1[0],box1[1],box1[4],box1[5]
+        roi = (x1, y1, x2-x1, y2-y1)
     elif LG:
         # img_path = 'E:\datasets\TRACK\LG\images/img_'
         img_path = 'E:\\for_test\\fly1'

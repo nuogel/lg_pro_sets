@@ -160,7 +160,8 @@ class TrackerSiamRPN(Tracker):
         instance_image = self._crop_and_resize(
             image, self.center, self.x_sz,
             self.cfg.instance_sz, self.avg_color)
-
+        # cv2.imshow('img', instance_image)
+        # cv2.waitKey()
         # classification and regression outputs
         instance_image = torch.from_numpy(instance_image).to(
             self.device).permute(2, 0, 1).unsqueeze(0).float()

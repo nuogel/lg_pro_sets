@@ -11,6 +11,8 @@ from lgdet.util.util_get_dataset_from_file import _read_train_test_dataset
 from lgdet.util.util_load_save_checkpoint import _load_checkpoint, _save_checkpoint, _load_pretrained
 from lgdet.metrics.ema import ModelEMA
 import math
+from torch.nn.parallel import DistributedDataParallel as DDP
+
 
 
 class BaseSolver(object):
@@ -62,7 +64,7 @@ class BaseSolver(object):
 
         if len(self.device_ids) > 1:
             print('using device id:', self.device_ids)
-            self.model = torch.nn.DataParallel(self.model, device_ids=self.device_ids)
+            self.model = DDP(self.model, device_ids=self.device_ids)
 
         if self.cfg.TRAIN.EMA:
             self.ema = ModelEMA(self.model, device=self.cfg.TRAIN.DEVICE)
