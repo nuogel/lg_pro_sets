@@ -2,6 +2,7 @@ import torch
 import numpy as np
 from lgdet.util.util_iou import iou_xywh, iou_xyxy, xywh2xyxy as _xywh2xyxy
 from torchvision.ops import nms
+from lgdet.util.util_iou import box_iou
 
 try:
     from lgdet.util.util_nms.nms_wrapper import nms as _nms_cython
@@ -198,18 +199,6 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         offsets = pre_class.to(pre_loc) * (max_coordinate + 1)
         boxes_for_nms = pre_loc + offsets[:, None]
         keep = nms(boxes_for_nms, pre_score, self.iou_thresh)
-
-        # labels_out = []
-        # score_sort = pre_score.sort(descending=True)  # sort the scores.
-        # score_idx = score_sort[1][score_sort[0] > self.score_thresh]  # find the scores>0.7(thresh)
-        # # pre_loc = pre_loc[score_idx]
-        # # pre_score = pre_score[score_idx]
-        # for i in self.class_range:
-        #     a = pre_class[score_idx] == i  # each class for NMS.
-        #     order_index = score_idx[a]
-        #     pre_loc_i = pre_loc[order_index]
-        #     pre_score_i = pre_score[order_index]
-        #     keep = nms(pre_loc_i, pre_score_i, self.iou_thresh)
         if len(keep) != 0:
             loc = pre_loc[keep[:4]]
             score = pre_score[keep[:4]]
@@ -370,3 +359,69 @@ class NMS:  # TODO: dubug the for ...in each NMS.
             class_out = pre_class[keep_idx].item()
             labels_out.append([pre_score_out, class_out, box_out])
         return labels_out
+
+
+    # others:
+    def fast_nms(self, boxes, scores, NMS_threshold:float=0.5):
+        '''
+        Arguments:
+            boxes (Tensor[N, 4])
+            scores (Tensor[N, 1])
+        Returns:
+            Fast NMS results
+        '''
+        scores, idx = scores.sort(1, descending=True)
+        boxes = boxes[idx]   # 对框按得分降序排列
+        iou = box_iou(boxes, boxes)  # IoU矩阵
+        iou.triu_(diagonal=1)  # 上三角化
+        keep = iou.max(dim=0)[0] < NMS_threshold  # 列最大值向量，二值化
+
+        return boxes[keep], scores[keep]
+
+    def cluster_nms(self, boxes, scores, NMS_threshold: float = 0.5):
+        '''
+        Arguments:
+            boxes (Tensor[N, 4])
+            scores (Tensor[N, 1])
+        Returns:
+            Fast NMS results
+        '''
+        scores, idx = scores.sort(1, descending=True)
+        boxes = boxes[idx]  # 对框按得分降序排列
+        iou = box_iou(boxes, boxes).triu_(diagonal=1)  # IoU矩阵，上三角化
+        C = iou
+        for i in range(200):
+            A = C
+            maxA = A.max(dim=0)[0]  # 列最大值向量
+            E = (maxA < NMS_threshold).float().unsqueeze(1).expand_as(A)  # 对角矩阵E的替代
+            C = iou.mul(E)  # 按元素相乘
+            if A.equal(C) == True:  # 终止条件
+                break
+        keep = maxA < NMS_threshold  # 列最大值向量，二值化
+
+        return boxes[keep], scores[keep]
+
+    def SPM_cluster_nms(self, boxes, scores, NMS_threshold: float = 0.5):
+        '''
+        Arguments:
+            boxes (Tensor[N, 4])
+            scores (Tensor[N, 1])
+        Returns:
+            Fast NMS results
+        '''
+        scores, idx = scores.sort(1, descending=True)
+        boxes = boxes[idx]  # 对框按得分降序排列
+        iou = box_iou(boxes, boxes).triu_(diagonal=1)  # IoU矩阵，上三角化
+        C = iou
+        for i in range(200):
+            A = C
+            maxA = A.max(dim=0)[0]  # 列最大值向量
+            E = (maxA < NMS_threshold).float().unsqueeze(1).expand_as(A)  # 对角矩阵E的替代
+            C = iou.mul(E)  # 按元素相乘
+            if A.equal(C) == True:  # 终止条件
+                break
+        scores = torch.prod(torch.exp(-C ** 2 / 0.2), 0) * scores  # 惩罚得分
+        keep = scores > 0.01  # 得分阈值筛选
+        return boxes[keep], scores[keep]
+
+

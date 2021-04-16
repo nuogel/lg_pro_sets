@@ -167,6 +167,7 @@ def _iou_wh(wh1, wh2):
     inter = torch.min(wh1, wh2).prod(2)  # [N,M]
     return inter / (wh1.prod(2) + wh2.prod(2) - inter)  # iou = inter / (area1 + area2 - inter)
 
+
 def bbox_GDCiou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False):
     # Returns the IoU of box1 to box2. box1 is 4, box2 is nx4
     box2 = box2.t()
@@ -270,3 +271,32 @@ def _iou_np(cubes_a, cubes_b):
     # compute iou
     iou = overlap / (area_a + area_b - overlap)
     return iou
+
+
+def box_iou(boxes1, boxes2):
+    # https://github.com/pytorch/vision/blob/master/torchvision/ops/boxes.py
+    """
+    Return intersection-over-union (Jaccard index) of boxes.
+    Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
+    Arguments:
+        boxes1 (Tensor[N, 4])
+        boxes2 (Tensor[M, 4])
+    Returns:
+        iou (Tensor[N, M]): the NxM matrix containing the pairwise
+            IoU values for every element in boxes1 and boxes2
+    """
+
+    def box_area(box):
+        # box = 4xn
+        return (box[2] - box[0]) * (box[3] - box[1])
+
+    area1 = box_area(boxes1.t())
+    area2 = box_area(boxes2.t())
+
+    lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])  # [N,M,2]
+    rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])  # [N,M,2]
+
+    inter = (rb - lt).clamp(min=0).prod(2)  # [N,M]
+    return inter / (area1[:, None] + area2 - inter)  # iou = inter / (area1 + area2 - inter)
+
+
