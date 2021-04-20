@@ -64,7 +64,7 @@ def prepare_cfg(cfg, args, is_training=True):
             args.number_works = 0
     except:
         pass
-    if cfg.TRAIN.MODEL in ['OBD', ]:
+    if cfg.BELONGS in ['OBD', ]:
         # single level anchor box config for VOC and COCO
         ANCHOR_SIZE = [[1.19, 1.98], [2.79, 4.59], [4.53, 8.92], [8.06, 5.29], [10.32, 10.65]]
 
@@ -151,7 +151,7 @@ def prepare_cfg(cfg, args, is_training=True):
             for k, v in class_dict.items():
                 if v not in class_names:
                     class_names.append(v)
-            cfg.TRAIN.CLASSES_NUM = 80  # len(class_names)
+            cfg.TRAIN.CLASSES_NUM = len(class_names)
             cfg.TRAIN.CLASSES = class_names
         except EnvironmentError:
             print('cfg.py trying get class number and classes faild.')

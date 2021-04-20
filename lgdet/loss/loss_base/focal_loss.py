@@ -35,34 +35,34 @@ def obj_noobj_loss_metrics(all_loss, obj_mask, reduction, split_loss):
     return all_loss, obj_loss, noobj_loss
 
 
-class FocalLoss(nn.Module):
-
-    def __init__(self, alpha=0.25, gamma=2):
-        super().__init__()
-        self.alpha = alpha
-        self.gamma = gamma
-
-    '''
-        p = x.sigmoid()
-        pt = p*t + (1-p)*(1-t)         # pt = p if t > 0 else 1-p
-        w = alpha*t + (1-alpha)*(1-t)  # w = alpha if t > 0 else 1-alpha
-        w = w * (1-pt).pow(gamma)
-    '''
-
-    def forward(self, pred, target, logist=False, reduction='mean'):
-        if logist:
-            ce = F.binary_cross_entropy_with_logits(pred, target, reduction='none')
-            pred = pred.sigmoid()
-        else:
-            ce = F.binary_cross_entropy(pred, target, reduction='none')  # lg
-        alpha = target * self.alpha + (1. - target) * (1. - self.alpha)
-        pt = pred * target + (1. - pred) * (1. - target)  # torch.where(target == 1, pred, 1 - pred)
-        all_loss = alpha * (1. - pt) ** self.gamma * ce
-        if reduction == 'sum':
-            all_loss = torch.sum(all_loss)
-        elif reduction == 'mean':
-            all_loss = torch.mean(all_loss)
-        return all_loss
+# class FocalLoss(nn.Module):
+#
+#     def __init__(self, alpha=0.25, gamma=2):
+#         super().__init__()
+#         self.alpha = alpha
+#         self.gamma = gamma
+#
+#     '''
+#         p = x.sigmoid()
+#         pt = p*t + (1-p)*(1-t)         # pt = p if t > 0 else 1-p
+#         w = alpha*t + (1-alpha)*(1-t)  # w = alpha if t > 0 else 1-alpha
+#         w = w * (1-pt).pow(gamma)
+#     '''
+#
+#     def forward(self, pred, target, logist=False, reduction='mean'):
+#         if logist:
+#             ce = F.binary_cross_entropy_with_logits(pred, target, reduction='none')
+#             pred = pred.sigmoid()
+#         else:
+#             ce = F.binary_cross_entropy(pred, target, reduction='none')  # lg
+#         alpha = target * self.alpha + (1. - target) * (1. - self.alpha)
+#         pt = pred * target + (1. - pred) * (1. - target)  # torch.where(target == 1, pred, 1 - pred)
+#         all_loss = alpha * (1. - pt) ** self.gamma * ce
+#         if reduction == 'sum':
+#             all_loss = torch.sum(all_loss)
+#         elif reduction == 'mean':
+#             all_loss = torch.mean(all_loss)
+#         return all_loss
 
 
 class FocalLoss_lg(nn.Module):
@@ -73,7 +73,7 @@ class FocalLoss_lg(nn.Module):
         self.gamma = gamma
         self.bceloss_focal = torch.nn.BCELoss(reduction='none')
 
-    def forward(self, pred, target, obj_mask, noobj_mask, reduction='sum', **kwargs):
+    def forward(self, pred, target, obj_mask, noobj_mask, reduction='mean', **kwargs):
         bceloss = self.bceloss_focal(pred, target)
         noobj_loss = ((1 - self.alpha) * ((pred[noobj_mask]) ** self.gamma)) * bceloss[noobj_mask]
         if obj_mask.float().sum() > 0:
@@ -88,3 +88,37 @@ class FocalLoss_lg(nn.Module):
             noobj_loss = noobj_loss.mean()
         all_loss = obj_loss + noobj_loss
         return all_loss, obj_loss, noobj_loss
+
+
+class FocalLoss(nn.Module):
+    # Wraps focal loss around existing loss_fcn(), i.e. criteria = FocalLoss(nn.BCEWithLogitsLoss(), gamma=1.5)
+    def __init__(self, loss_weight=1.0,pos_weight=1.0, gamma=1.5, alpha=0.25,reduction='mean'):
+        super(FocalLoss, self).__init__()
+        self.loss_weight = loss_weight
+        self.pos_weight = pos_weight
+        self.loss_fcn = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([self.pos_weight]),reduction=reduction)
+        # self.loss_fcn = loss_fcn  # must be nn.BCEWithLogitsLoss()
+        self.gamma = gamma
+        self.alpha = alpha
+        self.reduction = self.loss_fcn.reduction
+        self.loss_fcn.reduction = 'none'  # required to apply FL to each element
+
+    def forward(self, pred, true):
+        device = pred.device
+        loss = self.loss_fcn(pred, true).to(device)
+        # p_t = torch.exp(-loss)
+        # loss *= self.alpha * (1.000001 - p_t) ** self.gamma  # non-zero power for gradient stability
+
+        # TF implementation https://github.com/tensorflow/addons/blob/v0.7.1/tensorflow_addons/losses/focal_loss.py
+        pred_prob = torch.sigmoid(pred)  # prob from logits
+        p_t = true * pred_prob + (1 - true) * (1 - pred_prob)
+        alpha_factor = true * self.alpha + (1 - true) * (1 - self.alpha)
+        modulating_factor = (1.0 - p_t) ** self.gamma
+        loss *= alpha_factor * modulating_factor
+
+        if self.reduction == 'mean':
+            return loss.mean()
+        elif self.reduction == 'sum':
+            return loss.sum()
+        else:  # 'none'
+            return loss

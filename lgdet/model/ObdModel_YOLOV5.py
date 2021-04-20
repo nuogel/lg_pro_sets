@@ -39,9 +39,13 @@ class YOLOV5(nn.Module):
 
         self.backbone = YOLOV5BACKBONE(chs=backbone_chs, csp=backbone_csp)
         self.neck = YOLOV5NECK(chs=neck_chs, csp=neck_csp)
+        self.head = nn.ModuleList(nn.Conv2d(x,  self.final_out , 1) for x in deteck)
 
     def forward(self, **args):
         x = args['input_x']
         backbone = self.backbone(x)
-        featuremap0, featuremap1, featuremap2 = self.neck(backbone)
-        return featuremap0, featuremap1, featuremap2
+        neck = self.neck(backbone)
+        featuremaps=[]
+        for neck_i ,h_i in zip(neck, self.head):
+            featuremaps.append(h_i(neck_i))  # conv
+        return featuremaps

@@ -99,7 +99,7 @@ class OBD_Loader(DataLoader):
         assert len(img) > 0, 'img length is error'
         assert len(label) > 0, 'lab length is error'
 
-        return img, label, data_info  # only need the labels  label_after[x1y1x2y2]
+        return [img, label, data_info]  # only need the labels  label_after[x1y1x2y2]
 
     def _set_group_flag(self):  # LG: this is important
         """Set flag according to image aspect ratio.
@@ -383,7 +383,7 @@ class OBD_Loader(DataLoader):
 
         labels = self.collect_fun_normal(labels, infos)
 
-        return imgs, labels, list(infos)
+        return [imgs, labels, list(infos)]
 
     def collect_fun_normal(self, labels, infos):
         for i, label in enumerate(labels):

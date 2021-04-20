@@ -5,6 +5,8 @@ from .model.ObdModel_YOLOV3_TINY_O import YOLOV3_TINY_O
 from .model.ObdModel_YOLOV3_TINY_MOBILENET import YOLOV3_TINY_MOBILENET
 from .model.ObdModel_YOLOV3_TINY_SHUFFLENET import YOLOV3_TINY_SHUFFLENET
 from .model.ObdModel_YOLOV3_TINY_SQUEEZENET import YOLOV3_TINY_SQUEEZENET
+from .model.ObdModel_YOLOV5 import YOLOV5
+
 from .model.ObdModel_LRF300 import LRF300
 from .model.ObdModel_LRF512 import LRF512
 from .model.ObdModel_FCOS import FCOS

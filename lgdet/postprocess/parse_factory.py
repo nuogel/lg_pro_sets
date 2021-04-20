@@ -20,6 +20,7 @@ class ParsePredict:
             'yolov3_tiny_squeezenet': ParsePredict_yolo,
             'yolov3_tiny_shufflenet': ParsePredict_yolo,
             'yolov2_fgfa': ParsePredict_yolo,
+            'yolov5': ParsePredict_yolo,
             'yolonano': ParsePredict_yolo,
             'fcos': ParsePredict_fcos,
             'refinedet': ParsePredict_refinedet,

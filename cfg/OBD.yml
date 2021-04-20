@@ -2,7 +2,7 @@ BELONGS: OBD
 
 PATH:
   # '/media/lg/DataSet_E/datasets/'   '/media/lg/2628737E28734C35'  '/media/lg/DataSet_E/datasets/person/data_person' '/media/lg/DataSet_E/datasets/kitti/training/
-  INPUT_PATH: '/media/lg/DataSet_E/datasets/'
+  INPUT_PATH: 'F:/datasets/'
   LMDB_PATH: '/media/lg/2628737E28734C35/coco/{}2017_lmdb'
   LAB_PATH: ''
   CLASSES_PATH: 'lgdet/dataloader/classes/class_names_{}.txt'
@@ -14,14 +14,14 @@ TRAIN:
   MODEL: yolov5
   TYPE: s
   EMA: 0
-  EPOCH_SIZE: 500
+  EPOCH_SIZE: 100
   BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO'
   TRAIN_DATA_FROM_FILE: ['VOC']
   USE_LMDB: 0
 
   # data aug:
-  MOSAIC: 0
+  MOSAIC: 1
   DO_AUG: 0
   RESIZE: 0
   PADTOSIZE: 0
@@ -31,7 +31,7 @@ TRAIN:
   MIN_AREA: 10 #0 #100 #400 #
   #[H,W]
   #[384, 960] #[416, 416] #[512, 768] # [1024,1920] #[800,1333]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
-  IMG_SIZE: [800,1333]
+  IMG_SIZE: [640, 640]
 
   MULTI_SCALE: 0
   MULTI_SCALE_SIZE: [320, 640] #(320-640)//32
@@ -51,7 +51,7 @@ TRAIN:
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 0.0001
   # [loc_loss, obj_loss]
-  LOSSTYPE: ['mse', 'ghm'] #  giou focalloss mse bce
+  LOSSTYPE: ['giou', 'focalloss'] #  giou focalloss mse bce
   EPOCH_CONTINUE: None
   SAVE_STEP: 2000
 
@@ -87,7 +87,7 @@ TEST:
 
   TEST_ONLY: 0
 
-  ONE_TEST: 0
+  ONE_TEST: 1
   ONE_TEST_TRAIN_STEP: 100
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [

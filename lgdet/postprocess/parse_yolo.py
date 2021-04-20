@@ -13,6 +13,7 @@ class ParsePredict_yolo:
         self.cls_num = cfg.TRAIN.CLASSES_NUM
         self.NMS = NMS(cfg)
         self.device = self.cfg.TRAIN.DEVICE
+        self.scale_x_y = 2  # 1.05
 
     def parse_predict(self, f_maps):
         """
@@ -82,15 +83,13 @@ class ParsePredict_yolo:
         _permiute = (0, 1, 3, 4, 2)  # ((0, 1, 3, 4, 2),   (0, 3, 4, 1, 2))
         f_map = f_map.permute(_permiute).contiguous()
 
-        # pred_xy = torch.sigmoid(f_map[..., 0:2])  # Center x
-        # pred_wh = f_map[..., 2:4]  # Width
-        # pred_conf = torch.sigmoid(f_map[..., 4])  # Conf
-        # pred_cls = torch.sigmoid(f_map[..., 5:])  # Cls pred.
-
         pred_conf = f_map[..., 0]  # NO sigmoid()
         pred_xy = torch.sigmoid(f_map[..., 1:3])  # Center x
-        pred_wh = f_map[..., 3:5]  # Width
-        pred_cls = torch.softmax(f_map[..., 5:], -1)  # Cls pred.
+        # Grid Sensitive
+        if self.scale_x_y > 1:
+            pred_xy = self.scale_x_y * pred_xy - 0.5 * (self.scale_x_y - 1.0)  # Grid Sensitive
+        pred_wh = (f_map[..., 3:5].sigmoid() * 2) ** 2  # Width
+        pred_cls = f_map[..., 5:].sigmoid()  # Cls pred.
 
         mask = np.arange(self.anc_num) + self.anc_num * f_id
         anchors_raw = self.anchors[mask]
@@ -108,13 +107,14 @@ class ParsePredict_yolo:
         else:
             anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2)
             grid_xy = torch.cat([grid_x, grid_y], -1).unsqueeze(3).expand(1, H, W, self.anc_num, 2).to(self.device)
-        pre_wh = pred_wh.exp() * anchor_ch
+
         pre_xy = pred_xy + grid_xy.float()
+        pre_wh = pred_wh * anchor_ch
         pre_box = torch.cat([pre_xy, pre_wh], -1) / grid_wh
 
-        if not tolabel:
+        if not tolabel:  # training
             return pred_conf, pred_cls, pred_xy, pred_wh, pre_box
-        else:
+        else:  # test
             pred_conf = torch.sigmoid(pred_conf)
             return pred_conf, pred_cls, pre_box
 

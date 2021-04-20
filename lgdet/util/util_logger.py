@@ -7,8 +7,8 @@ import datetime
 def load_logger(cfg, args):
     log_path = os.path.join(cfg.PATH.TMP_PATH, 'txt_logs', str(datetime.date.today()) + '.txt')
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
-    if not os.path.isfile(log_path):
-        os.mknod(log_path)
+    # if not os.path.isfile(log_path):
+    #     os.mknod(log_path)  #Windows上的Python不支持mknod函数，因为在Windows上没有node这个概念
 
     logging.basicConfig(filename=log_path,
                         level=logging.DEBUG,  # if args.debug else logging.INFO

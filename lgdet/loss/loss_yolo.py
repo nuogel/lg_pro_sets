@@ -37,8 +37,8 @@ class YoloLoss:
 
         self.alpha = 0.25
         self.gamma = 2
-        self.Focalloss = FocalLoss(alpha=self.alpha, gamma=self.gamma)
-        self.Focalloss_lg = FocalLoss_lg(alpha=self.alpha, gamma=self.gamma)
+        self.Focalloss = FocalLoss(loss_weight=1.0, pos_weight=1.0, gamma=1.5, alpha=0.25, reduction='mean').to(self.device)
+        self.Focalloss_lg = FocalLoss_lg(alpha=self.alpha, gamma=self.gamma,).to(self.device)
         self.ghm = GHMC(use_sigmoid=True)
 
         self.multiply_area_scale = 0
@@ -65,9 +65,9 @@ class YoloLoss:
         at = torch.arange(self.anc_num).view(self.anc_num, 1).repeat(1, num_target)  # anchor tensor, same as .repeat_interleave(num_target)
 
         # Match targets to anchors
-        if num_target:
+        if num_target:  #
             ious = _iou_wh(anchors, t[:, 4:6])
-            a = ious.max(dim=0)[1]  # lg
+            a = ious.max(dim=0)[1]  # lg the max one fit the bbox, another way is iou>0.2 fit the bbox.
             j = ious > 0.5  # iou(3,n) = wh_iou(anchors(3,2), gwh(n,2))
             a_ignore, t_ignore = at[j], t.repeat(self.anc_num, 1, 1)[j]  # filter
         # Define
@@ -124,6 +124,7 @@ class YoloLoss:
                 area_scale = (1 - torch.sqrt(area) * 2).clamp(0.2, 1)  # 2 is scale parameter
             else:
                 area_scale = 1.
+
             if loc_losstype == 'mse':
                 # mse:
                 tobj[indices] = 1.0
@@ -134,16 +135,15 @@ class YoloLoss:
                 lbox = (lxy + lwh)
 
             elif loc_losstype == 'giou':
-                pre_wh = pre_wh.exp().clamp(max=1E3) * anchors
+                pre_wh = pre_wh * anchors
                 pbox = torch.cat((pre_xy, pre_wh), 1)  # predicted box
                 giou = bbox_GDCiou(pbox.t(), tbox, x1y1x2y2=False, GIoU=True)  # giou(prediction, target)
                 lbox = (1.0 - giou) * area_scale
                 if self.reduction == 'mean':
                     lbox = lbox.mean()  # giou loss
                 else:
-
                     lbox = lbox.sum() / num_target  # giou loss
-                # Obj
+                # # Objectness
                 global_step = kwargs['global_step']
                 if self.one_test:
                     gr = 1
@@ -161,6 +161,7 @@ class YoloLoss:
         if obj_losstype == 'focalloss':
             loss_ratio['obj'] = 1
             loss_ratio['noobj'] = 1
+            pre_obj = pre_obj.sigmoid()
             _loss, obj_loss, noobj_loss = self.Focalloss_lg(pre_obj, tobj, obj_mask, noobj_mask, split_loss=True)
         if obj_losstype == 'ghm':
             obj_loss = self.ghm(pre_obj, tobj, label_weight_mask)
@@ -173,7 +174,6 @@ class YoloLoss:
             else:
                 obj_loss = torch.FloatTensor([0]).to(self.device)
             noobj_loss = self.bceloss(pre_obj[noobj_mask], tobj[noobj_mask])  # obj loss
-
         elif obj_losstype == 'mse':
             loss_ratio['obj'] = 1
             loss_ratio['noobj'] = 5
@@ -189,7 +189,7 @@ class YoloLoss:
         if torch.isnan(total_loss) or total_loss.item() == float("inf") or total_loss.item() == -float("inf"):
             print('nan')
 
-        #metrics
+        # metrics
         pre_obj = pre_obj.sigmoid()
         obj_sc = pre_obj[obj_mask].mean().item() if obj_num > 0. else 0.
         noobj_sc = pre_obj[noobj_mask].mean().item()
