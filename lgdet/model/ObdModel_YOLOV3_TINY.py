@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from lgdet.model.backbone.darknet import darknet_tiny1, Conv2d
+from lgdet.model.backbone.DARKNET import DarkNet
 from ..registry import MODELS
 
 
@@ -14,7 +14,7 @@ class YOLOV3_TINY(nn.Module):
         self.anchor_number = cfg.TRAIN.FMAP_ANCHOR_NUM
 
         # backbone
-        self.backbone = darknet_tiny1(pretrained=False)
+        self.backbone = DarkNet(pretrained=False)
 
         # s = 32
         self.conv_set_2 = Conv2d(1024, 256, 3, padding=1, leakyReLU=True)

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from lgdet.model.backbone.darknet import *
+from lgdet.model.backbone.DARKNET import *
 import numpy as np
 from ..registry import MODELS
 

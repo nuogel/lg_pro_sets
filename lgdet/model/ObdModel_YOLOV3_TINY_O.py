@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from lgdet.model.backbone.darknet import darknet_tiny1, Conv2d
+from lgdet.model.backbone.darknet import DarkNet
 from ..registry import MODELS
 
 
