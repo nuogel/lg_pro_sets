@@ -21,7 +21,7 @@ class DataLoaderFactory:
                                      batch_size=self.cfg.TRAIN.BATCH_SIZE,
                                      sampler=None,
                                      shuffle=shuffle,
-                                     pin_memory=False,  # 这样将内存的Tensor转义到GPU的显存就会更快一些
+                                     pin_memory=True,  # 这样将内存的Tensor转义到GPU的显存就会更快一些
                                      num_workers=self.args.number_works,
                                      collate_fn=train_data.collate_fun,
                                      )

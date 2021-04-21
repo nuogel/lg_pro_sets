@@ -1,11 +1,12 @@
 """Loss calculation based on yolo."""
 import torch
 import numpy as np
-from lgdet.util.util_iou import _iou_wh, bbox_GDCiou, xywh2xyxy, iou_xyxy
+from lgdet.util.util_iou import _iou_wh, bbox_GDCiou, xywh2xyxy, iou_xyxy, wh_iou
 from lgdet.postprocess.parse_factory import ParsePredict
 
 from lgdet.loss.loss_base.focal_loss import FocalLoss, FocalLoss_lg
 from lgdet.loss.loss_base.ghm_loss import GHMC
+from lgdet.loss.loss_base.smothBCE import smooth_BCE
 
 '''
 with the new yolo loss, in 56 images, loss is 0.18 and map is 0.2.and the test show wrong bboxes.
@@ -73,8 +74,8 @@ class YoloLoss:
         if num_target:
             # Matches
             r = t[:, :, 4:6] / anchors[:, None]  # wh ratio
-            j = torch.max(r, 1. / r).max(2)[0] < 4  # compare
-            # j = wh_iou(anchors, t[:, 4:6]) > model.hyp['iou_t']  # iou(3,n)=wh_iou(anchors(3,2), gwh(n,2))
+            j = torch.max(r, 1. / r).max(2)[0] < 4.  # compare
+            # j = wh_iou(anchors, t[:, 4:6]) > 0.2  # iou(3,n)=wh_iou(anchors(3,2), gwh(n,2))
             t = t[j]  # filter
 
             # Offsets
@@ -111,7 +112,7 @@ class YoloLoss:
 
         metrics = {}
         lcls, lbox, lobj = [torch.FloatTensor([0]).to(self.device) for _ in range(3)]
-        iou=torch.FloatTensor([0,0]).to(self.device)
+        iou = torch.FloatTensor([0, 0]).to(self.device)
         pre_obj, pre_cls, pre_loc_xy, pre_loc_wh, pre_relative_box = self.parsepredict.parser._parse_yolo_predict_fmap(f_map, f_id)
         with torch.no_grad():
             tcls, tbox, indices, anchors = self.build_targets(pre_obj, labels, f_id)  # targets
@@ -122,8 +123,9 @@ class YoloLoss:
 
         if num_target:
             pre_cls, pre_xy, pre_wh = [i[indices] for i in [pre_cls, pre_loc_xy, pre_loc_wh]]
-            t_cls = torch.zeros_like(pre_cls)  # targets
-            t_cls[range(num_target), tcls] = 1
+            cp, cn = smooth_BCE(eps=0.1)
+            t_cls = torch.full_like(pre_cls, cn, device=self.device)  # targets
+            t_cls[range(num_target), tcls] = cp
             lcls = self.bceloss(pre_cls, t_cls)
             if self.reduction == 'sum':
                 lcls = lcls / num_target  # BCE

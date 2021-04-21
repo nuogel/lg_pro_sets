@@ -96,20 +96,13 @@ class ParsePredict_yolo:
         anchors_raw = self.anchors[mask]
         anchors = torch.Tensor([(a_w / self.cfg.TRAIN.IMG_SIZE[1] * W, a_h / self.cfg.TRAIN.IMG_SIZE[0] * H) for a_w, a_h in anchors_raw]).to(self.device)
         grid_wh = torch.Tensor([W, H, W, H]).to(self.device)
-        grid_x = torch.arange(W).repeat(H, 1).view([1, H, W, 1]).to(self.device)
-        grid_y = torch.arange(H).repeat(W, 1).t().view([1, H, W, 1]).to(self.device)
 
-        '''
-        yv, xv = torch.meshgrid([torch.arange(self.ny, device=device), torch.arange(self.nx, device=device)])
-        self.grid = torch.stack((xv, yv), 2).view((1, 1, self.ny, self.nx, 2)).float()
-        '''
         anchor_ch = anchors.view(1, self.anc_num, 1, 1, 2)
-        grid_xy = torch.cat([grid_x, grid_y], -1).unsqueeze(1)
 
-        if self.grid[f_id].shape[2:4] != [H, W]:
-            self.grid[f_id] = self._make_grid(W, H)
+        if self.grid[f_id].shape[2:4] != f_map.shape[2:4]:
+            self.grid[f_id] = self._make_grid(W, H).float().to(self.device)
 
-        _pre_xy = pred_xy + grid_xy.float()
+        _pre_xy = pred_xy + self.grid[f_id]
         _pre_wh = pred_wh * anchor_ch
         pre_box = torch.cat([_pre_xy, _pre_wh], -1) / grid_wh
 

@@ -415,33 +415,3 @@ class OBD_Loader(DataLoader):
         batch_classes = torch.stack(pad_classes_list)
 
         return batch_boxes, batch_classes
-
-#
-# def pre_load_data_infos(self):
-#     if 'COCO' in self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
-#         from lgdet.util.util_load_coco import COCODataset
-#         if self.is_training:
-#             annfile = os.path.join(self.cfg.PATH.INPUT_PATH, 'annotations/instances_train2017.json')
-#         else:
-#             annfile = os.path.join(self.cfg.PATH.INPUT_PATH, 'annotations/instances_val2017.json')
-#         self.coco = COCODataset(ann_file=annfile, cfg=self.cfg)
-#
-#         self.data_infos = []
-#         self.flag = np.zeros(len(self), dtype=np.uint8)
-#         for i, datainfo in enumerate(self.dataset_txt):
-#             img_info, ann_info = self.coco.prepare_data(datainfo[0])
-#             bboxes = self._read_labels(datainfo[2], datainfo)
-#             self.data_infos.append({'img_name': datainfo[0],
-#                                     'img_path': datainfo[1],
-#                                     'lab_path': datainfo[2],
-#                                     'img_info': img_info,
-#                                     'ann_info': ann_info,
-#                                     'bboxes': bboxes})
-#             if img_info['width'] / img_info['height'] > 1:
-#                 self.flag[i] = 1
-#     else:
-#         self.data_infos = []
-#         for datainfo in self.dataset_txt:
-#             self.data_infos.append({'imgname': datainfo[0],
-#                                     'imgpath': datainfo[1],
-#                                     'labpath': datainfo[2]})

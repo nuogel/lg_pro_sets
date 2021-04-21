@@ -21,16 +21,16 @@ TRAIN:
   USE_LMDB: 0
 
   # data aug:
-  MOSAIC: 1
+  MOSAIC: 0
   DO_AUG: 0
   RESIZE: 0
-  PADTOSIZE: 0
+  PADTOSIZE: 1
   MAXMINSIZE: 1
   RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0.1 #0 #
   MIN_AREA: 10 #0 #100 #400 #
   #[H,W]
-  #[384, 960] #[416, 416] #[512, 768] # [1024,1920] #[800,1333]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
+  #[384, 960] [640, 640]#[416, 416] #[512, 768] # [1024,1920] #[800,1333]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
   IMG_SIZE: [640, 640]
 
   MULTI_SCALE: 0
@@ -92,6 +92,6 @@ TEST:
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
     #  ['000000000009.jpg', 'coco/imgs/train2017/000000000009.jpg', 'coco/labels/train2017_xml/000000000009.xml']
-    #      ['000009', 'kitti/training/images/000009.png', 'kitti/training/labels/000009.xml']
-  ['000005.jpg', 'VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg', 'VOCdevkit/VOC2007/trainval/Annotations/000005.xml']
+          ['000009', 'kitti/training/images/000009.png', 'kitti/training/labels/000009.xml']
+#  ['000005.jpg', 'VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg', 'VOCdevkit/VOC2007/trainval/Annotations/000005.xml']
   ]

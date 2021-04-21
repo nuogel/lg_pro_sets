@@ -260,8 +260,8 @@ class LgTransformer:
         nw, nh = int(scale * w), int(scale * h)
         img_resized = cv2.resize(img, (nw, nh))
 
-        pad_w = 32 - nw % 32 if nw % 32 > 0 else 0
-        pad_h = 32 - nh % 32 if nw % 32 > 0 else 0
+        pad_w = 32 - nw % 32
+        pad_h = 32 - nh % 32
 
         pad_w /= 2  # divide padding into 2 sides
         pad_h /= 2
