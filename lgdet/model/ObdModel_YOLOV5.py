@@ -48,4 +48,4 @@ class YOLOV5(nn.Module):
         featuremaps=[]
         for neck_i ,h_i in zip(neck, self.head):
             featuremaps.append(h_i(neck_i))  # conv
-        return featuremaps
+        return featuremaps[::-1]

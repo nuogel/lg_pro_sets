@@ -14,6 +14,7 @@ class ParsePredict_yolo:
         self.NMS = NMS(cfg)
         self.device = self.cfg.TRAIN.DEVICE
         self.scale_x_y = 2  # 1.05
+        self.grid = [torch.zeros(1)] * self.anc_num  # init grid
 
     def parse_predict(self, f_maps):
         """
@@ -80,7 +81,7 @@ class ParsePredict_yolo:
         ###1: pre deal feature mps
         B, C, H, W = f_map.shape
         f_map = f_map.view(B, self.anc_num, self.cls_num + 5, H, W)
-        _permiute = (0, 1, 3, 4, 2)  # ((0, 1, 3, 4, 2),   (0, 3, 4, 1, 2))
+        _permiute = (0, 1, 3, 4, 2)
         f_map = f_map.permute(_permiute).contiguous()
 
         pred_conf = f_map[..., 0]  # NO sigmoid()
@@ -97,26 +98,30 @@ class ParsePredict_yolo:
         grid_wh = torch.Tensor([W, H, W, H]).to(self.device)
         grid_x = torch.arange(W).repeat(H, 1).view([1, H, W, 1]).to(self.device)
         grid_y = torch.arange(H).repeat(W, 1).t().view([1, H, W, 1]).to(self.device)
+
         '''
         yv, xv = torch.meshgrid([torch.arange(self.ny, device=device), torch.arange(self.nx, device=device)])
         self.grid = torch.stack((xv, yv), 2).view((1, 1, self.ny, self.nx, 2)).float()
         '''
-        if _permiute == (0, 1, 3, 4, 2):
-            anchor_ch = anchors.view(1, self.anc_num, 1, 1, 2)
-            grid_xy = torch.cat([grid_x, grid_y], -1).unsqueeze(1)
-        else:
-            anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2)
-            grid_xy = torch.cat([grid_x, grid_y], -1).unsqueeze(3).expand(1, H, W, self.anc_num, 2).to(self.device)
+        anchor_ch = anchors.view(1, self.anc_num, 1, 1, 2)
+        grid_xy = torch.cat([grid_x, grid_y], -1).unsqueeze(1)
 
-        pre_xy = pred_xy + grid_xy.float()
-        pre_wh = pred_wh * anchor_ch
-        pre_box = torch.cat([pre_xy, pre_wh], -1) / grid_wh
+        if self.grid[f_id].shape[2:4] != [H, W]:
+            self.grid[f_id] = self._make_grid(W, H)
+
+        _pre_xy = pred_xy + grid_xy.float()
+        _pre_wh = pred_wh * anchor_ch
+        pre_box = torch.cat([_pre_xy, _pre_wh], -1) / grid_wh
 
         if not tolabel:  # training
             return pred_conf, pred_cls, pred_xy, pred_wh, pre_box
         else:  # test
             pred_conf = torch.sigmoid(pred_conf)
             return pred_conf, pred_cls, pre_box
+
+    def _make_grid(self, nx=20, ny=20):
+        yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
+        return torch.stack((xv, yv), 2).view((1, 1, ny, nx, 2)).float()
 
     def _parse_yolo_predict_fmap_old(self, f_map, f_id, tolabel=False):
         # pylint: disable=no-self-use

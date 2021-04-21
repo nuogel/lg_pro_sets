@@ -38,8 +38,9 @@ class YoloLoss:
         self.alpha = 0.25
         self.gamma = 2
         self.Focalloss = FocalLoss(loss_weight=1.0, pos_weight=1.0, gamma=1.5, alpha=0.25, reduction='mean').to(self.device)
-        self.Focalloss_lg = FocalLoss_lg(alpha=self.alpha, gamma=self.gamma, ).to(self.device)
+        self.Focalloss_lg = FocalLoss_lg(alpha=self.alpha, gamma=self.gamma,).to(self.device)
         self.ghm = GHMC(use_sigmoid=True)
+
 
     def build_targets(self, pre_obj, labels, f_id):
         # time_1 = time.time()
@@ -55,54 +56,40 @@ class YoloLoss:
         anchors = torch.Tensor([(a_w / self.cfg.TRAIN.IMG_SIZE[1] * W, a_h / self.cfg.TRAIN.IMG_SIZE[0] * H) for a_w, a_h in anchors_raw]).to(self.device)
 
         num_target = targets.shape[0]
-        gain = torch.ones(7, device=targets.device)  # normalized to gridspace gain
-        na = anchors.shape[0]  # number of anchors
-
-        ai = torch.arange(na, device=targets.device).float().view(na, 1).repeat(1, num_target)  # same as .repeat_interleave(nt)
-        targets = torch.cat((targets.repeat(na, 1, 1), ai[:, :, None]), 2)  # append anchor indices
-
-        gain[2:6] = torch.tensor([W, H, W, H])  # xyxy gain
+        gain = torch.ones(6, device=targets.device)  # normalized to gridspace gain
+        gain[2:] = torch.tensor([W, H, W, H])  # xyxy gain
         t = targets * gain
-        g = 0.5  # bias
-        off = torch.tensor([[0, 0],
-                            [1, 0], [0, 1], [-1, 0], [0, -1],  # j,k,l,m
-                            # [1, 1], [1, -1], [-1, 1], [-1, -1],  # jk,jm,lk,lm
-                            ], device=targets.device).float() * g  # offsets
+
+        self.anc_num = anchors.shape[0]  # number of anchors
+        at = torch.arange(self.anc_num).view(self.anc_num, 1).repeat(1, num_target)  # anchor tensor, same as .repeat_interleave(num_target)
 
         # Match targets to anchors
-        if num_target:
-            # Matches
-            r = t[:, :, 4:6] / anchors[:, None]  # wh ratio
-            j = torch.max(r, 1. / r).max(2)[0] < 4  # compare
-            # j = wh_iou(anchors, t[:, 4:6]) > model.hyp['iou_t']  # iou(3,n)=wh_iou(anchors(3,2), gwh(n,2))
-            t = t[j]  # filter
-
-            # Offsets
-            gxy = t[:, 2:4]  # grid xy
-            gxi = gain[[2, 3]] - gxy  # inverse
-            j, k = ((gxy % 1. < g) & (gxy > 1.)).T
-            l, m = ((gxi % 1. < g) & (gxi > 1.)).T
-            j = torch.stack((torch.ones_like(j), j, k, l, m))
-            t = t.repeat((5, 1, 1))[j]
-            offsets = (torch.zeros_like(gxy)[None] + off[:, None])[j]
-        else:
-            t = targets[0]
-            offsets = 0
-
+        if num_target:  #
+            ious = _iou_wh(anchors, t[:, 4:6])
+            a = ious.max(dim=0)[1]  # lg the max one fit the bbox, another way is iou>0.2 fit the bbox.
+            j = ious > 0.5  # iou(3,n) = wh_iou(anchors(3,2), gwh(n,2))
+            a_ignore, t_ignore = at[j], t.repeat(self.anc_num, 1, 1)[j]  # filter
         # Define
-        b, c = t[:, :2].long().T  # image, class
+        batch, tcls = t[:, :2].long().t()  # image, class
         gxy = t[:, 2:4]  # grid xy
         gwh = t[:, 4:6]  # grid wh
-        gij = (gxy - offsets).long()
-        gi, gj = gij.T  # grid xy indices
+        gij = gxy.long()
+        gi, gj = gij.t()  # grid xy indices
+        indices = [batch, a, gj, gi]  # image, anchor, grid indices
 
-        a = t[:, 6].long()  # anchor indices
-        indices = [b, a, gj, gi]  # image, anchor, grid indices
+        batch_ignore, tcls_ignore = t_ignore[:, :2].long().t()  # image, class
+        gxy_ignore = t_ignore[:, 2:4]  # grid xy
+        gij_ignore = gxy_ignore.long()
+        gi_ignore, gj_ignore = gij_ignore.t()  # grid xy indices
+        indices_ignore = [batch_ignore, a_ignore, gj_ignore, gi_ignore]  # image, anchor, grid indices
 
-        tbox = torch.cat((gxy - gij, gwh), 1)  # box
+        tbox = torch.cat((gxy - gij.float(), gwh), 1)  # box
         anch = anchors[a]  # anchors
-        tcls = c  # class
-        return tcls, tbox, indices, anch
+        if tcls.shape[0]:  # if any targets
+            assert tcls.max() < self.cls_num, 'cls_num is beyound the classes.'
+        # time_2 = time.time()
+        # print('build target time LOSS CALL:', time_2 - time_1)
+        return tcls, tbox, indices, indices_ignore, anch
 
     def _loss_cal_one_Fmap(self, f_map, f_id, labels, kwargs):
         """Calculate the loss."""
@@ -111,14 +98,14 @@ class YoloLoss:
 
         metrics = {}
         lcls, lbox, lobj = [torch.FloatTensor([0]).to(self.device) for _ in range(3)]
-        iou=torch.FloatTensor([0,0]).to(self.device)
+
         pre_obj, pre_cls, pre_loc_xy, pre_loc_wh, pre_relative_box = self.parsepredict.parser._parse_yolo_predict_fmap(f_map, f_id)
         with torch.no_grad():
-            tcls, tbox, indices, anchors = self.build_targets(pre_obj, labels, f_id)  # targets
+            tcls, tbox, indices, indices_ignore, anchors = self.build_targets(pre_obj, labels, f_id)  # targets
             B, C, H, W = pre_obj.shape
             tobj = torch.zeros_like(pre_obj)  # target obj
             num_target = anchors.shape[0]  # number of targets
-            loss_ratio = {'box': 0.05, 'cls': 0.125, 'obj': 1, 'noobj': 1}
+            loss_ratio = {'box': 0.05, 'cls':0.125, 'obj': 1, 'noobj': 1}
 
         if num_target:
             pre_cls, pre_xy, pre_wh = [i[indices] for i in [pre_cls, pre_loc_xy, pre_loc_wh]]
@@ -167,7 +154,7 @@ class YoloLoss:
 
         obj_mask = tobj > 0.
         noobj_mask = ~obj_mask
-        # noobj_mask[indices_ignore] = False
+        noobj_mask[indices_ignore] = False
         label_weight_mask = (obj_mask | noobj_mask)
         obj_num = obj_mask.sum()
         if obj_losstype == 'focalloss':
@@ -207,9 +194,9 @@ class YoloLoss:
         noobj_sc = pre_obj[noobj_mask].mean().item()
         obj_percent = ((pre_obj[obj_mask] > self.cfg.TEST.SCORE_THRESH).float()).mean().item() if obj_num > 0. else 0.
         noobj_thresh_sum = (pre_obj[noobj_mask] > self.cfg.TEST.SCORE_THRESH).sum().item() / B
-        # iou_sc = iou_xyxy(xywh2xyxy(pre_relative_box[indices]), labels[..., 2:6], type='N2N') if obj_num > 0. else 0.
-        metrics['iou_sc'] = iou.mean()
-        iou_percent = (iou > self.cfg.TEST.IOU_THRESH).sum() * 1.0 / len(iou)
+        iou_sc = iou_xyxy(xywh2xyxy(pre_relative_box[indices]), labels[..., 2:6], type='N21') if obj_num > 0. else 0.
+        metrics['iou_sc'] = iou_sc.mean()
+        iou_percent = (iou_sc > self.cfg.TEST.IOU_THRESH).sum() * 1.0 / len(iou_sc)
         metrics['iou_p'] = iou_percent.item()
         metrics['obj_sc'] = obj_sc
         metrics['obj_p'] = obj_percent

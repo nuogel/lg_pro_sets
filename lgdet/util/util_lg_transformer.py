@@ -153,7 +153,7 @@ class LgTransformer:
         elif scaleFill:  # stretch
             pad_w, pad_h = 0.0, 0.0
             new_unpad = new_shape
-            ratio = new_shape[0] / shape[1], new_shape[1] / shape[0]  # width, height ratios
+            ratio = [new_shape[0] / shape[1], new_shape[1] / shape[0]]  # width, height ratios
 
         pad_w /= 2  # divide padding into 2 sides
         pad_h /= 2
@@ -171,9 +171,9 @@ class LgTransformer:
         labels[:, 4] = ratio[1] * label[:, 4] + pad_h
 
         data_info['img_raw_size(h,w)'] = shape
-        data_info['ratio(w,h)'] = ratio  # new/old
-        data_info['padding(w,h)'] = (pad_w, pad_h)
-        data_info['size_now(h,w)'] = img.shape[:2]
+        data_info['ratio(w,h)'] = np.asarray(ratio)  # new/old
+        data_info['padding(w,h)'] = np.asarray([pad_w, pad_h])
+        data_info['size_now(h,w)'] = np.asarray(img.shape[:2])
 
         return img, labels, data_info
 
@@ -233,12 +233,12 @@ class LgTransformer:
 
         img_after = cv2.resize(img, (size[1], size[0]))
         img_size = img.shape
-        ratio = size[1] / img_size[1], size[0] / img_size[0]  # (W,H)
+        ratio = np.asarray([size[1] / img_size[1], size[0] / img_size[0]])  # (W,H)
         label[:, [1, 3]] = label[:, [1, 3]] * ratio[0]
         label[:, [2, 4]] = label[:, [2, 4]] * ratio[1]
 
-        data_info['ratio(w,h)'] = ratio
-        data_info['padding(w,h)'] = (0, 0)
+        data_info['ratio(w,h)'] = ratio * data_info['ratio(w,h)']
+        data_info['padding(w,h)'] = ratio * data_info['padding(w,h)']
         data_info['size_now(h,w)'] = img_after.shape[:2]
         return img_after, label, data_info
 
@@ -260,8 +260,8 @@ class LgTransformer:
         nw, nh = int(scale * w), int(scale * h)
         img_resized = cv2.resize(img, (nw, nh))
 
-        pad_w = 32 - nw % 32
-        pad_h = 32 - nh % 32
+        pad_w = 32 - nw % 32 if nw % 32 > 0 else 0
+        pad_h = 32 - nh % 32 if nw % 32 > 0 else 0
 
         pad_w /= 2  # divide padding into 2 sides
         pad_h /= 2
@@ -270,7 +270,7 @@ class LgTransformer:
         # img_paded[:nh, :nw, :] = img_resized
 
         top, bottom = int(round(pad_h - 0.1)), int(round(pad_h + 0.1))
-        left, right = int(round(pad_w- 0.1)), int(round(pad_w + 0.1))
+        left, right = int(round(pad_w - 0.1)), int(round(pad_w + 0.1))
         img_paded = cv2.copyMakeBorder(img_resized, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(114, 114, 114))  # add border
 
         data_info['ratio(w,h)'] = (scale, scale)
@@ -279,8 +279,8 @@ class LgTransformer:
         if label is None:
             pass
         else:
-            label[:, [1, 3]] = label[:, [1, 3]] * scale
-            label[:, [2, 4]] = label[:, [2, 4]] * scale
+            label[:, [1, 3]] = label[:, [1, 3]] * scale + pad_w
+            label[:, [2, 4]] = label[:, [2, 4]] * scale + pad_h
 
         return img_paded, label, data_info
 

@@ -87,15 +87,15 @@ def prepare_cfg(cfg, args, is_training=True):
         TINY_MULTI_ANCHOR_SIZE_COCO = [[15.09, 23.25], [46.36, 61.47], [68.41, 161.84],
                                        [168.88, 93.59], [154.96, 257.45], [334.74, 302.47]]
 
-        anchor_yolov2 = [[10, 13],  # [W,H]
-                         [16, 30],
-                         [33, 23],
-                         [30, 61],
-                         [62, 45],
-                         [59, 119],
-                         [116, 90],
+        anchor_yolov2 = [[373, 326],  # [W,H]
                          [156, 198],
-                         [373, 326]]
+                         [116, 90],
+                         [59, 119],
+                         [62, 45],
+                         [30, 61],
+                         [33, 23],
+                         [16, 30],
+                         [10, 13]]
 
         anchor_yolov3_tiny = [[344.89, 337.14], [178.68, 306.55], [246.38, 163.33],
                               [93.49, 227.46], [86.93, 109.69], [34.01, 61.78]]  # others
@@ -139,7 +139,9 @@ def prepare_cfg(cfg, args, is_training=True):
         elif cfg.TRAIN.MODEL in ['yolov3', 'yolonano']:
             cfg.TRAIN.FMAP_ANCHOR_NUM = 3
             cfg.TRAIN.ANCHORS = anchor_yolov3
-
+        elif cfg.TRAIN.MODEL in ['yolov5']:
+            cfg.TRAIN.FMAP_ANCHOR_NUM = 3
+            cfg.TRAIN.ANCHORS = anchor_yolov2
         elif 'yolov2' in cfg.TRAIN.MODEL:
             cfg.TRAIN.FMAP_ANCHOR_NUM = len(anchor_yolov2)
             cfg.TRAIN.ANCHORS = anchor_yolov2
