@@ -150,6 +150,8 @@ class OBD_Loader(DataLoader):
             this_data_info = {'img_name': data_line[0],
                               'img_path': x_path,
                               'lab_path': y_path,
+                              'ratio(w,h)': np.asarray([1, 1]),
+                              'padding(w,h)': np.asarray([0, 0])
                               }
             if pre_load_labels:
                 label_i = self._load_labels(data_info=this_data_info)
@@ -368,8 +370,8 @@ class OBD_Loader(DataLoader):
         max_w = np.array(w_list).max()
         pad_imgs = []
         for i in range(len(imgs)):
-            img=imgs[i]
-            pad_imgs.append(torch.nn.functional.pad(img,(0,int(max_w-img.shape[2]),0,int(max_h-img.shape[1])),value=0.))
+            img = imgs[i]
+            pad_imgs.append(torch.nn.functional.pad(img, (0, int(max_w - img.shape[2]), 0, int(max_h - img.shape[1])), value=0.))
 
         imgs = torch.stack(pad_imgs, dim=0)
         if self.cfg.TRAIN.MULTI_SCALE and self.is_training:

@@ -60,14 +60,16 @@ class Solver(BaseSolver):
             if self.global_step % self.cfg.TRAIN.BATCH_BACKWARD_SIZE == 0:
                 self.optimizer.step()
                 self.optimizer.zero_grad()
-                if self.cfg.TRAIN.EMA: self.ema.update(self.model)
+                if self.cfg.TRAIN.EMA:
+                    self.ema.update(self.model)
             Pbar.set_description(train_info)
 
         if self.cfg.TRAIN.LR_SCHEDULE == 'reduce':
             self.scheduler.step(self.epoch_losses / (step + 1))
         else:
             self.scheduler.step()
-        if self.cfg.TRAIN.EMA: self.ema.update_attr(self.model)
+        if self.cfg.TRAIN.EMA:
+            self.ema.update_attr(self.model)
         self._save_checkpoint()
 
     def _validate_an_epoch(self, epoch):

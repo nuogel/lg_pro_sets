@@ -15,6 +15,7 @@ class ParsePredict_yolo:
         self.device = self.cfg.TRAIN.DEVICE
         self.scale_x_y = 2  # 1.05
         self.grid = [torch.zeros(1)] * self.anc_num  # init grid
+        self.iou_aware_factor = 0.4
 
     def parse_predict(self, f_maps):
         """
@@ -80,25 +81,24 @@ class ParsePredict_yolo:
 
         ###1: pre deal feature mps
         B, C, H, W = f_map.shape
-        f_map = f_map.view(B, self.anc_num, self.cls_num + 5, H, W)
+        base = 6 if self.cfg.TRAIN.IOU_AWARE else 5
+
+        f_map = f_map.view(B, self.anc_num, self.cls_num + base, H, W)
         _permiute = (0, 1, 3, 4, 2)
         f_map = f_map.permute(_permiute).contiguous()
 
+        f_map[..., 1:]=f_map[..., 1:].sigmoid()
         pred_conf = f_map[..., 0]  # NO sigmoid()
-        pred_xy = torch.sigmoid(f_map[..., 1:3])  # Center x
+        pred_xy = f_map[..., 1:3]  # Center x
         # Grid Sensitive
         if self.scale_x_y > 1:
             pred_xy = self.scale_x_y * pred_xy - 0.5 * (self.scale_x_y - 1.0)  # Grid Sensitive
-        pred_wh = (f_map[..., 3:5].sigmoid() * 2) ** 2  # Width
-        pred_cls = f_map[..., 5:].sigmoid()  # Cls pred.
 
-        mask = np.arange(self.anc_num) + self.anc_num * f_id
-        anchors_raw = self.anchors[mask]
-        anchors = torch.Tensor([(a_w / self.cfg.TRAIN.IMG_SIZE[1] * W, a_h / self.cfg.TRAIN.IMG_SIZE[0] * H) for a_w, a_h in anchors_raw]).to(self.device)
-        grid_wh = torch.Tensor([W, H, W, H]).to(self.device)
+        pred_wh = (f_map[..., 3:5] * 2) ** 2  # Width
+        pred_iou = f_map[..., base - 1] if self.cfg.TRAIN.IOU_AWARE else None
+        pred_cls = f_map[..., base:]  # Cls pred.
 
-        anchor_ch = anchors.view(1, self.anc_num, 1, 1, 2)
-
+        anchor_ch, grid_wh = self._make_anc(f_id, W, H)
         if self.grid[f_id].shape[2:4] != f_map.shape[2:4]:
             self.grid[f_id] = self._make_grid(W, H).float().to(self.device)
 
@@ -107,14 +107,29 @@ class ParsePredict_yolo:
         pre_box = torch.cat([_pre_xy, _pre_wh], -1) / grid_wh
 
         if not tolabel:  # training
-            return pred_conf, pred_cls, pred_xy, pred_wh, pre_box
+            return pred_conf, pred_cls, pred_xy, pred_wh, pred_iou, pre_box
         else:  # test
             pred_conf = torch.sigmoid(pred_conf)
+            if self.cfg.TRAIN.IOU_AWARE:
+                new_obj = torch.pow(pred_conf, (1 - self.iou_aware_factor)) * torch.pow(pred_iou, self.iou_aware_factor)
+                eps = 1e-7
+                new_obj = torch.clamp(new_obj, eps, 1 / eps)
+                one = torch.ones_like(new_obj)
+                new_obj = torch.clamp((one / new_obj - 1.0), eps, 1 / eps)
+                pred_conf = (-torch.log(new_obj)).sigmoid()
             return pred_conf, pred_cls, pre_box
 
     def _make_grid(self, nx=20, ny=20):
         yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
         return torch.stack((xv, yv), 2).view((1, 1, ny, nx, 2)).float()
+
+    def _make_anc(self, f_id, W,H):
+        mask = np.arange(self.anc_num) + self.anc_num * f_id
+        anchors_raw = self.anchors[mask]
+        anchors = torch.Tensor([(a_w / self.cfg.TRAIN.IMG_SIZE[1] * W, a_h / self.cfg.TRAIN.IMG_SIZE[0] * H) for a_w, a_h in anchors_raw]).to(self.device)
+        grid_wh = torch.Tensor([W, H, W, H]).to(self.device)
+        anchor_ch = anchors.view(1, self.anc_num, 1, 1, 2)
+        return anchor_ch, grid_wh
 
     def _parse_yolo_predict_fmap_old(self, f_map, f_id, tolabel=False):
         # pylint: disable=no-self-use

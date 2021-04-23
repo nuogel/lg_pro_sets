@@ -16,6 +16,8 @@ class YOLOV5(nn.Module):
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
         self.cls_num = cfg.TRAIN.CLASSES_NUM
         self.final_out = self.anc_num * (1 + 4 + self.cls_num)
+        if cfg.TRAIN.IOU_AWARE:
+            self.final_out = self.anc_num * (1 + 4 + 1 + self.cls_num)
         self.layers_out_filters = [64, 128, 256, 512, 1024]
 
         self.yolov5_type = cfg.TRAIN.TYPE
@@ -39,13 +41,13 @@ class YOLOV5(nn.Module):
 
         self.backbone = YOLOV5BACKBONE(chs=backbone_chs, csp=backbone_csp)
         self.neck = YOLOV5NECK(chs=neck_chs, csp=neck_csp)
-        self.head = nn.ModuleList(nn.Conv2d(x,  self.final_out , 1) for x in deteck)
+        self.head = nn.ModuleList(nn.Conv2d(x, self.final_out, 1) for x in deteck)
 
     def forward(self, **args):
         x = args['input_x']
         backbone = self.backbone(x)
         neck = self.neck(backbone)
-        featuremaps=[]
-        for neck_i ,h_i in zip(neck, self.head):
+        featuremaps = []
+        for neck_i, h_i in zip(neck, self.head):
             featuremaps.append(h_i(neck_i))  # conv
         return featuremaps[::-1]

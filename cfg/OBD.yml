@@ -21,11 +21,11 @@ TRAIN:
   USE_LMDB: 0
 
   # data aug:
-  MOSAIC: 0
+  MOSAIC: 1
   DO_AUG: 0
   RESIZE: 0
-  PADTOSIZE: 1
-  MAXMINSIZE: 1
+  PADTOSIZE: 0
+  MAXMINSIZE: 0
   RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0.1 #0 #
   MIN_AREA: 10 #0 #100 #400 #
@@ -47,13 +47,16 @@ TRAIN:
   LR_START: 0.001
   LR_SCHEDULE: 'reduce'  #'cos' #'reduce'# 'lr'
   STEP_LR: 50
-  WARM_UP_STEP: 100
+  WARM_UP_STEP: 1000
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 0.0001
   # [loc_loss, obj_loss]
   LOSSTYPE: ['iouloss', 'focalloss'] #  giou focalloss mse bce
   EPOCH_CONTINUE: None
   SAVE_STEP: 2000
+
+  # tricks
+  IOU_AWARE: 0
 
   # CUDA:
   GPU_NUM: [0] #[] # if is [] means use CPU.
@@ -87,11 +90,11 @@ TEST:
 
   TEST_ONLY: 0
 
-  ONE_TEST: 0
+  ONE_TEST: 1
   ONE_TEST_TRAIN_STEP: 100
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
     #  ['000000000009.jpg', 'coco/imgs/train2017/000000000009.jpg', 'coco/labels/train2017_xml/000000000009.xml']
-          ['000009', 'kitti/training/images/000009.png', 'kitti/training/labels/000009.xml']
-#  ['000005.jpg', 'VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg', 'VOCdevkit/VOC2007/trainval/Annotations/000005.xml']
+#          ['000009', 'kitti/training/images/000009.png', 'kitti/training/labels/000009.xml']
+  ['000005.jpg', 'VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg', 'VOCdevkit/VOC2007/trainval/Annotations/000005.xml']
   ]
