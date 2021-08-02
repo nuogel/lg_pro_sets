@@ -118,9 +118,9 @@ def _iou_mat(box1, box2, type='N2N'):
     :return:
     '''
 
-    if type is 'N2N':
+    if type == 'N2N':
         return _iou_mat_N2N(box1, box2)
-    elif type is 'N2N_yolo':
+    elif type == 'N2N_yolo':
         return _iou_mat_N2N_yolo(box1, box2)
     else:
         return _iou_mat_N21(box1, box2)
@@ -141,7 +141,8 @@ def xyxy2xywh(boxes_xyxy):
     Convert boxes with the shape xywh to x1y1x2y2.
     """
 
-    boxes_xywh = torch.cat([(boxes_xyxy[..., :2] + boxes_xyxy[..., 2:]) / 2.0, boxes_xyxy[..., 2:] - boxes_xyxy[..., :2]], -1)
+    boxes_xywh = torch.cat(
+        [(boxes_xyxy[..., :2] + boxes_xyxy[..., 2:]) / 2.0, boxes_xyxy[..., 2:] - boxes_xyxy[..., :2]], -1)
     return boxes_xywh
 
 
@@ -297,6 +298,7 @@ def box_iou(boxes1, boxes2):
 
     inter = (rb - lt).clamp(min=0).prod(2)  # [N,M]
     return inter / (area1[:, None] + area2 - inter)  # iou = inter / (area1 + area2 - inter)
+
 
 def wh_iou(wh1, wh2):
     # Returns the nxm IoU matrix. wh1 is nx2, wh2 is mx2

@@ -1,3 +1,4 @@
+# copy smale target with bounding boxes to background pics.
 import os
 from .util_load_xml2bbox import GetXmlGtBoxes
 import cv2

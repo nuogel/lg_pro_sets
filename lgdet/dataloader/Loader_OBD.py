@@ -9,7 +9,6 @@ from lgdet.util.util_show_img import _show_img
 from torch.utils.data import DataLoader
 from ..registry import DATALOADERS
 from lgdet.util.util_lg_transformer import LgTransformer
-import lmdb
 import pickle
 import tqdm
 import math
@@ -32,6 +31,7 @@ class OBD_Loader(DataLoader):
         if self.cfg.TRAIN.MULTI_SCALE:
             self._prepare_multiszie()
         if self.cfg.TRAIN.USE_LMDB:
+            import lmdb
             mod = 'train' if self.is_training else 'val'
             lmdb_path = self.cfg.PATH.LMDB_PATH.format(mod)
             env = lmdb.open(lmdb_path, max_dbs=2, lock=False)

@@ -14,7 +14,8 @@ imgaug
 python-Levenshtein
 librosa
 lmdb
-colorlog
 python_speech_features
 prefetch_generator
 munch
+tensorboardX
+colorlog

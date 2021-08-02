@@ -27,14 +27,15 @@ class Solver(BaseSolver):
             self.epoch = epoch
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch)
-            if epoch > 0 or self.cfg.TEST.ONE_TEST:
+            if (epoch + 1) % 5 == 0 or self.cfg.TEST.ONE_TEST:
                 with torch.no_grad():
                     self._validate_an_epoch(epoch)
 
     def _train_an_epoch(self, epoch):
         self.model.train()
         # count the step time, total time...
-        print(('\n[train] %8s|%7s|%7s|%9s|' + '%6s|' * 3) % ('model_n', 'epoch', 'g_step', 'l_rate', 'step_l', 'aver_l', 'others'))
+        print(('\n[train] %8s|%7s|%7s|%9s|' + '%6s|' * 3) % (
+        'model_n', 'epoch', 'g_step', 'l_rate', 'step_l', 'aver_l', 'others'))
         Pbar = tqdm.tqdm(self.trainDataloader)
         # time5 = time.time()
         for step, train_data in enumerate(Pbar):
@@ -84,9 +85,11 @@ class Solver(BaseSolver):
             test_data = self.DataFun.to_devce(train_data)
             if test_data[0] is None: continue
             if self.cfg.TRAIN.EMA:
-                predict = self.ema.ema(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)
+                predict = self.ema.ema(input_x=test_data[0], input_y=test_data[1], input_data=test_data,
+                                       is_training=False)
             else:
-                predict = self.model(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)
+                predict = self.model(input_x=test_data[0], input_y=test_data[1], input_data=test_data,
+                                     is_training=False)
             self.score.cal_score(predict, test_data)
             Pbar.set_description('[valid]')
 
@@ -95,6 +98,7 @@ class Solver(BaseSolver):
                   'main_score': main_score,
                   'item_score': item_score}
         self.cfg.writer.tbX_write(w_dict)
-        self.cfg.logger.debug('[EVALUATE] Summary: Epoch: %s, total_score: %s, other_score: %s', epoch, str(main_score), str(item_score))
+        self.cfg.logger.debug('[EVALUATE] Summary: Epoch: %s, total_score: %s, other_score: %s', epoch, str(main_score),
+                              str(item_score))
         if self.cfg.TEST.TEST_ONLY:
             exit()

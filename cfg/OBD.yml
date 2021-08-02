@@ -2,7 +2,7 @@ BELONGS: OBD
 
 PATH:
   # '/media/lg/DataSet_E/datasets/'   '/media/lg/2628737E28734C35'  '/media/lg/DataSet_E/datasets/person/data_person' '/media/lg/DataSet_E/datasets/kitti/training/
-  INPUT_PATH: 'F:/datasets/'
+  INPUT_PATH: '/media/dell/data/voc'
   LMDB_PATH: '/media/lg/2628737E28734C35/coco/{}2017_lmdb'
   LAB_PATH: ''
   CLASSES_PATH: 'lgdet/dataloader/classes/class_names_{}.txt'
@@ -14,7 +14,7 @@ TRAIN:
   MODEL: yolov5
   TYPE: s
   EMA: 0
-  EPOCH_SIZE: 100
+  EPOCH_SIZE: 300
   BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO'
   TRAIN_DATA_FROM_FILE: ['VOC']
@@ -90,7 +90,7 @@ TEST:
 
   TEST_ONLY: 0
 
-  ONE_TEST: 1
+  ONE_TEST: 0
   ONE_TEST_TRAIN_STEP: 100
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [

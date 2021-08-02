@@ -115,7 +115,7 @@ class BaseSolver(object):
             print('using StepLR lr_scheduler ', self.cfg.TRAIN.STEP_LR)
             self.scheduler = lr_scheduler.StepLR(self.optimizer, step_size=self.cfg.TRAIN.STEP_LR, gamma=0.1)
         elif self.cfg.TRAIN.LR_SCHEDULE == 'reduce':
-            factor, patience, min_lr = 0.1, 3, 1e-6
+            factor, patience, min_lr = 0.8, 3, 1e-6
             print('using ReduceLROnPlateau lr_scheduler: factor%.1f, patience:%d' % (factor, patience))
             self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=factor, patience=patience, min_lr=min_lr, verbose=True)
         # Plot lr schedule

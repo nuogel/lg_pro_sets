@@ -48,7 +48,7 @@ def _show_img(imgs, labels_out=None, img_in=None, save_labels=False, pic_path=No
                     class_out, box = label[0], label[1:5]
                     score_out = 1.0
                 elif len(label) == 6:  # in shape of [batch, class, x1, y1, x2, y2]
-                    class_out, box = label[1], label[2:6]
+                    class_out, box = label[1], np.asarray(label[2:6])
                     score_out = label[0]
                 elif len(label) == 2:  # [class, bbox[x1,y1,x2,y2]]
                     class_out = label[0]
