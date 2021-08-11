@@ -5,18 +5,25 @@ import cv2
 import random
 import numpy as np
 import tqdm
+import glob
 
 
 class CopyLittleTarget:
-    def __init__(self, imgs_path, labs_path, source_imgs_path, source_labs_path, copy_number, save_path):
-        self.imgs_path = imgs_path
-        self.labs_path = labs_path
+    def __init__(self, bg_imgs_path, bg_labs_path, source_imgs_path, source_labs_path, copy_number, save_path):
+        self.bg_imgs_path = bg_imgs_path
+        self.bg_labs_path = bg_labs_path
         self.source_imgs_path = source_imgs_path
         self.source_labs_path = source_labs_path
-
+        self.bg_imgs_list = os.listdir(self.bg_imgs_path)
+        self.targets_dict = {'散乱垃圾': [],
+                        '打包垃圾': []}
         self.copy_number = copy_number
-        self.img_list = os.listdir(self.imgs_path)
-        self.source_imgs_list = os.listdir(self.source_imgs_path)
+        for cls, img_p, lab_p in zip(('散乱垃圾', '打包垃圾'), source_imgs_path, source_labs_path):
+            for img in os.listdir(img_p):
+                name=os.path.basename(img)
+                img_ = os.path.join(img_p, name)
+                lab_ = os.path.join(lab_p, name.replace('jpg', 'json'))
+                self.targets_dict[cls].append([img_,lab_ ])
 
         self.save_path = save_path
         os.makedirs(self.save_path, exist_ok=True)
@@ -24,10 +31,9 @@ class CopyLittleTarget:
         os.makedirs(os.path.join(self.save_path, 'labels'), exist_ok=True)
 
     def run(self):
-        targets_dict = {'垃圾': [os.path.join(self.source_imgs_path, p) for p in self.source_imgs_list]}
-        for ii, img_name in enumerate(self.img_list):
+        for ii, img_name in enumerate(self.bg_imgs_list[:5]):
             print('deeling with pic:', ii, '-', img_name)
-            dest_img, dest_mask = self._make_dest_images(img_name, targets_dict)
+            dest_img, dest_mask = self._make_dest_images(img_name, self.targets_dict)
             #
             cv2.imshow('img', dest_img)
             cv2.waitKey()
@@ -76,11 +82,11 @@ class CopyLittleTarget:
         return mask_img, mask
 
     def _make_dest_images(self, dest_img, targets_dict):
-        dest_img_path = os.path.join(self.imgs_path, dest_img)
-        if self.labs_path:
-            dest_lab_path = os.path.join(self.labs_path, dest_img.replace('.jpg', '.json'))
+        dest_img_path = os.path.join(self.bg_imgs_path, dest_img)
+        if self.bg_labs_path:
+            dest_lab_path = os.path.join(self.bg_labs_path, dest_img.replace('.jpg', '.json'))
         else:
-            dest_lab_path=self.labs_path
+            dest_lab_path = self.bg_labs_path
         dest_img, dest_mask = self._read_source_targets(dest_img_path, dest_lab_path)
         d_size = dest_img.shape
         for k, v in targets_dict.items():
@@ -89,10 +95,8 @@ class CopyLittleTarget:
             else:
                 s_targets = v
             for s_target_p in s_targets:
-                s_img, s_mask = self._read_source_targets(s_target_p, os.path.join(self.source_labs_path,
-                                                                                   os.path.basename(s_target_p).replace(
-                                                                                       '.jpg', '.json')))
-                max_hw = 60
+                s_img, s_mask = self._read_source_targets(s_target_p[0],s_target_p[1])
+                max_hw = random.randint(50, 150)
                 if s_img.shape[0] > max_hw or s_img.shape[1] > max_hw:
                     s_img = cv2.resize(s_img, (max_hw, max_hw))
                     s_mask = cv2.resize(s_mask, (max_hw, max_hw))
@@ -117,14 +121,14 @@ class CopyLittleTarget:
 
 
 if __name__ == '__main__':
-    imgs_path = '/media/dell/data/garbage/合川城管_公安数据_公用背景训练/neg_image'
-    labs_path = None#'/media/dell/data/garbage/道路垃圾-合川摆拍-雨天-训练集/labels'
+    bg_imgs_path = '/media/dell/data/garbage/城管二期-垃圾分割-AI模型预测回传210810-lg/images'
+    bg_labs_path = None  # '/media/dell/data/garbage/道路垃圾-合川摆拍-雨天-训练集/labels'
+    save_path = '/media/dell/data/garbage/道路垃圾合成_回传_打包垃圾'
 
-    source_imgs_path = '/media/dell/data/garbage/合川城管-打包垃圾-网络下载-前景/images'#'/media/dell/data/garbage/河道垃圾_自动训练平台_训练集_前景垃圾_竞赛_修正/images'
-    source_labs_path = '/media/dell/data/garbage/合川城管-打包垃圾-网络下载-前景/labels'#'/media/dell/data/garbage/河道垃圾_自动训练平台_训练集_前景垃圾_竞赛_修正/labels'
-
-    save_path = '/media/dell/data/garbage/道路垃圾合成_打包垃圾'
-
-    copy_number = 50
-    clt = CopyLittleTarget(imgs_path, labs_path, source_imgs_path, source_labs_path, copy_number, save_path)
+    source_imgs_paths = ['/media/dell/data/garbage/合川城管-打包垃圾-网络下载-前景/images',
+                         '/media/dell/data/garbage/河道垃圾_自动训练平台_训练集_前景垃圾_竞赛_修正/images']
+    source_labs_paths = ['/media/dell/data/garbage/合川城管-打包垃圾-网络下载-前景/labels',
+                         '/media/dell/data/garbage/河道垃圾_自动训练平台_训练集_前景垃圾_竞赛_修正/labels']
+    copy_number = 10
+    clt = CopyLittleTarget(bg_imgs_path, bg_labs_path, source_imgs_paths, source_labs_paths, copy_number, save_path)
     clt.run()

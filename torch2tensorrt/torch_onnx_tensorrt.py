@@ -1,5 +1,6 @@
 import tensorrt
 import torch
+from torch2trt import torch2trt
 # import onnx
 # import onnxruntime as rt
 import cv2
@@ -21,6 +22,23 @@ def get_img_np_nchw(filename):
     img_np_t = np.array([r, g, b])
     img_np_nchw = np.expand_dims(img_np_t, axis=0)
     return np.asarray(img_np_nchw,dtype=np.float32)
+
+
+
+def torch2trt_lg():
+    model_path = 'yolov5.pth'
+    filename = '/media/dell/data/voc/VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg'
+    imgdata = torch.from_numpy(get_img_np_nchw(filename)).cuda()
+    model = torch.load(model_path).cuda()
+    # y = model(imgdata)
+
+    model_trt = torch2trt(model, [imgdata],
+                          input_names=['img'],
+                          output_names=["f1", 'f2', 'f3'],
+                          use_onnx=True)
+    y_trt = model_trt(imgdata)
+    print(torch.max(torch.abs(y - y_trt)))
+
 
 def torch2onnx():
     model = '../tmp/checkpoints/yolov5/now.pkl'
@@ -63,5 +81,6 @@ def onnx_runtime():
 
 
 if __name__ == '__main__':
+    torch2trt_lg()
     torch2onnx()
     onnx_runtime()
