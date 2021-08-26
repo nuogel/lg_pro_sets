@@ -119,7 +119,7 @@ class YoloLoss:
             tobj = torch.zeros_like(pre_obj)  # target obj
             num_target = anchors.shape[0]  # number of targets
             loss_ratio = {'box': 0.05, 'cls': 0.125, 'obj': 1 * balance, 'noobj': 1 * balance}
-
+        metrics['cls_p']=0.0
         if num_target:
             pre_cls, pre_xy, pre_wh = [i[indices] for i in [pre_cls, pre_loc_xy, pre_loc_wh]]
             cp, cn = smooth_BCE(eps=0.1)

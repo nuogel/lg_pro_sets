@@ -252,7 +252,7 @@ class OBD_Loader(DataLoader):
                 if not self.keep_difficult and difficult:
                     continue
 
-                cls_name = obj.find('name').text
+                cls_name = obj.find('name').text.strip()
                 if cls_name not in self.class_name:
                     print(cls_name, 'is passed')
                     continue

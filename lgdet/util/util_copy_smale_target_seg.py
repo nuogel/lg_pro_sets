@@ -16,14 +16,14 @@ class CopyLittleTarget:
         self.source_labs_path = source_labs_path
         self.bg_imgs_list = os.listdir(self.bg_imgs_path)
         self.targets_dict = {'散乱垃圾': [],
-                        '打包垃圾': []}
+                             '打包垃圾': []}
         self.copy_number = copy_number
         for cls, img_p, lab_p in zip(('散乱垃圾', '打包垃圾'), source_imgs_path, source_labs_path):
             for img in os.listdir(img_p):
-                name=os.path.basename(img)
+                name = os.path.basename(img)
                 img_ = os.path.join(img_p, name)
                 lab_ = os.path.join(lab_p, name.replace('jpg', 'json'))
-                self.targets_dict[cls].append([img_,lab_ ])
+                self.targets_dict[cls].append([img_, lab_])
 
         self.save_path = save_path
         os.makedirs(self.save_path, exist_ok=True)
@@ -31,19 +31,54 @@ class CopyLittleTarget:
         os.makedirs(os.path.join(self.save_path, 'labels'), exist_ok=True)
 
     def run(self):
-        for ii, img_name in enumerate(self.bg_imgs_list[:5]):
+        for ii, img_name in enumerate(self.bg_imgs_list):
             print('deeling with pic:', ii, '-', img_name)
             dest_img, dest_mask = self._make_dest_images(img_name, self.targets_dict)
-            #
+
+            dest_mask[dest_mask != 0] = 255
             cv2.imshow('img', dest_img)
             cv2.waitKey()
-            # cv2.imshow('img', dest_mask)
-            # cv2.waitKey()
+            cv2.imshow('img', dest_mask)
+            cv2.waitKey()
 
-            dest_lab_path = os.path.join(self.save_path, 'labels', img_name.replace('.jpg', '.bmp'))
-            dest_img_path = os.path.join(self.save_path, 'images', img_name)
-            cv2.imwrite(dest_img_path, dest_img)
-            cv2.imwrite(dest_lab_path, dest_mask)
+            # dest_lab_path = os.path.join(self.save_path, 'labels', img_name.replace('.jpg', '.png'))
+            # dest_img_path = os.path.join(self.save_path, 'images', img_name)
+            # cv2.imwrite(dest_img_path, dest_img)
+            # cv2.imwrite(dest_lab_path, dest_mask)
+            json_label = True
+            if json_label:
+                '''
+                [{"positions": [{"type": "out", "point": [{"x": 728, "y": 512}, {"x": 979, "y": 512}, {"x": 979, "y": 796}, {"x": 728, "y": 796}]}, {"type": "in", "point": [{"x": 730, "y": 520}, {"x": 800, "y": 520}, {"x": 800, "y": 600}, {"x": 730, "y": 600}]}, {"type": "in", "point": [{"x": 900, "y": 600}, {"x": 950, "y": 600}, {"x": 950, "y": 750}, {"x": 900, "y": 750}]}], "labels": {"实体类型": "轿车", "属性": {"品牌": "本田锋范", "年份": "2013-2017", "车身颜色": "红色"}}}]
+                '''
+
+                kernel = np.ones((3, 3), np.uint8)
+                dest_mask = cv2.dilate(dest_mask, kernel, iterations=1)
+                contours, _ = cv2.findContours(dest_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                # print('ctrs:', len(contours))
+                contours = self._filter_area(contours, min_area=9)
+                # TODO: add type:out and in
+                position_list=[]
+                for contour in contours:
+                    contour=np.squeeze(contour,axis=1)
+                    point_list = []
+                    for point in contour:
+                        point_list.append({'x': point[0], 'y': point[1]})
+                    point_dict = {'type': 'out',
+                                  'point': point_list}
+                    position_list.append(point_dict)
+                json_dict = {'positions': position_list,
+                             'labels': {'实体类型': '垃圾'}}
+                # jf = json.dumps(json_dict)
+                dest_lab_path = os.path.join(self.save_path, 'labels', img_name.replace('.jpg', '.json'))
+                json.dump(json_dict, dest_lab_path)
+
+    def _filter_area(self, ctrs, min_area=64):
+        ret = list()
+        for i in range(0, len(ctrs)):
+            area = cv2.contourArea(ctrs[i])
+            if area > min_area:
+                ret.append(ctrs[i])
+        return ret
 
     def _read_json_mask(self, file):
         f = open(file)
@@ -95,7 +130,7 @@ class CopyLittleTarget:
             else:
                 s_targets = v
             for s_target_p in s_targets:
-                s_img, s_mask = self._read_source_targets(s_target_p[0],s_target_p[1])
+                s_img, s_mask = self._read_source_targets(s_target_p[0], s_target_p[1])
                 max_hw = random.randint(50, 150)
                 if s_img.shape[0] > max_hw or s_img.shape[1] > max_hw:
                     s_img = cv2.resize(s_img, (max_hw, max_hw))

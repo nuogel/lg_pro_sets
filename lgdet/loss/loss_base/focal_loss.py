@@ -74,6 +74,7 @@ class FocalLoss_lg(nn.Module):
         self.bceloss_focal = torch.nn.BCELoss(reduction='none')
 
     def forward(self, pred, target, obj_mask, noobj_mask, reduction='mean', **kwargs):
+        pred = pred.sigmoid()
         bceloss = self.bceloss_focal(pred, target)
         noobj_loss = ((1 - self.alpha) * ((pred[noobj_mask]) ** self.gamma)) * bceloss[noobj_mask]
         if obj_mask.float().sum() > 0:

@@ -93,7 +93,7 @@ def _read_line(path):
                 box_x2 = float(tmps[4])
                 box_y2 = float(tmps[5])
             # if name in CLASS:
-            objs.append([name, str(box_x1), str(box_y1), str(box_x2), str(box_y2)])# + ': ' + '%.3f' % score
+            objs.append([name, str(box_x1), str(box_y1), str(box_x2), str(box_y2)])  # + ': ' + '%.3f' % score
     elif os.path.basename(path).split('.')[-1] == 'xml':
 
         tree = ET.parse(path)
@@ -184,7 +184,8 @@ def _read_datas(im_file, lab_file):
     return img, label
 
 
-def _show_img(images, labels, show_img=True, show_time=None, save_img=False, save_video=0, video_writer=None):
+def _show_img(images, labels, show_img=True, show_time=None, save_img=False, save_video=0, save_path=None,
+              video_writer=None):
     if labels:
         for _, label in enumerate(labels):
             if len(label) == 5:  # in shape of [class, x1, y1, x2, y2]
@@ -202,26 +203,40 @@ def _show_img(images, labels, show_img=True, show_time=None, save_img=False, sav
             ymax = int(float(box[3]))
             # text = class_out+"||"+ " ".join([str(i) for i in box])
             text = class_out
+            text = '占道经营'
             cv2.rectangle(images, (xmin, ymin), (xmax, ymax), (0, 0, 255))
-            # PIL图片上打印汉字
-            pilImg = Image.fromarray(cv2.cvtColor(images, cv2.COLOR_BGR2RGB))
-            draw = ImageDraw.Draw(pilImg)
-            font = ImageFont.truetype("simhei.ttf", 40, encoding="utf-8")  # 参数1：字体文件路径，参数2：字体大小
-            draw.text((xmin, ymin - 40), text, (255, 0, 0), font=font)  # 参数1：打印坐标，参数2：文本，参数3：字体颜色，参数4：字体
-            # PIL图片转cv2 图片
-            images = cv2.cvtColor(np.array(pilImg), cv2.COLOR_RGB2BGR)
-            # cv2.putText(images, text, (xmin, ymin), 1, 1, (0, 255, 255))
+            tryPIL = 1
+            if tryPIL:
+                # PIL图片上打印汉字
+                pilImg = Image.fromarray(cv2.cvtColor(images, cv2.COLOR_BGR2RGB))
+                draw = ImageDraw.Draw(pilImg)
+                size_font = 20
+                font = ImageFont.truetype(font=f'font/simhei.ttf', size=size_font,
+                                          encoding="utf-8")  # 参数1：字体文件路径，参数2：字体大小
+                draw.text((xmin, ymin - size_font), text, (255, 0, 0), font=font)  # 参数1：打印坐标，参数2：文本，参数3：字体颜色，参数4：字体
+                # PIL图片转cv2 图片
+                images = cv2.cvtColor(np.array(pilImg), cv2.COLOR_RGB2BGR)
+            else:
+                cv2.putText(images, 'shop_out', (xmin, ymin), 1, 1, (0, 255, 255))
 
-    cv2.putText(images, 'The Number of Cars is : %d' % len(labels), (600, 220), 1, 2, (0, 0, 255), thickness=2)
-    cv2.putText(images, 'Made by AI Team of Chengdu Fourier Electronic', (600, 250), 1, 2, (0, 0, 255), thickness=2)
+    # cv2.putText(images, 'The Number of Cars is : %d' % len(labels), (600, 220), 1, 2, (0, 0, 255), thickness=2)
+    # cv2.putText(images, 'Made by AI Team of Chengdu Fourier Electronic', (600, 250), 1, 2, (0, 0, 255), thickness=2)
 
     if show_img:
         cv2.imshow('img', images)
         cv2.waitKey(show_time)
     if save_img:
-        cv2.imwrite("show.png", images)
+        cv2.imwrite(save_path, images)
     if save_video:
         video_writer.write(images)
+
+
+def check_is_file(file):
+    if not os.path.isfile(file):
+        print(file, 'is not found')
+        return False
+    else:
+        return True
 
 
 def main():
@@ -233,8 +248,8 @@ def main():
     # im_file = os.path.join(path, "images", "1478019971185917857.jpg")
     # label_file = os.path.join(path, "labels", "1478019971185917857.xml")
     # img, label = _read_datas(im_file, label_file)
-    img_folds = 'E:\datasets\person\data_person/images'
-    label_folds = 'E:\datasets\person\data_person/labels'
+    img_folds = '/media/dell/data/shopout/城管二期-出店经营-第一批回传标注-lg/images'
+    label_folds = '/media/dell/data/shopout/城管二期-出店经营-第一批回传标注-lg/labels'
     # label_folds = 'F:\LG\GitHub\lg_pro_sets\\tmp\predicted_labels'
 
     # _show_img(img, label)
@@ -246,22 +261,30 @@ def main():
     lab_num = len(local_label_files)
     img_num = len(local_img_files)
     print(lab_num, img_num)
-    video_dir = 'E:/for_test/flys/fly3/saved_video.avi'
+    base_path = os.path.join(img_folds, '../saved')
+    os.makedirs(base_path,exist_ok=True)
+    video_dir = os.path.join(base_path, 'video.avi')
     fps = 12
     img_size = (1920, 1080)
     fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
     video_writer = cv2.VideoWriter(video_dir, fourcc, fps, img_size)
     save_video = 0
+    save_image = True
     for index in range(min(img_num, lab_num)):
-        if index <= 163300: continue
+        if index <= 0: continue
         im_file = local_img_files[index]
-        label_file = im_file.replace('images','labels').replace('.jpg', '.xml')#local_label_files[index]
+        label_file = im_file.replace('images', 'labels').replace('.jpg', '.xml')  # local_label_files[index]
+        if not check_is_file(im_file) or not check_is_file(label_file):
+            continue
         if print_path:
             print(im_file, '==>>>', label_file)
         img, label = _read_datas(im_file, label_file)
+        if save_image:
+            save_path = os.path.join(base_path, str(index) + '.jpg')
 
         try:
-            _show_img(img, label, show_img=True, show_time=10000, save_video=save_video, video_writer=video_writer)
+            _show_img(img, label, show_img=True, show_time=10000, save_img=save_image, save_video=save_video,
+                      save_path=save_path, video_writer=video_writer)
         except:
             if save_video: video_writer.release()
         # if index >= 9750 - 500: break

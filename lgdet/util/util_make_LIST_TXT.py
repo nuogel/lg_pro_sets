@@ -111,17 +111,20 @@ if __name__ == '__main__':
     # img_path = ['E:/datasets/VisDrone2019/VisDrone2019-VID-train/sequences/uav0000013_00000_v']
     # lab_path = 'E:\datasets\VisDrone2019\VisDrone2019-VID-train\\annotations/uav0000013_00000_v.txt'
 
-    img_path = 'VOC2012/JPEGImages'
-    lab_path = 'VOC2012/Annotations'
-    base_path = '/media/lg/DataSet_E/datasets/PASCAL_VOC/VOCdevkit'
+    # img_path = 'VOC2012/JPEGImages'
+    # lab_path = 'VOC2012/Annotations'
+    # base_path = '/media/lg/DataSet_E/datasets/PASCAL_VOC/VOCdevkit'
+    img_path = 'images'
+    lab_path = 'labels'
+    base_path = '/media/dell/data/比赛/VocXml/'
     # path = 'E:\datasets\FlyingChairs\data'
 
     save_path = 'util_tmp/make_list.txt'
 
     # datalist =_make_list_by_hand(path)
 
-    # datalist = make_list(base_path, img_path, lab_path)
-    datalist = cope_with_VOC()
+    datalist = make_list(base_path, img_path, lab_path)
+    # datalist = cope_with_VOC()
 
     _wrte_dataset_txt(datalist, save_path)
 

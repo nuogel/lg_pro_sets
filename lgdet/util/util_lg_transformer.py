@@ -209,7 +209,7 @@ class LgTransformer:
         labels = []
         try_tims = 0
         while len(labels) == 0 or [] in labels:
-            imgs, labels = self.dataaug._augmenting(aug_way_ids=([10, 11, 16, 21], [22]),
+            imgs, labels = self.dataaug._augmenting(aug_way_ids=([25],[]),
                                                     datas=([img], [label]))  # [11,20, 21, 22]
             try_tims += 1
 

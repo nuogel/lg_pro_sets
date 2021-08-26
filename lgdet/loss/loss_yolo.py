@@ -1,7 +1,7 @@
 """Loss calculation based on yolo."""
 import torch
 import numpy as np
-from lgdet.util.util_iou import _iou_wh, bbox_GDCiou, xywh2xyxy, iou_xyxy, wh_iou, xyxy2xywh
+from lgdet.util.util_iou import _iou_wh, bbox_GDCiou, xywh2xyxy, iou_xyxy, wh_iou
 from lgdet.postprocess.parse_factory import ParsePredict
 
 from lgdet.loss.loss_base.focal_loss import FocalLoss, FocalLoss_lg
@@ -44,7 +44,11 @@ class YoloLoss:
 
     def build_targets(self, pre_obj, labels, f_id):
         # time_1 = time.time()
-        targets = labels
+
+        # x1y1x2y2 to xywh:
+        targets = labels.clone()
+        targets[..., 2:4] = (labels[..., 2:4] + labels[..., 4:6]) / 2
+        targets[..., 4:6] = (labels[..., 4:6] - labels[..., 2:4])
         B, C, H, W = pre_obj.shape
 
         mask = np.arange(self.anc_num) + self.anc_num * f_id  # be care of the relationship between anchor size and the feature map size.
@@ -115,10 +119,17 @@ class YoloLoss:
             tobj = torch.zeros_like(pre_obj)  # target obj
             num_target = anchors.shape[0]  # number of targets
             loss_ratio = {'box': 0.05, 'cls': 0.125, 'obj': 1 * balance, 'noobj': 1 * balance}
-
+        metrics['cls_p']=0.0
         if num_target:
             pre_cls, pre_xy, pre_wh = [i[indices] for i in [pre_cls, pre_loc_xy, pre_loc_wh]]
-            lcls = self.loss_cls(pre_cls, num_target, tcls, metrics)
+            cp, cn = smooth_BCE(eps=0.1)
+            t_cls = torch.full_like(pre_cls, cn, device=self.device)  # targets
+            t_cls[range(num_target), tcls] = cp
+            lcls = self.bceloss(pre_cls, t_cls)
+            if self.reduction == 'sum':
+                lcls = lcls / num_target  # BCE
+            cls_score = ((pre_cls.max(-1)[1] == tcls).float()).mean()
+            metrics['cls_p'] = cls_score.item()
 
             # 1) boxes loss.
             if self.multiply_area_scale:
@@ -138,6 +149,7 @@ class YoloLoss:
 
             elif loc_losstype == 'iouloss':
                 pre_wh = pre_wh * anchors
+                pre_xy=pre_xy*2. - 0.5
                 pbox = torch.cat((pre_xy, pre_wh), 1)  # predicted box
                 iou = bbox_GDCiou(pbox.t(), tbox, x1y1x2y2=False, CIoU=True)  # giou(prediction, target)
                 lbox = (1.0 - iou) * area_scale
@@ -166,7 +178,6 @@ class YoloLoss:
         label_weight_mask = (obj_mask | noobj_mask)
         obj_num = obj_mask.sum()
         if obj_losstype == 'focalloss':
-            pre_obj = pre_obj.sigmoid()
             _loss, obj_loss, noobj_loss = self.Focalloss_lg(pre_obj, tobj, obj_mask, noobj_mask, split_loss=True)
         if obj_losstype == 'ghm':
             obj_loss = self.ghm(pre_obj, tobj, label_weight_mask)
@@ -188,7 +199,7 @@ class YoloLoss:
         noobj_loss = loss_ratio['noobj'] * noobj_loss
         lcls = loss_ratio['cls'] * lcls
         lbox = loss_ratio['box'] * lbox
-
+        loss_iou_aware = loss_ratio['box']*loss_iou_aware
         total_loss = obj_loss + noobj_loss + lcls + lbox + loss_iou_aware
 
         if self.reduction == 'sum': total_loss = total_loss / B
@@ -219,21 +230,8 @@ class YoloLoss:
         # print('loss time LOSS CALL2-1:', time_2 - time_1)
         return total_loss, metrics
 
-    def loss_cls(self, pre_cls, num_target, tcls, metrics):
-        cp, cn = smooth_BCE(eps=0.0)
-        t_cls = torch.full_like(pre_cls, cn, device=self.device)  # targets
-        t_cls[range(num_target), tcls] = cp
-        lcls = self.bceloss(pre_cls, t_cls)
-        if self.reduction == 'sum':
-            lcls = lcls / num_target  # BCE
-        cls_score = ((pre_cls.max(-1)[1] == tcls).float()).mean()
-        metrics['cls_p'] = cls_score.item()
-        return lcls
-
     def Loss_Call(self, f_maps, dataset, kwargs):
         images, labels, datainfos = dataset
-        labels[..., 2:6]=xyxy2xywh(labels[...,2:6])
-
         metrics = {}
         total_loss = torch.FloatTensor([0]).to(self.device)
         for f_id, f_map in enumerate(f_maps):
