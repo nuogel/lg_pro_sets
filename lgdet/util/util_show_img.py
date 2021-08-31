@@ -12,6 +12,7 @@ def _show_img(imgs, labels_out=None, img_in=None, save_labels=False, pic_path=No
     :param labels_out: labels out of nms [class, _boxes]
     :return: Show the bounding boxes of images
     """
+    font_scale = 0.5
     label_type = "simple"  # "kitti"
     if torch.is_tensor(imgs[0]):
         if imgs.max() <= 1:
@@ -76,17 +77,18 @@ def _show_img(imgs, labels_out=None, img_in=None, save_labels=False, pic_path=No
                     box[1] *= ratio[0]
                     box[2] *= ratio[1]
                     box[3] *= ratio[0]
-                box[0] = int(box[0])
-                box[1] = int(box[1])
-                box[2] = int(box[2])
-                box[3] = int(box[3])
+                box = [int(box_i) for box_i in box]
+                # box[0] = int(box[0])
+                # box[1] = int(box[1])
+                # box[2] = int(box[2])
+                # box[3] = int(box[3])
 
                 img_now = cv2.rectangle(img_raw, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
                 img_now = cv2.putText(img_now,
                                       str(class_out) + ': ' + score_out,
                                       (int(box[0] + 1), int(box[1] - 7)),
                                       fontFace=cv2.FONT_HERSHEY_COMPLEX,
-                                      fontScale=0.4,
+                                      fontScale=font_scale,
                                       color=(0, 0, 255),
                                       thickness=1)
                 if label_type == "kiiti":
@@ -98,7 +100,7 @@ def _show_img(imgs, labels_out=None, img_in=None, save_labels=False, pic_path=No
         else:
             img_now = img_raw
             img_now = cv2.putText(img_now, 'no bounding boxes ...', (10, 10), fontFace=cv2.FONT_HERSHEY_COMPLEX,
-                                  fontScale=0.4, color=(0, 0, 255), thickness=1)
+                                  fontScale=font_scale, color=(0, 0, 255), thickness=1)
 
         if save_labels:
             if pic_path is None:

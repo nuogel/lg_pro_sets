@@ -13,7 +13,7 @@ class ParsePredict_yolo:
         self.cls_num = cfg.TRAIN.CLASSES_NUM
         self.NMS = NMS(cfg)
         self.device = self.cfg.TRAIN.DEVICE
-        self.scale_x_y = 2  # 1.05
+        self.scale_x_y = 2  # 1.05    # Grid Sensitive
         self.grid = [torch.zeros(1)] * self.anc_num  # init grid
         self.iou_aware_factor = 0.4
 
@@ -87,7 +87,7 @@ class ParsePredict_yolo:
         _permiute = (0, 1, 3, 4, 2)
         f_map = f_map.permute(_permiute).contiguous()
 
-        f_map[..., 1:]=f_map[..., 1:].sigmoid()
+        f_map[..., 1:] = f_map[..., 1:].sigmoid()
         pred_conf = f_map[..., 0]  # NO sigmoid()
         pred_xy = f_map[..., 1:3]  # Center x
         # Grid Sensitive
@@ -123,10 +123,12 @@ class ParsePredict_yolo:
         yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
         return torch.stack((xv, yv), 2).view((1, 1, ny, nx, 2)).float()
 
-    def _make_anc(self, f_id, W,H):
+    def _make_anc(self, f_id, W, H):
         mask = np.arange(self.anc_num) + self.anc_num * f_id
         anchors_raw = self.anchors[mask]
-        anchors = torch.Tensor([(a_w / self.cfg.TRAIN.IMG_SIZE[1] * W, a_h / self.cfg.TRAIN.IMG_SIZE[0] * H) for a_w, a_h in anchors_raw]).to(self.device)
+        anchors = torch.Tensor(
+            [(a_w / self.cfg.TRAIN.IMG_SIZE[1] * W, a_h / self.cfg.TRAIN.IMG_SIZE[0] * H) for a_w, a_h in
+             anchors_raw]).to(self.device)
         grid_wh = torch.Tensor([W, H, W, H]).to(self.device)
         anchor_ch = anchors.view(1, self.anc_num, 1, 1, 2)
         return anchor_ch, grid_wh
@@ -145,7 +147,8 @@ class ParsePredict_yolo:
         anchors = self.anchors[mask]
         f_map = f_map.permute(0, 2, 3, 1)
         ###1: pre deal feature mps
-        obj_pred, cls_perd, loc_pred = torch.split(f_map, [self.anc_num, self.anc_num * self.cls_num, self.anc_num * 4], 3)
+        obj_pred, cls_perd, loc_pred = torch.split(f_map, [self.anc_num, self.anc_num * self.cls_num, self.anc_num * 4],
+                                                   3)
         pre_obj = obj_pred.sigmoid()
         cls_reshape = torch.reshape(cls_perd, (-1, self.cls_num))
         cls_pred_prob = torch.softmax(cls_reshape, -1)
@@ -166,12 +169,14 @@ class ParsePredict_yolo:
         grid_x = torch.arange(0, shape[1]).view(-1, 1).repeat(1, shape[0]).unsqueeze(2).permute(1, 0, 2)
         grid_y = torch.arange(0, shape[0]).view(-1, 1).repeat(1, shape[1]).unsqueeze(2)
         grid_xy = torch.cat([grid_x, grid_y], 2).unsqueeze(2).unsqueeze(0). \
-            expand(1, shape[0], shape[1], self.anc_num, 2).expand_as(pre_loc_xy).type(torch.FloatTensor).to(loc_pred.device)
+            expand(1, shape[0], shape[1], self.anc_num, 2).expand_as(pre_loc_xy).type(torch.FloatTensor).to(
+            loc_pred.device)
 
         # prepare gird xy
         box_ch = torch.Tensor([shape[1], shape[0]]).to(loc_pred.device)
         pre_realtive_xy = (pre_loc_xy + grid_xy) / box_ch
-        anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).expand(1, shape[0], shape[1], self.anc_num, 2).to(loc_pred.device)
+        anchor_ch = anchors.view(1, 1, 1, self.anc_num, 2).expand(1, shape[0], shape[1], self.anc_num, 2).to(
+            loc_pred.device)
         pre_realtive_wh = pre_loc_wh.exp() * anchor_ch
 
         pre_relative_box = torch.cat([pre_realtive_xy, pre_realtive_wh], -1)

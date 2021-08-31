@@ -59,12 +59,18 @@ def _read_line(path):
                     box_x2 = x + w / 2.
                     box_y2 = y + h / 2.
             elif len(tmps) == 6:
-                box_x1 = float(tmps[1])
-                box_y1 = float(tmps[2])
-                box_x2 = float(tmps[3])
-                box_y2 = float(tmps[4])
-                plant_number = tmps[5]
-                name = plant_number
+                # box_x1 = float(tmps[1])
+                # box_y1 = float(tmps[2])
+                # box_x2 = float(tmps[3])
+                # box_y2 = float(tmps[4])
+                # plant_number = tmps[5]
+
+                score = float(tmps[1])
+                box_x1 = float(tmps[2])
+                box_y1 = float(tmps[3])
+                box_x2 = float(tmps[4])
+                box_y2 = float(tmps[5])
+
                 if box_x1 < 1 and box_y1 < 1 and box_x2 < 1 and box_y2 < 1:
                     print('use yolo bboxes type')
 
@@ -93,7 +99,7 @@ def _read_line(path):
                 box_x2 = float(tmps[4])
                 box_y2 = float(tmps[5])
             # if name in CLASS:
-            objs.append([name, str(box_x1), str(box_y1), str(box_x2), str(box_y2)])  # + ': ' + '%.3f' % score
+            objs.append([name, score, str(box_x1), str(box_y1), str(box_x2), str(box_y2)])  # + ': ' + '%.3f' % score
     elif os.path.basename(path).split('.')[-1] == 'xml':
 
         tree = ET.parse(path)
@@ -194,6 +200,8 @@ def _show_img(images, labels, show_img=True, show_time=None, save_img=False, sav
             elif len(label) == 2:  # [class, bbox[x1,y1,x2,y2]]
                 class_out = label[0]
                 box = label[1]
+            elif len(label) == 6:
+                class_out, score, box = label[0], label[1], label[2:]
             else:
                 print('error: util_show_img-->no such a label shape')
                 continue
@@ -202,9 +210,11 @@ def _show_img(images, labels, show_img=True, show_time=None, save_img=False, sav
             xmax = int(float(box[2]))
             ymax = int(float(box[3]))
             # text = class_out+"||"+ " ".join([str(i) for i in box])
-            text = class_out
-            text = '占道经营'
-            cv2.rectangle(images, (xmin, ymin), (xmax, ymax), (0, 0, 255))
+            class_out_dict = {'person': '站立', 'fall': '跌倒'}
+            color = {'person': (0, 255, 0), 'fall': (0, 0, 255)}
+            text = class_out_dict[class_out] + str('--%.3f' % score)
+            # text = '占道经营'
+            cv2.rectangle(images, (xmin, ymin), (xmax, ymax), color[class_out])
             tryPIL = 1
             if tryPIL:
                 # PIL图片上打印汉字
@@ -213,7 +223,8 @@ def _show_img(images, labels, show_img=True, show_time=None, save_img=False, sav
                 size_font = 20
                 font = ImageFont.truetype(font=f'font/simhei.ttf', size=size_font,
                                           encoding="utf-8")  # 参数1：字体文件路径，参数2：字体大小
-                draw.text((xmin, ymin - size_font), text, (255, 0, 0), font=font)  # 参数1：打印坐标，参数2：文本，参数3：字体颜色，参数4：字体
+                draw.text((xmin, ymin - size_font), text, color[class_out][::-1],
+                          font=font)  # 参数1：打印坐标，参数2：文本，参数3：字体颜色，参数4：字体
                 # PIL图片转cv2 图片
                 images = cv2.cvtColor(np.array(pilImg), cv2.COLOR_RGB2BGR)
             else:
@@ -248,8 +259,8 @@ def main():
     # im_file = os.path.join(path, "images", "1478019971185917857.jpg")
     # label_file = os.path.join(path, "labels", "1478019971185917857.xml")
     # img, label = _read_datas(im_file, label_file)
-    img_folds = '/media/dell/data/shopout/城管二期-出店经营-第一批回传标注-lg/images'
-    label_folds = '/media/dell/data/shopout/城管二期-出店经营-第一批回传标注-lg/labels'
+    img_folds = '/home/dell/ai_share/wuzhe/西南油气田/测试视频/人员倒地/港356-4_20210810150000-20210810180000_500_00_00-00_08_25_person_pred/images'
+    label_folds = '/home/dell/ai_share/wuzhe/西南油气田/测试视频/人员倒地/港356-4_20210810150000-20210810180000_500_00_00-00_08_25_person_pred/labels'
     # label_folds = 'F:\LG\GitHub\lg_pro_sets\\tmp\predicted_labels'
 
     # _show_img(img, label)
@@ -262,18 +273,18 @@ def main():
     img_num = len(local_img_files)
     print(lab_num, img_num)
     base_path = os.path.join(img_folds, '../saved')
-    os.makedirs(base_path,exist_ok=True)
+    os.makedirs(base_path, exist_ok=True)
     video_dir = os.path.join(base_path, 'video.avi')
     fps = 12
     img_size = (1920, 1080)
     fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
     video_writer = cv2.VideoWriter(video_dir, fourcc, fps, img_size)
-    save_video = 0
+    save_video = 1
     save_image = True
     for index in range(min(img_num, lab_num)):
-        if index <= 0: continue
+        if index <= 7800 // 5 or index > 9200 // 5: continue
         im_file = local_img_files[index]
-        label_file = im_file.replace('images', 'labels').replace('.jpg', '.xml')  # local_label_files[index]
+        label_file = im_file.replace('images', 'labels').replace('.jpg', '.txt')  # local_label_files[index]
         if not check_is_file(im_file) or not check_is_file(label_file):
             continue
         if print_path:
@@ -283,7 +294,7 @@ def main():
             save_path = os.path.join(base_path, str(index) + '.jpg')
 
         try:
-            _show_img(img, label, show_img=True, show_time=10000, save_img=save_image, save_video=save_video,
+            _show_img(img, label, show_img=True, show_time=1, save_img=save_image, save_video=save_video,
                       save_path=save_path, video_writer=video_writer)
         except:
             if save_video: video_writer.release()

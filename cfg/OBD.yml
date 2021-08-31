@@ -2,7 +2,7 @@ BELONGS: OBD
 
 PATH:
   # '/media/lg/DataSet_E/datasets/'   '/media/lg/2628737E28734C35'  '/media/lg/DataSet_E/datasets/person/data_person' '/media/lg/DataSet_E/datasets/kitti/training/
-  INPUT_PATH: '/media/dell/data/比赛/VocXml'
+  INPUT_PATH: '/media/dell/data/比赛/VocXml'  #'/media/dell/data/voc' #
   LMDB_PATH: '/media/lg/2628737E28734C35/coco/{}2017_lmdb'
   LAB_PATH: ''
   CLASSES_PATH: 'lgdet/dataloader/classes/class_names_{}.txt'
@@ -11,24 +11,25 @@ PATH:
 
 TRAIN:
   # yolov5 lrf300 fcos lrf512 yolov3  ssdvgg  retinanet yolonano  yolov2 yolov3_tiny_shufflenet refinedet efficientdet yolov3_tiny_mobilenet yolov3_tiny_squeezenet fcos
-  MODEL: fcos
+  MODEL: yolov5
   TYPE: s
   EMA: 0
   EPOCH_SIZE: 300
   BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
-  #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO'
+  #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO' 'COMPETITION'
   TRAIN_DATA_FROM_FILE: ['COMPETITION']
   USE_LMDB: 0
 
   # data aug:
   MOSAIC: 0
   DO_AUG: 1
-  RESIZE: 0
+  RESIZE: 1
+  GRAY_BINARY: 1
   PADTOSIZE: 0
   MAXMINSIZE: 0
   RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
-  AREAR_RATIO: 0 #0 #
-  MIN_AREA: 0 #0 #100 #400 #
+  AREAR_RATIO: 0.05 #0 #
+  MIN_AREA: 4 #0 #100 #400 #
   #[H,W]
   #[384, 960] [640, 640]#[416, 416] #[512, 768] # [1024,1920] #[800,1333]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
   IMG_SIZE: [1280, 1280]
@@ -40,10 +41,10 @@ TRAIN:
   WATCH_METIRICS: 1
   WRITE_IMAGES: 20
   WRITER: 'tensorboardX'
-  SHOW_INPUT: -1  #10000 # #
+  SHOW_INPUT: -1  # 10000 ##
 
   # optimizer:
-  OPTIMIZER: 'adam' #'SGD' #adam #adamw
+  OPTIMIZER: adam #adamw'adam' #'SGD' #
   LR_START: 0.001
   LR_SCHEDULE: 'reduce'  #'cos' #'reduce'# 'lr'
   STEP_LR: 50
@@ -70,8 +71,8 @@ TRAIN:
 
 
 TEST:
-  # score type [ 0: MAP; 1: FNSCORE]
-  MAP_FSCORE: 1 # 0 #
+  # score type
+  MAP_FSCORE: 1 # 0 #[ 0: MAP; 1: FNSCORE]
 
   # NMS:
   USE_MNS_CYTHON: 0
@@ -81,7 +82,9 @@ TEST:
   SOFNMS_THETA: 0.5
 
   PADTOSIZE: 0
+  DO_AUG: 1
   RESIZE: 1
+  GRAY_BINARY: 1
   MAXMINSIZE: 0
 
   IMG_BLOCK: 0
@@ -90,7 +93,7 @@ TEST:
 
   TEST_ONLY: 0
 
-  ONE_TEST: 1
+  ONE_TEST: 0
   ONE_TEST_TRAIN_STEP: 100
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [

@@ -209,7 +209,7 @@ class LgTransformer:
         labels = []
         try_tims = 0
         while len(labels) == 0 or [] in labels:
-            imgs, labels = self.dataaug._augmenting(aug_way_ids=([25],[]),
+            imgs, labels = self.dataaug._augmenting(aug_way_ids=([25], []),
                                                     datas=([img], [label]))  # [11,20, 21, 22]
             try_tims += 1
 
@@ -234,6 +234,7 @@ class LgTransformer:
         img_after = cv2.resize(img, (size[1], size[0]))
         img_size = img.shape
         ratio = np.asarray([size[1] / img_size[1], size[0] / img_size[0]])  # (W,H)
+        label = np.asarray(label)
         label[:, [1, 3]] = label[:, [1, 3]] * ratio[0]
         label[:, [2, 4]] = label[:, [2, 4]] * ratio[1]
 
@@ -310,6 +311,11 @@ class LgTransformer:
         label = label / mask
         return img, label
 
+    def img_binary(self, img, label):
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        img, binary = cv2.threshold(img, 175, 255, cv2.THRESH_BINARY)
+        binary = np.stack((binary,) * 3, axis=-1)
+        return binary, label
     #
     # def rescale_size(self, old_size, scale, return_scale=False):
     #     """Calculate the new size to be rescaled to."""

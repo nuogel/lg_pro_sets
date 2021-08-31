@@ -27,7 +27,7 @@ class OBD_Loader(DataLoader):
         self.cls2idx = dict(zip(cfg.TRAIN.CLASSES, range(cfg.TRAIN.CLASSES_NUM)))
         self.write_images = self.cfg.TRAIN.WRITE_IMAGES
         self.lgtransformer = LgTransformer(self.cfg)
-        self.keep_difficult = False
+        self.keep_difficult = True
         if self.cfg.TRAIN.MULTI_SCALE:
             self._prepare_multiszie()
         if self.cfg.TRAIN.USE_LMDB:
@@ -62,6 +62,10 @@ class OBD_Loader(DataLoader):
         # DOAUG:
         if self.cfg.TRAIN.DO_AUG and self.is_training:  # data aug is wasting time.
             img, label = self.lgtransformer.data_aug(img, label)
+
+        # GRAY_BINARY
+        if (self.cfg.TRAIN.GRAY_BINARY and self.is_training) or (self.cfg.TEST.GRAY_BINARY and not self.is_training):
+            img, label = self.lgtransformer.img_binary(img, label)
 
         if self.cfg.TRAIN.MOSAIC and self.is_training:
             # need 4 images

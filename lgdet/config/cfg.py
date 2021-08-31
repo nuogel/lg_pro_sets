@@ -50,6 +50,7 @@ def prepare_cfg(cfg, args, is_training=True):
         cfg.TRAIN.RESIZE = 1
         cfg.TRAIN.PADTOSIZE = 0
         cfg.TRAIN.DO_AUG = 0
+        cfg.TRAIN.GRAY_BINARY = 0
         cfg.TRAIN.USE_LMDB = 0
         cfg.TRAIN.MOSAIC = 0
         cfg.TRAIN.MULTI_SCALE = 0
@@ -97,15 +98,15 @@ def prepare_cfg(cfg, args, is_training=True):
         #                  [16, 30],
         #                  [10, 13]]
 
-        anchor_yolov2 = [[128., 128.],
-                         [64, 64],
-                         [32., 32.],
-                         [16., 32.],
-                         [16., 16.],
-                         [13., 8.],
-                         [8., 13.],
-                         [9., 9.],
-                         [5., 5.]]
+        anchor_yolov2 = [[117., 158.],
+                          [202., 73.],
+                          [107., 30.],
+                          [20., 82.],
+                          [24., 45.],
+                          [51., 19.],
+                          [33., 12.],
+                          [15., 22.],
+                          [9., 10.]]
         anchor_yolov3_tiny = [[344.89, 337.14], [178.68, 306.55], [246.38, 163.33],
                               [93.49, 227.46], [86.93, 109.69], [34.01, 61.78]]  # others
 
@@ -171,28 +172,28 @@ def prepare_cfg(cfg, args, is_training=True):
         # backbone
         if cfg.TRAIN.MODEL == 'fcos':
             cfg.TRAIN.RELATIVE_LABELS = 0
-        cfg.pretrained = True
-        cfg.freeze_stage_1 = True
-        cfg.freeze_bn = True
+            cfg.pretrained = False
+            cfg.freeze_stage_1 = True
+            cfg.freeze_bn = True
 
-        # fpn
-        cfg.fpn_out_channels = 256
-        cfg.use_p5 = True
+            # fpn
+            cfg.fpn_out_channels = 256
+            cfg.use_p5 = True
 
-        # head
-        cfg.use_GN_head = True
-        cfg.prior = 0.01
-        cfg.add_centerness = True
-        cfg.cnt_on_reg = True
+            # head
+            cfg.use_GN_head = True
+            cfg.prior = 0.01
+            cfg.add_centerness = True
+            cfg.cnt_on_reg = True
 
-        # training
-        cfg.strides = [8, 16, 32, 64, 128]
-        cfg.limit_range = [[-1, 64], [64, 128], [128, 256], [256, 512], [512, 999999]]
+            # training
+            cfg.strides = [8, 16, 32, 64, 128]
+            cfg.limit_range = [[-1, 64], [64, 128], [128, 256], [256, 512], [512, 999999]]
 
-        # inference
-        cfg.score_threshold = 0.5
-        cfg.nms_iou_threshold = 0.5
-        cfg.max_detection_boxes_num = 1000
+            # inference
+            cfg.score_threshold = 0.5
+            cfg.nms_iou_threshold = 0.5
+            cfg.max_detection_boxes_num = 1000
 
     return cfg, args
 

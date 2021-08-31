@@ -69,7 +69,7 @@ class Dataaug:
             22: iaa.Affine(translate_percent=(-0.01, 0.01), rotate=(-3, 3)),
             23: iaa.Crop(),
             24: iaa.CropAndPad(),
-            25: iaa.CropToFixedSize(width=crop_size[1], height=crop_size[0], ),
+            25: iaa.CropToFixedSize(width=crop_size[1], height=crop_size[0], position='normal'),
             26: iaa.PadToFixedSize(width=crop_size[1], height=crop_size[0], ),
             27: iaa.Resize(crop_size)
         }

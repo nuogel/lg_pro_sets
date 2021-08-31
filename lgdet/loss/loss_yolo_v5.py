@@ -75,7 +75,13 @@ class YoloLoss:
             # Matches
             r = t[:, :, 4:6] / anchors[:, None]  # wh ratio
             j = torch.max(r, 1. / r).max(2)[0] < 4.  # compare
-            # j = wh_iou(anchors, t[:, 4:6]) > 0.2  # iou(3,n)=wh_iou(anchors(3,2), gwh(n,2))
+            # j = wh_iou(anchors, t[:,:, 4:6]) > 0.2  # iou(3,n)=wh_iou(anchors(3,2), gwh(n,2))
+            iou = wh_iou(anchors, t[0, :, 4:6]).max(0)[1]
+            fited = j.max(0)[0].detach()
+            for i, fi in enumerate(fited):
+                if fi == False:
+                    j[iou[i], i] = True
+
             t = t[j]  # filter
 
             # Offsets
@@ -111,7 +117,8 @@ class YoloLoss:
         loc_losstype, obj_losstype = kwargs['losstype']
         balance = [4.0, 1.0, 0.4][f_id]
         metrics = {}
-        lcls, lbox, lobj, loss_iou_aware, iou = [torch.FloatTensor([0]).to(self.device) for _ in range(5)]
+        lcls, lbox, lobj, loss_iou_aware, iou, cls_p = [torch.FloatTensor([-1.]).to(self.device) for _ in range(6)]
+        loss_iou_aware = torch.FloatTensor([0.]).to(self.device)
         pre_obj, pre_cls, pre_loc_xy, pre_loc_wh, pred_iou, pre_relative_box = self.parsepredict.parser._parse_yolo_predict_fmap(f_map, f_id)
         with torch.no_grad():
             tcls, tbox, indices, anchors = self.build_targets(pre_obj, labels, f_id)  # targets
@@ -119,7 +126,7 @@ class YoloLoss:
             tobj = torch.zeros_like(pre_obj)  # target obj
             num_target = anchors.shape[0]  # number of targets
             loss_ratio = {'box': 0.05, 'cls': 0.125, 'obj': 1 * balance, 'noobj': 1 * balance}
-        metrics['cls_p']=0.0
+        metrics['cls_p'] = cls_p
         if num_target:
             pre_cls, pre_xy, pre_wh = [i[indices] for i in [pre_cls, pre_loc_xy, pre_loc_wh]]
             cp, cn = smooth_BCE(eps=0.1)
@@ -138,25 +145,23 @@ class YoloLoss:
             else:
                 area_scale = 1.
 
-            if loc_losstype == 'mse':
-                # mse:
-                tobj[indices] = 1.0
-                twh = torch.log(tbox[..., 2:] / anchors + 1e-10)  # torch.log(gw / anchors[best_n][:, 0] + 1e-16)
-                lxy = self.mseloss(pre_xy, tbox[..., :2])
-                if self.multiply_area_scale: area_scale = area_scale.unsqueeze(-1).expand_as(pre_wh)
-                lwh = self.mseloss(pre_wh * area_scale, twh * area_scale)
-                lbox = (lxy + lwh)
-
-            elif loc_losstype == 'iouloss':
+            if loc_losstype == 'iouloss':
                 pre_wh = pre_wh * anchors
                 pbox = torch.cat((pre_xy, pre_wh), 1)  # predicted box
                 iou = bbox_GDCiou(pbox.t(), tbox, x1y1x2y2=False, CIoU=True)  # giou(prediction, target)
-                lbox = (1.0 - iou) * area_scale
+                ratio_iou=False
+                if ratio_iou:
+                    riou = torch.ones_like(iou)  # IOU ratio
+                    riou[iou < 0.5] = 5
+                else:
+                    riou=1.0
+                lbox = (1.0 - iou) * area_scale * riou
                 if self.reduction == 'mean':
                     lbox = lbox.mean()  # giou loss
                 else:
                     lbox = lbox.sum() / num_target  # giou loss
-                # # Objectness
+
+                # 2) Objectness
                 global_step = kwargs['global_step']
                 if self.one_test:
                     gr = 1
@@ -171,13 +176,17 @@ class YoloLoss:
                     pred_iou = torch.clamp(pred_iou[indices], 0, 1)
                     loss_iou_aware = self.bceloss(pred_iou, iou.detach())
 
+                metrics['iou_sc'] = iou.mean().item()
+                iou_percent = (iou > self.cfg.TEST.IOU_THRESH).sum() * 1.0 / len(iou)
+                metrics['iou_p'] = iou_percent.item()
+        else:
+            pass
         obj_mask = tobj > 0.
         noobj_mask = ~obj_mask
         # noobj_mask[indices_ignore] = False
         label_weight_mask = (obj_mask | noobj_mask)
         obj_num = obj_mask.sum()
         if obj_losstype == 'focalloss':
-            pre_obj = pre_obj.sigmoid()
             _loss, obj_loss, noobj_loss = self.Focalloss_lg(pre_obj, tobj, obj_mask, noobj_mask, split_loss=True)
         if obj_losstype == 'ghm':
             obj_loss = self.ghm(pre_obj, tobj, label_weight_mask)
@@ -199,7 +208,7 @@ class YoloLoss:
         noobj_loss = loss_ratio['noobj'] * noobj_loss
         lcls = loss_ratio['cls'] * lcls
         lbox = loss_ratio['box'] * lbox
-
+        loss_iou_aware = loss_ratio['box'] * loss_iou_aware
         total_loss = obj_loss + noobj_loss + lcls + lbox + loss_iou_aware
 
         if self.reduction == 'sum': total_loss = total_loss / B
@@ -208,9 +217,9 @@ class YoloLoss:
 
         # metrics
         pre_obj = pre_obj.sigmoid()
-        obj_sc = pre_obj[obj_mask].mean().item() if obj_num > 0. else 0.
+        obj_sc = pre_obj[obj_mask].mean().item() if obj_num > 0. else -1.
         noobj_sc = pre_obj[noobj_mask].mean().item()
-        obj_percent = ((pre_obj[obj_mask] > self.cfg.TEST.SCORE_THRESH).float()).mean().item() if obj_num > 0. else 0.
+        obj_percent = ((pre_obj[obj_mask] > self.cfg.TEST.SCORE_THRESH).float()).mean().item() if obj_num > 0. else -1.
         noobj_thresh_sum = (pre_obj[noobj_mask] > self.cfg.TEST.SCORE_THRESH).sum().item() / B
         # iou_sc = iou_xyxy(xywh2xyxy(pre_relative_box[indices]), labels[..., 2:6], type='N2N') if obj_num > 0. else 0.
         metrics['ob_l'] = obj_loss.item()
@@ -218,9 +227,6 @@ class YoloLoss:
         metrics['cls_l'] = lcls.item()
         metrics['box_l'] = lbox.item()
         metrics['aware_l'] = loss_iou_aware.item()
-        metrics['iou_sc'] = iou.mean()
-        iou_percent = (iou > self.cfg.TEST.IOU_THRESH).sum() * 1.0 / len(iou)
-        metrics['iou_p'] = iou_percent.item()
         metrics['obj_sc'] = obj_sc
         metrics['obj_p'] = obj_percent
         metrics['nob_sc'] = noobj_sc
@@ -237,15 +243,17 @@ class YoloLoss:
         for f_id, f_map in enumerate(f_maps):
             _loss, _metrics = self._loss_cal_one_Fmap(f_map, f_id, labels, kwargs)
             total_loss += _loss
-            if f_id == 0:
-                metrics = _metrics
-            else:
-                for k, v in metrics.items():
-                    try:
-                        metrics[k] += _metrics[k]
-                    except:
+            for k, v in _metrics.items():
+                if k not in metrics:
+                    metrics[k] = []
+                try:
+                    if _metrics[k] == -1.:
                         pass
+                    else:
+                        metrics[k].append(_metrics[k])
+                except:
+                    pass
 
         for k, v in metrics.items():
-            metrics[k] = v / len(f_maps)
+            metrics[k] = np.asarray(v).mean()
         return {'total_loss': total_loss, 'metrics': metrics}

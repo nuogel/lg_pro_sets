@@ -33,6 +33,7 @@ class CopyLittleTarget:
     def run(self):
         for ii, img_name in enumerate(self.bg_imgs_list):
             print('deeling with pic:', ii, '-', img_name)
+
             dest_img, dest_mask = self._make_dest_images(img_name, self.targets_dict)
 
             dest_mask[dest_mask != 0] = 255
@@ -45,7 +46,7 @@ class CopyLittleTarget:
             # dest_img_path = os.path.join(self.save_path, 'images', img_name)
             # cv2.imwrite(dest_img_path, dest_img)
             # cv2.imwrite(dest_lab_path, dest_mask)
-            json_label = True
+            json_label = False
             if json_label:
                 '''
                 [{"positions": [{"type": "out", "point": [{"x": 728, "y": 512}, {"x": 979, "y": 512}, {"x": 979, "y": 796}, {"x": 728, "y": 796}]}, {"type": "in", "point": [{"x": 730, "y": 520}, {"x": 800, "y": 520}, {"x": 800, "y": 600}, {"x": 730, "y": 600}]}, {"type": "in", "point": [{"x": 900, "y": 600}, {"x": 950, "y": 600}, {"x": 950, "y": 750}, {"x": 900, "y": 750}]}], "labels": {"实体类型": "轿车", "属性": {"品牌": "本田锋范", "年份": "2013-2017", "车身颜色": "红色"}}}]
@@ -102,13 +103,15 @@ class CopyLittleTarget:
             img = cv2.polylines(img, [contours], True, (0, 255, 255), 1)
         cv2.imshow('img', img)
         cv2.waitKey()
+        cv2.imwrite(str(random.randint(0, 1000))+'.jpg', img)
 
     def _read_source_targets(self, mask_img_path, mask_lab_path):  # little target with its bounding box as a pic size.
         mask_img = cv2.imread(mask_img_path)
         mask = np.zeros(mask_img.shape[:2], dtype=np.uint8)
         if mask_lab_path is not None:
             mask_points = self._read_json_mask(mask_lab_path)
-            # self._show_mask(mask_img, mask_points)
+            self._show_mask(mask_img, mask_points)
+
             for mask_point in mask_points:
                 if mask_point['name'] == '垃圾':
                     mask = cv2.fillPoly(mask, [np.asarray(mask_point['points'])], 255)
@@ -124,6 +127,9 @@ class CopyLittleTarget:
             dest_lab_path = self.bg_labs_path
         dest_img, dest_mask = self._read_source_targets(dest_img_path, dest_lab_path)
         d_size = dest_img.shape
+        if self.copy_number<=0:
+            return dest_img, dest_mask
+
         for k, v in targets_dict.items():
             if len(v) >= self.copy_number:
                 s_targets = random.sample(v, self.copy_number)
@@ -156,14 +162,14 @@ class CopyLittleTarget:
 
 
 if __name__ == '__main__':
-    bg_imgs_path = '/media/dell/data/garbage/城管二期-垃圾分割-AI模型预测回传210810-lg/images'
-    bg_labs_path = None  # '/media/dell/data/garbage/道路垃圾-合川摆拍-雨天-训练集/labels'
+    bg_imgs_path = '/media/dell/data/garbage/道路垃圾-合川摆拍-雨天-训练集/images'
+    bg_labs_path ='/media/dell/data/garbage/道路垃圾-合川摆拍-雨天-训练集/labels'# None  #
     save_path = '/media/dell/data/garbage/道路垃圾合成_回传_打包垃圾'
 
     source_imgs_paths = ['/media/dell/data/garbage/合川城管-打包垃圾-网络下载-前景/images',
                          '/media/dell/data/garbage/河道垃圾_自动训练平台_训练集_前景垃圾_竞赛_修正/images']
     source_labs_paths = ['/media/dell/data/garbage/合川城管-打包垃圾-网络下载-前景/labels',
                          '/media/dell/data/garbage/河道垃圾_自动训练平台_训练集_前景垃圾_竞赛_修正/labels']
-    copy_number = 10
+    copy_number = 0
     clt = CopyLittleTarget(bg_imgs_path, bg_labs_path, source_imgs_paths, source_labs_paths, copy_number, save_path)
     clt.run()
