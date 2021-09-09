@@ -59,13 +59,14 @@ class OBD_Loader(DataLoader):
 
     def __getitem__(self, index):
         img, label, data_info = self._load_gt(index)
-        # DOAUG:
-        if self.cfg.TRAIN.DO_AUG and self.is_training:  # data aug is wasting time.
-            img, label = self.lgtransformer.data_aug(img, label)
 
         # GRAY_BINARY
         if (self.cfg.TRAIN.GRAY_BINARY and self.is_training) or (self.cfg.TEST.GRAY_BINARY and not self.is_training):
-            img, label = self.lgtransformer.img_binary(img, label)
+            img, label, data_info = self.lgtransformer.img_binary(img, label, data_info)
+
+        # DOAUG:
+        if self.cfg.TRAIN.DO_AUG and self.is_training:  # data aug is wasting time.
+            img, label, data_info = self.lgtransformer.data_aug(img, label, data_info)
 
         if self.cfg.TRAIN.MOSAIC and self.is_training:
             # need 4 images
@@ -88,8 +89,9 @@ class OBD_Loader(DataLoader):
         if (self.cfg.TRAIN.RESIZE and self.is_training) or (self.cfg.TEST.RESIZE and not self.is_training):
             img, label, data_info = self.lgtransformer.resize(img, label, self.cfg.TRAIN.IMG_SIZE, data_info)
 
+
         if self.cfg.TRAIN.RELATIVE_LABELS:
-            img, label = self.lgtransformer.relative_label(img, label)
+            img, label = self.lgtransformer.relative_label(img, label, )
 
         if self.cfg.TRAIN.SHOW_INPUT > 0:
             _show_img(img.copy(), label.copy(), cfg=self.cfg, show_time=self.cfg.TRAIN.SHOW_INPUT, pic_path=data_info['lab_path'])

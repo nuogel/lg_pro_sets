@@ -21,9 +21,11 @@ def images2video(images_dir, video_save_path, fps=10):
 
 
 if __name__ == '__main__':
-    img_path='/media/dell/data/garbage/video_demo/images'
-    save_path = '/media/dell/data/garbage/video_demo/garbage_seg_demo.mp4'
-    images2video(img_path, save_path, fps=1)
+    # img_path='/media/dell/data/garbage/video_demo/images'
+    # save_path = '/media/dell/data/garbage/video_demo/garbage_seg_demo.mp4'
+    img_path = '/media/dell/data/shopout/video_demo/images'
+    save_path = '/media/dell/data/shopout/video_demo/出店经营-demo.mp4'
+    images2video(img_path, save_path, fps=0.8)
 #
 #
 #

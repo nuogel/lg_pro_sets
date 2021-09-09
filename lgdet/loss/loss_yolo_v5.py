@@ -9,9 +9,7 @@ from lgdet.loss.loss_base.ghm_loss import GHMC
 from lgdet.loss.loss_base.smothBCE import smooth_BCE
 
 '''
-with the new yolo loss, in 56 images, loss is 0.18 and map is 0.2.and the test show wrong bboxes.
-with the new yolo loss, in 8 images, loss is 0.015 and map is 0.99.and the test show terrible bboxes.
-
+some bugs for not good results...
 '''
 
 
@@ -76,11 +74,13 @@ class YoloLoss:
             r = t[:, :, 4:6] / anchors[:, None]  # wh ratio
             j = torch.max(r, 1. / r).max(2)[0] < 4.  # compare
             # j = wh_iou(anchors, t[:,:, 4:6]) > 0.2  # iou(3,n)=wh_iou(anchors(3,2), gwh(n,2))
-            iou = wh_iou(anchors, t[0, :, 4:6]).max(0)[1]
-            fited = j.max(0)[0].detach()
-            for i, fi in enumerate(fited):
-                if fi == False:
-                    j[iou[i], i] = True
+            add_maxIou = 1 # by:lg
+            if add_maxIou:
+                iou = wh_iou(anchors, t[0, :, 4:6]).max(0)[1]
+                fited = j.max(0)[0].detach()
+                for i, fi in enumerate(fited):
+                    if fi == False:
+                        j[iou[i], i] = True
 
             t = t[j]  # filter
 
@@ -216,7 +216,7 @@ class YoloLoss:
             print('nan')
 
         # metrics
-        pre_obj = pre_obj.sigmoid()
+        # pre_obj = pre_obj.sigmoid()
         obj_sc = pre_obj[obj_mask].mean().item() if obj_num > 0. else -1.
         noobj_sc = pre_obj[noobj_mask].mean().item()
         obj_percent = ((pre_obj[obj_mask] > self.cfg.TEST.SCORE_THRESH).float()).mean().item() if obj_num > 0. else -1.

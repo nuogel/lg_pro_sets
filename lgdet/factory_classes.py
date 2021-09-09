@@ -22,7 +22,10 @@ def get_score_class(belongs):
 
 
 def get_loss_class(belongs, modelname):
-    if modelname == 'yolov5':
+    if modelname == 'yolov3':
+        from lgdet.loss.loss_yolo_v3 import YoloLoss
+        return YoloLoss
+    elif modelname == 'yolov5':
         from lgdet.loss.loss_yolo_v5 import YoloLoss
         return YoloLoss
     elif modelname[:4] == 'yolo':

@@ -35,13 +35,6 @@ class YoloLoss:
         self.parsepredict = ParsePredict(cfg)
         self.multiply_area_scale = 0  # whether multiply loss to area_scale.
 
-        self.alpha = 0.25
-        self.gamma = 2
-        self.Focalloss = FocalLoss(loss_weight=1.0, pos_weight=1.0, gamma=1.5, alpha=0.25, reduction='mean').to(
-            self.device)
-        self.Focalloss_lg = FocalLoss_lg(alpha=self.alpha, gamma=self.gamma, ).to(self.device)
-        self.ghm = GHMC(use_sigmoid=True)
-
     def build_targets(self, pre_obj, labels, f_id):
         # time_1 = time.time()
 
@@ -99,7 +92,6 @@ class YoloLoss:
         """Calculate the loss."""
         # init loss.
         loc_losstype, obj_losstype = kwargs['losstype']
-
         metrics = {}
         lcls, lbox, lobj = [torch.FloatTensor([0]).to(self.device) for _ in range(3)]
         pre_obj, pre_cls, pre_loc_xy, pre_loc_wh, pred_iou, pre_relative_box = self.parsepredict.parser._parse_yolo_predict_fmap(
@@ -128,62 +120,24 @@ class YoloLoss:
             else:
                 area_scale = 1.
 
-            if loc_losstype == 'mse':
-                # mse:
-                tobj[indices] = 1.0
-                twh = torch.log(tbox[..., 2:] / anchors + 1e-10)  # torch.log(gw / anchors[best_n][:, 0] + 1e-16)
-                lxy = self.mseloss(pre_xy, tbox[..., :2])
-                if self.multiply_area_scale: area_scale = area_scale.unsqueeze(-1).expand_as(pre_wh)
-                lwh = self.mseloss(pre_wh * area_scale, twh * area_scale)
-                lbox = (lxy + lwh)
-
-            elif loc_losstype == 'iouloss':
-                pre_wh = pre_wh * anchors
-                pbox = torch.cat((pre_xy, pre_wh), 1)  # predicted box
-                iou = bbox_GDCiou(pbox.t(), tbox, x1y1x2y2=False, CIoU=True)  # giou(prediction, target)
-                lbox = (1.0 - iou) * area_scale
-                if self.reduction == 'mean':
-                    lbox = lbox.mean()  # giou loss
-                else:
-                    lbox = lbox.sum() / num_target  # giou loss
-                # # Objectness
-                global_step = kwargs['global_step']
-                if self.one_test:
-                    gr = 1
-                else:
-                    len_batch = kwargs['len_batch']
-                    xi = [0, max(3 * len_batch, 500)]
-                    gr = np.interp(global_step, xi, [0.0, 1.0])  # giou loss ratio (obj_loss = 1.0 or giou)
-                tobj[indices] = (1.0 - gr) + gr * iou.detach().clamp(min=0.1).type(tobj.dtype)  # giou ratio
+            # MSE:
+            tobj[indices] = 1.0
+            twh = torch.log(tbox[..., 2:] / anchors + 1e-10)  # torch.log(gw / anchors[best_n][:, 0] + 1e-16)
+            lxy = self.mseloss(pre_xy, tbox[..., :2])
+            if self.multiply_area_scale: area_scale = area_scale.unsqueeze(-1).expand_as(pre_wh)
+            lwh = self.mseloss(pre_wh * area_scale, twh * area_scale)
+            lbox = (lxy + lwh)
 
         obj_mask = tobj > 0.
         noobj_mask = ~obj_mask
         noobj_mask[indices_ignore] = False
         label_weight_mask = (obj_mask | noobj_mask)
         obj_num = obj_mask.sum()
-        if obj_losstype == 'focalloss':
-            loss_ratio['obj'] = 1
-            loss_ratio['noobj'] = 1
-            _loss, obj_loss, noobj_loss = self.Focalloss_lg(pre_obj, tobj, obj_mask, noobj_mask, split_loss=True)
-        if obj_losstype == 'ghm':
-            obj_loss = self.ghm(pre_obj, tobj, label_weight_mask)
-            noobj_loss = torch.FloatTensor([0]).to(self.device)
-        elif obj_losstype == 'bce':
-            loss_ratio['obj'] = 1
-            loss_ratio['noobj'] = 1
-            if obj_num:
-                obj_loss = self.bceloss(pre_obj[obj_mask], tobj[obj_mask])  # obj loss
-            else:
-                obj_loss = torch.FloatTensor([0]).to(self.device)
-            noobj_loss = self.bceloss(pre_obj[noobj_mask], tobj[noobj_mask])  # obj loss
-        elif obj_losstype == 'mse':
-            loss_ratio['obj'] = 1
-            loss_ratio['noobj'] = 5
-            if obj_num:
-                obj_loss = self.mseloss(pre_obj[obj_mask], tobj[obj_mask])  # obj loss
-            else:
-                obj_loss = torch.FloatTensor([0]).to(self.device)
-            noobj_loss = self.mseloss(pre_obj[noobj_mask], tobj[noobj_mask])  # obj loss
+        if obj_num:
+            obj_loss = self.bceloss(pre_obj[obj_mask], tobj[obj_mask])  # obj loss
+        else:
+            obj_loss = torch.FloatTensor([0]).to(self.device)
+        noobj_loss = self.bceloss(pre_obj[noobj_mask], tobj[noobj_mask])  # obj loss
 
         total_loss = loss_ratio['obj'] * obj_loss + loss_ratio['noobj'] * noobj_loss + loss_ratio['cls'] * lcls + \
                      loss_ratio['box'] * lbox

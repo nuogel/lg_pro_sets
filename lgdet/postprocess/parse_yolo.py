@@ -13,7 +13,12 @@ class ParsePredict_yolo:
         self.cls_num = cfg.TRAIN.CLASSES_NUM
         self.NMS = NMS(cfg)
         self.device = self.cfg.TRAIN.DEVICE
-        self.scale_x_y = 2  # 1.05    # Grid Sensitive
+        if self.cfg.TRAIN.MODEL == 'yolov5':
+            self.scale_xy = 2  # 1.05    # Grid Sensitive [-1 or >1]
+            self.scale_wh = False
+        else:
+            self.scale_xy = -1  # 1.05    # Grid Sensitive [-1 or >1]
+            self.scale_wh = False
         self.grid = [torch.zeros(1)] * self.anc_num  # init grid
         self.iou_aware_factor = 0.4
 
@@ -79,24 +84,28 @@ class ParsePredict_yolo:
         """
         # make the feature map anchors
 
-        ###1: pre deal feature mps
+        # 1: pre deal feature mps
         B, C, H, W = f_map.shape
         base = 6 if self.cfg.TRAIN.IOU_AWARE else 5
 
         f_map = f_map.view(B, self.anc_num, self.cls_num + base, H, W)
-        _permiute = (0, 1, 3, 4, 2)
-        f_map = f_map.permute(_permiute).contiguous()
+        permiute_type = (0, 1, 3, 4, 2)
+        f_map = f_map.permute(permiute_type).contiguous()
 
-        f_map[..., 1:] = f_map[..., 1:].sigmoid()
-        pred_conf = f_map[..., 0]  # NO sigmoid()
-        pred_xy = f_map[..., 1:3]  # Center x
-        # Grid Sensitive
-        if self.scale_x_y > 1:
-            pred_xy = self.scale_x_y * pred_xy - 0.5 * (self.scale_x_y - 1.0)  # Grid Sensitive
-
-        pred_wh = (f_map[..., 3:5] * 2) ** 2  # Width
+        pred_conf = f_map[..., 0].sigmoid()  # sigmoid()
+        pred_xy = f_map[..., 1:3].sigmoid()  # Center xy
+        pred_wh = f_map[..., 3:5]  # wh
         pred_iou = f_map[..., base - 1] if self.cfg.TRAIN.IOU_AWARE else None
-        pred_cls = f_map[..., base:]  # Cls pred.
+        pred_cls = f_map[..., base:].sigmoid()  # Cls pred with Sigmoid
+
+        # Grid Sensitive
+        if self.scale_xy > 1:
+            pred_xy = self.scale_xy * pred_xy - 0.5 * (self.scale_xy - 1.0)  # Grid Sensitive
+        if self.scale_wh:
+            pred_wh = pred_wh.sigmoid()
+            pred_wh = (pred_wh * 2) ** 2  # Width
+        else:
+            pred_wh = pred_wh.exp()
 
         anchor_ch, grid_wh = self._make_anc(f_id, W, H)
         if self.grid[f_id].shape[2:4] != f_map.shape[2:4]:
@@ -109,7 +118,6 @@ class ParsePredict_yolo:
         if not tolabel:  # training
             return pred_conf, pred_cls, pred_xy, pred_wh, pred_iou, pre_box
         else:  # test
-            pred_conf = torch.sigmoid(pred_conf)
             if self.cfg.TRAIN.IOU_AWARE:
                 new_obj = torch.pow(pred_conf, (1 - self.iou_aware_factor)) * torch.pow(pred_iou, self.iou_aware_factor)
                 eps = 1e-7

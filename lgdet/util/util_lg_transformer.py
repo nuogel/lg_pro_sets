@@ -205,7 +205,7 @@ class LgTransformer:
                 pre_labels_out.append(labels)
         return pre_labels_out
 
-    def data_aug(self, img, label):
+    def data_aug(self, img, label, data_info):
         labels = []
         try_tims = 0
         while len(labels) == 0 or [] in labels:
@@ -219,7 +219,7 @@ class LgTransformer:
             len(label) == 0
         except:
             ...
-        return img_after, label_after
+        return img_after, label_after, data_info
 
     def resize(self, img, label, size, data_info):
         '''
@@ -231,7 +231,7 @@ class LgTransformer:
         :return:
         '''
 
-        img_after = cv2.resize(img, (size[1], size[0]))
+        img_after = cv2.resize(img, (size[1], size[0]),interpolation=cv2.INTER_CUBIC)
         img_size = img.shape
         ratio = np.asarray([size[1] / img_size[1], size[0] / img_size[0]])  # (W,H)
         label = np.asarray(label)
@@ -311,11 +311,22 @@ class LgTransformer:
         label = label / mask
         return img, label
 
-    def img_binary(self, img, label):
+    def img_binary(self, img, label, data_info):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        img, binary = cv2.threshold(img, 175, 255, cv2.THRESH_BINARY)
-        binary = np.stack((binary,) * 3, axis=-1)
-        return binary, label
+        # cv2.imshow('img', img)
+        # cv2.waitKey()
+        label = np.asarray(label)
+        txt = label[label[:, 0] == 10]
+        if txt!=[]:
+            w_txt = min((txt[:, 3] - txt[:, 1]).mean(), (txt[:, 4] - txt[:, 2]).mean())
+            ratio = 20/w_txt
+            newsize = int(img.shape[0]*ratio), int(img.shape[1]*ratio)
+            img, label, data_info = self.resize(img, label, newsize, data_info)
+        img, binary = cv2.threshold(img, 210, 255, cv2.THRESH_BINARY)
+        img = np.stack((binary,) * 3, axis=-1)
+        # cv2.imshow('img', img)
+        # cv2.waitKey()
+        return img, label, data_info
     #
     # def rescale_size(self, old_size, scale, return_scale=False):
     #     """Calculate the new size to be rescaled to."""

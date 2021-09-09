@@ -27,7 +27,7 @@ class Solver(BaseSolver):
             self.epoch = epoch
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch)
-            if (epoch + 1) % 5 == 0 or self.cfg.TEST.ONE_TEST:
+            if (epoch + 1) % 20 == 0 or self.cfg.TEST.ONE_TEST:
                 with torch.no_grad():
                     self._validate_an_epoch(epoch)
 
@@ -35,7 +35,7 @@ class Solver(BaseSolver):
         self.model.train()
         # count the step time, total time...
         print(('\n[train] %8s|%7s|%7s|%9s|' + '%6s|' * 3) % (
-        'model_n', 'epoch', 'g_step', 'l_rate', 'step_l', 'aver_l', 'others'))
+            'model_n', 'epoch', 'g_step', 'l_rate', 'step_l', 'aver_l', 'others'))
         Pbar = tqdm.tqdm(self.trainDataloader)
         # time5 = time.time()
         for step, train_data in enumerate(Pbar):
@@ -43,8 +43,10 @@ class Solver(BaseSolver):
                 self._set_warmup_lr()
             train_data = self.DataFun.to_devce(train_data)
             # forward process
-            predict = self.model.forward(input_x=train_data[0], input_y=train_data[1], input_data=train_data,
-                                         is_training=True)
+            if self.cfg.TRAIN.EMA:
+                predict = self.ema.ema(input_x=train_data[0], input_y=train_data[1], input_data=train_data, is_training=False)
+            else:
+                predict = self.model(input_x=train_data[0], input_y=train_data[1], input_data=train_data, is_training=False)
             # calculate the total loss
             self.global_step += 1
             total_loss, train_info = self._calculate_loss(predict, train_data,
@@ -84,12 +86,7 @@ class Solver(BaseSolver):
                 break
             test_data = self.DataFun.to_devce(train_data)
             if test_data[0] is None: continue
-            if self.cfg.TRAIN.EMA:
-                predict = self.ema.ema(input_x=test_data[0], input_y=test_data[1], input_data=test_data,
-                                       is_training=False)
-            else:
-                predict = self.model(input_x=test_data[0], input_y=test_data[1], input_data=test_data,
-                                     is_training=False)
+            predict = self.model(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)
             self.score.cal_score(predict, test_data)
             Pbar.set_description('[valid]')
 

@@ -4,6 +4,8 @@ eva_sys - 当前项目的名称。
 util_show_img - 读取图片数据，对应标签数据，将标注框画到图片上，显示出来
 
 """
+import random
+
 import cv2
 import os
 import xml.etree.ElementTree as ET
@@ -212,15 +214,20 @@ def _show_img(images, labels, show_img=True, show_time=None, save_img=False, sav
             # text = class_out+"||"+ " ".join([str(i) for i in box])
             class_out_dict = {'person': '站立', 'fall': '跌倒'}
             color = {'person': (0, 255, 0), 'fall': (0, 0, 255)}
-            text = class_out_dict[class_out] + str('--%.3f' % score)
-            # text = '占道经营'
-            cv2.rectangle(images, (xmin, ymin), (xmax, ymax), color[class_out])
+
+            text = class_out_dict[class_out] #+ str('--%.3f' % score)
+            # text = class_out_dict[class_out] + str('--%.3f' % score)
+            # text = '占道经营' + str('--%.3f' % (0.8+0.1*random.random()))
+            # class_out='占道经营'
+            # color = {'占道经营': (0, 0, 255)}
+
+            cv2.rectangle(images, (xmin, ymin), (xmax, ymax), color[class_out], thickness=3)
             tryPIL = 1
             if tryPIL:
                 # PIL图片上打印汉字
                 pilImg = Image.fromarray(cv2.cvtColor(images, cv2.COLOR_BGR2RGB))
                 draw = ImageDraw.Draw(pilImg)
-                size_font = 20
+                size_font = 40
                 font = ImageFont.truetype(font=f'font/simhei.ttf', size=size_font,
                                           encoding="utf-8")  # 参数1：字体文件路径，参数2：字体大小
                 draw.text((xmin, ymin - size_font), text, color[class_out][::-1],
@@ -228,7 +235,7 @@ def _show_img(images, labels, show_img=True, show_time=None, save_img=False, sav
                 # PIL图片转cv2 图片
                 images = cv2.cvtColor(np.array(pilImg), cv2.COLOR_RGB2BGR)
             else:
-                cv2.putText(images, 'shop_out', (xmin, ymin), 1, 1, (0, 255, 255))
+                cv2.putText(images, 'shop_out', (xmin, ymin), 3, 3, (0, 255, 255))
 
     # cv2.putText(images, 'The Number of Cars is : %d' % len(labels), (600, 220), 1, 2, (0, 0, 255), thickness=2)
     # cv2.putText(images, 'Made by AI Team of Chengdu Fourier Electronic', (600, 250), 1, 2, (0, 0, 255), thickness=2)
@@ -261,6 +268,8 @@ def main():
     # img, label = _read_datas(im_file, label_file)
     img_folds = '/home/dell/ai_share/wuzhe/西南油气田/测试视频/人员倒地/港356-4_20210810150000-20210810180000_500_00_00-00_08_25_person_pred/images'
     label_folds = '/home/dell/ai_share/wuzhe/西南油气田/测试视频/人员倒地/港356-4_20210810150000-20210810180000_500_00_00-00_08_25_person_pred/labels'
+    # img_folds = '/media/dell/data/shopout/城管二期-出店经营-第一批回传标注-lg/images'
+    # label_folds = '/media/dell/data/shopout/城管二期-出店经营-第一批回传标注-lg/labels'
     # label_folds = 'F:\LG\GitHub\lg_pro_sets\\tmp\predicted_labels'
 
     # _show_img(img, label)
@@ -282,7 +291,7 @@ def main():
     save_video = 1
     save_image = True
     for index in range(min(img_num, lab_num)):
-        if index <= 7800 // 5 or index > 9200 // 5: continue
+        if index <= 7800 // 5 or index > 8300 // 5: continue
         im_file = local_img_files[index]
         label_file = im_file.replace('images', 'labels').replace('.jpg', '.txt')  # local_label_files[index]
         if not check_is_file(im_file) or not check_is_file(label_file):

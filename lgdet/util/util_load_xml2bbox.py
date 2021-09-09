@@ -22,7 +22,7 @@ class GetXmlGtBoxes:
             difficult = int(obj.find("difficult").text) == 1
             if not keep_difficult and difficult:
                 continue
-            name = obj.find("name").text.lower().strip()
+            name = obj.find("name").text.strip()
             if name in self.name_dict:
                 name = self.name_dict[name]
             bbox = obj.find("bndbox")

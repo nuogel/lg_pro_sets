@@ -1,13 +1,96 @@
 # copy smale target with bounding boxes to background pics.
 import os
-from .util_load_xml2bbox import GetXmlGtBoxes
+from util_load_xml2bbox import GetXmlGtBoxes
 import cv2
 import random
 import numpy as np
-from .util_iou import box_iou
-from .util_save_vocxml import GEN_Annotations
+from util_iou import box_iou
 import tqdm
 
+from lxml import etree
+
+
+class GEN_Annotations:
+    def __init__(self, filename='voc xml'):
+        self.root = etree.Element("annotation")
+        child1 = etree.SubElement(self.root, "folder")
+        child1.text = "VOC2007"
+        child2 = etree.SubElement(self.root, "filename")
+        child2.text = filename
+        child3 = etree.SubElement(self.root, "source")
+        child4 = etree.SubElement(child3, "annotation")
+        child4.text = "PASCAL VOC2007"
+        child5 = etree.SubElement(child3, "database")
+        child5.text = "Unknown"
+        child6 = etree.SubElement(child3, "image")
+        child6.text = "flickr"
+        # child7 = etree.SubElement(child3, "flickrid")
+        # child7.text = "35435"
+
+    def set_size(self, witdh, height, channel):
+        size = etree.SubElement(self.root, "size")
+        widthn = etree.SubElement(size, "width")
+        widthn.text = str(witdh)
+        heightn = etree.SubElement(size, "height")
+        heightn.text = str(height)
+        channeln = etree.SubElement(size, "depth")
+        channeln.text = str(channel)
+
+    def savefile(self, filename):
+        tree = etree.ElementTree(self.root)
+        tree.write(filename, pretty_print=True, xml_declaration=False, encoding='utf-8')
+
+    def add_pic_attr(self, label, xmin, ymin, xmax, ymax):
+        object = etree.SubElement(self.root, "object")
+        namen = etree.SubElement(object, "name")
+        namen.text = label
+        pose = etree.SubElement(object, "pose")
+        pose.text = str(0)
+        truncated = etree.SubElement(object, "truncated")
+        truncated.text = str(0)
+        difficult = etree.SubElement(object, "difficult")
+        difficult.text = str(0)
+        bndbox = etree.SubElement(object, "bndbox")
+        xminn = etree.SubElement(bndbox, "xmin")
+        xminn.text = str(xmin)
+        yminn = etree.SubElement(bndbox, "ymin")
+        yminn.text = str(ymin)
+        xmaxn = etree.SubElement(bndbox, "xmax")
+        xmaxn.text = str(xmax)
+        ymaxn = etree.SubElement(bndbox, "ymax")
+        ymaxn.text = str(ymax)
+
+    def genvoc(self, filename, class_, width, height, depth, xmin, ymin, xmax, ymax, savedir):
+        anno = GEN_Annotations(filename)
+        anno.set_size(width, height, depth)
+        anno.add_pic_attr("pos", xmin, ymin, xmax, ymax)
+        anno.savefile(savedir)
+
+def box_iou(boxes1, boxes2):
+    # https://github.com/pytorch/vision/blob/master/torchvision/ops/boxes.py
+    """
+    Return intersection-over-union (Jaccard index) of boxes.
+    Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
+    Arguments:
+        boxes1 (Tensor[N, 4])
+        boxes2 (Tensor[M, 4])
+    Returns:
+        iou (Tensor[N, M]): the NxM matrix containing the pairwise
+            IoU values for every element in boxes1 and boxes2
+    """
+
+    def box_area(box):
+        # box = 4xn
+        return (box[2] - box[0]) * (box[3] - box[1])
+
+    area1 = box_area(boxes1.t())
+    area2 = box_area(boxes2.t())
+
+    lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])  # [N,M,2]
+    rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])  # [N,M,2]
+
+    inter = (rb - lt).clamp(min=0).prod(2)  # [N,M]
+    return inter / (area1[:, None] + area2 - inter)  # iou = inter / (area1 + area2 - inter)
 
 class CopyLittleTarget:
     def __init__(self, imgs_path, labs_path, save_targe_folder, name_dict1, name_dict2, copy_number, save_xml_path):
@@ -50,7 +133,7 @@ class CopyLittleTarget:
         print('collecting little targets ...')
         for source_img_name in tqdm.tqdm(self.img_list):
             source_img_path = os.path.join(self.imgs_path, source_img_name)
-            source_lab_path = os.path.join(self.labs_path, source_img_name.replace('.jpg', '.xml'))
+            source_lab_path = os.path.join(self.labs_path, source_img_name.replace('.png', '.xml'))
             source_img = cv2.imread(source_img_path)
             source_bboxes = self.parse_xml.get_groundtruth(source_lab_path)
             if source_bboxes == []: continue
@@ -68,6 +151,29 @@ class CopyLittleTarget:
                 save_name = os.path.join(self.save_targe_folder, self.name_dict2[box[0]],
                                          source_img_name.split('.')[0] + '_%03d.jpg' % i)
                 cv2.imwrite(save_name, source_t_i)
+
+    def _crop_source_targets(self):
+        print('collecting little targets ...')
+        name_list = set()
+        for source_img_name in tqdm.tqdm(self.img_list):
+            source_img_path = os.path.join(self.imgs_path, source_img_name)
+            source_lab_path = os.path.join(self.labs_path, source_img_name.replace('.jpg', '.xml'))
+            source_img = cv2.imread(source_img_path)
+            source_bboxes = self.parse_xml.get_groundtruth(source_lab_path)
+            if source_bboxes == []: continue
+            for i, box in enumerate(source_bboxes):
+                x1, y1, x2, y2 = box[1:5]
+                name = box[0]
+                name_list.add(name)
+                source_t_i = source_img[y1:y2, x1:x2, :]
+                save_name = os.path.join(self.save_targe_folder, name,
+                                         source_img_name.split('.')[0] + '_%03d.jpg' % i)
+                os.makedirs(os.path.dirname(save_name), exist_ok=True)
+                cv2.imwrite(save_name, source_t_i)
+        print(len(name_list), name_list)
+        list(name_list).sort()
+        for it in name_list:
+            print(it)
 
     def _make_dest_images(self, dest_img, targets_dict):
         dest_img_path = os.path.join(self.imgs_path, dest_img)
@@ -101,13 +207,16 @@ class CopyLittleTarget:
 
 
 if __name__ == '__main__':
-    imgs_path = '/media/dell/data/smogfire/guanlang/管廊-烟火-检测-红外自采集p1/images'
-    labs_path = '/media/dell/data/smogfire/guanlang/管廊-烟火-检测-红外自采集p1/labels'
-    save_xml_path = '/media/dell/data/smogfire/guanlang/管廊-烟火-小目标数据增强/'
+    imgs_path = '/media/dell/data/比赛/第一批标注数据35张/images'
+    labs_path = '/media/dell/data/比赛/第一批标注数据35张/labels'
+    save_xml_path = '/media/dell/data/比赛/第一批标注数据35张/crop'
     save_targe_folder = os.path.join(save_xml_path, 'smale_targets')
 
     name_dict1 = {"烟雾": 1, '﻿火': 2, "火": 2, 'person': 3}
     name_dict2 = {1: "烟雾", 2: "火"}
     copy_number = 20
+
     clt = CopyLittleTarget(imgs_path, labs_path, save_targe_folder, name_dict1, name_dict2, copy_number, save_xml_path)
-    clt.run()
+    # clt.run()
+
+    clt._crop_source_targets()

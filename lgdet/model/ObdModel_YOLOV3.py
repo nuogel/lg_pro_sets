@@ -47,7 +47,7 @@ class YOLOV3(nn.Module):
         )
         self.conv_1x1_3 = Conv2d(512, 256, 1, leakyReLU=True)
         self.extra_conv_3 = Conv2d(512, 1024, 3, padding=1, leakyReLU=True)
-        self.pred_3 = nn.Conv2d(1024, self.anchor_number * (1 + 4 + self.num_classes), 1)
+        self.head_3 = nn.Conv2d(1024, self.anchor_number * (1 + 4 + self.num_classes), 1)
 
         # s = 16
         self.conv_set_2 = nn.Sequential(
@@ -59,7 +59,7 @@ class YOLOV3(nn.Module):
         )
         self.conv_1x1_2 = Conv2d(256, 128, 1, leakyReLU=True)
         self.extra_conv_2 = Conv2d(256, 512, 3, padding=1, leakyReLU=True)
-        self.pred_2 = nn.Conv2d(512, self.anchor_number * (1 + 4 + self.num_classes), 1)
+        self.head_2 = nn.Conv2d(512, self.anchor_number * (1 + 4 + self.num_classes), 1)
 
         # s = 8
         self.conv_set_1 = nn.Sequential(
@@ -70,7 +70,7 @@ class YOLOV3(nn.Module):
             Conv2d(256, 128, 1, leakyReLU=True),
         )
         self.extra_conv_1 = Conv2d(128, 256, 3, padding=1, leakyReLU=True)
-        self.pred_1 = nn.Conv2d(256, self.anchor_number * (1 + 4 + self.num_classes), 1)
+        self.head_1 = nn.Conv2d(256, self.anchor_number * (1 + 4 + self.num_classes), 1)
 
 
     def forward(self, **args):
@@ -93,15 +93,15 @@ class YOLOV3(nn.Module):
         # head
         # s = 32
         fmp_3 = self.extra_conv_3(fmp_3)
-        pred_3 = self.pred_3(fmp_3)
+        head_3 = self.head_3(fmp_3)
 
         # s = 16
         fmp_2 = self.extra_conv_2(fmp_2)
-        pred_2 = self.pred_2(fmp_2)
+        head_2 = self.head_2(fmp_2)
 
         # s = 8
         fmp_1 = self.extra_conv_1(fmp_1)
-        pred_1 = self.pred_1(fmp_1)
+        head_1 = self.head_1(fmp_1)
 
-        preds = [pred_3, pred_2, pred_1]
+        preds = [head_3, head_2, head_1]
         return preds

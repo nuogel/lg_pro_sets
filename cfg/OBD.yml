@@ -2,7 +2,7 @@ BELONGS: OBD
 
 PATH:
   # '/media/lg/DataSet_E/datasets/'   '/media/lg/2628737E28734C35'  '/media/lg/DataSet_E/datasets/person/data_person' '/media/lg/DataSet_E/datasets/kitti/training/
-  INPUT_PATH: '/media/dell/data/比赛/VocXml'  #'/media/dell/data/voc' #
+  INPUT_PATH: '/media/dell/data/比赛/第一批标注数据35张/'
   LMDB_PATH: '/media/lg/2628737E28734C35/coco/{}2017_lmdb'
   LAB_PATH: ''
   CLASSES_PATH: 'lgdet/dataloader/classes/class_names_{}.txt'
@@ -10,11 +10,11 @@ PATH:
   GENERATE_LABEL_SAVE_PATH: 'tmp/predicted_labels/'
 
 TRAIN:
-  # yolov5 lrf300 fcos lrf512 yolov3  ssdvgg  retinanet yolonano  yolov2 yolov3_tiny_shufflenet refinedet efficientdet yolov3_tiny_mobilenet yolov3_tiny_squeezenet fcos
+  # yolov5 lrf300 fcos lrf512 yolov3  ssdvgg  retinanet yolonano  yolov2 yolov3 yolov3_tiny yolov3_tiny_shufflenet refinedet efficientdet yolov3_tiny_mobilenet yolov3_tiny_squeezenet fcos
   MODEL: yolov5
   TYPE: s
   EMA: 0
-  EPOCH_SIZE: 300
+  EPOCH_SIZE: 500
   BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO' 'COMPETITION'
   TRAIN_DATA_FROM_FILE: ['COMPETITION']
@@ -31,7 +31,7 @@ TRAIN:
   AREAR_RATIO: 0.05 #0 #
   MIN_AREA: 4 #0 #100 #400 #
   #[H,W]
-  #[384, 960] [640, 640]#[416, 416] #[512, 768] # [1024,1920] #[800,1333]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
+  #[384, 960] [640, 640]#[1280, 1280] [416, 416] #[512, 768] # [1024,1920] #[800,1333]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
   IMG_SIZE: [1280, 1280]
 
   MULTI_SCALE: 0
@@ -41,18 +41,18 @@ TRAIN:
   WATCH_METIRICS: 1
   WRITE_IMAGES: 20
   WRITER: 'tensorboardX'
-  SHOW_INPUT: -1  # 10000 ##
+  SHOW_INPUT: -1  #10000  # #
 
   # optimizer:
   OPTIMIZER: adam #adamw'adam' #'SGD' #
   LR_START: 0.001
-  LR_SCHEDULE: 'reduce'  #'cos' #'reduce'# 'lr'
+  LR_SCHEDULE: 'cos' #'reduce'# 'lr''reduce'  #
   STEP_LR: 50
   WARM_UP_STEP: 1000
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 0.0001
-  # [loc_loss, obj_loss]
-  LOSSTYPE: ['iouloss', 'focalloss'] #  giou focalloss mse bce
+  # [loc_loss, obj_loss]: loc_loss: mse & iouloss | obj_loss: focalloss & ghm & bce |
+  LOSSTYPE: ['iouloss', 'focalloss']
   EPOCH_CONTINUE: None
   SAVE_STEP: 2000
 
@@ -83,8 +83,8 @@ TEST:
 
   PADTOSIZE: 0
   DO_AUG: 1
-  RESIZE: 1
   GRAY_BINARY: 1
+  RESIZE: 1
   MAXMINSIZE: 0
 
   IMG_BLOCK: 0
@@ -100,5 +100,5 @@ TEST:
     #  ['000000000009.jpg', 'coco/imgs/train2017/000000000009.jpg', 'coco/labels/train2017_xml/000000000009.xml']
 #          ['000009', 'kitti/training/images/000009.png', 'kitti/training/labels/000009.xml']
 #  ['000005.jpg', 'VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg', 'VOCdevkit/VOC2007/trainval/Annotations/000005.xml']
-              ['站10_power.png', 'images/站10_power.png', 'labels/站10_power.xml']
+              ['站10_power.jpg', 'images/站10_power.jpg', 'labels/站10_power.xml']
   ]
