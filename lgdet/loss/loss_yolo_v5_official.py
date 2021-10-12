@@ -115,23 +115,19 @@ class YoloLoss:
         self.sort_obj_iou = False
 
         # Define criteria
-        BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['cls_pw']], device=self.device))
-        BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['obj_pw']], device=self.device))
+        BCEcls = nn.BCEWithLogitsLoss()
+        BCEobj = nn.BCEWithLogitsLoss()
 
         # Class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
-        self.cp, self.cn = smooth_BCE(eps=h.get('label_smoothing', 0.0))  # positive, negative BCE targets
+        self.cp, self.cn = smooth_BCE(eps=0)  # positive, negative BCE targets
 
         # Focal loss
-        g = h['fl_gamma']  # focal loss gamma
+        g = 0  # focal loss gamma
         if g > 0:
             BCEcls, BCEobj = FocalLoss(BCEcls, g), FocalLoss(BCEobj, g)
 
-        det = model.module.model[-1] if is_parallel(model) else model.model[-1]  # Detect() module
-        self.balance = {3: [4.0, 1.0, 0.4]}.get(det.nl, [4.0, 1.0, 0.25, 0.06, .02])  # P3-P7
-        self.ssi = list(det.stride).index(16) if autobalance else 0  # stride 16 index
-        self.BCEcls, self.BCEobj, self.gr, self.hyp, self.autobalance = BCEcls, BCEobj, 1.0, h, autobalance
-        for k in 'na', 'nc', 'nl', 'anchors':
-            setattr(self, k, getattr(det, k))
+        self.BCEcls, self.BCEobj, self.gr,= BCEcls, BCEobj, 1.0,
+
 
     # def __call__(self, p, targets):  # predictions, targets, model
     def Loss_Call(self, p, dataset, kwargs):
@@ -175,16 +171,8 @@ class YoloLoss:
 
             obji = self.BCEobj(pi[..., 4], tobj)
             lobj += obji * self.balance[i]  # obj loss
-            if self.autobalance:
-                self.balance[i] = self.balance[i] * 0.9999 + 0.0001 / obji.detach().item()
 
-        if self.autobalance:
-            self.balance = [x / self.balance[self.ssi] for x in self.balance]
-        lbox *= self.hyp['box']
-        lobj *= self.hyp['obj']
-        lcls *= self.hyp['cls']
         bs = tobj.shape[0]  # batch size
-
         return (lbox + lobj + lcls) * bs, torch.cat((lbox, lobj, lcls)).detach()
 
     def build_targets(self, p, targets):

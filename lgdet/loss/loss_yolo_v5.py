@@ -36,7 +36,7 @@ class YoloLoss:
 
         self.alpha = 0.25
         self.gamma = 2
-        self.Focalloss = FocalLoss(loss_weight=1.0, pos_weight=1.0, gamma=1.5, alpha=0.25, reduction='mean').to(self.device)
+        self.Focalloss = FocalLoss(loss_weight=1.0, pos_weight=1.0, gamma=1.5, alpha=0.25, add_logist=False, reduction='mean').to(self.device)
         self.Focalloss_lg = FocalLoss_lg(alpha=self.alpha, gamma=self.gamma, ).to(self.device)
         self.ghm = GHMC(use_sigmoid=True)
 
@@ -74,7 +74,7 @@ class YoloLoss:
             r = t[:, :, 4:6] / anchors[:, None]  # wh ratio
             j = torch.max(r, 1. / r).max(2)[0] < 4.  # compare
             # j = wh_iou(anchors, t[:,:, 4:6]) > 0.2  # iou(3,n)=wh_iou(anchors(3,2), gwh(n,2))
-            add_maxIou = 1 # by:lg
+            add_maxIou = 0  # by:lg
             if add_maxIou:
                 iou = wh_iou(anchors, t[0, :, 4:6]).max(0)[1]
                 fited = j.max(0)[0].detach()
@@ -108,8 +108,19 @@ class YoloLoss:
 
         tbox = torch.cat((gxy - gij, gwh), 1)  # box
         anch = anchors[a]  # anchors
-        tcls = c  # class
+        tcls = c
+        # self.check_2_bbox_in_one_grid(tcls.clone(), indices.copy(), tbox)
         return tcls, tbox, indices, anch
+
+    def check_2_bbox_in_one_grid(self, tcls, indices, tbox):
+        indices.append(tcls)
+        all = torch.stack(indices).T
+        same = 0
+        for i in range(len(all) - 1):
+            for j in range(i + 1, len(all)):
+                if (all[i] == all[j]).sum() == 5:
+                    same += 1
+                    print(same, '-same:', str(i), '-', str(j), all[i], all[j], tbox[i], tbox[j])
 
     def _loss_cal_one_Fmap(self, f_map, f_id, labels, kwargs):
         """Calculate the loss."""
@@ -129,7 +140,7 @@ class YoloLoss:
         metrics['cls_p'] = cls_p
         if num_target:
             pre_cls, pre_xy, pre_wh = [i[indices] for i in [pre_cls, pre_loc_xy, pre_loc_wh]]
-            cp, cn = smooth_BCE(eps=0.1)
+            cp, cn = smooth_BCE(eps=0.0)
             t_cls = torch.full_like(pre_cls, cn, device=self.device)  # targets
             t_cls[range(num_target), tcls] = cp
             lcls = self.bceloss(pre_cls, t_cls)
@@ -149,12 +160,14 @@ class YoloLoss:
                 pre_wh = pre_wh * anchors
                 pbox = torch.cat((pre_xy, pre_wh), 1)  # predicted box
                 iou = bbox_GDCiou(pbox.t(), tbox, x1y1x2y2=False, CIoU=True)  # giou(prediction, target)
-                ratio_iou=False
+                # if f_id == 0:
+                #     print('\n', pbox[0], '\n', tbox[0])
+                ratio_iou = False
                 if ratio_iou:
                     riou = torch.ones_like(iou)  # IOU ratio
                     riou[iou < 0.5] = 5
                 else:
-                    riou=1.0
+                    riou = 1.0
                 lbox = (1.0 - iou) * area_scale * riou
                 if self.reduction == 'mean':
                     lbox = lbox.mean()  # giou loss
@@ -164,7 +177,7 @@ class YoloLoss:
                 # 2) Objectness
                 global_step = kwargs['global_step']
                 if self.one_test:
-                    gr = 1
+                    gr = 0
                 else:
                     len_batch = kwargs['len_batch']
                     xi = [0, max(3 * len_batch, 500)]
@@ -176,7 +189,7 @@ class YoloLoss:
                     pred_iou = torch.clamp(pred_iou[indices], 0, 1)
                     loss_iou_aware = self.bceloss(pred_iou, iou.detach())
 
-                metrics['iou_sc'] = iou.mean().item()
+                metrics['iou_sc'] = torch.clamp(iou, 0, 1).mean().item()
                 iou_percent = (iou > self.cfg.TEST.IOU_THRESH).sum() * 1.0 / len(iou)
                 metrics['iou_p'] = iou_percent.item()
         else:
@@ -187,8 +200,11 @@ class YoloLoss:
         label_weight_mask = (obj_mask | noobj_mask)
         obj_num = obj_mask.sum()
         if obj_losstype == 'focalloss':
-            _loss, obj_loss, noobj_loss = self.Focalloss_lg(pre_obj, tobj, obj_mask, noobj_mask, split_loss=True)
-        if obj_losstype == 'ghm':
+            _loss, obj_loss, noobj_loss = self.Focalloss(pre_obj, tobj, obj_mask=obj_mask, noobj_mask=obj_mask)
+            if obj_loss is None or noobj_loss is None:
+                obj_loss = _loss/2.
+                noobj_loss = _loss/2.
+        elif obj_losstype == 'ghm':
             obj_loss = self.ghm(pre_obj, tobj, label_weight_mask)
             noobj_loss = torch.FloatTensor([0]).to(self.device)
         elif obj_losstype == 'bce':
@@ -197,7 +213,7 @@ class YoloLoss:
             else:
                 obj_loss = torch.FloatTensor([0]).to(self.device)
             noobj_loss = self.bceloss(pre_obj[noobj_mask], tobj[noobj_mask])  # obj loss
-        elif obj_losstype == 'mse':
+        else:  # obj_losstype == 'mse':
             if obj_num:
                 obj_loss = self.mseloss(pre_obj[obj_mask], tobj[obj_mask])  # obj loss
             else:

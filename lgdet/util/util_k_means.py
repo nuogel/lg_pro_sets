@@ -120,7 +120,7 @@ if __name__ == '__main__':
         return np.array(dataset)
 
 
-    ANNOTATIONS_PATH ='/media/dell/data/比赛/VocXml/labels'
+    ANNOTATIONS_PATH ='/media/dell/data/比赛/第一批标注数据35张/labels'
     # 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/annotations/'
     CLUSTERS = 9
 

@@ -98,15 +98,19 @@ def prepare_cfg(cfg, args, is_training=True):
         #                  [16, 30],
         #                  [10, 13]]
 
-        anchor_yolov2 = [[117., 158.],
-                          [202., 73.],
-                          [107., 30.],
-                          [20., 82.],
-                          [24., 45.],
-                          [51., 19.],
-                          [33., 12.],
-                          [15., 22.],
-                          [9., 10.]]
+        ICONS_ANCHORS = [[61, 183], [15, 36], [29, 19], [25, 13], [18, 13], [10, 17]]
+
+        anchor_yolov2 = [[185., 112.],
+                         [87., 32.],
+                         [25., 83.],
+                         [60., 26.],
+                         [26., 26.],
+                         [17., 36.],
+                         [37., 14.],
+                         [27., 12.],
+                         [12., 14.]]
+        # anchor_yolov2 = [[10, 13], [16, 30], [33, 23], [30, 61], [62, 45], [59, 119], [116, 90], [156, 198], [373, 326]]
+
         anchor_yolov3_tiny = [[344.89, 337.14], [178.68, 306.55], [246.38, 163.33],
                               [93.49, 227.46], [86.93, 109.69], [34.01, 61.78]]  # others
 
@@ -114,6 +118,7 @@ def prepare_cfg(cfg, args, is_training=True):
                          [78.4, 201.92], [178.24, 178.56], [129.6, 294.72],
                          [32.64, 47.68], [50.24, 108.16], [126.72, 96.32], ]
 
+        anchor_yolov3_voc_auto = [[516, 534], [454, 302], [250, 456], [240, 236], [127, 309], [118, 134], [63, 183], [52, 80], [27, 50]]
         # yolov3 writer's anchors: [10,13,  16,30,  33,23,  30,61,  62,45,  59,119,  116,90,  156,198,  373,326]
 
         VISDRONE_anchors = [[104., 92.],
@@ -151,7 +156,7 @@ def prepare_cfg(cfg, args, is_training=True):
             cfg.TRAIN.ANCHORS = anchor_yolov3
         elif cfg.TRAIN.MODEL in ['yolov5']:
             cfg.TRAIN.FMAP_ANCHOR_NUM = 3
-            cfg.TRAIN.ANCHORS = anchor_yolov2
+            cfg.TRAIN.ANCHORS = anchor_yolov3_voc_auto
         elif 'yolov2' in cfg.TRAIN.MODEL:
             cfg.TRAIN.FMAP_ANCHOR_NUM = len(anchor_yolov2)
             cfg.TRAIN.ANCHORS = anchor_yolov2

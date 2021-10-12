@@ -15,9 +15,9 @@ class ParsePredict_yolo:
         self.device = self.cfg.TRAIN.DEVICE
         if self.cfg.TRAIN.MODEL == 'yolov5':
             self.scale_xy = 2  # 1.05    # Grid Sensitive [-1 or >1]
-            self.scale_wh = False
+            self.scale_wh = True
         else:
-            self.scale_xy = -1  # 1.05    # Grid Sensitive [-1 or >1]
+            self.scale_xy = -1  # 1.05 #    # Grid Sensitive [-1 or >1]
             self.scale_wh = False
         self.grid = [torch.zeros(1)] * self.anc_num  # init grid
         self.iou_aware_factor = 0.4
@@ -97,7 +97,7 @@ class ParsePredict_yolo:
         pred_wh = f_map[..., 3:5]  # wh
         pred_iou = f_map[..., base - 1] if self.cfg.TRAIN.IOU_AWARE else None
         pred_cls = f_map[..., base:].sigmoid()  # Cls pred with Sigmoid
-
+        # print(pred_cls[0,2,17,26])
         # Grid Sensitive
         if self.scale_xy > 1:
             pred_xy = self.scale_xy * pred_xy - 0.5 * (self.scale_xy - 1.0)  # Grid Sensitive

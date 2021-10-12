@@ -14,14 +14,14 @@ def _parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('--type', default='OBD', type=str, help='yml_path')
     parser.add_argument('--model', type=str, help='yml_path')
-    parser.add_argument('--checkpoint', '--cp', default=1
+    parser.add_argument('--checkpoint', '--cp', default=0
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--epoch_size', '--ep', type=int, help='batch size')
     parser.add_argument('--batch_size', '--bz', default=1, type=int, help='batch size')
     parser.add_argument('--lr', default=1e-3, type=float, help='learning rate')
     parser.add_argument('--lr_continue', '--lr_c', default=0, type=float, help='learning rate')
     parser.add_argument('--number_works', '--nw', default=0, type=int, help='number works of dataloader')
-    parser.add_argument('--score_thresh', '--st', default=0.6, type=float, help='score_thresh')
+    parser.add_argument('--score_thresh', '--st', default=0.5, type=float, help='score_thresh')
     parser.add_argument('--ema', default=0, type=int, help='ema')
     parser.add_argument('--gpu', help='number works of dataloader')
     parser.add_argument('--pre_trained', '--pt', default=0, help='0')

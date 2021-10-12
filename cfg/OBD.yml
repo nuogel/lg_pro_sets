@@ -2,7 +2,7 @@ BELONGS: OBD
 
 PATH:
   # '/media/lg/DataSet_E/datasets/'   '/media/lg/2628737E28734C35'  '/media/lg/DataSet_E/datasets/person/data_person' '/media/lg/DataSet_E/datasets/kitti/training/
-  INPUT_PATH: '/media/dell/data/比赛/第一批标注数据35张/'
+  INPUT_PATH: '/media/dell/data/voc/'
   LMDB_PATH: '/media/lg/2628737E28734C35/coco/{}2017_lmdb'
   LAB_PATH: ''
   CLASSES_PATH: 'lgdet/dataloader/classes/class_names_{}.txt'
@@ -17,25 +17,24 @@ TRAIN:
   EPOCH_SIZE: 500
   BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO' 'COMPETITION'
-  TRAIN_DATA_FROM_FILE: ['COMPETITION']
+  TRAIN_DATA_FROM_FILE: [ 'VOC' ]
   USE_LMDB: 0
 
   # data aug:
   MOSAIC: 0
-  DO_AUG: 1
-  RESIZE: 1
-  GRAY_BINARY: 1
-  PADTOSIZE: 0
+  DO_AUG: 0
+  RESIZE: 0
+  GRAY_BINARY: 0
+  PADTOSIZE: 1
   MAXMINSIZE: 0
   RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
-  AREAR_RATIO: 0.05 #0 #
-  MIN_AREA: 4 #0 #100 #400 #
+  AREAR_RATIO: 0 #0.05 #
+  MIN_AREA: 0 #100 #400 #4 #
   #[H,W]
   #[384, 960] [640, 640]#[1280, 1280] [416, 416] #[512, 768] # [1024,1920] #[800,1333]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
-  IMG_SIZE: [1280, 1280]
-
+  IMG_SIZE: [640, 640]
   MULTI_SCALE: 0
-  MULTI_SCALE_SIZE: [320, 640] #(320-640)//32
+  MULTI_SCALE_SIZE: [ 320, 640 ] #(320-640)//32
 
   SHOW_TRAIN_NAMES: 0 #TRUE #
   WATCH_METIRICS: 1
@@ -52,7 +51,7 @@ TRAIN:
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 0.0001
   # [loc_loss, obj_loss]: loc_loss: mse & iouloss | obj_loss: focalloss & ghm & bce |
-  LOSSTYPE: ['iouloss', 'focalloss']
+  LOSSTYPE: [ 'iouloss', 'focalloss' ]
   EPOCH_CONTINUE: None
   SAVE_STEP: 2000
 
@@ -60,15 +59,19 @@ TRAIN:
   IOU_AWARE: 0
 
   # CUDA:
-  GPU_NUM: [0] #[] # if is [] means use CPU.
+  GPU_NUM: [ 0 ] #[] # if is [] means use CPU.
   DEVICE: 'gpu'
 
   # debug:
   LOG_FORMAT: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'  # logging format
   FMAP_ANCHOR_NUM: 3
+
+  # anchors
+  AUTO_ANCHORS: 0
   ANCHORS: 'please see the util_prepare.py'
 
-
+  # pass object
+  PASS_OBJ: ['Bus_0', 'Bus_90',]
 
 TEST:
   # score type
@@ -82,7 +85,7 @@ TEST:
   SOFNMS_THETA: 0.5
 
   PADTOSIZE: 0
-  DO_AUG: 1
+  DO_AUG: 0
   GRAY_BINARY: 1
   RESIZE: 1
   MAXMINSIZE: 0
@@ -93,12 +96,12 @@ TEST:
 
   TEST_ONLY: 0
 
-  ONE_TEST: 0
-  ONE_TEST_TRAIN_STEP: 100
+  ONE_TEST: 1
+  ONE_TEST_TRAIN_STEP: 200
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
     #  ['000000000009.jpg', 'coco/imgs/train2017/000000000009.jpg', 'coco/labels/train2017_xml/000000000009.xml']
-#          ['000009', 'kitti/training/images/000009.png', 'kitti/training/labels/000009.xml']
-#  ['000005.jpg', 'VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg', 'VOCdevkit/VOC2007/trainval/Annotations/000005.xml']
-              ['站10_power.jpg', 'images/站10_power.jpg', 'labels/站10_power.xml']
+    #          ['000009', 'kitti/training/images/000009.png', 'kitti/training/labels/000009.xml']
+      ['000005.jpg', 'VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg', 'VOCdevkit/VOC2007/trainval/Annotations/000005.xml']
+#    [ '站2_transformer.jpg', 'images/站2_transformer.jpg', 'labels/站2_transformer.xml' ]
   ]

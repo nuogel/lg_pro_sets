@@ -17,7 +17,7 @@ def weights_init(Modle, manual_seed=False):
         print('initiating weight with lg_init')
         for name, m in Modle.named_modules():
             if isinstance(m, torch.nn.Conv2d):
-                if "classifier.header" in name or 'head' in name:
+                if "classifier.header" in name or 'head' in name:  #:#
                     prior = 0.01
                     m.weight.data.fill_(0)
                     if m.bias is not None:

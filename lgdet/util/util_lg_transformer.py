@@ -316,12 +316,15 @@ class LgTransformer:
         # cv2.imshow('img', img)
         # cv2.waitKey()
         label = np.asarray(label)
-        txt = label[label[:, 0] == 10]
-        if txt!=[]:
-            w_txt = min((txt[:, 3] - txt[:, 1]).mean(), (txt[:, 4] - txt[:, 2]).mean())
-            ratio = 20/w_txt
-            newsize = int(img.shape[0]*ratio), int(img.shape[1]*ratio)
-            img, label, data_info = self.resize(img, label, newsize, data_info)
+        use_txt_scal_img = 0
+        if use_txt_scal_img:
+            txt = label[label[:, 0] == 33]
+            if txt!=[]:
+                w_txt = min((txt[:, 3] - txt[:, 1]).mean(), (txt[:, 4] - txt[:, 2]).mean())
+                ratio = 20/w_txt
+                newsize = int(img.shape[0]*ratio), int(img.shape[1]*ratio)
+                img, label, data_info = self.resize(img, label, newsize, data_info)
+
         img, binary = cv2.threshold(img, 210, 255, cv2.THRESH_BINARY)
         img = np.stack((binary,) * 3, axis=-1)
         # cv2.imshow('img', img)

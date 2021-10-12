@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 from ..registry import DATALOADERS, build_from_cfg
 from .group_sampler import GroupSampler
+from lgdet.util.util_auto_kmeans import auto_kmeans_anchors
 
 
 class DataLoaderFactory:
@@ -9,10 +10,10 @@ class DataLoaderFactory:
         self.cfg = cfg
         self.args = args
 
-    def make_dataset(self, train_dataset=None, test_dataset=None):
+    def make_dataset(self, train_dataset=None, test_dataset=None, cfg=None):
         shuffle = True
         trainLoader, testLoader = None, None
-
+        train_data, test_data = None, None
         if train_dataset:
             train_data = build_from_cfg(DATALOADERS, self.cfg.BELONGS + '_Loader')(self.cfg, train_dataset, is_training=True)
             # sampler = GroupSampler(train_data, self.cfg.TRAIN.BATCH_SIZE) if shuffle is False else None
@@ -35,6 +36,11 @@ class DataLoaderFactory:
                                     pin_memory=True,
                                     collate_fn=test_data.collate_fun,
                                     shuffle=False)
+
+        if self.cfg.TRAIN.AUTO_ANCHORS and train_data != None:
+            anchors = auto_kmeans_anchors([train_data, test_data], self.cfg)
+            cfg.TRAIN.ANCHORS = anchors
+            print('use auto anchors:', anchors)
         return trainLoader, testLoader
 
     def to_devce(self, data):

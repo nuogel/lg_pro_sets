@@ -64,8 +64,7 @@ class YoloLoss:
         t = targets * gain
 
         self.anc_num = anchors.shape[0]  # number of anchors
-        at = torch.arange(self.anc_num).view(self.anc_num, 1).repeat(1,
-                                                                     num_target)  # anchor tensor, same as .repeat_interleave(num_target)
+        at = torch.arange(self.anc_num).view(self.anc_num, 1).repeat(1, num_target)  # anchor tensor, same as .repeat_interleave(num_target)
 
         # Match targets to anchors
         if num_target:  #
@@ -93,7 +92,18 @@ class YoloLoss:
             assert tcls.max() < self.cls_num, 'cls_num is beyound the classes.'
         # time_2 = time.time()
         # print('build target time LOSS CALL:', time_2 - time_1)
+        # self.check_2_bbox_in_one_grid(tcls.clone(), indices.copy(), tbox)
         return tcls, tbox, indices, indices_ignore, anch
+
+    def check_2_bbox_in_one_grid(self, tcls, indices, tbox):
+        indices.append(tcls)
+        all = torch.stack(indices).T
+        same = 0
+        for i in range(len(all) - 1):
+            for j in range(i + 1, len(all)):
+                if (all[i] == all[j]).sum() == 5:
+                    same += 1
+                    print(same, '-same:', str(i), '-', str(j), all[i], all[j], tbox[i], tbox[j])
 
     def _loss_cal_one_Fmap(self, f_map, f_id, labels, kwargs):
         """Calculate the loss."""

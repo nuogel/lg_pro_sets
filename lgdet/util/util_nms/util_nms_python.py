@@ -25,11 +25,11 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         else:
             self.use_nms_cython = False
             print('use nms-lg')
-        self.max_detection_boxes_num = 100
+        self.max_detection_boxes_num = 1000
         self.st = self.cfg.TEST.SCORE_THRESH
         if not self.cfg.TEST.NMS_TYPE:  # 1-fscore
             self.st = 0.05  # count map score thresh is <0.05
-            self.max_detection_boxes_num = 100
+            self.max_detection_boxes_num = 1000
 
     def forward(self, pre_score, pre_loc, xywh2xyxy=True):
         if self.use_nms_cython:

@@ -27,7 +27,7 @@ class OBD_Loader(DataLoader):
         self.cls2idx = dict(zip(cfg.TRAIN.CLASSES, range(cfg.TRAIN.CLASSES_NUM)))
         self.write_images = self.cfg.TRAIN.WRITE_IMAGES
         self.lgtransformer = LgTransformer(self.cfg)
-        self.keep_difficult = True
+        self.keep_difficult = False
         if self.cfg.TRAIN.MULTI_SCALE:
             self._prepare_multiszie()
         if self.cfg.TRAIN.USE_LMDB:
@@ -88,7 +88,6 @@ class OBD_Loader(DataLoader):
         # resize
         if (self.cfg.TRAIN.RESIZE and self.is_training) or (self.cfg.TEST.RESIZE and not self.is_training):
             img, label, data_info = self.lgtransformer.resize(img, label, self.cfg.TRAIN.IMG_SIZE, data_info)
-
 
         if self.cfg.TRAIN.RELATIVE_LABELS:
             img, label = self.lgtransformer.relative_label(img, label, )
@@ -160,10 +159,12 @@ class OBD_Loader(DataLoader):
                               'padding(w,h)': np.asarray([0, 0])
                               }
             if pre_load_labels:
-                label_i = self._load_labels(data_info=this_data_info)
+                label_i, wh = self._load_labels(data_info=this_data_info)
             else:
                 label_i = 'not_load'
+                wh = None
             this_data_info['label'] = label_i
+            this_data_info['wh_original'] = wh
             data_infos.append(this_data_info)
         return data_infos
 
@@ -241,15 +242,20 @@ class OBD_Loader(DataLoader):
         :param path: the path of file that need to parse.
         :return:lists of the classes and the key points============ [x1, y1, x2, y2].
         """
+        pass_obj = self.cfg.TRAIN.PASS_OBJ
         bbs = []
         path = data_info['lab_path']
-
+        width = None
+        height = None
         if self.cfg.TRAIN.USE_LMDB:
             bbs = self._load_lmdb_label_from_name(data_info)
 
         elif os.path.basename(path).split('.')[-1] == 'xml' and not predicted_line:
             tree = ET.parse(path)
             root = tree.getroot()
+            width = int(root.find('size').find('width').text)
+            height = int(root.find('size').find('height').text)
+
             for obj in root.findall('object'):
                 try:
                     difficult = int(obj.find('difficult').text) == 1
@@ -351,7 +357,7 @@ class OBD_Loader(DataLoader):
                 if not self._is_finedata(bbx): continue
                 bbs.append([self.cls2idx[self.class_name[cls_name]], bbx[0], bbx[1], bbx[2], bbx[3]])
 
-        return bbs
+        return bbs, [width, height]
 
     def _prepare_multiszie(self):
         self.gs = 32
