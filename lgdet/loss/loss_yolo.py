@@ -37,9 +37,8 @@ class YoloLoss:
 
         self.alpha = 0.25
         self.gamma = 2
-        self.Focalloss = FocalLoss(loss_weight=1.0, pos_weight=1.0, gamma=1.5, alpha=0.25, reduction='mean').to(
-            self.device)
-        self.Focalloss_lg = FocalLoss_lg(alpha=self.alpha, gamma=self.gamma, ).to(self.device)
+        self.Focalloss = FocalLoss(gamma=1.5, alpha=0.25, reduction='mean')
+        self.Focalloss_lg = FocalLoss_lg(alpha=self.alpha, gamma=self.gamma,)
         self.ghm = GHMC(use_sigmoid=True)
 
     def build_targets(self, pre_obj, labels, f_id):
