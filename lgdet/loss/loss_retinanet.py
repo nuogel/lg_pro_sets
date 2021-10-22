@@ -62,7 +62,7 @@ class RETINANETLOSS():
                 'pos_sc': pos_sc,
                 'neg_sc': neg_sc,
                 'obj>t': pos_t,
-                'nob>t': neg_t,
+                'nob_t': neg_t,
                 'cls_p': cls_p,
                 'cls_loss': cls_loss.item(),
                 # 'pos_loss': pos_loss.item(),

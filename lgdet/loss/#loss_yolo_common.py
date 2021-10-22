@@ -213,7 +213,7 @@ class YoloLoss:
         metrics['obj_sc'] = obj_sc
         metrics['obj_p'] = obj_percent
         metrics['nob_sc'] = noobj_sc
-        metrics['nob>t'] = noobj_thresh_sum
+        metrics['nob_t'] = noobj_thresh_sum
 
         # time_2 = time.time()
         # print('loss time LOSS CALL2-1:', time_2 - time_1)

@@ -242,7 +242,7 @@ class YoloLoss:
         metrics['obj_sc'] = obj_sc
         metrics['obj_p'] = obj_percent
         metrics['nob_sc'] = noobj_sc
-        metrics['nob>t'] = noobj_thresh_sum
+        metrics['nob_t'] = noobj_thresh_sum
         metrics['ob_l'] = obj_loss.item()
         metrics['nob_l'] = noobj_loss.item()
         metrics['cls_l'] = lcls.item()

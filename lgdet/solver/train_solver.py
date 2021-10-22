@@ -37,8 +37,10 @@ class Solver(BaseSolver):
     def _train_an_epoch(self, epoch):
         self.model.train()
         # count the step time, total time...
-        print(('\n[train] %8s|%7s|%7s|%9s|' + '%6s|' * 3) % (
-            'model_n', 'epoch', 'g_step', 'l_rate', 'step_l', 'aver_l', 'others'))
+        headinfos = ('\n[train] %8s|%7s|%7s|%9s|' + '%6s|' * 3) % (
+            'model_n', 'epoch', 'g_step', 'l_rate', 'step_l', 'aver_l', 'others')
+        print(headinfos)
+
         Pbar = tqdm.tqdm(self.trainDataloader)
         # time5 = time.time()
         for step, train_data in enumerate(Pbar):
@@ -47,7 +49,7 @@ class Solver(BaseSolver):
             train_data = self.DataFun.to_devce(train_data)
             # forward process
             if self.cfg.TRAIN.AMP:
-                useamp =True
+                useamp = True
             else:
                 useamp = False
             with self.amp.autocast(enabled=useamp):
@@ -78,7 +80,6 @@ class Solver(BaseSolver):
                 if self.cfg.TRAIN.EMA:
                     self.ema.update(self.model)
             Pbar.set_description(train_info)
-
         if self.cfg.TRAIN.LR_SCHEDULE == 'reduce':
             self.scheduler.step(self.epoch_losses / (step + 1))
         else:
@@ -86,6 +87,7 @@ class Solver(BaseSolver):
         if self.cfg.TRAIN.EMA:
             self.ema.update_attr(self.model)
         self._save_checkpoint()
+        self.cfg.logger.info(train_info)
 
     def _validate_an_epoch(self, epoch):
         if not self.cfg.TEST.ONE_TEST:
