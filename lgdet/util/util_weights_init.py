@@ -21,7 +21,8 @@ def weights_init(Modle, manual_seed=False):
                     prior = 0.01
                     m.weight.data.fill_(0)
                     if m.bias is not None:
-                        m.bias.data.fill_(-math.log((1.0 - prior) / prior))
+                        # m.bias.data.fill_(-math.log((1.0 - prior) / prior))
+                        m.bias.data.fill_(0)
                 elif "regressor.header" in name:
                     m.weight.data.fill_(0)
                     if m.bias is not None:

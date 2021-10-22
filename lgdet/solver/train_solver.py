@@ -10,6 +10,7 @@ At the end, we will get the weight file of the net.
 import tqdm
 from .solver_base import BaseSolver
 import torch
+from torch.cuda import amp
 
 
 class Solver(BaseSolver):
@@ -19,6 +20,8 @@ class Solver(BaseSolver):
         self._get_score()
         self._get_lossfun()
         self.metrics_ave = {}
+        self.amp = amp
+        self.scaler = amp.GradScaler()
 
     def train(self):
         """Train the network.
@@ -43,25 +46,34 @@ class Solver(BaseSolver):
                 self._set_warmup_lr()
             train_data = self.DataFun.to_devce(train_data)
             # forward process
-            if self.cfg.TRAIN.EMA:
-                predict = self.ema.ema(input_x=train_data[0], input_y=train_data[1], input_data=train_data, is_training=False)
+            if self.cfg.TRAIN.AMP:
+                useamp =True
             else:
+                useamp = False
+            with self.amp.autocast(enabled=useamp):
                 predict = self.model(input_x=train_data[0], input_y=train_data[1], input_data=train_data, is_training=False)
-            # calculate the total loss
-            self.global_step += 1
-            total_loss, train_info = self._calculate_loss(predict, train_data,
-                                                          losstype=self.cfg.TRAIN.LOSSTYPE,
-                                                          global_step=self.global_step,
-                                                          len_batch=len(self.trainDataloader),
-                                                          step=step,
-                                                          epoch=epoch)
+                # calculate the total loss
+                self.global_step += 1
+                total_loss, train_info = self._calculate_loss(predict, train_data,
+                                                              losstype=self.cfg.TRAIN.LOSSTYPE,
+                                                              global_step=self.global_step,
+                                                              len_batch=len(self.trainDataloader),
+                                                              step=step,
+                                                              epoch=epoch)
             # backward process
-            total_loss.backward()
+            if self.cfg.TRAIN.AMP:
+                self.scaler.scale(total_loss).backward()
+            else:
+                total_loss.backward()
 
             if self.global_step % self.cfg.TRAIN.SAVE_STEP == 0:
                 self._save_checkpoint()
             if self.global_step % self.cfg.TRAIN.BATCH_BACKWARD_SIZE == 0:
-                self.optimizer.step()
+                if self.cfg.TRAIN.AMP:
+                    self.scaler.step(self.optimizer)  # self.optimizer.step()
+                    self.scaler.update()
+                else:
+                    self.optimizer.step()
                 self.optimizer.zero_grad()
                 if self.cfg.TRAIN.EMA:
                     self.ema.update(self.model)

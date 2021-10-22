@@ -27,7 +27,7 @@ class OBD_Loader(DataLoader):
         self.cls2idx = dict(zip(cfg.TRAIN.CLASSES, range(cfg.TRAIN.CLASSES_NUM)))
         self.write_images = self.cfg.TRAIN.WRITE_IMAGES
         self.lgtransformer = LgTransformer(self.cfg)
-        self.keep_difficult = False
+        self.keep_difficult = True
         if self.cfg.TRAIN.MULTI_SCALE:
             self._prepare_multiszie()
         if self.cfg.TRAIN.USE_LMDB:

@@ -105,7 +105,7 @@ class FnScore:
         for cls, f, p, r in zip(self.cfg.TRAIN.CLASSES, f1score_txt, prec_txt, rec_txt):
             print('%30s'*4 % (cls,f , p, r))
 
-        # print('f1score:%0.4f\nf1sc: %s\nprec: %s\nreca: %s' % (F1Score, f1score_txt, prec_txt, rec_txt))
+        print('f1score:%0.4f\nf1sc: %s\nprec: %s\nreca: %s' % (F1Score, f1score_txt, prec_txt, rec_txt))
         return F1Score, {'f1score': f1score_dict, 'prec_dict': prec_dict, 'rec_dict': rec_dict}
 
     def F1_SCORE(self, beta=1):

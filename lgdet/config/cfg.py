@@ -35,6 +35,7 @@ def prepare_cfg(cfg, args, is_training=True):
             cfg.TEST.TEST_ONLY = args.test_only
 
         cfg.TRAIN.EMA = args.ema
+        cfg.TRAIN.AMP = args.autoamp
         cfg.TEST.MAP_FSCORE = args.map_fscore
 
     cfg.checkpoint = args.checkpoint

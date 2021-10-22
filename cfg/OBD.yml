@@ -11,11 +11,11 @@ PATH:
 
 TRAIN:
   # yolov5 lrf300 fcos lrf512 yolov3  ssdvgg  retinanet yolonano  yolov2 yolov3 yolov3_tiny yolov3_tiny_shufflenet refinedet efficientdet yolov3_tiny_mobilenet yolov3_tiny_squeezenet fcos
-  MODEL: yolov5
+  MODEL: yolov3
   TYPE: s
   EMA: 0
   EPOCH_SIZE: 500
-  BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
+  BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO' 'COMPETITION'
   TRAIN_DATA_FROM_FILE: [ 'VOC' ]
   USE_LMDB: 0
@@ -23,9 +23,9 @@ TRAIN:
   # data aug:
   MOSAIC: 0
   DO_AUG: 0
-  RESIZE: 0
+  RESIZE: 1
   GRAY_BINARY: 0
-  PADTOSIZE: 1
+  PADTOSIZE: 0
   MAXMINSIZE: 0
   RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0 #0.05 #
@@ -47,7 +47,7 @@ TRAIN:
   LR_START: 0.001
   LR_SCHEDULE: 'cos' #'reduce'# 'lr''reduce'  #
   STEP_LR: 50
-  WARM_UP_STEP: 1000
+  WARM_UP_STEP: 10000
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 0.0001
   # [loc_loss, obj_loss]: loc_loss: mse & iouloss | obj_loss: focalloss & ghm & bce |
@@ -86,7 +86,7 @@ TEST:
 
   PADTOSIZE: 0
   DO_AUG: 0
-  GRAY_BINARY: 1
+  GRAY_BINARY: 0
   RESIZE: 1
   MAXMINSIZE: 0
 
@@ -96,12 +96,15 @@ TEST:
 
   TEST_ONLY: 0
 
-  ONE_TEST: 1
+  ONE_TEST: 0
   ONE_TEST_TRAIN_STEP: 200
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
     #  ['000000000009.jpg', 'coco/imgs/train2017/000000000009.jpg', 'coco/labels/train2017_xml/000000000009.xml']
-    #          ['000009', 'kitti/training/images/000009.png', 'kitti/training/labels/000009.xml']
-      ['000005.jpg', 'VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg', 'VOCdevkit/VOC2007/trainval/Annotations/000005.xml']
+    #  ['000009', 'kitti/training/images/000009.png', 'kitti/training/labels/000009.xml']
+      ['2010_002691.jpg', 'VOCdevkit/VOC2012/JPEGImages/2010_002691.jpg', 'VOCdevkit/VOC2012/Annotations/2010_002691.xml']
+#      ['000005.jpg', 'VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg', 'VOCdevkit/VOC2007/trainval/Annotations/000005.xml']
 #    [ '站2_transformer.jpg', 'images/站2_transformer.jpg', 'labels/站2_transformer.xml' ]
   ]
+
+  #'/media/dell/data/voc/VOCdevkit/VOC2012/JPEGImages/2010_002691.jpg'

@@ -36,8 +36,8 @@ class YoloLoss:
 
         self.alpha = 0.25
         self.gamma = 2
-        self.Focalloss = FocalLoss(loss_weight=1.0, pos_weight=1.0, gamma=1.5, alpha=0.25, add_logist=False, reduction='mean').to(self.device)
-        self.Focalloss_lg = FocalLoss_lg(alpha=self.alpha, gamma=self.gamma, ).to(self.device)
+        self.Focalloss = FocalLoss(gamma=2, alpha=0.75, add_logist=False, reduction='mean')
+        self.Focalloss_lg = FocalLoss_lg(alpha=self.alpha, gamma=self.gamma, )
         self.ghm = GHMC(use_sigmoid=True)
 
     def build_targets(self, pre_obj, labels, f_id):
@@ -125,29 +125,41 @@ class YoloLoss:
     def _loss_cal_one_Fmap(self, f_map, f_id, labels, kwargs):
         """Calculate the loss."""
         # init loss.
+        lcls, lbox, loss_iou_aware = [torch.FloatTensor([0.]).to(self.device) for _ in range(3)]
+        iou, iou_percent, cls_p = [torch.FloatTensor([-1.]).to(self.device) for _ in range(3)]
         loc_losstype, obj_losstype = kwargs['losstype']
         balance = [4.0, 1.0, 0.4][f_id]
         metrics = {}
-        lcls, lbox, lobj, loss_iou_aware, iou, cls_p = [torch.FloatTensor([-1.]).to(self.device) for _ in range(6)]
-        loss_iou_aware = torch.FloatTensor([0.]).to(self.device)
         pre_obj, pre_cls, pre_loc_xy, pre_loc_wh, pred_iou, pre_relative_box = self.parsepredict.parser._parse_yolo_predict_fmap(f_map, f_id)
         with torch.no_grad():
+            global_step = kwargs['global_step']
+            if self.one_test:
+                gr = 1
+                eps = 0.
+            else:
+                len_batch = kwargs['len_batch']
+                xi = [0, max(3 * len_batch, 500)]
+                xj = [0, max(10 * len_batch, 500)]
+                gr = np.interp(global_step, xi, [0.0, 1.0])  # giou loss ratio (obj_loss = 1.0 or giou)
+                eps = np.interp(global_step, xj, [0.2, 0.0])
             tcls, tbox, indices, anchors = self.build_targets(pre_obj, labels, f_id)  # targets
             B, C, H, W = pre_obj.shape
-            tobj = torch.zeros_like(pre_obj)  # target obj
+            cp, cn = smooth_BCE(eps=eps)
+            tobj = torch.full_like(pre_obj, cn, device=self.device)  # targets
+            obj_mask = torch.zeros_like(pre_obj).type(torch.BoolTensor)  # targets
+            obj_mask[indices] = True
+            noobj_mask = ~obj_mask
             num_target = anchors.shape[0]  # number of targets
-            loss_ratio = {'box': 0.05, 'cls': 0.125, 'obj': 1 * balance, 'noobj': 1 * balance}
-        metrics['cls_p'] = cls_p
+            loss_ratio = {'box': 0.05, 'cls': 0.125, 'obj': 10 * balance, 'noobj': 1 * balance}
         if num_target:
             pre_cls, pre_xy, pre_wh = [i[indices] for i in [pre_cls, pre_loc_xy, pre_loc_wh]]
-            cp, cn = smooth_BCE(eps=0.0)
+            cp, cn = smooth_BCE(eps=eps)
             t_cls = torch.full_like(pre_cls, cn, device=self.device)  # targets
             t_cls[range(num_target), tcls] = cp
             lcls = self.bceloss(pre_cls, t_cls)
             if self.reduction == 'sum':
                 lcls = lcls / num_target  # BCE
-            cls_score = ((pre_cls.max(-1)[1] == tcls).float()).mean()
-            metrics['cls_p'] = cls_score.item()
+            cls_p = ((pre_cls.max(-1)[1] == tcls).float()).mean()
 
             # 1) boxes loss.
             if self.multiply_area_scale:
@@ -175,35 +187,22 @@ class YoloLoss:
                     lbox = lbox.sum() / num_target  # giou loss
 
                 # 2) Objectness
-                global_step = kwargs['global_step']
-                if self.one_test:
-                    gr = 0
-                else:
-                    len_batch = kwargs['len_batch']
-                    xi = [0, max(3 * len_batch, 500)]
-                    gr = np.interp(global_step, xi, [0.0, 1.0])  # giou loss ratio (obj_loss = 1.0 or giou)
                 tobj[indices] = (1.0 - gr) + gr * iou.detach().clamp(min=0.1).type(tobj.dtype)  # giou ratio
 
                 if self.cfg.TRAIN.IOU_AWARE:
                     iou = torch.clamp(iou, 0, 1)
                     pred_iou = torch.clamp(pred_iou[indices], 0, 1)
                     loss_iou_aware = self.bceloss(pred_iou, iou.detach())
-
-                metrics['iou_sc'] = torch.clamp(iou, 0, 1).mean().item()
                 iou_percent = (iou > self.cfg.TEST.IOU_THRESH).sum() * 1.0 / len(iou)
-                metrics['iou_p'] = iou_percent.item()
         else:
             pass
-        obj_mask = tobj > 0.
-        noobj_mask = ~obj_mask
-        # noobj_mask[indices_ignore] = False
         label_weight_mask = (obj_mask | noobj_mask)
         obj_num = obj_mask.sum()
         if obj_losstype == 'focalloss':
-            _loss, obj_loss, noobj_loss = self.Focalloss(pre_obj, tobj, obj_mask=obj_mask, noobj_mask=obj_mask)
+            _loss, obj_loss, noobj_loss = self.Focalloss(pre_obj, tobj, obj_mask=obj_mask, noobj_mask=noobj_mask)
             if obj_loss is None or noobj_loss is None:
-                obj_loss = _loss/2.
-                noobj_loss = _loss/2.
+                obj_loss = _loss / 2.
+                noobj_loss = _loss / 2.
         elif obj_losstype == 'ghm':
             obj_loss = self.ghm(pre_obj, tobj, label_weight_mask)
             noobj_loss = torch.FloatTensor([0]).to(self.device)
@@ -226,7 +225,6 @@ class YoloLoss:
         lbox = loss_ratio['box'] * lbox
         loss_iou_aware = loss_ratio['box'] * loss_iou_aware
         total_loss = obj_loss + noobj_loss + lcls + lbox + loss_iou_aware
-
         if self.reduction == 'sum': total_loss = total_loss / B
         if torch.isnan(total_loss) or total_loss.item() == float("inf") or total_loss.item() == -float("inf"):
             print('nan')
@@ -238,15 +236,20 @@ class YoloLoss:
         obj_percent = ((pre_obj[obj_mask] > self.cfg.TEST.SCORE_THRESH).float()).mean().item() if obj_num > 0. else -1.
         noobj_thresh_sum = (pre_obj[noobj_mask] > self.cfg.TEST.SCORE_THRESH).sum().item() / B
         # iou_sc = iou_xyxy(xywh2xyxy(pre_relative_box[indices]), labels[..., 2:6], type='N2N') if obj_num > 0. else 0.
+        metrics['cls_p'] = cls_p.item()
+        metrics['iou_sc'] = torch.clamp(iou, 0, 1).mean().item()
+        metrics['iou_p'] = iou_percent.item()
+        metrics['obj_sc'] = obj_sc
+        metrics['obj_p'] = obj_percent
+        metrics['nob_sc'] = noobj_sc
+        metrics['nob>t'] = noobj_thresh_sum
         metrics['ob_l'] = obj_loss.item()
         metrics['nob_l'] = noobj_loss.item()
         metrics['cls_l'] = lcls.item()
         metrics['box_l'] = lbox.item()
         metrics['aware_l'] = loss_iou_aware.item()
-        metrics['obj_sc'] = obj_sc
-        metrics['obj_p'] = obj_percent
-        metrics['nob_sc'] = noobj_sc
-        metrics['nob>t'] = noobj_thresh_sum
+
+
 
         # time_2 = time.time()
         # print('loss time LOSS CALL2-1:', time_2 - time_1)
@@ -263,7 +266,7 @@ class YoloLoss:
                 if k not in metrics:
                     metrics[k] = []
                 try:
-                    if _metrics[k] == -1.:
+                    if _metrics[k] < 0.:
                         pass
                     else:
                         metrics[k].append(_metrics[k])
