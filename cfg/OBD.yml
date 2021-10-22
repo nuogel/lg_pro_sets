@@ -11,10 +11,10 @@ PATH:
 
 TRAIN:
   # yolov5 lrf300 fcos lrf512 yolov3  ssdvgg  retinanet yolonano  yolov2 yolov3 yolov3_tiny yolov3_tiny_shufflenet refinedet efficientdet yolov3_tiny_mobilenet yolov3_tiny_squeezenet fcos
-  MODEL: yolov2
+  MODEL: yolov3
   TYPE: s
   EMA: 0
-  EPOCH_SIZE: 500
+  EPOCH_SIZE: 300
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO' 'COMPETITION'
   TRAIN_DATA_FROM_FILE: [ 'VOC' ]
@@ -32,7 +32,7 @@ TRAIN:
   MIN_AREA: 0 #100 #400 #4 #
   #[H,W]
   #[384, 960] [640, 640]#[1280, 1280] [416, 416] #[512, 768] # [1024,1920] #[800,1333]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
-  IMG_SIZE: [640, 640]
+  IMG_SIZE: [ 640, 640 ]
   MULTI_SCALE: 0
   MULTI_SCALE_SIZE: [ 320, 640 ] #(320-640)//32
 
@@ -47,13 +47,14 @@ TRAIN:
   LR_START: 0.001
   LR_SCHEDULE: 'cos' #'reduce'# 'lr''reduce'  #
   STEP_LR: 50
-  WARM_UP_STEP: 10000
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 0.0001
   # [loc_loss, obj_loss]: loc_loss: mse & iouloss | obj_loss: focalloss & ghm & bce |
-  LOSSTYPE: [ 'iouloss', 'focalloss' ]
+  LOSSTYPE: [ 'mse', 'focalloss' ]
   EPOCH_CONTINUE: None
+  WARM_UP_STEP: 100
   SAVE_STEP: 2000
+  EVALUATE_STEP: 10
 
   # tricks
   IOU_AWARE: 0
@@ -71,7 +72,7 @@ TRAIN:
   ANCHORS: 'please see the util_prepare.py'
 
   # pass object
-  PASS_OBJ: ['Bus_0', 'Bus_90',]
+  PASS_OBJ: [ 'Bus_0', 'Bus_90', ]
 
 TEST:
   # score type
@@ -96,15 +97,15 @@ TEST:
 
   TEST_ONLY: 0
 
-  ONE_TEST: 1
+  ONE_TEST: 0
   ONE_TEST_TRAIN_STEP: 200
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
     #  ['000000000009.jpg', 'coco/imgs/train2017/000000000009.jpg', 'coco/labels/train2017_xml/000000000009.xml']
     #  ['000009', 'kitti/training/images/000009.png', 'kitti/training/labels/000009.xml']
-#      ['2010_002691.jpg', 'VOCdevkit/VOC2012/JPEGImages/2010_002691.jpg', 'VOCdevkit/VOC2012/Annotations/2010_002691.xml']
-      ['000005.jpg', 'VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg', 'VOCdevkit/VOC2007/trainval/Annotations/000005.xml']
-#    [ '站2_transformer.jpg', 'images/站2_transformer.jpg', 'labels/站2_transformer.xml' ]
+    #      ['2010_002691.jpg', 'VOCdevkit/VOC2012/JPEGImages/2010_002691.jpg', 'VOCdevkit/VOC2012/Annotations/2010_002691.xml']
+    [ '000005.jpg', 'VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg', 'VOCdevkit/VOC2007/trainval/Annotations/000005.xml' ]
+    #    [ '站2_transformer.jpg', 'images/站2_transformer.jpg', 'labels/站2_transformer.xml' ]
   ]
 
   #'/media/dell/data/voc/VOCdevkit/VOC2012/JPEGImages/2010_002691.jpg'

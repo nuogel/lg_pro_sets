@@ -30,7 +30,7 @@ class Solver(BaseSolver):
             self.epoch = epoch
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch)
-            if (epoch + 1) % 20 == 0 or self.cfg.TEST.ONE_TEST:
+            if (epoch + 1) % self.cfg.TRAIN.EVALUATE_STEP == 0 or self.cfg.TEST.ONE_TEST:
                 with torch.no_grad():
                     self._validate_an_epoch(epoch)
 

@@ -130,7 +130,9 @@ class YoloLoss:
         loc_losstype, obj_losstype = kwargs['losstype']
         balance = [4.0, 1.0, 0.4][f_id]
         metrics = {}
-        pre_obj, pre_cls, pre_loc_xy, pre_loc_wh, pred_iou, pre_relative_box = self.parsepredict.parser._parse_yolo_predict_fmap(f_map, f_id)
+        pred_conf, pred_cls, pred_xy, pred_wh, pred_iou, pre_relative_box = self.parsepredict.parser._parse_yolo_predict_fmap(f_map, f_id)
+        pre_obj, pre_cls, pre_loc_xy, pre_loc_wh = pred_conf.value, pred_cls.value, pred_xy.value, pred_wh.value
+
         with torch.no_grad():
             global_step = kwargs['global_step']
             if self.one_test:

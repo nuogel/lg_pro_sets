@@ -6,6 +6,7 @@ from lgdet.postprocess.parse_factory import ParsePredict
 
 from lgdet.loss.loss_base.focal_loss import FocalLoss, FocalLoss_lg
 from lgdet.loss.loss_base.ghm_loss import GHMC
+import torch.nn.functional as F
 
 '''
 with the new yolo loss, in 56 images, loss is 0.18 and map is 0.2.and the test show wrong bboxes.
@@ -38,7 +39,7 @@ class YoloLoss:
         self.alpha = 0.25
         self.gamma = 2
         self.Focalloss = FocalLoss(gamma=1.5, alpha=0.25, reduction='mean')
-        self.Focalloss_lg = FocalLoss_lg(alpha=self.alpha, gamma=self.gamma,)
+        self.Focalloss_lg = FocalLoss_lg(alpha=self.alpha, gamma=self.gamma, )
         self.ghm = GHMC(use_sigmoid=True)
 
     def build_targets(self, pre_obj, labels, f_id):
@@ -50,12 +51,9 @@ class YoloLoss:
         targets[..., 4:6] = (labels[..., 4:6] - labels[..., 2:4])
         B, C, H, W = pre_obj.shape
 
-        mask = np.arange(
-            self.anc_num) + self.anc_num * f_id  # be care of the relationship between anchor size and the feature map size.
+        mask = np.arange(self.anc_num) + self.anc_num * f_id  # be care of the relationship between anchor size and the feature map size.
         anchors_raw = self.anchors[mask]
-        anchors = torch.Tensor(
-            [(a_w / self.cfg.TRAIN.IMG_SIZE[1] * W, a_h / self.cfg.TRAIN.IMG_SIZE[0] * H) for a_w, a_h in
-             anchors_raw]).to(self.device)
+        anchors = torch.Tensor([(a_w / self.cfg.TRAIN.IMG_SIZE[1] * W, a_h / self.cfg.TRAIN.IMG_SIZE[0] * H) for a_w, a_h in anchors_raw]).to(self.device)
 
         num_target = targets.shape[0]
         gain = torch.ones(6, device=targets.device)  # normalized to gridspace gain
@@ -111,8 +109,8 @@ class YoloLoss:
 
         metrics = {}
         lcls, lbox, lobj = [torch.FloatTensor([0]).to(self.device) for _ in range(3)]
-        pre_obj, pre_cls, pre_loc_xy, pre_loc_wh, pred_iou, pre_relative_box = self.parsepredict.parser._parse_yolo_predict_fmap(
-            f_map, f_id)
+        pred_conf, pred_cls, pred_xy, pred_wh, pred_iou, pre_relative_box = self.parsepredict.parser._parse_yolo_predict_fmap(f_map, f_id)
+        pre_obj, pre_cls, pre_loc_xy, pre_loc_wh = pred_conf.value, pred_cls.value, pred_xy.value, pred_wh.value
         with torch.no_grad():
             tcls, tbox, indices, indices_ignore, anchors = self.build_targets(pre_obj, labels, f_id)  # targets
             B, C, H, W = pre_obj.shape
@@ -122,9 +120,11 @@ class YoloLoss:
 
         if num_target:
             pre_cls, pre_xy, pre_wh = [i[indices] for i in [pre_cls, pre_loc_xy, pre_loc_wh]]
-            t_cls = torch.zeros_like(pre_cls)  # targets
-            t_cls[range(num_target), tcls] = 1
-            lcls = self.bceloss(pre_cls, t_cls)
+            # t_cls = torch.zeros_like(pre_cls)  # targets
+            # t_cls[range(num_target), tcls] = 1
+            # lcls = self.bceloss(pre_cls, t_cls) # F.cross_entropy
+            assert pred_cls.sigmoid_tag is False
+            lcls = F.cross_entropy(pre_cls, tcls.type(torch.LongTensor).cuda())
             if self.reduction == 'sum':
                 lcls = lcls / num_target  # BCE
             cls_score = ((pre_cls.max(-1)[1] == tcls).float()).mean()

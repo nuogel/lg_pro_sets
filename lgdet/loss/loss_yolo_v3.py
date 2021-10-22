@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from lgdet.util.util_iou import _iou_wh, bbox_GDCiou, xywh2xyxy, iou_xyxy
 from lgdet.postprocess.parse_factory import ParsePredict
-
+import torch.nn.functional as F
 from lgdet.loss.loss_base.focal_loss import FocalLoss, FocalLoss_lg
 from lgdet.loss.loss_base.ghm_loss import GHMC
 
@@ -44,12 +44,9 @@ class YoloLoss:
         targets[..., 4:6] = (labels[..., 4:6] - labels[..., 2:4])
         B, C, H, W = pre_obj.shape
 
-        mask = np.arange(
-            self.anc_num) + self.anc_num * f_id  # be care of the relationship between anchor size and the feature map size.
+        mask = np.arange(self.anc_num) + self.anc_num * f_id  # be care of the relationship between anchor size and the feature map size.
         anchors_raw = self.anchors[mask]
-        anchors = torch.Tensor(
-            [(a_w / self.cfg.TRAIN.IMG_SIZE[1] * W, a_h / self.cfg.TRAIN.IMG_SIZE[0] * H) for a_w, a_h in
-             anchors_raw]).to(self.device)
+        anchors = torch.Tensor([(a_w / self.cfg.TRAIN.IMG_SIZE[1] * W, a_h / self.cfg.TRAIN.IMG_SIZE[0] * H) for a_w, a_h in anchors_raw]).to(self.device)
 
         num_target = targets.shape[0]
         gain = torch.ones(6, device=targets.device)  # normalized to gridspace gain
@@ -57,8 +54,7 @@ class YoloLoss:
         t = targets * gain
 
         self.anc_num = anchors.shape[0]  # number of anchors
-        at = torch.arange(self.anc_num).view(self.anc_num, 1).repeat(1,
-                                                                     num_target)  # anchor tensor, same as .repeat_interleave(num_target)
+        at = torch.arange(self.anc_num).view(self.anc_num, 1).repeat(1, num_target)  # anchor tensor, same as .repeat_interleave(num_target)
 
         # Match targets to anchors
         if num_target:  #
@@ -86,6 +82,7 @@ class YoloLoss:
             assert tcls.max() < self.cls_num, 'cls_num is beyound the classes.'
         # time_2 = time.time()
         # print('build target time LOSS CALL:', time_2 - time_1)
+        # self.check_2_bbox_in_one_grid(tcls.clone(), indices.copy(), tbox)
         return tcls, tbox, indices, indices_ignore, anch
 
     def _loss_cal_one_Fmap(self, f_map, f_id, labels, kwargs):
@@ -94,20 +91,23 @@ class YoloLoss:
         loc_losstype, obj_losstype = kwargs['losstype']
         metrics = {}
         lcls, lbox, lobj = [torch.FloatTensor([0]).to(self.device) for _ in range(3)]
-        pre_obj, pre_cls, pre_loc_xy, pre_loc_wh, pred_iou, pre_relative_box = self.parsepredict.parser._parse_yolo_predict_fmap(
-            f_map, f_id)
+        pred_conf, pred_cls, pred_xy, pred_wh, pred_iou, pre_relative_box = self.parsepredict.parser._parse_yolo_predict_fmap(f_map, f_id)
+        pre_obj, pre_cls, pre_loc_xy, pre_loc_wh = pred_conf.value, pred_cls.value, pred_xy.value, pred_wh.value
+
         with torch.no_grad():
             tcls, tbox, indices, indices_ignore, anchors = self.build_targets(pre_obj, labels, f_id)  # targets
             B, C, H, W = pre_obj.shape
             tobj = torch.zeros_like(pre_obj)  # target obj
             num_target = anchors.shape[0]  # number of targets
-            loss_ratio = {'box': 0.05, 'cls': 0.125, 'obj': 1, 'noobj': 1}
+            loss_ratio = {'box': 1, 'cls': 1, 'obj': 1, 'noobj': 1}
 
         if num_target:
             pre_cls, pre_xy, pre_wh = [i[indices] for i in [pre_cls, pre_loc_xy, pre_loc_wh]]
-            t_cls = torch.zeros_like(pre_cls)  # targets
-            t_cls[range(num_target), tcls] = 1
-            lcls = self.bceloss(pre_cls, t_cls)
+            # t_cls = torch.zeros_like(pre_cls)  # targets
+            # t_cls[range(num_target), tcls] = 1
+            # lcls = self.bceloss(pre_cls, t_cls) # F.cross_entropy
+            assert pred_cls.sigmoid_tag is False
+            lcls = F.cross_entropy(pre_cls, tcls.type(torch.LongTensor).cuda())
             if self.reduction == 'sum':
                 lcls = lcls / num_target  # BCE
             cls_score = ((pre_cls.max(-1)[1] == tcls).float()).mean()
@@ -120,13 +120,14 @@ class YoloLoss:
             else:
                 area_scale = 1.
 
-            # MSE:
-            tobj[indices] = 1.0
-            twh = torch.log(tbox[..., 2:] / anchors + 1e-10)  # torch.log(gw / anchors[best_n][:, 0] + 1e-16)
-            lxy = self.mseloss(pre_xy, tbox[..., :2])
-            if self.multiply_area_scale: area_scale = area_scale.unsqueeze(-1).expand_as(pre_wh)
-            lwh = self.mseloss(pre_wh * area_scale, twh * area_scale)
-            lbox = (lxy + lwh)
+            if loc_losstype == 'mse':
+                # MSE:
+                tobj[indices] = 1.0
+                twh = torch.log(tbox[..., 2:] / anchors + 1e-10)  # torch.log(gw / anchors[best_n][:, 0] + 1e-16)
+                lxy = self.mseloss(pre_xy, tbox[..., :2])
+                if self.multiply_area_scale: area_scale = area_scale.unsqueeze(-1).expand_as(pre_wh)
+                lwh = self.mseloss(pre_wh * area_scale, twh * area_scale)
+                lbox = (lxy + lwh)
 
         obj_mask = tobj > 0.
         noobj_mask = ~obj_mask
@@ -139,8 +140,7 @@ class YoloLoss:
             obj_loss = torch.FloatTensor([0]).to(self.device)
         noobj_loss = self.bceloss(pre_obj[noobj_mask], tobj[noobj_mask])  # obj loss
 
-        total_loss = loss_ratio['obj'] * obj_loss + loss_ratio['noobj'] * noobj_loss + loss_ratio['cls'] * lcls + \
-                     loss_ratio['box'] * lbox
+        total_loss = loss_ratio['obj'] * obj_loss + loss_ratio['noobj'] * noobj_loss + loss_ratio['cls'] * lcls + loss_ratio['box'] * lbox
 
         if self.reduction == 'sum': total_loss = total_loss / B
         if torch.isnan(total_loss) or total_loss.item() == float("inf") or total_loss.item() == -float("inf"):
