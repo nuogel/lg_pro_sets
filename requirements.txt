@@ -1,21 +1,2 @@
-torch
-torchvision
-tensorflow
-matplotlib
-scikit-image
-keras
-opencv
-opencv-contrib-python
-pyyaml
-tensorboard
-scikit-learn
-shapely
-imgaug
-python-Levenshtein
-librosa
-lmdb
-python_speech_features
-prefetch_generator
-munch
-tensorboardX
-colorlog
+-r requirements/must.txt
+-r requirements/tools.txt

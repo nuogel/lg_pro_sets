@@ -152,7 +152,7 @@ class YoloLoss:
         obj_percent = ((pre_obj[obj_mask] > self.cfg.TEST.SCORE_THRESH).float()).mean().item() if obj_num > 0. else 0.
         noobj_thresh_sum = (pre_obj[noobj_mask] > self.cfg.TEST.SCORE_THRESH).sum().item() / B
         iou_sc = iou_xyxy(xywh2xyxy(pre_relative_box[indices]), labels[..., 2:6], type='N21') if obj_num > 0. else 0.
-        metrics['iou_sc'] = iou_sc.mean()
+        metrics['iou_sc'] = iou_sc.mean().item()
         iou_percent = (iou_sc > self.cfg.TEST.IOU_THRESH).sum() * 1.0 / len(iou_sc)
         metrics['iou_p'] = iou_percent.item()
         metrics['obj_sc'] = obj_sc

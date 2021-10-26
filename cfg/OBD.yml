@@ -14,7 +14,7 @@ TRAIN:
   MODEL: yolov3
   TYPE: s
   EMA: 0
-  EPOCH_SIZE: 300
+  EPOCH_SIZE: 500
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO' 'COMPETITION'
   TRAIN_DATA_FROM_FILE: [ 'VOC' ]

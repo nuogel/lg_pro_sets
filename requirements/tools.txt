@@ -1,0 +1,14 @@
+opencv
+opencv-contrib-pythonmatplotlib
+scikit-image
+python-Levenshtein
+pyyaml
+scikit-learn
+shapely
+imgaug
+librosa
+lmdb
+python_speech_features
+prefetch_generator
+munch
+colorlog
