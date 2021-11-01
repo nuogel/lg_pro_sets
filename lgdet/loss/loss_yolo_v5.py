@@ -3,6 +3,7 @@ import torch
 import numpy as np
 from lgdet.util.util_iou import _iou_wh, bbox_GDCiou, xywh2xyxy, iou_xyxy, wh_iou
 from lgdet.postprocess.parse_factory import ParsePredict
+import torch.nn.functional as F
 
 from lgdet.loss.loss_base.focal_loss import FocalLoss, FocalLoss_lg
 from lgdet.loss.loss_base.ghm_loss import GHMC
@@ -156,9 +157,11 @@ class YoloLoss:
         if num_target:
             pre_cls, pre_xy, pre_wh = [i[indices] for i in [pre_cls, pre_loc_xy, pre_loc_wh]]
             cp, cn = smooth_BCE(eps=eps)
-            t_cls = torch.full_like(pre_cls, cn, device=self.device)  # targets
-            t_cls[range(num_target), tcls] = cp
-            lcls = self.bceloss(pre_cls, t_cls)
+            # t_cls = torch.full_like(pre_cls, cn, device=self.device)  # targets
+            # t_cls[range(num_target), tcls] = cp
+            # lcls = self.bceloss(pre_cls, t_cls)
+            assert pred_cls.sigmoid_tag is False
+            lcls = F.cross_entropy(pre_cls, tcls.type(torch.LongTensor).cuda())
             if self.reduction == 'sum':
                 lcls = lcls / num_target  # BCE
             cls_p = ((pre_cls.max(-1)[1] == tcls).float()).mean()

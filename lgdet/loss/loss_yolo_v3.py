@@ -31,7 +31,7 @@ class YoloLoss:
         self.reduction = 'mean'
         self.mseloss = torch.nn.MSELoss(reduction=self.reduction)
         self.bceloss = torch.nn.BCELoss(reduction=self.reduction)
-
+        self.bceloss_logits = torch.nn.BCEWithLogitsLoss(reduction=self.reduction)
         self.parsepredict = ParsePredict(cfg)
         self.multiply_area_scale = 0  # whether multiply loss to area_scale.
 
@@ -99,7 +99,7 @@ class YoloLoss:
             B, C, H, W = pre_obj.shape
             tobj = torch.zeros_like(pre_obj)  # target obj
             num_target = anchors.shape[0]  # number of targets
-            loss_ratio = {'box': 1, 'cls': 1, 'obj': 1, 'noobj': 1}
+            loss_ratio = {'box': 5, 'cls': 1, 'obj': 1, 'noobj': 10}
 
         if num_target:
             pre_cls, pre_xy, pre_wh = [i[indices] for i in [pre_cls, pre_loc_xy, pre_loc_wh]]
@@ -128,6 +128,8 @@ class YoloLoss:
                 if self.multiply_area_scale: area_scale = area_scale.unsqueeze(-1).expand_as(pre_wh)
                 lwh = self.mseloss(pre_wh * area_scale, twh * area_scale)
                 lbox = (lxy + lwh)
+            else:
+                print('error loss type')
 
         obj_mask = tobj > 0.
         noobj_mask = ~obj_mask
@@ -135,10 +137,12 @@ class YoloLoss:
         label_weight_mask = (obj_mask | noobj_mask)
         obj_num = obj_mask.sum()
         if obj_num:
-            obj_loss = self.bceloss(pre_obj[obj_mask], tobj[obj_mask])  # obj loss
+            # obj_loss = self.bceloss(pre_obj[obj_mask], tobj[obj_mask])  # obj loss
+            obj_loss = self.bceloss_logits(pred_conf.value_raw[obj_mask], tobj[obj_mask])  # obj loss
         else:
             obj_loss = torch.FloatTensor([0]).to(self.device)
-        noobj_loss = self.bceloss(pre_obj[noobj_mask], tobj[noobj_mask])  # obj loss
+        # noobj_loss = self.bceloss(pre_obj[noobj_mask], tobj[noobj_mask])  # obj loss
+        noobj_loss = self.bceloss_logits(pred_conf.value_raw[noobj_mask], tobj[noobj_mask])  # obj loss
 
         total_loss = loss_ratio['obj'] * obj_loss + loss_ratio['noobj'] * noobj_loss + loss_ratio['cls'] * lcls + loss_ratio['box'] * lbox
 

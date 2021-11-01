@@ -118,8 +118,17 @@ def other():
     for i in n:
         print(i)
 
+
+def resize():
+    img = cv2.imread('/media/dell/data/比赛/提交/logo.png')
+    img = cv2.resize(img, None, fx=10, fy=10)
+    cv2.imwrite('/media/dell/data/比赛/提交/logo2.png', img)
+
+
+
 if __name__ == '__main__':
     # _test_1()
     # a = torch.version.cuda
     # _y4m()
-    other()
+    # other()
+    resize()
