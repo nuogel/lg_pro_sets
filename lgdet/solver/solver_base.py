@@ -7,7 +7,7 @@ from lgdet.config.cfg import prepare_cfg
 from lgdet.dataloader.DataLoaderFactory import DataLoaderFactory
 from lgdet.registry import MODELS, build_from_cfg
 from lgdet.util.util_weights_init import weights_init
-from lgdet.util.util_get_dataset_from_file import _read_train_test_dataset
+from lgdet.dataloader.utils_data.util_get_dataset_from_file import _read_train_test_dataset
 from lgdet.util.util_load_save_checkpoint import _load_checkpoint, _save_checkpoint, _load_pretrained
 from lgdet.metrics.ema import ModelEMA
 import math

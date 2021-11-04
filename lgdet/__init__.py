@@ -1,3 +1,6 @@
+from .model.vit.vit import VIT
+
+
 from .model.ObdModel_YOLOV2 import YOLOV2
 from .model.ObdModel_YOLOV3 import YOLOV3
 from .model.ObdModel_YOLOV3_TINY import YOLOV3_TINY
@@ -25,6 +28,7 @@ from .model.TtsModel_TACOTRON2 import TACOTRON2
 
 from .score.Score_OBD import Score
 
+from .dataloader.Loader_IMC import IMC_Loader
 from .dataloader.Loader_OBD import OBD_Loader
 from .dataloader.Loader_TTS import TTS_Loader
 from .dataloader.Loader_SRDN import SRDN_Loader

@@ -173,7 +173,7 @@ class YoloLoss:
         if obj_losstype == 'focalloss':
             loss_ratio['obj'] = 1
             loss_ratio['noobj'] = 1
-            _loss, obj_loss, noobj_loss = self.Focalloss_lg(pre_obj, tobj, obj_mask, noobj_mask, split_loss=True)
+            _loss, obj_loss, noobj_loss = self.Focalloss_lg(pred_conf.value_raw, tobj, obj_mask, noobj_mask, split_loss=True)
         if obj_losstype == 'ghm':
             obj_loss = self.ghm(pre_obj, tobj, label_weight_mask)
             noobj_loss = torch.FloatTensor([0]).to(self.device)

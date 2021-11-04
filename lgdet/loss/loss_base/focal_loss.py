@@ -67,15 +67,19 @@ def obj_noobj_loss_metrics(all_loss, obj_mask, reduction, split_loss):
 
 class FocalLoss_lg(nn.Module):
 
-    def __init__(self, alpha=0.25, gamma=2):
+    def __init__(self, alpha=0.25, gamma=2, add_logist=True):
         super().__init__()
         self.alpha = alpha
         self.gamma = gamma
-        self.bceloss_focal = torch.nn.BCELoss(reduction='none')
+        self.add_logist = add_logist
+        if add_logist:
+            self.loss_fcn = nn.BCEWithLogitsLoss(reduction='none')
+        else:
+            self.loss_fcn = nn.BCELoss(reduction='none')
 
     def forward(self, pred, target, obj_mask, noobj_mask, reduction='mean', **kwargs):
         pred = pred.sigmoid()
-        bceloss = self.bceloss_focal(pred, target)
+        bceloss = self.loss_fcn(pred, target)
         noobj_loss = ((1 - self.alpha) * ((pred[noobj_mask]) ** self.gamma)) * bceloss[noobj_mask]
         if obj_mask.float().sum() > 0:
             obj_loss = (self.alpha * ((1. - pred[obj_mask]) ** self.gamma)) * bceloss[obj_mask]

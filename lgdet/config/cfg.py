@@ -66,7 +66,28 @@ def prepare_cfg(cfg, args, is_training=True):
             args.number_works = 0
     except:
         pass
-    if cfg.BELONGS in ['OBD', ]:
+
+    if cfg.BELONGS in ['IMC', ]:
+        try:
+            cfg.PATH.CLASSES_PATH = cfg.PATH.CLASSES_PATH.format(cfg.TRAIN.TRAIN_DATA_FROM_FILE[0].lower())
+        except:
+            print('class names error:', cfg.PATH.CLASSES_PATH)
+        try:
+            from lgdet.util.util_get_cls_names import _get_class_names
+            class_dict = _get_class_names(cfg.PATH.CLASSES_PATH)
+            class_names = []
+            for k, v in class_dict.items():
+                if v not in class_names:
+                    class_names.append(v)
+            cfg.TRAIN.CLASSES_NUM = len(class_names)
+            cfg.TRAIN.CLASSES = class_names
+        except EnvironmentError:
+            print('cfg.py trying get class number and classes faild.')
+
+
+    elif cfg.BELONGS in ['OBD', ]:
+        if cfg.TEST.MAP_FSCORE == 0:
+            cfg.TEST.SCORE_THRESH = 0.05
         # single level anchor box config for VOC and COCO
         ANCHOR_SIZE = [[1.19, 1.98], [2.79, 4.59], [4.53, 8.92], [8.06, 5.29], [10.32, 10.65]]
 
@@ -133,7 +154,7 @@ def prepare_cfg(cfg, args, is_training=True):
         try:
             cfg.PATH.CLASSES_PATH = cfg.PATH.CLASSES_PATH.format(cfg.TRAIN.TRAIN_DATA_FROM_FILE[0].lower())
         except:
-            ...
+            print('class names error:', cfg.PATH.CLASSES_PATH)
 
         cfg.TRAIN.ANCHORS = anchor_yolov3
         if cfg.TEST.ONE_TEST:

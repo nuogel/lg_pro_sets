@@ -285,12 +285,14 @@ class LgTransformer:
 
         return img_paded, label, data_info
 
-    def transpose(self, img, label):
+    def transpose(self, img, label=None):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = np.asarray(img, dtype=np.float32) / 255.
         # img = (img - self.cfg.mean) / self.cfg.std
         img = torch.from_numpy(img).permute(2, 0, 1)  # C, H, W
         img = transforms.Normalize(self.cfg.mean, self.cfg.std, inplace=True)(img)
+        if label is None:
+            return img, label
 
         if isinstance(label, list):
             label = np.asarray(label, np.float32)

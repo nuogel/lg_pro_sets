@@ -96,16 +96,20 @@ def _read_train_test_dataset(cfg):
         train_set = []
         test_set = []
         for FILE_TXT in cfg.TRAIN.TRAIN_DATA_FROM_FILE:
-            train_idx = os.path.join('datasets/', cfg.BELONGS, FILE_TXT,
-                                     FILE_TXT + '_train' + '.txt')
-            test_idx = os.path.join('datasets/', cfg.BELONGS, FILE_TXT,
-                                    FILE_TXT + '_test' + '.txt')
+            if FILE_TXT in ['CIFAR10']:
+                from lgdet.dataloader.utils_data.cifar10 import load_cifar10
+                train_set, test_set = load_cifar10()
+            else:
+                train_idx = os.path.join('datasets/', cfg.BELONGS, FILE_TXT,
+                                         FILE_TXT + '_train' + '.txt')
+                test_idx = os.path.join('datasets/', cfg.BELONGS, FILE_TXT,
+                                        FILE_TXT + '_test' + '.txt')
 
-            print('data set: %s' % FILE_TXT)
-            f = open(train_idx, 'r', encoding='utf-8-sig')
-            train_set.extend([line.strip().split('┣┫') for line in f.readlines()])
-            f = open(test_idx, 'r', encoding='utf-8-sig')
-            test_set.extend([line.strip().split('┣┫') for line in f.readlines()])
+                print('data set: %s' % FILE_TXT)
+                f = open(train_idx, 'r', encoding='utf-8-sig')
+                train_set.extend([line.strip().split('┣┫') for line in f.readlines()])
+                f = open(test_idx, 'r', encoding='utf-8-sig')
+                test_set.extend([line.strip().split('┣┫') for line in f.readlines()])
         return train_set, test_set
 
     if cfg.TEST.ONE_TEST:

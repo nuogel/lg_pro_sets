@@ -99,7 +99,7 @@ class YoloLoss:
             B, C, H, W = pre_obj.shape
             tobj = torch.zeros_like(pre_obj)  # target obj
             num_target = anchors.shape[0]  # number of targets
-            loss_ratio = {'box': 5, 'cls': 1, 'obj': 1, 'noobj': 10}
+            loss_ratio = {'box': 10, 'cls': 1, 'obj': 1, 'noobj': 25}
 
         if num_target:
             pre_cls, pre_xy, pre_wh = [i[indices] for i in [pre_cls, pre_loc_xy, pre_loc_wh]]
