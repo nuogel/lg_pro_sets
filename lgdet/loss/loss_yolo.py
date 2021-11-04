@@ -8,12 +8,6 @@ from lgdet.loss.loss_base.focal_loss import FocalLoss, FocalLoss_lg
 from lgdet.loss.loss_base.ghm_loss import GHMC
 import torch.nn.functional as F
 
-'''
-with the new yolo loss, in 56 images, loss is 0.18 and map is 0.2.and the test show wrong bboxes.
-with the new yolo loss, in 8 images, loss is 0.015 and map is 0.99.and the test show terrible bboxes.
-
-'''
-
 
 class YoloLoss:
     # pylint: disable=too-few-public-methods
@@ -116,7 +110,7 @@ class YoloLoss:
             B, C, H, W = pre_obj.shape
             tobj = torch.zeros_like(pre_obj)  # target obj
             num_target = anchors.shape[0]  # number of targets
-            loss_ratio = {'box': 0.05, 'cls': 0.125, 'obj': 1, 'noobj': 1}
+            loss_ratio = {'box': 1, 'cls': 0.125, 'obj': 1, 'noobj': 1}
 
         if num_target:
             pre_cls, pre_xy, pre_wh = [i[indices] for i in [pre_cls, pre_loc_xy, pre_loc_wh]]
@@ -172,7 +166,7 @@ class YoloLoss:
         obj_num = obj_mask.sum()
         if obj_losstype == 'focalloss':
             loss_ratio['obj'] = 1
-            loss_ratio['noobj'] = 1
+            loss_ratio['noobj'] = 5
             _loss, obj_loss, noobj_loss = self.Focalloss_lg(pred_conf.value_raw, tobj, obj_mask, noobj_mask, split_loss=True)
         if obj_losstype == 'ghm':
             obj_loss = self.ghm(pre_obj, tobj, label_weight_mask)

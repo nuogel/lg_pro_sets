@@ -14,7 +14,7 @@ TRAIN:
   MODEL: vit
   TYPE: s
   EMA: 0
-  EPOCH_SIZE: 500
+  EPOCH_SIZE: 300
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   # CIFAR10
   TRAIN_DATA_FROM_FILE: [ 'CIFAR10' ]
@@ -50,7 +50,7 @@ TRAIN:
   WEIGHT_DECAY: 0.0001
   LOSSTYPE: [ 'bce', 'focalloss' ]
   EPOCH_CONTINUE: None
-  WARM_UP_STEP: 100
+  WARM_UP_STEP: 2000
   SAVE_STEP: 2000
   EVALUATE_STEP: 10
 

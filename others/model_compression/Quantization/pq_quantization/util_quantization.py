@@ -1,6 +1,6 @@
-from others.Quantization.pq_quantization.pq.utils import quantize_model_, SizeTracker
+from others.model_compression.Quantization.pq_quantization.pq.utils import quantize_model_, SizeTracker
 
-from others.Quantization.pq_quantization import quantization_options
+from others.model_compression.Quantization.pq_quantization import quantization_options
 
 
 def util_quantize_model(model):

@@ -9,7 +9,7 @@ from operator import attrgetter
 import torch.nn as nn
 import torch.distributed as dist
 
-from others.Quantization import get_layers, attrsetter
+from others.model_compression.Quantization import get_layers, attrsetter
 from .modules import IntConv2d, IntLinear, IntEmbedding, ActivationQuantizer
 
 

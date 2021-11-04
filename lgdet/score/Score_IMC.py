@@ -17,7 +17,7 @@ class Score:
 
     def cal_score(self, pre_labels, test_data=None, from_net=True):
         gt_labels = test_data[1]
-        self.score += (torch.sum((torch.argmax(torch.softmax(pre_labels, -1)) == gt_labels)) / pre_labels.size(0)).item()
+        self.score += (torch.sum((torch.argmax(torch.softmax(pre_labels, -1),-1) == gt_labels)) / pre_labels.size(0)).item()
         self.batches += 1
 
     def score_out(self):
