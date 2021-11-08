@@ -73,8 +73,8 @@ class YOLOV3(nn.Module):
         self.pred_1 = nn.Conv2d(256, self.anchor_number * (1 + 4 + self.num_classes), 1)
 
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
         # backbone
         fmp_1, fmp_2, fmp_3 = self.backbone(x)
 

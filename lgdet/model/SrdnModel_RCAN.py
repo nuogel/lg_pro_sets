@@ -74,8 +74,8 @@ class RCAN(nn.Module):
         self.upscale = nn.Sequential(*upsampler(scale, num_features))
         self.conv2 = nn.Conv2d(num_features, 3, kernel_size=3, padding=1)
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
         x = self.sf(x)
         residual = x
         x = self.rgs(x)

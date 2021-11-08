@@ -285,8 +285,8 @@ class LRF512(nn.Module):
 
         self.anchor = PriorBox(COCO_512)
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
         sources = list()
         loc = list()
         conf = list()

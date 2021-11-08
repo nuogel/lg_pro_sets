@@ -71,8 +71,8 @@ class YOLOV2_APOLLO(torch.nn.Module):
         self.conv9_relu = torch.nn.ReLU(1)
         self.conv_final = torch.nn.Conv2d(512, self.anc_num * (4 + 1 + self.cls_num), 1, 1, 0, bias=True)
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
         x = self.conv1_relu(self.conv1(x))
         x = self.pool1(x)
         x = self.conv2_relu(self.conv2(x))

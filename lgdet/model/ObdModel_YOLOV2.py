@@ -70,8 +70,8 @@ class YOLOV2(torch.nn.Module):
                                           nn.LeakyReLU(0.1, inplace=True))
         self.stage3_conv2 = nn.Conv2d(1024, self.anc_num * (5 + self.cls_num), 1, 1, 0, bias=False)
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
         output = self.stage1_conv1(x)
         output = self.stage1_conv2(output)
         output = self.stage1_conv3(output)

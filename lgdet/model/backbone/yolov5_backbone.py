@@ -1,5 +1,5 @@
 import torch.nn as nn
-from lgdet.model.common.common_convs import Focus, CBL, BottleneckCSP,SPP
+from lgdet.model.common.common_convs import Focus, CBL, BottleneckCSP, SPP, Conv
 
 
 class YOLOV5BACKBONE(nn.Module):

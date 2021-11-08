@@ -267,8 +267,8 @@ class SRFBN(nn.Module):
 
         self.add_mean = MeanShift(rgb_mean, rgb_std, 1)
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
         self._reset_state()
 
         x = self.sub_mean(x)

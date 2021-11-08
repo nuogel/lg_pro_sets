@@ -28,8 +28,8 @@ class FSRCNN(nn.Module):
         # Deconvolution
         self.last_part = nn.ConvTranspose2d(in_channels=64, out_channels=3, kernel_size=9, stride=self.cfg.TRAIN.UPSCALE_FACTOR, padding=4, output_padding=3)
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
         out = self.first_part(x)
         out = self.mid_part(out)
         out = self.last_part(out)

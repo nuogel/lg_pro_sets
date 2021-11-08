@@ -60,8 +60,8 @@ class DBPN(nn.Module):
                 if m.bias is not None:
                     m.bias.data.zero_()
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
 
         x = self.feat0(x)
         x = self.feat1(x)

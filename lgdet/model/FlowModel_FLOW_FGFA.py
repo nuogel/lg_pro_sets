@@ -47,8 +47,8 @@ class FLOW_FGFA(nn.Module):
 
         self.avgpool = nn.AvgPool2d(2, stride=2, ceil_mode=True)
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
         x = self.avgpool(x)
         conv1 = self.flow_conv1(x)
         relu1 = self.relu(conv1)

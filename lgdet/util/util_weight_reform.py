@@ -57,8 +57,18 @@ def decode_weight_lg():
     torch.save(new_dic, new_path)
     print('saved to ', new_path)
 
+def analies_checkpoint():
+    path = '/home/dell/lg/code/lg_pro_sets/tmp/checkpoints/yolov5/now.pkl'
+    checkpoint = torch.load(path)
+    state_dict = checkpoint['state_dict']
+    layer_i = 0
+    for k,v in state_dict.items():
+        layer_i +=1
+        print(layer_i, ':', k, '------',v.shape)
+
 
 if __name__ == '__main__':
     # weight_discard_module()
     # weight_reshape()
-    decode_weight_lg()
+    # decode_weight_lg()
+    analies_checkpoint()

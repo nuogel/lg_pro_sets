@@ -11,7 +11,7 @@ PATH:
 
 TRAIN:
   # yolov5 lrf300 fcos lrf512 yolov3  ssdvgg  retinanet yolonano  yolov2 yolov3 yolov3_tiny yolov3_tiny_shufflenet refinedet efficientdet yolov3_tiny_mobilenet yolov3_tiny_squeezenet fcos
-  MODEL: yolov3_tiny
+  MODEL: yolov5
   TYPE: s
   EMA: 0
   EPOCH_SIZE: 300
@@ -33,7 +33,7 @@ TRAIN:
   MIN_AREA: 0 #100 #400 #4 #
   #[H,W]
   #[384, 960] [640, 640]#[1280, 1280] [416, 416] #[512, 768] # [1024,1920] #[800,1333]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
-  IMG_SIZE: [ 512, 512 ]
+  IMG_SIZE: [ 640, 640 ]
   MULTI_SCALE: 0
   MULTI_SCALE_SIZE: [ 320, 640 ] #(320-640)//32
 
@@ -51,7 +51,7 @@ TRAIN:
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 0.0001
   # [loc_loss, obj_loss]: loc_loss: mse & iouloss | obj_loss: focalloss & ghm & bce |
-  LOSSTYPE: [ 'mse', 'focalloss' ]
+  LOSSTYPE: [ 'iouloss', 'focalloss' ]
   EPOCH_CONTINUE: None
   WARM_UP_STEP: 2000
   SAVE_STEP: 2000

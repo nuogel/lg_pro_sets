@@ -12,9 +12,9 @@ from lgdet.util.util_yml_parse import parse_yaml
 
 def _parse_arguments():
     parser = ArgumentParser()
-    parser.add_argument('--type', default='IMC', type=str, help='yml_path')
+    parser.add_argument('--type', default='OBD', type=str, help='yml_path')
     parser.add_argument('--model', type=str, help='yml_path')
-    parser.add_argument('--checkpoint', '--cp', default=1
+    parser.add_argument('--checkpoint', '--cp', default=0
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--epoch_size', '--ep', type=int, help='batch size')
     parser.add_argument('--batch_size', '--bz', default=32, type=int, help='batch size')

@@ -28,8 +28,8 @@ class YOLOV3_TINY_O(nn.Module):
         self.conv_set_1 = Conv2d(384, 256, 3, padding=1, leakyReLU=True)
         self.pred_1 = nn.Conv2d(256, self.anchor_number * (1 + 4 + self.num_classes), 1)
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
         # backbone
         C_4, C_5 = self.backbone(x)
 

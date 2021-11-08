@@ -271,8 +271,8 @@ class LRF300(nn.Module):
         self.anchor = PriorBox(COCO_300)
         # _load_pretrained(self, 'saved/checkpoint/LRF_vgg_COCO_300.pth', self.device)
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
         sources = list()
         loc = list()
         conf = list()

@@ -133,8 +133,8 @@ class VIT(nn.Module):
             nn.Linear(dim, num_classes)
         )
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
         x = self.to_patch_embedding(x)
         b, n, _ = x.shape
 

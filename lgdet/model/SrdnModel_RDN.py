@@ -75,8 +75,8 @@ class RDN(nn.Module):
             nn.Conv2d(self.G, out_channels, kernel_size=kernel_size, padding=kernel_size >> 1, stride=1)
         )
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
         # f-1
         f__1 = self.SFE1(x)
         out = self.SFE2(f__1)

@@ -34,8 +34,8 @@ class EDSR(nn.Module):
 
         self.output_conv = nn.Conv2d(base_channel, num_channels, kernel_size=3, stride=1, padding=1)
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
         x = self.input_conv(x)
         residual = x
         x = self.residual_layers(x)

@@ -346,8 +346,8 @@ class RETINANET(nn.Module):
             if isinstance(layer, nn.BatchNorm2d):
                 layer.eval()
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
         c3, c4, c5, p6, p7 = self.backbone(x)  # resnet输出五层特征图
         p3, p4, p5 = self.fpn([c3, c4, c5])  # 前三层特征图进FPN
         features = [p3, p4, p5, p6, p7]

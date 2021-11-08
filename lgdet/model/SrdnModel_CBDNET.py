@@ -146,8 +146,8 @@ class CBDNET(nn.Module):
         self.fcn = FCN()
         self.unet = UNet()
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
         noise_level = self.fcn(x)
         concat_img = torch.cat([x, noise_level], dim=1)
         out = self.unet(concat_img) + x

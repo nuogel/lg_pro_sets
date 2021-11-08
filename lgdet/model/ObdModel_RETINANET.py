@@ -41,8 +41,8 @@ class RETINANET(nn.Module):
             self.backbone.freeze_stages(1)
             print("success freeze stage 1")
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
         C3, C4, C5 = self.backbone(x)
         all_p_level = self.fpn([C3, C4, C5])
         cls_logits, reg_preds = self.head(all_p_level)

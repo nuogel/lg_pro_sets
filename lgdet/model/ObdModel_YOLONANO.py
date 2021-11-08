@@ -182,8 +182,8 @@ class YOLONANO(nn.Module):
         self.ep7 = EP(189, 462, stride=1)  # output: 13x13x462
         self.conv11 = conv1x1(462, self.yolo_channels, stride=1, bn=False)  # output: 13x13x yolo_channels
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
         out = self.conv1(x)
         out = self.conv2(out)
         out = self.pep1(out)

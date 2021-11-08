@@ -37,7 +37,7 @@ class YoloLoss:
 
         self.alpha = 0.25
         self.gamma = 2
-        self.Focalloss = FocalLoss(gamma=2, alpha=0.75, add_logist=False, reduction='mean')
+        self.Focalloss = FocalLoss(gamma=2, alpha=0.75, add_logist=True, reduction='mean')
         self.Focalloss_lg = FocalLoss_lg(alpha=self.alpha, gamma=self.gamma, )
         self.ghm = GHMC(use_sigmoid=True)
 
@@ -204,7 +204,7 @@ class YoloLoss:
         label_weight_mask = (obj_mask | noobj_mask)
         obj_num = obj_mask.sum()
         if obj_losstype == 'focalloss':
-            _loss, obj_loss, noobj_loss = self.Focalloss(pre_obj, tobj, obj_mask=obj_mask, noobj_mask=noobj_mask)
+            _loss, obj_loss, noobj_loss = self.Focalloss(pred_conf.value_raw, tobj, obj_mask=obj_mask, noobj_mask=noobj_mask)
             if obj_loss is None or noobj_loss is None:
                 obj_loss = _loss / 2.
                 noobj_loss = _loss / 2.

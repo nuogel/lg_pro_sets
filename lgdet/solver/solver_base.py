@@ -9,10 +9,10 @@ from lgdet.registry import MODELS, build_from_cfg
 from lgdet.util.util_weights_init import weights_init
 from lgdet.dataloader.utils_data.util_get_dataset_from_file import _read_train_test_dataset
 from lgdet.util.util_load_save_checkpoint import _load_checkpoint, _save_checkpoint, _load_pretrained
+from lgdet.util.util_model_infos import model_info
 from lgdet.metrics.ema import ModelEMA
 import math
 from torch.nn.parallel import DistributedDataParallel as DDP
-
 
 
 class BaseSolver(object):
@@ -57,7 +57,6 @@ class BaseSolver(object):
                 self.cfg.writer.clean_history_and_init_log()
 
         else:
-
             weights_init(self.model, self.cfg.manual_seed)
             if self.is_training:
                 self.cfg.writer.clean_history_and_init_log()
@@ -78,6 +77,7 @@ class BaseSolver(object):
                 self.model.eval()
 
         self.model = self.model.to(self.cfg.TRAIN.DEVICE)
+        model_info(self.model, verbose=True, img_size=self.cfg.TRAIN.IMG_SIZE)
 
     def _get_score(self):
         self.score = get_score_class(self.cfg.BELONGS)(self.cfg)

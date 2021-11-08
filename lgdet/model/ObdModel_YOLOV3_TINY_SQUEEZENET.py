@@ -110,8 +110,8 @@ class YOLOV3_TINY_SQUEEZENET(nn.Module):
         self.bb2_2 = make_layer(self.ch_2[2], self.ch_2[3], max_pool=0)
         self.bb2_3 = make_layer(self.ch_2[-2], self.ch_2[-1], ksize=1, max_pool=0, last_layer=True)
 
-    def forward(self, **args):
-        x = args['input_x']
+    def forward(self, input_x,**args):
+        x = input_x
         f1, f2 = self.backbone(x)  # jump2
         net1 = self.bb1_1(f1)
         net2 = net1  # jump1
