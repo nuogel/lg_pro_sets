@@ -107,18 +107,17 @@ class ParsePredict_yolo:
 
         # Grid Sensitive
         if self.grid_sensitive > 1:
+            pred_xy.sigmoid()
             pred_xy.value = self.grid_sensitive * pred_xy.value - 0.5 * (self.grid_sensitive - 1.0)  # Grid Sensitive
         if self.scale_wh:
             pred_wh.sigmoid()
             pred_wh.value = (pred_wh.value * 2) ** 2  # Width
-
-        _pre_xy = pred_xy.value + self.grid[f_id]
-        if self.scale_wh:
             _pre_wh = pred_wh.value * anchor_ch
         else:
             assert pred_wh.sigmoid_tag == False
             _pre_wh = pred_wh.value.exp() * anchor_ch
 
+        _pre_xy = pred_xy.value + self.grid[f_id]
         pre_box = torch.cat([_pre_xy, _pre_wh], -1) / grid_wh
 
         if not tolabel:  # training
@@ -208,6 +207,7 @@ class SigmodNot:
         self.sigmoid_tag = False
         self.value = value
         self.value_raw = value
+        self.infos = ''
 
     def sigmoid(self):
         self.value = self.value.sigmoid()

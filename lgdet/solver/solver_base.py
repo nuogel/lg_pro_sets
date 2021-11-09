@@ -93,7 +93,7 @@ class BaseSolver(object):
         elif opt_type == 'adamw':
             self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=1e-2)  # weight_decay=1e-2
         elif opt_type == 'sgd':
-            self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=0.937, weight_decay=float(self.cfg.TRAIN.WEIGHT_DECAY))
+            self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=0.937, weight_decay=float(self.cfg.TRAIN.WEIGHT_DECAY), nesterov=True)
         else:
             self.cfg.logger.error('NO such a optimizer: ' + str(opt_type))
         print('using: ', opt_type)

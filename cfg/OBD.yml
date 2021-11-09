@@ -15,16 +15,16 @@ TRAIN:
   TYPE: s
   EMA: 0
   EPOCH_SIZE: 300
-  BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
+  BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO' 'COMPETITION'
   TRAIN_DATA_FROM_FILE: [ 'VOC' ]
   USE_LMDB: 0
 
   # data aug:
-  KEEP_DIFFICAULT: 1
-  MOSAIC: 0
+  KEEP_DIFFICAULT: 0
+  MOSAIC: 1
   DO_AUG: 0
-  RESIZE: 1
+  RESIZE: 0
   GRAY_BINARY: 0
   PADTOSIZE: 0
   MAXMINSIZE: 0
@@ -44,18 +44,18 @@ TRAIN:
   SHOW_INPUT: -1  #10000  # #
 
   # optimizer:
-  OPTIMIZER: adam #adamw'adam' #'SGD' #
+  OPTIMIZER: sgd #adamw'adam' #'SGD' #
   LR_START: 0.001
   LR_SCHEDULE: 'cos' #'reduce'# 'lr''reduce'  #
   STEP_LR: 50
   BETAS_ADAM: 0.9
-  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY: 0.0005
   # [loc_loss, obj_loss]: loc_loss: mse & iouloss | obj_loss: focalloss & ghm & bce |
   LOSSTYPE: [ 'iouloss', 'focalloss' ]
   EPOCH_CONTINUE: None
   WARM_UP_STEP: 2000
   SAVE_STEP: 2000
-  EVALUATE_STEP: 10
+  EVALUATE_STEP: 2
 
   # tricks
   IOU_AWARE: 0

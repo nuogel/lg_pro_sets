@@ -142,6 +142,7 @@ def prepare_cfg(cfg, args, is_training=True):
 
         anchor_yolov3_voc_auto = [[516, 534], [454, 302], [250, 456], [240, 236], [127, 309], [118, 134], [63, 183], [52, 80], [27, 50]]
         # yolov3 writer's anchors: [10,13,  16,30,  33,23,  30,61,  62,45,  59,119,  116,90,  156,198,  373,326]
+        anchor_yolov3_writer = [[10, 13], [16, 30], [33, 23], [30, 61], [62, 45], [59, 119], [116, 90], [156, 198], [373, 326]]
 
         VISDRONE_anchors = [[104., 92.],
                             [57., 41.],
@@ -178,7 +179,7 @@ def prepare_cfg(cfg, args, is_training=True):
             cfg.TRAIN.ANCHORS = anchor_yolov3
         elif cfg.TRAIN.MODEL in ['yolov5']:
             cfg.TRAIN.FMAP_ANCHOR_NUM = 3
-            cfg.TRAIN.ANCHORS = anchor_yolov3_voc_auto
+            cfg.TRAIN.ANCHORS = anchor_yolov3_writer
         elif 'yolov2' in cfg.TRAIN.MODEL:
             cfg.TRAIN.FMAP_ANCHOR_NUM = len(anchor_yolov2)
             cfg.TRAIN.ANCHORS = anchor_yolov2

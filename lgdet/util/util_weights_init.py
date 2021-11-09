@@ -51,6 +51,8 @@ def weights_init(Modle, manual_seed=False):
                 torch.nn.init.kaiming_normal_(m.weight, a=0, mode='fan_in', nonlinearity='leaky_relu')
                 if m.bias is not None:
                     m.bias.data.zero_()
+            elif isinstance(m, (torch.nn.Hardswish, torch.nn.LeakyReLU, torch.nn.ReLU, torch.nn.ReLU6)):
+                m.inplace = True
 
 
 def variance_scaling_(tensor, gain=1.):
