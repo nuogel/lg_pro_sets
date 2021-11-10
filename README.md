@@ -101,18 +101,21 @@ python test.py --yml_path xxx --checkpoint xxx
 OBD:
 The result of F1-score of Car in KITTI DATA SET.
 
-networks | input size |  F1-SCORE |mAP| weight size| PS
- --- | --- | --- |  --- |---|---
-yolov2|512x768|0.86|X|58.5 M|used 16 Anchors.
-yolov3|384x960|0.9|X|136 M|收敛快，效果好
-yolov3_tiny | 512x768| 0.857 |0.76571836| 33 M|
-yolov3_tiny_squeezenet | 384x960 | 0.844 |X|5.85 M|收敛快，效果好
-yolov3_tiny_mobilenet|512x768|0.836|X|3.37 M|
-yolov3_tiny_shufflenet|512x768|0.790|0.672|686 KB|
-yolonano|X|X|...|11M
-refinedet | 512x768 | 0.91|X|129 M|收敛快，效果好
-efficientdet_b0|512x768|0.9|X|42.7M|收敛快，效果好
-ssd|512x768|0.8904|X|94.7 M|收敛慢，效果好
+networks |dataset| input size |  F1-SCORE |mAP| weight size| PS
+ --- | --- |--- | --- |  --- |---|---
+yolov2|KITTI|512x768|0.86|X|58.5 M|used 16 Anchors.
+yolov3|KITTI|384x960|0.9|X|136 M|收敛快，效果好
+yolov3_tiny |KITTI| 512x768| 0.857 |0.76571836| 33 M|
+yolov3_tiny_squeezenet |KITTI| 384x960 | 0.844 |X|5.85 M|收敛快，效果好
+yolov3_tiny_mobilenet|KITTI|512x768|0.836|X|3.37 M|
+yolov3_tiny_shufflenet|KITTI|512x768|0.790|0.672|686 KB|
+yolonano|KITTI|X|X|...|11M
+refinedet |KITTI| 512x768 | 0.91|X|129 M|收敛快，效果好
+efficientdet_b0|KITTI|512x768|0.9|X|42.7M|收敛快，效果好
+ssd|KITTI|512x768|0.8904|X|94.7 M|收敛慢，效果好
+yolov5|voc+|640x640|...|0.489|20|debug中
+
+
 
 
 以上分数是在 SCORE_THRESH: 0.7 下得到的，以yolov3_tiny为例: 

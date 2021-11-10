@@ -21,13 +21,13 @@ def _parse_arguments():
     parser.add_argument('--lr', default=1e-2, type=float, help='learning rate')
     parser.add_argument('--lr_continue', '--lr_c', default=0, type=float, help='learning rate')
     parser.add_argument('--number_works', '--nw', default=0, type=int, help='number works of dataloader')
-    parser.add_argument('--score_thresh', '--st', default=0.25, type=float, help='score_thresh')
+    parser.add_argument('--score_thresh', '--st', default=0.05, type=float, help='score_thresh')
     parser.add_argument('--ema', default=0, type=int, help='ema')
     parser.add_argument('--autoamp', default=0, type=int, help='autoamp')
 
     parser.add_argument('--gpu', help='number works of dataloader')
     parser.add_argument('--pre_trained', '--pt', default=0, help='0')
-    parser.add_argument('--map_fscore', '--mf', default=1, type=int, help='map-0; fcore-1')
+    parser.add_argument('--map_fscore', '--mf', default=0, type=int, help='map-0; fcore-1')
 
     parser.add_argument('--epoch_continue', default=None, type=int, help='Epoch of continue training')
     parser.add_argument('--debug', '--d', action='store_true', default=False, help='Enable verbose info')
