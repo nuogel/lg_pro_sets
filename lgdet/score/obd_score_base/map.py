@@ -18,7 +18,6 @@ class MAP:
         self.parsepredict = ParsePredict(self.cfg)
         print('use map')
 
-
     def init_parameters(self):
         self.gt_boxes = []
         self.gt_classes = []
@@ -39,9 +38,9 @@ class MAP:
                 pre_cls = pre_label[..., 1]
                 pre_box = pre_label[..., 2:]
             except:
-                pre_score=[]
-                pre_cls =[]
-                pre_box=[]
+                pre_score = []
+                pre_cls = []
+                pre_box = []
 
             self.pred_scores.append(pre_score)
             self.pred_classes.append(pre_cls)
@@ -85,10 +84,25 @@ class MAP:
             # get samples with specific label
             true_label_loc = [sample_labels == label for sample_labels in self.gt_classes]
             gt_single_cls = [sample_boxes[mask] for sample_boxes, mask in zip(self.gt_boxes, true_label_loc)]
+            pred_label_loc = []
+            for sample_labels in self.pred_classes:
+                if sample_labels != []:
+                    pred_label_loc.append(sample_labels == label)
+                else:
+                    pred_label_loc.append([])
 
-            pred_label_loc = [sample_labels == label for sample_labels in self.pred_classes]
-            bbox_single_cls = [sample_boxes[mask] for sample_boxes, mask in zip(self.pred_boxes, pred_label_loc)]
-            scores_single_cls = [sample_scores[mask] for sample_scores, mask in zip(self.pred_scores, pred_label_loc)]
+            bbox_single_cls = []
+            for sample_boxes, mask in zip(self.pred_boxes, pred_label_loc):
+                if sample_boxes != []:
+                    bbox_single_cls.append(sample_boxes[mask])
+                else:
+                    bbox_single_cls.append([])
+            scores_single_cls = []
+            for sample_scores, mask in zip(self.pred_scores, pred_label_loc):
+                if sample_scores != []:
+                    scores_single_cls.append(sample_scores[mask])
+                else:
+                    scores_single_cls.append([])
 
             fp = np.zeros((0,))
             tp = np.zeros((0,))

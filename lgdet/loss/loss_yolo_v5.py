@@ -108,7 +108,7 @@ class YoloLoss:
         self.multiply_area_scale = 0  # whether multiply loss to area_scale.
 
         self.alpha = 0.25
-        self.gamma = 1.5
+        self.gamma = 0
         self.sort_obj_iou = False
         self.balance = [4.0, 1.0, 0.4]
         # Define criteria
