@@ -209,7 +209,7 @@ class LgTransformer:
         labels = []
         try_tims = 0
         while len(labels) == 0 or [] in labels:
-            imgs, labels = self.dataaug._augmenting(aug_way_ids=([25], []),
+            imgs, labels = self.dataaug._augmenting(aug_way_ids=([5,6,10,11,12,13,14,15,16,19,20, 21, 22], [25]),
                                                     datas=([img], [label]))  # [11,20, 21, 22]
             try_tims += 1
 
@@ -219,6 +219,7 @@ class LgTransformer:
             len(label) == 0
         except:
             ...
+        label_after = np.asarray(label_after)
         return img_after, label_after, data_info
 
     def resize(self, img, label, size, data_info):

@@ -63,19 +63,18 @@ class OBD_Loader(DataLoader):
         # GRAY_BINARY
         if (self.cfg.TRAIN.GRAY_BINARY and self.is_training) or (self.cfg.TEST.GRAY_BINARY and not self.is_training):
             img, label, data_info = self.lgtransformer.img_binary(img, label, data_info)
-
-        # DOAUG:
-        if self.cfg.TRAIN.DO_AUG and self.is_training:  # data aug is wasting time.
-            img, label, data_info = self.lgtransformer.data_aug(img, label, data_info)
-
-        if self.cfg.TRAIN.MOSAIC and self.is_training:
+        # MOSAIC
+        if (random.random() < self.cfg.TRAIN.MOSAIC) and self.is_training:
             # need 4 images
             indices = [random.randint(0, len(self.dataset_infos) - 1) for _ in range(3)]  # 3 additional image indices
             imglabs = [self._load_gt(index) for index in indices]
-            imglabs.insert(0, [img, label, data_info])
+            imglabs.insert(0, (img, label, data_info))
             img, label = self.lgtransformer.aug_mosaic(imglabs, s=self.cfg.TRAIN.IMG_SIZE[0])
             while len(label) <= 0:  # if there is no label in mosaic, then repeat mosaic
                 img, label = self.lgtransformer.aug_mosaic(imglabs, s=self.cfg.TRAIN.IMG_SIZE[0])
+        # DOAUG:
+        if (random.random() < self.cfg.TRAIN.DO_AUG) and self.is_training:  # data aug is wasting time.
+            img, label, data_info = self.lgtransformer.data_aug(img, label, data_info)
 
         # PAD TO SIZE:
         if (self.cfg.TRAIN.PADTOSIZE and self.is_training) or (self.cfg.TEST.PADTOSIZE and not self.is_training):

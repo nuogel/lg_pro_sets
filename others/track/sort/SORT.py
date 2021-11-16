@@ -31,8 +31,7 @@ from skimage import io
 
 from filterpy.kalman import KalmanFilter
 from numba import jit
-from sklearn.utils.linear_assignment_ import linear_assignment
-
+from scipy.optimize import linear_sum_assignment as linear_assignment
 
 @jit
 def iou(bbox_test, bbox_gt):

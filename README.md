@@ -113,7 +113,7 @@ yolonano|KITTI|X|X|...|11M
 refinedet |KITTI| 512x768 | 0.91|X|129 M|收敛快，效果好
 efficientdet_b0|KITTI|512x768|0.9|X|42.7M|收敛快，效果好
 ssd|KITTI|512x768|0.8904|X|94.7 M|收敛慢，效果好
-yolov5|voc+|640x640|...|0.489->0.52|20|debug中
+yolov5|voc+|640x640|...|0.489(resize onley)->0.52(masic only)|20|debug中
 
 
 

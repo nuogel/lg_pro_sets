@@ -3,6 +3,7 @@ import random
 
 import cv2
 import imgaug as ia
+import numpy as np
 from imgaug import augmenters as iaa
 import xml.etree.ElementTree as ET
 
@@ -63,7 +64,7 @@ class Dataaug:
             18: iaa.Clouds(),
             ####################
             #####   shape aug  >20 ###
-
+            19: iaa.Fliplr(0.5),  # 增加原图的概率。
             20: iaa.Fliplr(0.5),  # 增加原图的概率。
             21: iaa.Fliplr(0.5),  # 增加原图的概率。
             22: iaa.Affine(translate_percent=(-0.01, 0.01), rotate=(-3, 3)),

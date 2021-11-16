@@ -22,12 +22,12 @@ TRAIN:
 
   # data aug:
   KEEP_DIFFICAULT: 0
-  MOSAIC: 1
-  DO_AUG: 0
+  MOSAIC: 0.8
+  DO_AUG: 0.5
   RESIZE: 0
   GRAY_BINARY: 0
   PADTOSIZE: 0
-  MAXMINSIZE: 0
+  MAXMINSIZE: 1
   RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0 #0.05 #
   MIN_AREA: 0 #100 #400 #4 #
@@ -53,8 +53,8 @@ TRAIN:
   # [loc_loss, obj_loss]: loc_loss: mse & iouloss | obj_loss: focalloss & ghm & bce |
   LOSSTYPE: [ 'iouloss', 'focalloss' ]
   EPOCH_CONTINUE: None
-  WARM_UP_STEP: 2000
-  SAVE_STEP: 2000
+  WARM_UP_STEP: 4000
+  SAVE_STEP: 4000
   EVALUATE_STEP: 2
 
   # tricks
@@ -69,7 +69,7 @@ TRAIN:
   FMAP_ANCHOR_NUM: 3
 
   # anchors
-  AUTO_ANCHORS: 0
+  AUTO_ANCHORS: 1
   ANCHORS: 'please see the util_prepare.py'
 
   # pass object

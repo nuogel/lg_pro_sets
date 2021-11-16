@@ -13,7 +13,10 @@ def auto_kmeans_anchors(datasets, cfg):
             shapes.append(data['wh_original'])
     WH = np.asarray(cfg.TRAIN.IMG_SIZE[::-1])
     shapes = np.asarray(shapes)
-    ratios = WH / shapes
+    shapes = WH / shapes.max(1, keepdims=True)
+    scale = np.random.uniform(0.9, 1.1, size=(shapes.shape[0], 1))
+    ratios = shapes*scale
+    # wh = torch.tensor(np.concatenate([l[:, 3:5] * s for s, l in zip(shapes * scale, bboxes)])).float()
 
     wh0 = []
     for bbox, ratio in zip(bboxes, ratios):
@@ -41,7 +44,7 @@ def auto_kmeans_anchors(datasets, cfg):
         if fg > f:
             f, k = fg, kg.copy()
     k = k[np.argsort(k.prod(1))][::-1]
-    anchor=[]
+    anchor = []
     for ki in k:
         anchor.append([round(ki[0]), round(ki[1])])
     return anchor

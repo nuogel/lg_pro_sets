@@ -112,15 +112,15 @@ class YoloLoss:
         self.sort_obj_iou = False
         self.balance = [4.0, 1.0, 0.4]
         # Define criteria
-        BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([4]).to(self.device))
-        BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([4]).to(self.device))
+        BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([1]).to(self.device))
+        BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([1]).to(self.device))
         # Focal loss
         g = self.gamma  # focal loss gamma
         if g > 0:
             BCEcls, BCEobj = FocalLoss(BCEcls, g), FocalLoss(BCEobj, g)
         self.BCEcls, self.BCEobj, self.gr, = BCEcls, BCEobj, 1.0,
         # Class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
-        self.cp, self.cn = smooth_BCE(eps=0.1)  # positive, negative BCE targets
+        self.cp, self.cn = smooth_BCE(eps=0.0)  # positive, negative BCE targets
 
     # def __call__(self, p, targets):  # predictions, targets, model
     def Loss_Call(self, p, dataset, kwargs):
@@ -130,7 +130,7 @@ class YoloLoss:
         targets[..., 4:6] = (labels[..., 4:6] - labels[..., 2:4])
 
         lcls, lbox, lobj = torch.zeros(1, device=self.device), torch.zeros(1, device=self.device), torch.zeros(1, device=self.device)
-        meanious=[]
+        meanious = []
         tcls, tbox, indices, anchors = self.build_targets(p, targets)  # targets
 
         # Losses
@@ -175,12 +175,12 @@ class YoloLoss:
             obji = self.BCEobj(pi[..., 0], tobj)
             lobj += obji * self.balance[i]  # obj loss
 
-        meaniou = torch.cat(meanious,  -1).mean()
+        meaniou = torch.cat(meanious, -1).mean()
         bs = tobj.shape[0]  # batch size
-        lbox *= 1
-        lcls *= 1
-        lobj *= 5
-        total_loss = (lbox + lobj + lcls)
+        lbox *= 0.05
+        lcls *= 0.125
+        lobj *= 1
+        total_loss = (lbox + lobj + lcls) * bs
         metrics = {'box_loss': lbox.item(),
                    'obj_loss': lobj.item(),
                    'cls_loss': lcls.item(),

@@ -40,7 +40,7 @@ class DataLoaderFactory:
         if self.cfg.TRAIN.AUTO_ANCHORS and train_data != None and not self.cfg.TEST.ONE_TEST:
             anchors = auto_kmeans_anchors([train_data, test_data], self.cfg)
             cfg.TRAIN.ANCHORS = anchors
-            print('use auto anchors:', anchors)
+            self.cfg.logger.info('use auto anchors:', anchors)
         return trainLoader, testLoader
 
     def to_devce(self, data):
