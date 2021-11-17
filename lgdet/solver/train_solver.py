@@ -109,7 +109,6 @@ class Solver(BaseSolver):
                   'main_score': main_score,
                   'item_score': item_score}
         self.cfg.writer.tbX_write(w_dict)
-        self.cfg.logger.debug('[EVALUATE] Summary: Epoch: %s, total_score: %s, other_score: %s', epoch, str(main_score),
-                              str(item_score))
+        self.cfg.logger.info('[EVALUATE] Summary: Epoch: %s, total_score: %s, other_score: %s', epoch, str(main_score), str(item_score))
         if self.cfg.TEST.TEST_ONLY:
             exit()

@@ -22,7 +22,7 @@ TRAIN:
 
   # data aug:
   KEEP_DIFFICAULT: 0
-  MOSAIC: 0.8
+  MOSAIC: 1
   DO_AUG: 0.5
   RESIZE: 0
   GRAY_BINARY: 0
@@ -61,7 +61,7 @@ TRAIN:
   IOU_AWARE: 0
 
   # CUDA:
-  GPU_NUM: [ 0 ] #[] # if is [] means use CPU.
+  GPU_NUM: [0,1] #[] # if is [] means use CPU.
   DEVICE: 'gpu'
 
   # debug:

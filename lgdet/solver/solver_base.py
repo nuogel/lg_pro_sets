@@ -63,8 +63,9 @@ class BaseSolver(object):
 
         if len(self.device_ids) > 1:
             print('using device id:', self.device_ids)
-            self.model = DDP(self.model, device_ids=self.device_ids)
-
+            self.model = DDP(self.model, device_ids=self.device_ids, output_device=self.device_ids)
+            self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model).to(self.cfg.TRAIN.DEVICE)
+            self.cfg.logger.info('Using SyncBatchNorm()')
         if self.cfg.TRAIN.EMA:
             self.ema = ModelEMA(self.model, device=self.cfg.TRAIN.DEVICE)
 
