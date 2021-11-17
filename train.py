@@ -26,7 +26,7 @@ def _parse_arguments():
     parser.add_argument('--autoamp', default=0, type=int, help='autoamp')
 
     parser.add_argument('--gpu', help='number works of dataloader')
-    parser.add_argument('--pre_trained', '--pt', default=0, help='0')
+    parser.add_argument('--pre_trained', '--pt', default=2, help='1:loading pre_trained from path, 2:loading pre_trained from model.weight_inits() itself')
     parser.add_argument('--map_fscore', '--mf', default=0, type=int, help='map-0; fcore-1')
 
     parser.add_argument('--epoch_continue', default=None, type=int, help='Epoch of continue training')

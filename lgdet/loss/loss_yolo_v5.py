@@ -176,15 +176,16 @@ class YoloLoss:
             lobj += obji * self.balance[i]  # obj loss
 
         meaniou = torch.cat(meanious, -1).mean()
-        bs = tobj.shape[0]  # batch size
-        lbox *= 0.05
-        lcls *= 0.125
-        lobj *= 1
-        total_loss = (lbox + lobj + lcls) * bs
         metrics = {'box_loss': lbox.item(),
                    'obj_loss': lobj.item(),
                    'cls_loss': lcls.item(),
                    'mean_iou': meaniou.item()}
+        bs = tobj.shape[0]  # batch size
+        lbox *= 1
+        lcls *= 1
+        lobj *= 5
+        total_loss = (lbox + lobj + lcls) * bs
+
         return {'total_loss': total_loss, 'metrics': metrics}
 
     def build_targets(self, p, targets):

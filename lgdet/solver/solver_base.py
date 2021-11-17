@@ -50,6 +50,7 @@ class BaseSolver(object):
                 self.model = _load_pretrained(self.model, self.args.pre_trained, self.cfg.TRAIN.DEVICE)
             elif self.args.pre_trained in [2, '2']:
                 print('loading pre_trained from model itself')
+                self.model.weights_init()
             else:
                 print('loading pre_trained:', self.args.pre_trained)
                 self.model = _load_pretrained(self.model, self.args.pre_trained, self.cfg.TRAIN.DEVICE)

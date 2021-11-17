@@ -23,6 +23,7 @@ def weights_init(Modle, manual_seed=False):
                     if m.bias is not None:
                         # m.bias.data.fill_(-math.log((1.0 - prior) / prior))
                         m.bias.data.fill_(0)
+
                 elif "regressor.header" in name:
                     m.weight.data.fill_(0)
                     if m.bias is not None:
@@ -43,6 +44,8 @@ def weights_init(Modle, manual_seed=False):
             elif isinstance(m, (torch.nn.BatchNorm2d, torch.nn.GroupNorm, torch.nn.SyncBatchNorm)):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
+                m.eps = 1e-4
+                m.momentum = 0.03
             elif isinstance(m, torch.nn.Linear):
                 m.weight.data.normal_(0, 0.01)
                 if m.bias is not None:

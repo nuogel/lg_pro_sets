@@ -4,7 +4,7 @@ import torch.nn as nn
 from lgdet.model.backbone.yolov5_backbone import YOLOV5BACKBONE
 from lgdet.model.neck.yolov5_neck import YOLOV5NECK
 from ..registry import MODELS
-
+import math
 
 @MODELS.registry()
 class YOLOV5(nn.Module):
@@ -43,7 +43,7 @@ class YOLOV5(nn.Module):
         self.neck = YOLOV5NECK(chs=neck_chs, csp=neck_csp)
         self.head = nn.ModuleList(nn.Conv2d(x, self.final_out, 1) for x in deteck)
 
-    def forward(self, input_x,**args):
+    def forward(self, input_x, **args):
         x = input_x
         backbone = self.backbone(x)
         neck = self.neck(backbone)
@@ -52,3 +52,14 @@ class YOLOV5(nn.Module):
             featuremaps.append(h_i(neck_i))  # conv
         # return featuremaps[::-1]
         return featuremaps
+
+    def weights_init(self):
+        # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
+        cf=None
+        for mi, s in zip(self.head, [8, 16, 32]):  # from
+            mi.weight.data.fill_(0)
+            # tricks form yolov5:
+            b = mi.bias.view(3, -1)  # conv.bias(255) to (3,85)
+            b.data[:, 0] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
+            b.data[:, 5:] += math.log(0.6 / (self.cls_num - 0.99)) if cf is None else torch.log(cf / cf.sum())  # cls
+            mi.bias = torch.nn.Parameter(b.view(-1), requires_grad=True)

@@ -41,7 +41,7 @@ TRAIN:
   WATCH_METIRICS: 1
   WRITE_IMAGES: 20
   WRITER: 'tensorboardX'
-  SHOW_INPUT: 10000  # #-1  #
+  SHOW_INPUT: -1  #10000  # #
 
   # optimizer:
   OPTIMIZER: sgd #adamw'adam' #'SGD' #
@@ -53,7 +53,7 @@ TRAIN:
   # [loc_loss, obj_loss]: loc_loss: mse & iouloss | obj_loss: focalloss & ghm & bce |
   LOSSTYPE: [ 'iouloss', 'focalloss' ]
   EPOCH_CONTINUE: None
-  WARM_UP_STEP: 4000
+  WARM_UP_STEP: 1000
   SAVE_STEP: 4000
   EVALUATE_STEP: 2
 
