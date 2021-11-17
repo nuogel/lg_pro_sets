@@ -133,7 +133,7 @@ class LgTransformer:
 
         return img, targets
 
-    def pad_to_size(self, img, label, data_info, new_shape=(416, 416), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
+    def letter_box(self, img, label, data_info, new_shape=(416, 416), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
         # Resize image to a 32-pixel-multiple rectangle https://github.com/ultralytics/yolov3/issues/232
         shape = img.shape[:2]  # current shape [height, width]
         if isinstance(new_shape, int):
@@ -348,7 +348,7 @@ class LgTransformer:
     #
     #     return new_size, scale_factor
 
-    # def pad_to_size_lg(self, img, label, size, decode=False):
+    # def letter_box_lg(self, img, label, size, decode=False):
     #     h, w, c = img.shape
     #     ratio_w = size[1] / w
     #     ratio_h = size[0] / h

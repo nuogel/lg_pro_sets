@@ -12,3 +12,4 @@ python_speech_features
 prefetch_generator
 munch
 colorlog
+pypinying
