@@ -131,6 +131,8 @@ class YoloLoss:
 
         lcls, lbox, lobj = torch.zeros(1, device=self.device), torch.zeros(1, device=self.device), torch.zeros(1, device=self.device)
         meanious = []
+        pos_score = []
+        cls_score = []
         tcls, tbox, indices, anchors = self.build_targets(p, targets)  # targets
 
         # Losses
@@ -168,18 +170,24 @@ class YoloLoss:
                     t = torch.full_like(ps[:, self.base:], self.cn, device=self.device)  # targets
                     t[range(n), tcls[i]] = self.cp
                     lcls += self.BCEcls(ps[:, self.base:], t)  # BCE
+                    cls_score.append(((ps[:, self.base:].max(-1)[1] == tcls[i]).float()))
 
                 # Append targets to text file
                 # with open('targets.txt', 'a') as file:
                 #     [file.write('%11.5g ' * 4 % tuple(x) + '\n') for x in torch.cat((txy[i], twh[i]), 1)]
             obji = self.BCEobj(pi[..., 0], tobj)
             lobj += obji * self.balance[i]  # obj loss
+            pos_score.append((pi[..., 0][b, a, gj, gi]).sigmoid())
 
         meaniou = torch.cat(meanious, -1).mean()
+        cls_score = torch.cat(cls_score, -1).mean()
+        pos_score = torch.cat(pos_score, -1).mean()
         metrics = {'box_loss': lbox.item(),
                    'obj_loss': lobj.item(),
                    'cls_loss': lcls.item(),
-                   'mean_iou': meaniou.item()}
+                   'pos_score': pos_score.item(),
+                   'mean_iou': meaniou.item(),
+                   'cls_p': cls_score.item()}
         bs = tobj.shape[0]  # batch size
         lbox *= 1
         lcls *= 1
