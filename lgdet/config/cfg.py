@@ -49,7 +49,7 @@ def prepare_cfg(cfg, args, is_training=True):
         assert cfg.TRAIN.BATCH_SIZE > 0, 'batch size <0 !!!!'
     if cfg.TEST.ONE_TEST:
         cfg.TRAIN.RESIZE = 1
-        cfg.TRAIN.PADTOSIZE = 0
+        cfg.TRAIN.LETTERBOX = 0
         cfg.TRAIN.DO_AUG = 0
         cfg.TRAIN.GRAY_BINARY = 0
         cfg.TRAIN.USE_LMDB = 0
@@ -57,7 +57,7 @@ def prepare_cfg(cfg, args, is_training=True):
         cfg.TRAIN.MULTI_SCALE = 0
         cfg.TRAIN.WARM_UP_STEP = 0
 
-        cfg.TEST.PADTOSIZE = 0
+        cfg.TEST.LETTERBOX = 0
         cfg.TEST.RESIZE = 1
         cfg.TEST.MULTI_SCALE = 0
 

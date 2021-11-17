@@ -22,12 +22,12 @@ TRAIN:
 
   # data aug:
   KEEP_DIFFICAULT: 0
-  MOSAIC: 0.8
-  DO_AUG: 0.5
+  MOSAIC: 0
+  DO_AUG: 0
   RESIZE: 0
   GRAY_BINARY: 0
-  PADTOSIZE: 0
-  MAXMINSIZE: 1
+  LETTERBOX: 1
+  MAXMINSIZE: 0
   RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0 #0.05 #
   MIN_AREA: 0 #100 #400 #4 #
@@ -41,7 +41,7 @@ TRAIN:
   WATCH_METIRICS: 1
   WRITE_IMAGES: 20
   WRITER: 'tensorboardX'
-  SHOW_INPUT: -1  #10000  # #
+  SHOW_INPUT: 10000  # #-1  #
 
   # optimizer:
   OPTIMIZER: sgd #adamw'adam' #'SGD' #
@@ -86,10 +86,10 @@ TEST:
   IOU_THRESH: 0.4
   SOFNMS_THETA: 0.5
 
-  PADTOSIZE: 0
+  LETTERBOX: 1
   DO_AUG: 0
   GRAY_BINARY: 0
-  RESIZE: 1
+  RESIZE: 0
   MAXMINSIZE: 0
 
   IMG_BLOCK: 0
