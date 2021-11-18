@@ -191,10 +191,8 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         return keep
 
     def NMS_torchvision(self, pre_score, pre_class, pre_loc):
-        # strategy: in order to perform NMS independently per class.
-        # we add an offset to all the pre_loc. The offset is dependent
-        # only on the class idx, and is large enough so that pre_loc
-        # from different classes do not overlap
+        if pre_loc.numel() == 0:
+            return []
         pre_loc = _xywh2xyxy(pre_loc)
         max_coordinate = pre_loc.max()
         offsets = pre_class.to(pre_loc) * (max_coordinate + 1)

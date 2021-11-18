@@ -31,7 +31,7 @@ def _parse_arguments():
 
     parser.add_argument('--epoch_continue', default=None, type=int, help='Epoch of continue training')
     parser.add_argument('--debug', '--d', action='store_true', default=False, help='Enable verbose info')
-    parser.add_argument('--test_only', '--to', default=0, type=int, help='test only')
+    parser.add_argument('--test_only', '--to', default=1, type=int, help='test only')
     return parser.parse_args()
 
 
