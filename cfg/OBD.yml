@@ -78,12 +78,12 @@ TRAIN:
 TEST:
   # score type
   MAP_FSCORE: 1 # 0 #[ 0: MAP; 1: FNSCORE]
+  SCORE_THRESH: 0.5
 
   # NMS:
   USE_MNS_CYTHON: 0
-  NMS_TYPE: 'NMS' #'SOFT_NMS'#
-  SCORE_THRESH: 0.5
-  IOU_THRESH: 0.4
+  NMS_TYPE: 'default' #'SOFT_NMS' #'NMS' #
+  IOU_THRESH: 0.6
   SOFNMS_THETA: 0.5
 
   LETTERBOX: 1

@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from lgdet.util.util_iou import iou_xywh, iou_xyxy, xywh2xyxy as _xywh2xyxy
-from torchvision.ops import nms
+import torchvision
 from lgdet.util.util_iou import box_iou
 
 try:
@@ -26,9 +26,8 @@ class NMS:  # TODO: dubug the for ...in each NMS.
             self.use_nms_cython = False
             print('use nms-lg')
         self.max_detection_boxes_num = 1000
-        self.st = self.cfg.TEST.SCORE_THRESH
         if not self.cfg.TEST.NMS_TYPE:  # 1-fscore
-            self.st = 0.05  # count map score thresh is <0.05
+            self.score_thresh = 0.05  # count map score thresh is <0.05
             self.max_detection_boxes_num = 1000
 
     def forward(self, pre_score, pre_loc, xywh2xyxy=True):
@@ -45,7 +44,7 @@ class NMS:  # TODO: dubug the for ...in each NMS.
             _pre_class = pre_score_max[1]
             _pre_loc = pre_loc[batch_n]
 
-            index = _pre_score > self.st
+            index = _pre_score > self.score_thresh
             _pre_score = _pre_score[index]
             _pre_class = _pre_class[index]
             _pre_loc = _pre_loc[index]
@@ -70,14 +69,14 @@ class NMS:  # TODO: dubug the for ...in each NMS.
             if xywh2xyxy:
                 boxes = _xywh2xyxy(boxes)
             for j in self.class_range:
-                inds = (scores[:, j] > self.st)
+                inds = (scores[:, j] > self.score_thresh)
                 if inds.sum() == 0:
                     continue
                 c_bboxes = boxes[inds].cpu().detach().numpy()
                 c_scores = scores[inds, j].cpu().detach().numpy()
                 c_dets = np.hstack((c_bboxes, c_scores[:, np.newaxis])).astype(np.float32, copy=False)
                 cpu = False
-                keep = _nms_cython(c_dets, 0.5, force_cpu=cpu)
+                keep = _nms_cython(c_dets, self.iou_thresh, force_cpu=cpu)
                 keep = keep[:self.max_detection_boxes_num]
                 c_dets = c_dets[keep, :]
                 c_dets_reshap = c_dets.copy()
@@ -113,12 +112,16 @@ class NMS:  # TODO: dubug the for ...in each NMS.
     def _nms(self, pre_score=None, pre_class=None, pre_loc=None, xywh2xyxy=None):
         if self.cfg.TEST.NMS_TYPE in ['soft_nms', 'SOFT_NMS']:
             keep = self.NMS_Soft(pre_score, pre_class, pre_loc)
-        else:
+        elif self.cfg.TEST.NMS_TYPE in ['greedy']:
             keep = self.NMS_Greedy(pre_score, pre_class, pre_loc)
+        else:
+            keep = self.NMS_torchvision(pre_score, pre_class, pre_loc)
+
 
         labels_out = self.nms2labels(keep, pre_score, pre_class, pre_loc, xywh2xyxy)
 
         return labels_out
+
 
     def NMS_Greedy(self, pre_score, pre_class, pre_loc):
         """
@@ -179,7 +182,7 @@ class NMS:  # TODO: dubug the for ...in each NMS.
                 # print('iou', ious)
                 soft_score = score_others * torch.exp(-pow(ious, 2) / self.theta).squeeze()  # s = s*e^(-iou^2 / theta)
                 # print('s',soft_score)
-                rest = torch.gt(soft_score, self.score_thresh)
+                rest = torch.gt(soft_score, self.iou_thresh)
                 order_index = order_index[1:][rest]
                 new_index = pre_score[order_index].sort(descending=True)
                 order_index = order_index[new_index[1]]
@@ -188,20 +191,16 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         return keep
 
     def NMS_torchvision(self, pre_score, pre_class, pre_loc):
-        # TODO: find the fast way of NMS.
-        if pre_loc.numel() == 0:
-            return torch.empty((0,), dtype=torch.int64, device=pre_loc.device)
         # strategy: in order to perform NMS independently per class.
         # we add an offset to all the pre_loc. The offset is dependent
         # only on the class idx, and is large enough so that pre_loc
         # from different classes do not overlap
+        pre_loc = _xywh2xyxy(pre_loc)
         max_coordinate = pre_loc.max()
         offsets = pre_class.to(pre_loc) * (max_coordinate + 1)
         boxes_for_nms = pre_loc + offsets[:, None]
-        keep = nms(boxes_for_nms, pre_score, self.iou_thresh)
-        if len(keep) != 0:
-            loc = pre_loc[keep[:4]]
-            score = pre_score[keep[:4]]
+        keep = torchvision.ops.nms(boxes_for_nms, pre_score, self.iou_thresh)
+        keep = keep[:self.max_detection_boxes_num]
         return keep
 
     def NMS_SSD(self, boxes, scores, overlap=0.5, top_k=200):
@@ -360,9 +359,8 @@ class NMS:  # TODO: dubug the for ...in each NMS.
             labels_out.append([pre_score_out, class_out, box_out])
         return labels_out
 
-
     # others:
-    def fast_nms(self, boxes, scores, NMS_threshold:float=0.5):
+    def fast_nms(self, boxes, scores, iou_thresh: float = 0.5):
         '''
         Arguments:
             boxes (Tensor[N, 4])
@@ -371,14 +369,14 @@ class NMS:  # TODO: dubug the for ...in each NMS.
             Fast NMS results
         '''
         scores, idx = scores.sort(1, descending=True)
-        boxes = boxes[idx]   # 对框按得分降序排列
+        boxes = boxes[idx]  # 对框按得分降序排列
         iou = box_iou(boxes, boxes)  # IoU矩阵
         iou.triu_(diagonal=1)  # 上三角化
-        keep = iou.max(dim=0)[0] < NMS_threshold  # 列最大值向量，二值化
+        keep = iou.max(dim=0)[0] < iou_thresh  # 列最大值向量，二值化
 
         return boxes[keep], scores[keep]
 
-    def cluster_nms(self, boxes, scores, NMS_threshold: float = 0.5):
+    def cluster_nms(self, boxes, scores, iou_thresh: float = 0.5):
         '''
         Arguments:
             boxes (Tensor[N, 4])
@@ -393,15 +391,15 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         for i in range(200):
             A = C
             maxA = A.max(dim=0)[0]  # 列最大值向量
-            E = (maxA < NMS_threshold).float().unsqueeze(1).expand_as(A)  # 对角矩阵E的替代
+            E = (maxA < iou_thresh).float().unsqueeze(1).expand_as(A)  # 对角矩阵E的替代
             C = iou.mul(E)  # 按元素相乘
             if A.equal(C) == True:  # 终止条件
                 break
-        keep = maxA < NMS_threshold  # 列最大值向量，二值化
+        keep = maxA < iou_thresh  # 列最大值向量，二值化
 
         return boxes[keep], scores[keep]
 
-    def SPM_cluster_nms(self, boxes, scores, NMS_threshold: float = 0.5):
+    def SPM_cluster_nms(self, boxes, scores, iou_thresh: float = 0.5):
         '''
         Arguments:
             boxes (Tensor[N, 4])
@@ -416,12 +414,10 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         for i in range(200):
             A = C
             maxA = A.max(dim=0)[0]  # 列最大值向量
-            E = (maxA < NMS_threshold).float().unsqueeze(1).expand_as(A)  # 对角矩阵E的替代
+            E = (maxA < iou_thresh).float().unsqueeze(1).expand_as(A)  # 对角矩阵E的替代
             C = iou.mul(E)  # 按元素相乘
             if A.equal(C) == True:  # 终止条件
                 break
         scores = torch.prod(torch.exp(-C ** 2 / 0.2), 0) * scores  # 惩罚得分
         keep = scores > 0.01  # 得分阈值筛选
         return boxes[keep], scores[keep]
-
-

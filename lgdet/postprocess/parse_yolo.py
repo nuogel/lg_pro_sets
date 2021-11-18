@@ -8,7 +8,7 @@ class ParsePredict_yolo:
     # TODO: 分解parseprdict.
     def __init__(self, cfg):
         self.cfg = cfg
-        self.anchors = torch.Tensor(cfg.TRAIN.ANCHORS)
+        self.anchors = torch.Tensor(cfg.TRAIN.ANCHORS[::-1]) # SMALL -> BIG
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
         self.cls_num = cfg.TRAIN.CLASSES_NUM
         self.NMS = NMS(cfg)
@@ -38,13 +38,9 @@ class ParsePredict_yolo:
             _pre_obj, _pre_cls, _pre_relative_box = self._parse_yolo_predict_fmap(f_map, f_id=f_id, tolabel=True)
             _pre_obj = _pre_obj.unsqueeze(-1)
             BN = _pre_obj.shape[0]
-            _pre_obj = _pre_obj.reshape(BN, -1, _pre_obj.shape[-1])
-            _pre_cls = _pre_cls.reshape(BN, -1, _pre_cls.shape[-1])
-            _pre_loc = _pre_relative_box.reshape(BN, -1, _pre_relative_box.shape[-1])
-
-            pre_obj.append(_pre_obj)
-            pre_cls.append(_pre_cls)
-            pre_loc.append(_pre_loc)
+            pre_obj.append(_pre_obj.reshape(BN, -1, _pre_obj.shape[-1]))
+            pre_cls.append(_pre_cls.reshape(BN, -1, _pre_cls.shape[-1]))
+            pre_loc.append(_pre_relative_box.reshape(BN, -1, _pre_relative_box.shape[-1]))
 
         pre_obj = torch.cat(pre_obj, -2)
         pre_cls = torch.cat(pre_cls, -2)
