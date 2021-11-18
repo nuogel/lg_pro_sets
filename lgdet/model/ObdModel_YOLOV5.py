@@ -57,7 +57,7 @@ class YOLOV5(nn.Module):
         # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
         cf=None
         for mi, s in zip(self.head, [8, 16, 32]):  # from
-            mi.weight.data.fill_(0)
+            # mi.weight.data.fill_(0)
             # tricks form yolov5:
             b = mi.bias.view(3, -1)  # conv.bias(255) to (3,85)
             b.data[:, 0] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)

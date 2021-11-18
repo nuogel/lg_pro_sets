@@ -69,7 +69,7 @@ TRAIN:
   FMAP_ANCHOR_NUM: 3
 
   # anchors
-  AUTO_ANCHORS: 1
+  AUTO_ANCHORS: 0
   ANCHORS: 'please see the util_prepare.py'
 
   # pass object

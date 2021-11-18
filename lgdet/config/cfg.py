@@ -184,6 +184,8 @@ def prepare_cfg(cfg, args, is_training=True):
             cfg.TRAIN.FMAP_ANCHOR_NUM = len(anchor_yolov2)
             cfg.TRAIN.ANCHORS = anchor_yolov2
 
+        check_anchors(cfg)
+
         try:
             from lgdet.util.util_get_cls_names import _get_class_names
             class_dict = _get_class_names(cfg.PATH.CLASSES_PATH)
@@ -234,3 +236,12 @@ def common_cfg(cfg):
     cfg.mean = mean
     cfg.std = std
     return cfg
+
+
+def check_anchors(cfg):
+    areas = []
+    for anc in cfg.TRAIN.ANCHORS:
+        areas.append(anc[0] * anc[1])
+
+    if areas[0]<areas[-1]:
+        cfg.TRAIN.ANCHORS = cfg.TRAIN.ANCHORS[::-1]

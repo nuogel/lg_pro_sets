@@ -96,7 +96,7 @@ class YoloLoss:
         super(YoloLoss, self).__init__()
         self.cfg = cfg
         self.device = self.cfg.TRAIN.DEVICE
-        self.anchors = torch.Tensor(cfg.TRAIN.ANCHORS).reshape((3, 3, 2))
+        self.anchors = torch.Tensor(cfg.TRAIN.ANCHORS[::-1]).reshape((3, 3, 2))
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
         self.na = self.anc_num
         self.cls_num = cfg.TRAIN.CLASSES_NUM
@@ -112,8 +112,8 @@ class YoloLoss:
         self.sort_obj_iou = False
         self.balance = [4.0, 1.0, 0.4]
         # Define criteria
-        BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([1]).to(self.device))
-        BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([1]).to(self.device))
+        BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([1.0]).to(self.device))
+        BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([1.0]).to(self.device))
         # Focal loss
         g = self.gamma  # focal loss gamma
         if g > 0:
@@ -189,9 +189,9 @@ class YoloLoss:
                    'mean_iou': meaniou.item(),
                    'cls_p': cls_score.item()}
         bs = tobj.shape[0]  # batch size
-        lbox *= 1
-        lcls *= 1
-        lobj *= 5
+        lbox *= 0.05  # 0.05
+        lcls *= 0.5  # 0.5
+        lobj *= 1  # 1
         total_loss = (lbox + lobj + lcls) * bs
 
         return {'total_loss': total_loss, 'metrics': metrics}
