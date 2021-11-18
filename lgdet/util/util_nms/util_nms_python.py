@@ -55,6 +55,12 @@ class NMS:  # TODO: dubug the for ...in each NMS.
             _pre_class = _pre_class[score_idx]
             _pre_loc = _pre_loc[score_idx]
 
+            # TODO: simple code
+            # _pre_score = pre_score[batch_n]
+            # index = _pre_score > self.score_thresh
+            # _pre_score = _pre_score[index]
+            # _pre_loc = pre_loc[batch_n][index]
+
             labels = self._nms(_pre_score, _pre_class, _pre_loc, xywh2xyxy)
             labels_predict.append(labels)
 
@@ -117,11 +123,9 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         else:
             keep = self.NMS_torchvision(pre_score, pre_class, pre_loc)
 
-
         labels_out = self.nms2labels(keep, pre_score, pre_class, pre_loc, xywh2xyxy)
 
         return labels_out
-
 
     def NMS_Greedy(self, pre_score, pre_class, pre_loc):
         """
@@ -198,7 +202,6 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         offsets = pre_class.to(pre_loc) * (max_coordinate + 1)
         boxes_for_nms = pre_loc + offsets[:, None]
         keep = torchvision.ops.nms(boxes_for_nms, pre_score, self.iou_thresh)
-        keep = keep[:self.max_detection_boxes_num]
         return keep
 
     def NMS_SSD(self, boxes, scores, overlap=0.5, top_k=200):
