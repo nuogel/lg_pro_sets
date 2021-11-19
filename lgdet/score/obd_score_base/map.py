@@ -54,7 +54,7 @@ class MAP:
             self.gt_boxes.append(gt_box)
 
     def score_out(self):
-        all_AP = self.eval_ap(iou_thread=0.5)
+        all_AP = self.eval_ap()
         mAP = 0.
         item_score = {}
         for key, value in all_AP.items():
@@ -68,7 +68,7 @@ class MAP:
         print("mAP=====>%.3f\n" % mAP)
         return mAP, item_score
 
-    def eval_ap(self, iou_thread):
+    def eval_ap(self, iou_thread=0.5):
         """
         :param gt_boxes: list of 2d array,shape[(a,(x1,y1,x2,y2)),(b,(x1,y1,x2,y2))...]
         :param gt_labels: list of 1d array,shape[(a),(b)...],value is sparse label index

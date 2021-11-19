@@ -32,6 +32,13 @@ class TestBase(BaseSolver):
         dataset = []
         if file_s == 'one_name':
             dataset = self.cfg.TEST.ONE_NAME
+        elif file_s == 'test_set':
+            FILE_TXT = self.cfg.TRAIN.TRAIN_DATA_FROM_FILE[0]
+            test_set = os.path.join('datasets/', self.cfg.BELONGS, FILE_TXT, FILE_TXT + '_test' + '.txt')
+            lines = open(test_set, 'r', encoding='utf-8').readlines()
+            for line in lines:
+                tmp = line.strip().split("┣┫")
+                dataset.append(tmp)
 
         elif os.path.isfile(file_s):
             if file_s.split('.')[1] == 'txt':  # .txt

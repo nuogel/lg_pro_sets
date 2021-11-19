@@ -182,18 +182,18 @@ class YoloLoss:
         meaniou = torch.cat(meanious, -1).mean()
         cls_score = torch.cat(cls_score, -1).mean()
         pos_score = torch.cat(pos_score, -1).mean()
+
+        bs = tobj.shape[0]  # batch size
+        lbox *= 0.05  # 0.05
+        lcls *= 0.125  # 0.125
+        lobj *= 1  # 1
+        total_loss = (lbox + lobj + lcls) * bs
         metrics = {'box_loss': lbox.item(),
                    'obj_loss': lobj.item(),
                    'cls_loss': lcls.item(),
-                   'pos_score': pos_score.item(),
                    'mean_iou': meaniou.item(),
-                   'cls_p': cls_score.item()}
-        bs = tobj.shape[0]  # batch size
-        lbox *= 0.05  # 0.05
-        lcls *= 0.5  # 0.5
-        lobj *= 1  # 1
-        total_loss = (lbox + lobj + lcls) * bs
-
+                   'cls_p': cls_score.item(),
+                   'pos_score': pos_score.item()}
         return {'total_loss': total_loss, 'metrics': metrics}
 
     def build_targets(self, p, targets):

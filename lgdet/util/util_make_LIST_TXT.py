@@ -116,7 +116,7 @@ if __name__ == '__main__':
     # base_path = '/media/lg/DataSet_E/datasets/PASCAL_VOC/VOCdevkit'
     img_path = 'images'
     lab_path = 'labels'
-    base_path = '/media/dell/data/比赛/第一批标注数据35张/'
+    base_path = '/media/dell/data/ocr/电表识别/电表图片'
     # path = 'E:\datasets\FlyingChairs\data'
 
     save_path = 'util_tmp/make_list.txt'

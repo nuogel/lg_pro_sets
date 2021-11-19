@@ -43,7 +43,7 @@ class FnScore:
             pre_labels = self.parsepredict.parse_predict(pre_labels)
         if pre_labels != [[]] and pre_labels != []:
             for i, pre_label in enumerate(pre_labels):  # calculate every image
-                self._cal_per_image(pre_label, gt_labels[gt_labels[..., 0] == i], self.cfg.TEST.IOU_THRESH)
+                self._cal_per_image(pre_label, gt_labels[gt_labels[..., 0] == i])
         # else:
         #     print('predicted labels is None.')
 

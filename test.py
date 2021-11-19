@@ -34,6 +34,7 @@ def main():
     """Run the script."""
     exit_code = 0
     files = 'one_name'
+    files = 'test_set'
     # files = 'datasets/OBD/VOC/VOC_test.txt'
     # files = 'datasets/OBD_idx_stores/COCO/COCO_test.txt'  #
     # files = 'datasets/OBD_idx_stores/KITTI/KITTI_test.txt'
