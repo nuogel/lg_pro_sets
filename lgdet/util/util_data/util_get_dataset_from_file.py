@@ -97,7 +97,7 @@ def _read_train_test_dataset(cfg):
         test_set = []
         for FILE_TXT in cfg.TRAIN.TRAIN_DATA_FROM_FILE:
             if FILE_TXT in ['CIFAR10']:
-                from lgdet.dataloader.utils_data.cifar10 import load_cifar10
+                from lgdet.util.util_data.cifar10 import load_cifar10
                 train_set, test_set = load_cifar10()
             else:
                 train_idx = os.path.join('datasets/', cfg.BELONGS, FILE_TXT,

@@ -7,7 +7,7 @@ from lgdet.config.cfg import prepare_cfg
 from lgdet.dataloader.DataLoaderFactory import DataLoaderFactory
 from lgdet.registry import MODELS, build_from_cfg
 from lgdet.util.util_weights_init import weights_init
-from lgdet.dataloader.utils_data.util_get_dataset_from_file import _read_train_test_dataset
+from lgdet.util.util_data.util_get_dataset_from_file import _read_train_test_dataset
 from lgdet.util.util_load_save_checkpoint import _load_checkpoint, _save_checkpoint, _load_pretrained
 from lgdet.util.util_model_infos import model_info
 from lgdet.metrics.ema import ModelEMA
@@ -109,7 +109,7 @@ class BaseSolver(object):
 
         if self.cfg.TRAIN.LR_SCHEDULE == 'cos':
             print('using cos LambdaLR lr_scheduler')
-            finial_lr = 2e-3
+            finial_lr = self.args.lr*0.01
             alpha = finial_lr / self.optimizer.param_groups[0]['initial_lr']
             lf = lambda x: (0.5 * (1 + math.cos(x * math.pi / self.cfg.TRAIN.EPOCH_SIZE))) * (1 - alpha) + alpha
             self.scheduler = lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lf, last_epoch=self.epoch_last - 1)
