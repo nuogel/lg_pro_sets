@@ -10,3 +10,6 @@ draw = ImageDraw.Draw(pil_img)
 font = ImageFont.truetype('/home/dell/lg/rock_lg/utils/font/simhei.ttf', 60, encoding='utf-8')
 draw.rectangle(((bbox[0], bbox[1]), (bbox[2], bbox[3])),outline='red',width=4)
 draw.text((bbox[0], bbox[1]-61), '行人',fill='red', font=font)
+
+img = cv2.rectangle(img, (bbox[0], bbox[1]), (bbox[2], bbox[3]), color=color, thickness=4)
+img = cv2.putText(img, 's', (bbox[0] + 10, bbox[1] + 10), cv2.FONT_ITALIC, 0.5, color, 2)
