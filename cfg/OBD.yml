@@ -61,7 +61,7 @@ TRAIN:
   IOU_AWARE: 0
 
   # CUDA:
-  GPU_NUM: [0,1] #[] # if is [] means use CPU.
+  GPU_NUM: [0] #[] # if is [] means use CPU.
   DEVICE: 'gpu'
 
   # debug:
