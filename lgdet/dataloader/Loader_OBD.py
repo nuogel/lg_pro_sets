@@ -76,6 +76,10 @@ class OBD_Loader(DataLoader):
         if (random.random() < self.cfg.TRAIN.DO_AUG) and self.is_training:  # data aug is wasting time.
             img, label, data_info = self.lgtransformer.data_aug(img, label, data_info)
 
+        # augment_hsv
+        if (random.random() < self.cfg.TRAIN.HSV) and self.is_training:  # data aug is wasting time.
+            img, label, data_info = self.lgtransformer.augment_hsv(img, label, data_info)
+
         # PAD TO SIZE:
         if (self.cfg.TRAIN.LETTERBOX and self.is_training) or (self.cfg.TEST.LETTERBOX and not self.is_training):
             img, label, data_info = self.lgtransformer.letter_box(img, label, data_info, new_shape=self.cfg.TRAIN.IMG_SIZE, auto=False, scaleup=True)

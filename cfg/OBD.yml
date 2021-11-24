@@ -14,7 +14,7 @@ TRAIN:
   MODEL: yolov5
   TYPE: s
   EMA: 0
-  EPOCH_SIZE: 500
+  EPOCH_SIZE: 300
   BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO' 'COMPETITION'
   TRAIN_DATA_FROM_FILE: [ 'VOC' ]
@@ -22,8 +22,9 @@ TRAIN:
 
   # data aug:
   KEEP_DIFFICAULT: 0
-  MOSAIC: 1
-  DO_AUG: 0
+  MOSAIC: 0.9
+  DO_AUG: 0.5
+  HSV: 0.5
   RESIZE: 0
   GRAY_BINARY: 0
   LETTERBOX: 0
@@ -48,6 +49,7 @@ TRAIN:
   LR_START: 0.001
   LR_SCHEDULE: 'cos' #'reduce'# 'lr''reduce'  #
   STEP_LR: 50
+
   BETAS_ADAM: 0.9
   WEIGHT_DECAY: 0.0005
   # [loc_loss, obj_loss]: loc_loss: mse & iouloss | obj_loss: focalloss & ghm & bce |

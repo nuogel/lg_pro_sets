@@ -1,7 +1,7 @@
 import cv2
 import glob
 import os
-from others.track.sort.SORT import SORT
+from others.track.sort.sort import Sort
 import numpy as np
 import matplotlib.pyplot as plt
 import random
@@ -14,7 +14,7 @@ def test():
     class_dict = {1: 'car'}
     img_path = 'F:\Projects\\auto_Airplane\TS02\\20191217_153659'
     lab_path = 'F:\Projects\\auto_Airplane\TS02\\20191217_153659_predicted_labels'
-    sort = SORT()
+    sort = Sort()
     for img_p in glob.glob(img_path + '/*.*'):
         id = os.path.basename(img_p).split('.')[0]
         frame = cv2.imread(img_p)
