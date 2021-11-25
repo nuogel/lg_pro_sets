@@ -64,9 +64,9 @@ class Dataaug:
             18: iaa.Clouds(),
             ####################
             #####   shape aug  >20 ###
-            19: iaa.Fliplr(0.5),  # 增加原图的概率。
+            # 19: iaa.Fliplr(0.5),  # 增加原图的概率。
             20: iaa.Fliplr(0.5),  # 增加原图的概率。
-            21: iaa.Fliplr(0.5),  # 增加原图的概率。
+            # 21: iaa.Fliplr(0.5),  # 增加原图的概率。
             22: iaa.Affine(translate_percent=(-0.01, 0.01), rotate=(-3, 3)),
             23: iaa.Crop(),
             24: iaa.CropAndPad(),

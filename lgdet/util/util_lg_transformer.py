@@ -225,7 +225,7 @@ class LgTransformer:
         labels = []
         try_tims = 0
         while len(labels) == 0 or [] in labels:
-            imgs, labels = self.dataaug._augmenting(aug_way_ids=([5,6,10,11,12,13,14,15,16,19,20, 21, 22], [25]),
+            imgs, labels = self.dataaug._augmenting(aug_way_ids=([5, 6, 10, 11, 12, 13, 14, 15, 16, 20, 22], [20, 25]),
                                                     datas=([img], [label]))  # [11,20, 21, 22]
             try_tims += 1
 
@@ -248,7 +248,7 @@ class LgTransformer:
         :return:
         '''
 
-        img_after = cv2.resize(img, (size[1], size[0]),interpolation=cv2.INTER_CUBIC)
+        img_after = cv2.resize(img, (size[1], size[0]), interpolation=cv2.INTER_CUBIC)
         img_size = img.shape
         ratio = np.asarray([size[1] / img_size[1], size[0] / img_size[0]])  # (W,H)
         label = np.asarray(label)
@@ -338,10 +338,10 @@ class LgTransformer:
         use_txt_scal_img = 0
         if use_txt_scal_img:
             txt = label[label[:, 0] == 33]
-            if txt!=[]:
+            if txt != []:
                 w_txt = min((txt[:, 3] - txt[:, 1]).mean(), (txt[:, 4] - txt[:, 2]).mean())
-                ratio = 20/w_txt
-                newsize = int(img.shape[0]*ratio), int(img.shape[1]*ratio)
+                ratio = 20 / w_txt
+                newsize = int(img.shape[0] * ratio), int(img.shape[1] * ratio)
                 img, label, data_info = self.resize(img, label, newsize, data_info)
 
         img, binary = cv2.threshold(img, 210, 255, cv2.THRESH_BINARY)
