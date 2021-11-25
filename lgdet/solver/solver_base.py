@@ -109,7 +109,7 @@ class BaseSolver(object):
 
         if self.cfg.TRAIN.LR_SCHEDULE == 'cos':
             print('using cos LambdaLR lr_scheduler')
-            finial_lr = self.args.lr * 0.01
+            finial_lr = self.args.lr * self.cfg.TRAIN.LR_FINAL_RATIO
             alpha = finial_lr / self.optimizer.param_groups[0]['initial_lr']
             lf = lambda x: (0.5 * (1 + math.cos(x * math.pi / self.cfg.TRAIN.EPOCH_SIZE))) * (1 - alpha) + alpha
             self.scheduler = lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lf, last_epoch=self.epoch_last - 1)
