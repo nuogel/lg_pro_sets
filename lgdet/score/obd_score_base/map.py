@@ -35,11 +35,9 @@ class MAP:
         if from_net:
             pre_labels = self.parsepredict.parse_predict(pre_labels)
         for si, pre_label in enumerate(pre_labels):
-
             labels = gt_labels[gt_labels[:, 0] == si, 1:]
             nl = len(labels)
             tcls = labels[:, 0].tolist() if nl else []  # target class
-            pre_label = torch.Tensor(pre_label).to(self.cfg.TRAIN.DEVICE)
             if len(pre_label) == 0:
                 if nl:
                     self.stats.append((torch.zeros(0, 1, dtype=torch.bool), torch.Tensor(), torch.Tensor(), tcls))

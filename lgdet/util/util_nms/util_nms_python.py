@@ -50,7 +50,7 @@ class NMS:  # TODO: dubug the for ...in each NMS.
             _pre_loc = _pre_loc[index]
 
             # score_sort = _pre_score.sort(descending=True)
-            # score_idx = score_sort[1][:self.max_detection_boxes_num]
+            # score_idx = score_sort[1][:10000]
             # _pre_score = _pre_score[score_idx]
             # _pre_class = _pre_class[score_idx]
             # _pre_loc = _pre_loc[score_idx]
@@ -62,7 +62,6 @@ class NMS:  # TODO: dubug the for ...in each NMS.
             # _pre_loc = pre_loc[batch_n][index]
 
             labels = self._nms(_pre_score, _pre_class, _pre_loc, xywh2xyxy)
-            labels = labels[:self.max_detection_boxes_num]
             labels_predict.append(labels)
 
         return labels_predict
@@ -96,24 +95,28 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         return labels_predict
 
     def nms2labels(self, keep, pre_score, pre_class, pre_loc, xywh2xyxy):
-        labels_out = []
-        pre_loc = pre_loc.cpu().detach().numpy()
-        for keep_idx in keep:
-            box = pre_loc[keep_idx]
-            box = box.squeeze()
-            if xywh2xyxy:
-                boxx1 = max(0, box[0] - box[2] / 2)
-                boxy1 = max(0, box[1] - box[3] / 2)
-                boxx2 = max(0, box[0] + box[2] / 2)
-                boxy2 = max(0, box[1] + box[3] / 2)
-            else:
-                boxx1 = max(0, box[0])
-                boxy1 = max(0, box[1])
-                boxx2 = max(0, box[2])
-                boxy2 = max(0, box[3])
-            pre_score_out = pre_score[keep_idx].item()
-            class_out = pre_class[keep_idx].item()
-            labels_out.append([pre_score_out, class_out, boxx1, boxy1, boxx2, boxy2])
+        # labels_out = []
+        # pre_loc = pre_loc.cpu().detach().numpy()
+        # for keep_idx in keep:
+        #     box = pre_loc[keep_idx]
+        #     box = box.squeeze()
+        #     if xywh2xyxy:
+        #         boxx1 = max(0, box[0] - box[2] / 2)
+        #         boxy1 = max(0, box[1] - box[3] / 2)
+        #         boxx2 = max(0, box[0] + box[2] / 2)
+        #         boxy2 = max(0, box[1] + box[3] / 2)
+        #     else:
+        #         boxx1 = max(0, box[0])
+        #         boxy1 = max(0, box[1])
+        #         boxx2 = max(0, box[2])
+        #         boxy2 = max(0, box[3])
+        #     pre_score_out = pre_score[keep_idx].item()
+        #     class_out = pre_class[keep_idx].item()
+        #     labels_out.append([pre_score_out, class_out, boxx1, boxy1, boxx2, boxy2])
+
+        pre_loc = xywh2xyxy(pre_loc)
+        labels_out = torch.cat((pre_score.unsqueeze(-1), pre_class.unsqueeze(-1), pre_loc),-1)
+        labels_out = labels_out[keep]
         return labels_out
 
     def _nms(self, pre_score=None, pre_class=None, pre_loc=None, xywh2xyxy=None):
@@ -124,7 +127,13 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         else:
             keep = self.NMS_torchvision(pre_score, pre_class, pre_loc)
 
-        labels_out = self.nms2labels(keep, pre_score, pre_class, pre_loc, xywh2xyxy)
+        keep = keep[:self.max_detection_boxes_num]
+        if xywh2xyxy:
+            pre_loc = _xywh2xyxy(pre_loc)
+        labels_out = torch.cat((pre_score.unsqueeze(-1), pre_class.unsqueeze(-1), pre_loc),-1)
+        labels_out = labels_out[keep]
+
+        # labels_out = self.nms2labels(keep, pre_score, pre_class, pre_loc, xywh2xyxy)
 
         return labels_out
 
