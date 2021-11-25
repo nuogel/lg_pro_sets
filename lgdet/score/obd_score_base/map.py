@@ -1,9 +1,10 @@
 """Calculate the F1 score."""
 import numpy as np
 from lgdet.util.util_get_cls_names import _get_class_names
-from lgdet.util.util_iou import _iou_np
+from lgdet.util.util_iou import _iou_np, box_iou
 from lgdet.registry import SCORES
 from lgdet.postprocess.parse_factory import ParsePredict
+import torch
 
 
 @SCORES.registry()
@@ -17,6 +18,8 @@ class MAP:
         self.cls_num = len(self.cfg.TRAIN.CLASSES)
         self.parsepredict = ParsePredict(self.cfg)
         print('use map')
+        self.iouv = torch.linspace(0.5, 0.95, 10).to(self.cfg.TRAIN.DEVICE)  # iou vector for mAP@0.5:0.95
+        self.niou = self.iouv.numel()
 
     def init_parameters(self):
         self.gt_boxes = []
@@ -24,149 +27,146 @@ class MAP:
         self.pred_boxes = []
         self.pred_classes = []
         self.pred_scores = []
+        self.stats = []
 
-    def cal_score(self, pre_labels, gt_labels=None, from_net=True):
-        gt_labels = np.asarray(gt_labels.cpu())
+    def cal_score(self, pre_labels, test_data=None, from_net=True):
+        gt_labels = test_data[1]
+        # gt_labels = np.asarray(gt_labels.cpu())
         if from_net:
             pre_labels = self.parsepredict.parse_predict(pre_labels)
-        for i, pre_label in enumerate(pre_labels):
-            try:
-                pre_label = np.asarray(pre_label)
-                index = np.argsort(-pre_label[..., 0])
-                pre_label = pre_label[index]
-                pre_score = pre_label[..., 0]
-                pre_cls = pre_label[..., 1]
-                pre_box = pre_label[..., 2:]
-            except:
-                pre_score = []
-                pre_cls = []
-                pre_box = []
+        for si, pre_label in enumerate(pre_labels):
 
-            self.pred_scores.append(pre_score)
-            self.pred_classes.append(pre_cls)
-            self.pred_boxes.append(pre_box)
+            labels = gt_labels[gt_labels[:, 0] == si, 1:]
+            nl = len(labels)
+            tcls = labels[:, 0].tolist() if nl else []  # target class
+            pre_label = torch.Tensor(pre_label).to(self.cfg.TRAIN.DEVICE)
+            if len(pre_label) == 0:
+                if nl:
+                    self.stats.append((torch.zeros(0, 1, dtype=torch.bool), torch.Tensor(), torch.Tensor(), tcls))
 
-            gt_label = gt_labels[gt_labels[..., 0] == i]
-            gt_cls = gt_label[..., 1]
-            gt_box = gt_label[..., 2:]
+            if nl:
+                correct = self._process_batch(pre_label, labels, self.iouv)
+            else:
+                correct = torch.zeros(pre_label.shape[0], self.niou, dtype=torch.bool)
 
-            self.gt_classes.append(gt_cls)
-            self.gt_boxes.append(gt_box)
+            self.stats.append((correct.cpu(), pre_label[:, 0].cpu(), pre_label[:, 1].cpu(), tcls))  # (correct, conf, pcls, tcls)
 
     def score_out(self):
-        all_AP = self.eval_ap()
-        mAP = 0.
-        item_score = {}
-        for key, value in all_AP.items():
-            print('ap for {}: {}'.format(self.cfg.TRAIN.CLASSES[int(key)], value))
-            if np.isnan(value):
-                value = 0.
-            mAP += float(value)
-            item_score[self.cfg.TRAIN.CLASSES[int(key)]] = value
-        mAP /= self.cls_num
+        stats = [np.concatenate(x, 0) for x in zip(*self.stats)]  # to numpy
+        if len(stats) and stats[0].any():
+            p, r, ap, f1, ap_class = self._ap_per_class(*stats)
+            ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
+            mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
+            # nt = np.bincount(stats[3].astype(np.int64), minlength=self.cls_num)  # number of targets per class
+        else:
+            mp, mr, map50, map = 0, 0, 0, 0
+        print(('\n'+'%15s' * 4) % ('meanP', 'meanR', 'mAP@.5', 'mAP@.5:.95'))
+        print(('%15f' * 4)% (mp, mr, map50, map))
+        return map50, {'map50:95': map, 'mean_precision': mp, 'mean_recall': mr}
 
-        print("mAP=====>%.3f\n" % mAP)
-        return mAP, item_score
-
-    def eval_ap(self, iou_thread=0.5):
-        """
-        :param gt_boxes: list of 2d array,shape[(a,(x1,y1,x2,y2)),(b,(x1,y1,x2,y2))...]
-        :param gt_labels: list of 1d array,shape[(a),(b)...],value is sparse label index
-        :param pred_boxes: list of 2d array, shape[(m,(x1,y1,x2,y2)),(n,(x1,y1,x2,y2))...]
-        :param pred_labels: list of 1d array,shape[(m),(n)...],value is sparse label index
-        :param pred_scores: list of 1d array,shape[(m),(n)...]
-        :param iou_thread: eg. 0.5
-        :param num_cls: eg. 4, total number of class including background which is equal to 0
-        :return: a dict containing average precision for each cls
-        """
-        all_ap = {}
-        for label in range(self.cls_num):
-            # get samples with specific label
-            true_label_loc = [sample_labels == label for sample_labels in self.gt_classes]
-            gt_single_cls = [sample_boxes[mask] for sample_boxes, mask in zip(self.gt_boxes, true_label_loc)]
-            pred_label_loc = []
-            for sample_labels in self.pred_classes:
-                if sample_labels != []:
-                    pred_label_loc.append(sample_labels == label)
-                else:
-                    pred_label_loc.append([])
-
-            bbox_single_cls = []
-            for sample_boxes, mask in zip(self.pred_boxes, pred_label_loc):
-                if sample_boxes != []:
-                    bbox_single_cls.append(sample_boxes[mask])
-                else:
-                    bbox_single_cls.append([])
-            scores_single_cls = []
-            for sample_scores, mask in zip(self.pred_scores, pred_label_loc):
-                if sample_scores != []:
-                    scores_single_cls.append(sample_scores[mask])
-                else:
-                    scores_single_cls.append([])
-
-            fp = np.zeros((0,))
-            tp = np.zeros((0,))
-            scores = np.zeros((0,))
-            total_gts = 0
-            # loop for each sample
-            for sample_gts, sample_pred_box, sample_scores in zip(gt_single_cls, bbox_single_cls, scores_single_cls):
-                total_gts = total_gts + len(sample_gts)
-                assigned_gt = []  # one gt can only be assigned to one predicted bbox
-                # loop for each predicted bbox
-                for index in range(len(sample_pred_box)):
-                    scores = np.append(scores, sample_scores[index])
-                    if len(sample_gts) == 0:  # if no gts found for the predicted bbox, assign the bbox to fp
-                        fp = np.append(fp, 1)
-                        tp = np.append(tp, 0)
-                        continue
-                    pred_box = np.expand_dims(sample_pred_box[index], axis=0)
-                    iou = _iou_np(sample_gts, pred_box)
-                    gt_for_box = np.argmax(iou, axis=0)
-                    max_overlap = iou[gt_for_box, 0]
-                    if max_overlap >= iou_thread and gt_for_box not in assigned_gt:
-                        fp = np.append(fp, 0)
-                        tp = np.append(tp, 1)
-                        assigned_gt.append(gt_for_box)
-                    else:
-                        fp = np.append(fp, 1)
-                        tp = np.append(tp, 0)
-            # sort by score
-            indices = np.argsort(-scores)
-            fp = fp[indices]
-            tp = tp[indices]
-            # compute cumulative false positives and true positives
-            fp = np.cumsum(fp)
-            tp = np.cumsum(tp)
-            # compute recall and precision
-            recall = tp / total_gts
-            precision = tp / np.maximum(tp + fp, np.finfo(np.float64).eps)
-            ap = self._compute_ap(recall, precision)
-            all_ap[label] = ap
-            # print(recall, precision)
-        return all_ap
-
-    def _compute_ap(self, recall, precision):
+    def _ap_per_class(self, tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names=()):
         """ Compute the average precision, given the recall and precision curves.
-        Code originally from https://github.com/rbgirshick/py-faster-rcnn.
+        Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
         # Arguments
-            recall:    The recall curve (list).
-            precision: The precision curve (list).
+            tp:  True positives (nparray, nx1 or nx10).
+            conf:  Objectness value from 0-1 (nparray).
+            pred_cls:  Predicted object classes (nparray).
+            target_cls:  True object classes (nparray).
+            plot:  Plot precision-recall curve at mAP@0.5
+            save_dir:  Plot save directory
         # Returns
             The average precision as computed in py-faster-rcnn.
         """
-        # correct AP calculation
-        # first append sentinel values at the end
-        mrec = np.concatenate(([0.], recall, [1.]))
-        mpre = np.concatenate(([0.], precision, [0.]))
 
-        # compute the precision envelope
-        for i in range(mpre.size - 1, 0, -1):
-            mpre[i - 1] = np.maximum(mpre[i - 1], mpre[i])
+        # Sort by objectness
+        i = np.argsort(-conf)
+        tp, conf, pred_cls = tp[i], conf[i], pred_cls[i]
 
-        # to calculate area under PR curve, look for points
-        # where X axis (recall) changes value
-        i = np.where(mrec[1:] != mrec[:-1])[0]
+        # Find unique classes
+        unique_classes = np.unique(target_cls)
+        nc = unique_classes.shape[0]  # number of classes, number of detections
 
-        # and sum (\Delta recall) * prec
-        ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
-        return ap
+        # Create Precision-Recall curve and compute AP for each class
+        px, py = np.linspace(0, 1, 1000), []  # for plotting
+        ap, p, r = np.zeros((nc, tp.shape[1])), np.zeros((nc, 1000)), np.zeros((nc, 1000))
+        for ci, c in enumerate(unique_classes):
+            i = pred_cls == c
+            n_l = (target_cls == c).sum()  # number of labels
+            n_p = i.sum()  # number of predictions
+
+            if n_p == 0 or n_l == 0:
+                continue
+            else:
+                # Accumulate FPs and TPs
+                fpc = (1 - tp[i]).cumsum(0)
+                tpc = tp[i].cumsum(0)
+
+                # Recall
+                recall = tpc / (n_l + 1e-16)  # recall curve
+                r[ci] = np.interp(-px, -conf[i], recall[:, 0], left=0)  # negative x, xp because xp decreases
+
+                # Precision
+                precision = tpc / (tpc + fpc)  # precision curve
+                p[ci] = np.interp(-px, -conf[i], precision[:, 0], left=1)  # p at pr_score
+
+                # AP from recall-precision curve
+                for j in range(tp.shape[1]):
+                    ap[ci, j], mpre, mrec = self._compute_ap(recall[:, j], precision[:, j])
+                    if plot and j == 0:
+                        py.append(np.interp(px, mrec, mpre))  # precision at mAP@0.5
+
+        # Compute F1 (harmonic mean of precision and recall)
+        f1 = 2 * p * r / (p + r + 1e-16)
+
+        i = f1.mean(0).argmax()  # max F1 index
+        return p[:, i], r[:, i], ap, f1[:, i], unique_classes.astype('int32')
+
+    def _process_batch(self, detections, labels, iouv):
+        """
+        Return correct predictions matrix. Both sets of boxes are in (x1, y1, x2, y2) format.
+        Arguments:
+            detections (Array[N, 6]), x1, y1, x2, y2, conf, class
+            labels (Array[M, 5]), class, x1, y1, x2, y2
+        Returns:
+            correct (Array[N, 10]), for 10 IoU levels
+        """
+        correct = torch.zeros(detections.shape[0], iouv.shape[0], dtype=torch.bool, device=iouv.device)
+        iou = box_iou(labels[:, 1:], detections[:, 2:])
+        x = torch.where((iou >= iouv[0]) & (labels[:, 0:1] == detections[:, 1]))  # IoU above threshold and classes match
+        if x[0].shape[0]:
+            matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]), 1).cpu().numpy()  # [label, detection, iou]
+            if x[0].shape[0] > 1:
+                matches = matches[matches[:, 2].argsort()[::-1]]
+                matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
+                # matches = matches[matches[:, 2].argsort()[::-1]]
+                matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
+            matches = torch.Tensor(matches).to(iouv.device)
+            correct[matches[:, 1].long()] = matches[:, 2:3] >= iouv
+        return correct
+
+    def _compute_ap(self, recall, precision):
+        """ Compute the average precision, given the recall and precision curves
+        # Arguments
+            recall:    The recall curve (list)
+            precision: The precision curve (list)
+        # Returns
+            Average precision, precision curve, recall curve
+        """
+
+        # Append sentinel values to beginning and end
+        mrec = np.concatenate(([0.], recall, [recall[-1] + 0.01]))
+        mpre = np.concatenate(([1.], precision, [0.]))
+
+        # Compute the precision envelope
+        mpre = np.flip(np.maximum.accumulate(np.flip(mpre)))
+
+        # Integrate area under curve
+        method = 'interp'  # methods: 'continuous', 'interp'
+        if method == 'interp':
+            x = np.linspace(0, 1, 101)  # 101-point interp (COCO)
+            ap = np.trapz(np.interp(x, mrec, mpre), x)  # integrate
+        else:  # 'continuous'
+            i = np.where(mrec[1:] != mrec[:-1])[0]  # points where x axis (recall) changes
+            ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])  # area under curve
+
+        return ap, mpre, mrec

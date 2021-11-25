@@ -105,9 +105,8 @@ class Solver(BaseSolver):
             Pbar.set_description('[valid]')
 
         main_score, item_score = self.score.score_out()
-        w_dict = {'epoch': epoch,
-                  'main_score': main_score,
-                  'item_score': item_score}
+        item_score['main_score'] = main_score
+        w_dict = {'epoch': epoch, 'scores': item_score}
         self.cfg.writer.tbX_write(w_dict)
         self.cfg.logger.info('[EVALUATE] Summary: Epoch: %s, total_score: %s, other_score: %s', epoch, str(main_score), str(item_score))
         if self.cfg.TEST.TEST_ONLY:

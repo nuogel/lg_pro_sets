@@ -47,6 +47,8 @@ class TxbLogger:
                 for k1, v1 in v.items():
                     if isinstance(v1, dict):
                         self.tbX_writer.add_scalars(k + '/' + k1, v1, epoch)
+                    else:
+                        self.tbX_writer.add_scalar(k + '/' + k1, v1, epoch)
             else:
                 self.tbX_writer.add_scalar(k, v, epoch)
 

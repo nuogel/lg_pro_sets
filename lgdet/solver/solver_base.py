@@ -109,7 +109,7 @@ class BaseSolver(object):
 
         if self.cfg.TRAIN.LR_SCHEDULE == 'cos':
             print('using cos LambdaLR lr_scheduler')
-            finial_lr = self.args.lr*0.01
+            finial_lr = self.args.lr * 0.01
             alpha = finial_lr / self.optimizer.param_groups[0]['initial_lr']
             lf = lambda x: (0.5 * (1 + math.cos(x * math.pi / self.cfg.TRAIN.EPOCH_SIZE))) * (1 - alpha) + alpha
             self.scheduler = lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lf, last_epoch=self.epoch_last - 1)
@@ -183,9 +183,9 @@ class BaseSolver(object):
 
         # add tensorboard writer.
         if self.global_step % len_batch == 0:
-            w_dict = {'epoch': epoch, 'lr': self.optimizer.param_groups[0]['lr'], 'epoch_loss': self.epoch_losses / len(self.trainDataloader)}
+            w_dict = {'epoch': epoch, '0_train': {'lr': self.optimizer.param_groups[0]['lr'], 'epoch_loss': self.epoch_losses / len(self.trainDataloader)}}
             for k, v in self.metrics_ave.items():
-                w_dict['metrics/' + k] = v / (step + 1)
+                w_dict['0_train_metrics/' + k] = v / (step + 1)
             self.cfg.writer.tbX_write(w_dict=w_dict)
 
         if torch.isnan(total_loss) or total_loss.item() == float("inf") or total_loss.item() == -float("inf"):

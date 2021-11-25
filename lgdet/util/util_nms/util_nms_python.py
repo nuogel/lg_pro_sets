@@ -25,10 +25,10 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         else:
             self.use_nms_cython = False
             print('use nms-lg')
-        self.max_detection_boxes_num = 1000
+        self.max_detection_boxes_num = 300
         if self.cfg.TEST.MAP_FSCORE in [0, '0']:  # 1-fscore
             self.score_thresh = 0.001  # count map score thresh is <0.05
-            self.max_detection_boxes_num = 2000
+            self.max_detection_boxes_num = 300
 
     def forward(self, pre_score, pre_loc, xywh2xyxy=True):
         if self.use_nms_cython:
@@ -49,11 +49,11 @@ class NMS:  # TODO: dubug the for ...in each NMS.
             _pre_class = _pre_class[index]
             _pre_loc = _pre_loc[index]
 
-            score_sort = _pre_score.sort(descending=True)
-            score_idx = score_sort[1][:self.max_detection_boxes_num]
-            _pre_score = _pre_score[score_idx]
-            _pre_class = _pre_class[score_idx]
-            _pre_loc = _pre_loc[score_idx]
+            # score_sort = _pre_score.sort(descending=True)
+            # score_idx = score_sort[1][:self.max_detection_boxes_num]
+            # _pre_score = _pre_score[score_idx]
+            # _pre_class = _pre_class[score_idx]
+            # _pre_loc = _pre_loc[score_idx]
 
             # TODO: simple code
             # _pre_score = pre_score[batch_n]
@@ -62,6 +62,7 @@ class NMS:  # TODO: dubug the for ...in each NMS.
             # _pre_loc = pre_loc[batch_n][index]
 
             labels = self._nms(_pre_score, _pre_class, _pre_loc, xywh2xyxy)
+            labels = labels[:self.max_detection_boxes_num]
             labels_predict.append(labels)
 
         return labels_predict
