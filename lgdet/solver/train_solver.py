@@ -30,15 +30,12 @@ class Solver(BaseSolver):
             self.epoch = epoch
             if not self.cfg.TEST.TEST_ONLY and not self.args.test_only:
                 self._train_an_epoch(epoch)
-            if (epoch + 1) % self.cfg.TRAIN.EVALUATE_STEP == 0 or self.cfg.TEST.ONE_TEST:
-                with torch.no_grad():
-                    self._validate_an_epoch(epoch)
+            self._validate_an_epoch(epoch)
 
     def _train_an_epoch(self, epoch):
         self.model.train()
         # count the step time, total time...
-        headinfos = ('\n[train] %8s|%7s|%7s|%9s|' + '%6s|' * 3) % (
-            'model_n', 'epoch', 'g_step', 'l_rate', 'step_l', 'aver_l', 'others')
+        headinfos = ('\n[train] %8s|%7s|%7s|%9s|' + '%6s|' * 3) % ('model_n', 'epoch', 'g_step', 'l_rate', 'step_l', 'aver_l', 'others')
         print(headinfos)
 
         Pbar = tqdm.tqdm(self.trainDataloader)
@@ -90,24 +87,26 @@ class Solver(BaseSolver):
         self.cfg.logger.info(train_info)
 
     def _validate_an_epoch(self, epoch):
-        if not self.cfg.TEST.ONE_TEST:
-            self.model.eval()
-        self.cfg.logger.debug('[evaluate] model:%s, evaluating ...', self.cfg.TRAIN.MODEL)
-        self.score.init_parameters()
-        Pbar = tqdm.tqdm(self.testDataloader)
-        for step, train_data in enumerate(Pbar):
-            if step >= len(self.trainDataloader):
-                break
-            test_data = self.DataFun.to_devce(train_data)
-            if test_data[0] is None: continue
-            predict = self.model(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)
-            self.score.cal_score(predict, test_data)
-            Pbar.set_description('[valid]')
+        if ((epoch + 1) % self.cfg.TRAIN.EVALUATE_STEP == 0 and self.global_step < self.cfg.TRAIN.WARM_UP_STEP) or self.cfg.TEST.ONE_TEST:
+            with torch.no_grad():
+                if not self.cfg.TEST.ONE_TEST:
+                    self.model.eval()
+                self.cfg.logger.debug('[evaluate] model:%s, evaluating ...', self.cfg.TRAIN.MODEL)
+                self.score.init_parameters()
+                Pbar = tqdm.tqdm(self.testDataloader)
+                for step, train_data in enumerate(Pbar):
+                    if step >= len(self.trainDataloader):
+                        break
+                    test_data = self.DataFun.to_devce(train_data)
+                    if test_data[0] is None: continue
+                    predict = self.model(input_x=test_data[0], input_y=test_data[1], input_data=test_data, is_training=False)
+                    self.score.cal_score(predict, test_data)
+                    Pbar.set_description('[valid]')
 
-        main_score, item_score = self.score.score_out()
-        item_score['main_score'] = main_score
-        w_dict = {'epoch': epoch, 'scores': item_score}
-        self.cfg.writer.tbX_write(w_dict)
-        self.cfg.logger.info('[EVALUATE] Summary: Epoch: %s, total_score: %s, other_score: %s', epoch, str(main_score), str(item_score))
-        if self.cfg.TEST.TEST_ONLY:
-            exit()
+                main_score, item_score = self.score.score_out()
+                item_score['main_score'] = main_score
+                w_dict = {'epoch': epoch, 'scores': item_score}
+                self.cfg.writer.tbX_write(w_dict)
+                self.cfg.logger.info('[EVALUATE] Summary: Epoch: %s, total_score: %s, other_score: %s', epoch, str(main_score), str(item_score))
+                if self.cfg.TEST.TEST_ONLY:
+                    exit()

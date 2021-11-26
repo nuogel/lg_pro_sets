@@ -47,7 +47,7 @@ TRAIN:
   # optimizer:
   OPTIMIZER: sgd #adamw'adam' #'SGD' #
   LR_START: 0.001
-  LR_FINAL_RATIO: 0.01
+  LR_FINAL_RATIO: 0.2
   LR_SCHEDULE: 'cos' #'reduce'# 'lr''reduce'  #
   STEP_LR: 50
 
@@ -56,7 +56,7 @@ TRAIN:
   # [loc_loss, obj_loss]: loc_loss: mse & iouloss | obj_loss: focalloss & ghm & bce |
   LOSSTYPE: [ 'iouloss', 'focalloss' ]
   EPOCH_CONTINUE: None
-  WARM_UP_STEP: 1000
+  WARM_UP_STEP: 2100
   SAVE_STEP: 4000
   EVALUATE_STEP: 2
 
