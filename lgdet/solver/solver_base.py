@@ -1,5 +1,7 @@
 import os
 import torch
+import torch.nn as nn
+import numpy as np
 from torch.optim import lr_scheduler
 from lgdet.factory_classes import get_loss_class, get_score_class
 from lgdet.util.util_prepare_device import load_device
@@ -31,16 +33,16 @@ class BaseSolver(object):
 
     def _get_model(self):
         self.model = build_from_cfg(MODELS, str(self.cfg.TRAIN.MODEL).upper())(self.cfg)
-        self.optimizer_dict = None
+        self.optimizer_state_dict = None
         self.epoch_last = 0
         self.global_step = 0
         # init model:
         if self.args.checkpoint not in [0, '0', 'None', 'no', 'none', "''"]:
             if self.args.checkpoint in [1, '1']: self.args.checkpoint = os.path.join(self.cfg.PATH.TMP_PATH, 'checkpoints', self.cfg.TRAIN.MODEL, 'now.pkl')
             print('loading checkpoint:', self.args.checkpoint)
-            self.model, self.epoch_last, self.optimizer_dict, self.optimizer_type, self.global_step = _load_checkpoint(self.model,
-                                                                                                                       self.args.checkpoint,
-                                                                                                                       self.cfg.TRAIN.DEVICE)
+            self.model, self.epoch_last, self.optimizer_state_dict, self.optimizer_type, self.global_step = _load_checkpoint(self.model,
+                                                                                                                             self.args.checkpoint,
+                                                                                                                             self.cfg.TRAIN.DEVICE)
             if self.is_training:
                 self.cfg.writer.tbX_reStart(self.epoch_last)
         elif self.args.pre_trained not in [0, '0', 'None', 'no', 'none', "''"]:
@@ -89,30 +91,36 @@ class BaseSolver(object):
 
     def _get_optimizer(self):
         opt_type = self.cfg.TRAIN.OPTIMIZER.lower()
-        learning_rate = self.args.lr
+        self.init_lr = self.args.lr
+
+        g0, g1, g2 = [], [], []  # optimizer parameter groups
+        for v in self.model.modules():
+            if hasattr(v, 'bias') and isinstance(v.bias, nn.Parameter):  # bias
+                g2.append(v.bias)
+            if isinstance(v, nn.BatchNorm2d):  # weight (no decay)
+                g0.append(v.weight)
+            elif hasattr(v, 'weight') and isinstance(v.weight, nn.Parameter):  # weight (with decay)
+                g1.append(v.weight)
+
         if opt_type == 'adam':
-            self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=float(self.cfg.TRAIN.WEIGHT_DECAY))
+            self.optimizer = torch.optim.Adam(g0, lr=self.init_lr, betas=(float(self.cfg.TRAIN.MOMENTUM), 0.999))
         elif opt_type == 'adamw':
-            self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=1e-2)  # weight_decay=1e-2
+            self.optimizer = torch.optim.Adam(g0, lr=self.init_lr, weight_decay=1e-2)  # weight_decay=1e-2
         elif opt_type == 'sgd':
-            self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=0.937, weight_decay=float(self.cfg.TRAIN.WEIGHT_DECAY))
+            self.optimizer = torch.optim.SGD(g0, lr=self.init_lr, momentum=float(self.cfg.TRAIN.MOMENTUM), nesterov=True)
         else:
             self.cfg.logger.error('NO such a optimizer: ' + str(opt_type))
+        self.optimizer.add_param_group({'params': g1, 'weight_decay': float(self.cfg.TRAIN.WEIGHT_DECAY)})  # add g1 with weight_decay
+        self.optimizer.add_param_group({'params': g2})  # add g2 (biases)
         print('using: ', opt_type)
-        if self.optimizer_dict and opt_type == self.optimizer_type:
-            self.optimizer.state_dict = self.optimizer_dict
-        self.optimizer.param_groups[0]['initial_lr'] = learning_rate
-        if self.args.lr_continue:
-            self.optimizer.param_groups[0]['lr'] = self.args.lr_continue
-            self.optimizer.param_groups[0]['initial_lr'] = self.args.lr_continue
-        self.learning_rate = self.optimizer.param_groups[0]['lr']
+        del g0, g1, g2
 
         if self.cfg.TRAIN.LR_SCHEDULE == 'cos':
             print('using cos LambdaLR lr_scheduler')
-            finial_lr = self.args.lr * self.cfg.TRAIN.LR_FINAL_RATIO
-            alpha = finial_lr / self.optimizer.param_groups[0]['initial_lr']
+            finial_lr = self.init_lr * self.cfg.TRAIN.LR_FINAL_RATIO
+            alpha = finial_lr / self.init_lr
             lf = lambda x: (0.5 * (1 + math.cos(x * math.pi / self.cfg.TRAIN.EPOCH_SIZE))) * (1 - alpha) + alpha
-            self.scheduler = lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lf, last_epoch=self.epoch_last - 1)
+            self.scheduler = lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lf)
         elif self.cfg.TRAIN.LR_SCHEDULE == 'step':
             print('using StepLR lr_scheduler ', self.cfg.TRAIN.STEP_LR)
             self.scheduler = lr_scheduler.StepLR(self.optimizer, step_size=self.cfg.TRAIN.STEP_LR, gamma=0.1)
@@ -120,11 +128,21 @@ class BaseSolver(object):
             factor, patience, min_lr = 0.8, 3, 1e-6
             print('using ReduceLROnPlateau lr_scheduler: factor%.1f, patience:%d' % (factor, patience))
             self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=factor, patience=patience, min_lr=min_lr, verbose=True)
+
+        if self.optimizer_state_dict and opt_type == self.optimizer_type:
+            self.optimizer.load_state_dict(self.optimizer_state_dict)
+        self.scheduler.last_epoch = self.epoch_last-1  # do not move
+        # self.optimizer.param_groups[0]['initial_lr'] = learning_rate
+        # if self.args.lr_continue:
+        #     self.optimizer.param_groups[0]['lr'] = self.args.lr_continue
+        #     self.optimizer.param_groups[0]['initial_lr'] = self.args.lr_continue
+        # self.init_lr = self.optimizer.param_groups[0]['lr']
+        # self.init_lr = learning_rate
         # Plot lr schedule
         plot_lr = 0
         if plot_lr:
             y = []
-            for _ in range(0, self.cfg.TRAIN.EPOCH_SIZE):
+            for _ in range(self.epoch_last, self.cfg.TRAIN.EPOCH_SIZE):
                 if self.cfg.TRAIN.LR_SCHEDULE == 'reduce':
                     self.scheduler.step(1.)
                 else:
@@ -134,7 +152,9 @@ class BaseSolver(object):
         self.optimizer.zero_grad()
 
     def _set_warmup_lr(self):
-        self.optimizer.param_groups[0]['lr'] = self.learning_rate / self.cfg.TRAIN.WARM_UP_STEP * (self.global_step + 1)
+        self.optimizer.param_groups[0]['lr'] = np.interp(self.global_step, [0, self.cfg.TRAIN.WARM_UP_STEP], [0, self.init_lr])
+        self.optimizer.param_groups[1]['lr'] = np.interp(self.global_step, [0, self.cfg.TRAIN.WARM_UP_STEP], [0, self.init_lr])
+        self.optimizer.param_groups[2]['lr'] = np.interp(self.global_step, [0, self.cfg.TRAIN.WARM_UP_STEP], [self.cfg.TRAIN.WARMUP_BIAS_LR, self.init_lr])
 
     def _get_dataloader(self, is_training, cfg):
         """
@@ -183,7 +203,9 @@ class BaseSolver(object):
 
         # add tensorboard writer.
         if self.global_step % len_batch == 0:
-            w_dict = {'epoch': epoch, '0_train': {'lr': self.optimizer.param_groups[0]['lr'], 'epoch_loss': self.epoch_losses / len(self.trainDataloader)}}
+            w_dict = {'epoch': epoch, '0_train': {'epoch_loss': self.epoch_losses / len(self.trainDataloader)}}
+            for i, op in enumerate(self.optimizer.param_groups):
+                w_dict['0_train']['lr' + str(i)] = self.optimizer.param_groups[i]['lr']
             for k, v in self.metrics_ave.items():
                 w_dict['0_train_metrics/' + k] = v / (step + 1)
             self.cfg.writer.tbX_write(w_dict=w_dict)

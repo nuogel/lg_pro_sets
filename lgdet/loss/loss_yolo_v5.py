@@ -108,7 +108,7 @@ class YoloLoss:
         self.multiply_area_scale = 0  # whether multiply loss to area_scale.
 
         self.alpha = 0.25
-        self.gamma = 1.5
+        self.gamma = 0
         self.sort_obj_iou = False
         self.balance = [4.0, 1.0, 0.4]
         # Define criteria
@@ -184,10 +184,10 @@ class YoloLoss:
         pos_score = torch.cat(pos_score, -1).mean()
 
         bs = tobj.shape[0]  # batch size
-        lbox *= 1  # 0.05
-        lcls *= 1 # 0.125
-        lobj *= 10  # 1
-        total_loss = (lbox + lobj + lcls)
+        lbox *= 0.05  # 0.05
+        lcls *= 0.5  # 0.125
+        lobj *= 1  # 1
+        total_loss = (lbox + lobj + lcls) * bs
         metrics = {'box_loss': lbox.item(),
                    'obj_loss': lobj.item(),
                    'cls_loss': lcls.item(),

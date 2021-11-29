@@ -15,7 +15,7 @@ TRAIN:
   TYPE: s
   EMA: 0
   EPOCH_SIZE: 300
-  BATCH_BACKWARD_SIZE: 2  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
+  BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO' 'COMPETITION'
   TRAIN_DATA_FROM_FILE: [ 'VOC' ]
   USE_LMDB: 0
@@ -47,16 +47,17 @@ TRAIN:
   # optimizer:
   OPTIMIZER: sgd #adamw'adam' #'SGD' #
   LR_START: 0.001
+  WARMUP_BIAS_LR: 0.1
   LR_FINAL_RATIO: 0.2
   LR_SCHEDULE: 'cos' #'reduce'# 'lr''reduce'  #
   STEP_LR: 50
 
-  BETAS_ADAM: 0.9
   WEIGHT_DECAY: 0.0005
+  MOMENTUM: 0.937
   # [loc_loss, obj_loss]: loc_loss: mse & iouloss | obj_loss: focalloss & ghm & bce |
   LOSSTYPE: [ 'iouloss', 'focalloss' ]
   EPOCH_CONTINUE: None
-  WARM_UP_STEP: 2100
+  WARM_UP_STEP: 300
   SAVE_STEP: 4000
   EVALUATE_STEP: 2
 
@@ -102,7 +103,7 @@ TEST:
   TEST_ONLY: 0
 
   ONE_TEST: 0
-  ONE_TEST_TRAIN_STEP: 200
+  ONE_TEST_TRAIN_STEP: 100
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [
     #  ['000000000009.jpg', 'coco/imgs/train2017/000000000009.jpg', 'coco/labels/train2017_xml/000000000009.xml']

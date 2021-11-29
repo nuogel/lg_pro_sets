@@ -8,7 +8,7 @@ def _load_checkpoint(model, checkpoint, device):
     checkpoint = torch.load(checkpoint, map_location=device)
     state_dict = checkpoint['state_dict']
     last_epoch = checkpoint['epoch']
-    optimizer_dict = checkpoint['optimizer']
+    optimizer = checkpoint['optimizer']
     optimizer_type = checkpoint['optimizer_type']
     global_step = checkpoint['global_step']
 
@@ -18,7 +18,7 @@ def _load_checkpoint(model, checkpoint, device):
         new_dic[k] = v
 
     model.load_state_dict(new_dic)
-    return model, last_epoch, optimizer_dict, optimizer_type, global_step
+    return model, last_epoch, optimizer, optimizer_type, global_step
 
 
 def _load_pretrained(model, pre_trained, device):
@@ -50,7 +50,7 @@ def _save_checkpoint(self):
     _model = self.ema.ema if self.cfg.TRAIN.EMA else self.model
     saved_dict = {'epoch': self.epoch,
                   'state_dict': _model.state_dict(),
-                  'optimizer': self.optimizer.param_groups,
+                  'optimizer': self.optimizer.state_dict(),
                   'optimizer_type': self.cfg.TRAIN.OPTIMIZER.lower(),
                   'global_step': self.global_step}
 
