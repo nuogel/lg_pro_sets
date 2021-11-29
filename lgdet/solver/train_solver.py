@@ -87,7 +87,7 @@ class Solver(BaseSolver):
         self.cfg.logger.info(train_info)
 
     def _validate_an_epoch(self, epoch):
-        if ((epoch + 1) % self.cfg.TRAIN.EVALUATE_STEP == 0 and self.global_step < self.cfg.TRAIN.WARM_UP_STEP) or self.cfg.TEST.ONE_TEST:
+        if ((epoch + 1) % self.cfg.TRAIN.EVALUATE_STEP == 0 and self.global_step > self.cfg.TRAIN.WARM_UP_STEP) or self.cfg.TEST.ONE_TEST:
             with torch.no_grad():
                 if not self.cfg.TEST.ONE_TEST:
                     self.model.eval()

@@ -57,7 +57,7 @@ TRAIN:
   # [loc_loss, obj_loss]: loc_loss: mse & iouloss | obj_loss: focalloss & ghm & bce |
   LOSSTYPE: [ 'iouloss', 'focalloss' ]
   EPOCH_CONTINUE: None
-  WARM_UP_STEP: 300
+  WARM_UP_STEP: 2100
   SAVE_STEP: 4000
   EVALUATE_STEP: 2
 
