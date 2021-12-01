@@ -2,6 +2,7 @@ from pycocotools.coco import COCO
 from pascal_voc_writer import Writer
 import argparse
 import os
+from tqdm import tqdm
 
 def coco2voc(ann_file, output_dir):
     coco = COCO(ann_file)
@@ -9,7 +10,8 @@ def coco2voc(ann_file, output_dir):
     cat_idx = {}
     for c in cats:
         cat_idx[c['id']] = c['name']
-    for img in coco.imgs:
+    for img in tqdm(coco.imgs):
+        print('deeling with img:',img)
         catIds = coco.getCatIds()
         annIds = coco.getAnnIds(imgIds=[img], catIds=catIds)
         if len(annIds) > 0:
@@ -28,13 +30,15 @@ def coco2voc(ann_file, output_dir):
                 writer.save(output_dir+'/'+label_fname)
 
 
-parser = argparse.ArgumentParser(description='Convert COCO annotations to PASCAL VOC XML annotations')
-parser.add_argument('--ann_file',default='/media/lg/2628737E28734C35/coco/annotations/instances_train2017.json',help='Path to annotations file')
-parser.add_argument('--output_dir',default='/media/lg/2628737E28734C35/coco/labels/train2017_xml',help='Path to output directory where annotations are to be stored')
-args = parser.parse_args()
-try:
-    os.mkdir(args.output_dir)
-except FileExistsError:
-    pass
+items = ['train', 'val']
+for item in items:
+    parser = argparse.ArgumentParser(description='Convert COCO annotations to PASCAL VOC XML annotations')
+    parser.add_argument('--ann_file',default='/media/dell/data/coco/2017/annotations/instances_{}2017.json'.format(item),help='Path to annotations file')
+    parser.add_argument('--output_dir',default='/media/dell/data/coco/2017/labels/{}2017_xml'.format(item),help='Path to output directory where annotations are to be stored')
+    args = parser.parse_args()
+    try:
+        os.mkdir(args.output_dir)
+    except FileExistsError:
+        pass
 
-coco2voc(ann_file=args.ann_file, output_dir=args.output_dir)
+    coco2voc(ann_file=args.ann_file, output_dir=args.output_dir)

@@ -14,7 +14,7 @@ TRAIN:
   MODEL: yolov5
   TYPE: s
   EMA: 0
-  EPOCH_SIZE: 300
+  EPOCH_SIZE: 800
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO' 'COMPETITION'
   TRAIN_DATA_FROM_FILE: [ 'VOC' ]
@@ -22,7 +22,7 @@ TRAIN:
 
   # data aug:
   KEEP_DIFFICAULT: 0
-  MOSAIC: 0.9
+  MOSAIC: 1
   DO_AUG: 0.5
   HSV: 0.1
   RESIZE: 0
@@ -46,9 +46,9 @@ TRAIN:
 
   # optimizer:
   OPTIMIZER: sgd #adamw'adam' #'SGD' #
-  LR_START: 0.001
+  LR_START: 0.01
   WARMUP_BIAS_LR: 0.1
-  LR_FINAL_RATIO: 0.2
+  LR_FINAL_RATIO: 0.01
   LR_SCHEDULE: 'cos' #'reduce'# 'lr''reduce'  #
   STEP_LR: 50
 

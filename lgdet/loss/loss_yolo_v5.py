@@ -112,8 +112,8 @@ class YoloLoss:
         self.sort_obj_iou = False
         self.balance = [4.0, 1.0, 0.4]
         # Define criteria
-        BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([1.0]).to(self.device))
-        BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([1.0]).to(self.device))
+        BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([5.0]).to(self.device))
+        BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([5.0]).to(self.device))
         # Focal loss
         g = self.gamma  # focal loss gamma
         if g > 0:
