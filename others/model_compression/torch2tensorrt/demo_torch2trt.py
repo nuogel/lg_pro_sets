@@ -17,8 +17,9 @@ y_trt = model_trt(x)
 # check the output against PyTorch
 print(torch.max(torch.abs(y - y_trt)))
 
-
 torch.save(model_trt.state_dict(), 'alexnet_trt.pth')
+# ======================================================
+
 
 from torch2trt import TRTModule
 

@@ -81,7 +81,7 @@ class BaseSolver(object):
                 self.model.eval()
 
         self.model = self.model.to(self.cfg.TRAIN.DEVICE)
-        model_info(self.model, verbose=True, img_size=self.cfg.TRAIN.IMG_SIZE)
+        model_info(self.model, verbose=False, img_size=self.cfg.TRAIN.IMG_SIZE)
 
     def _get_score(self):
         self.score = get_score_class(self.cfg.BELONGS)(self.cfg)
@@ -131,7 +131,7 @@ class BaseSolver(object):
 
         if self.optimizer_state_dict and opt_type == self.optimizer_type:
             self.optimizer.load_state_dict(self.optimizer_state_dict)
-        self.scheduler.last_epoch = self.epoch_last-1  # do not move
+        self.scheduler.last_epoch = self.epoch_last - 1  # do not move
         # self.optimizer.param_groups[0]['initial_lr'] = learning_rate
         # if self.args.lr_continue:
         #     self.optimizer.param_groups[0]['lr'] = self.args.lr_continue

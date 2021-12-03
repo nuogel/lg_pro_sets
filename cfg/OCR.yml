@@ -1,8 +1,8 @@
-BELONGS: OBD
+BELONGS: OCR
 
 PATH:
   # '/media/lg/DataSet_E/datasets/'   '/media/lg/2628737E28734C35'  '/media/lg/DataSet_E/datasets/person/data_person' '/media/lg/DataSet_E/datasets/kitti/training/
-  INPUT_PATH: '/media/dell/data/voc/' #'/media/dell/data/coco/2017' # #'/media/dell/data/ocr/电表识别/电表图片' #
+  INPUT_PATH: '/media/dell/data/coco/2017' #'/media/dell/data/voc/'  #'/media/dell/data/ocr/电表识别/电表图片' #
   LMDB_PATH: '/media/lg/2628737E28734C35/coco/{}2017_lmdb'
   LAB_PATH: ''
   CLASSES_PATH: 'lgdet/dataloader/classes/class_names_{}.txt'
@@ -10,14 +10,11 @@ PATH:
   GENERATE_LABEL_SAVE_PATH: 'tmp/predicted_labels/'
 
 TRAIN:
-  # yolov5 lrf300 fcos lrf512 yolov3  ssdvgg  retinanet yolonano  yolov2 yolov3 yolov3_tiny yolov3_tiny_shufflenet refinedet efficientdet yolov3_tiny_mobilenet yolov3_tiny_squeezenet fcos
-  MODEL: yolov5
-  TYPE: s
+  MODEL: crnn
   EMA: 1
   EPOCH_SIZE: 300
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
-  #'PERSON_COLLECT'  'AUTOAIR'   'VISDRONE' UCAS_AOD  'VOC'  'KITTI'  'COCO' 'COMPETITION'
-  TRAIN_DATA_FROM_FILE: [ 'VOC' ]
+  TRAIN_DATA_FROM_FILE: [ 'COCO' ]
   USE_LMDB: 0
 
   # data aug:

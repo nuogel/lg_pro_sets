@@ -60,6 +60,45 @@ class Focus(nn.Module):
         return self.conv(torch.cat([x[..., ::2, ::2], x[..., 1::2, ::2], x[..., ::2, 1::2], x[..., 1::2, 1::2]], 1))
 
 
+class FocusConvLG(nn.Module):
+    # Focus wh information into c-space
+    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
+        super(FocusConvLG, self).__init__()
+        self.conv = CBL(c1 * 4, c2, k, s, p, g, act)
+        self.sliceconv1 = nn.Conv2d(in_channels=c1, out_channels=c1, kernel_size=2, stride=2, groups=c1, bias=False)
+        self.sliceconv1.weight.data.fill_(0)
+        self.sliceconv1.weight.data[:, :, 0, 0] = 1
+        self.sliceconv1.requires_grad = False
+
+        self.sliceconv2 = nn.Conv2d(in_channels=c1, out_channels=c1, kernel_size=2, stride=2, groups=c1, bias=False)
+        self.sliceconv2.weight.data.fill_(0)
+        self.sliceconv2.weight.data[:, :, 1, 0] = 1
+        self.sliceconv2.requires_grad = False
+
+        self.sliceconv3 = nn.Conv2d(in_channels=c1, out_channels=c1, kernel_size=2, stride=2, groups=c1, bias=False)
+        self.sliceconv3.weight.data.fill_(0)
+        self.sliceconv3.weight.data[:, :, 0, 1] = 1
+        self.sliceconv3.requires_grad = False
+
+        self.sliceconv4 = nn.Conv2d(in_channels=c1, out_channels=c1, kernel_size=2, stride=2, groups=c1, bias=False)
+        self.sliceconv4.weight.data.fill_(0)
+        self.sliceconv4.weight.data[:, :, 1, 1] = 1
+        self.sliceconv4.requires_grad = False
+
+    def forward(self, x):  # x(b,c,w,h) -> y(b,4c,w/2,h/2)
+        slice = torch.cat([x[..., ::2, ::2], x[..., 1::2, ::2], x[..., ::2, 1::2], x[..., 1::2, 1::2]], 1)
+
+        y1 = self.sliceconv1(x)
+        y2 = self.sliceconv2(x)
+        y3 = self.sliceconv3(x)
+        y4 = self.sliceconv4(x)
+
+        out = torch.cat([y1, y2, y3, y4], dim=1)
+
+        assert slice.equal(out), 'slice.equal(out)->FALSE'
+        return self.conv(out)
+
+
 '''
 An alternative implementation for PyTorch with auto-infering the x-y dimensions.
 '''

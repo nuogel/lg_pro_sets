@@ -184,10 +184,10 @@ class YoloLoss:
         pos_score = torch.cat(pos_score, -1).mean()
 
         bs = tobj.shape[0]  # batch size
-        lbox *= 0.05  # 0.05
-        lcls *= 0.5  # 0.125
-        lobj *= 1  # 1
-        total_loss = (lbox + lobj + lcls) * bs
+        lbox *= 1  # 0.05
+        lcls *= 1  # 0.125
+        lobj *= 10  # 1
+        total_loss = (lbox + lobj + lcls) / bs
         metrics = {'box_loss': lbox.item(),
                    'obj_loss': lobj.item(),
                    'cls_loss': lcls.item(),

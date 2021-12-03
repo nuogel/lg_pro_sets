@@ -1,11 +1,12 @@
 import torch
 from torch2trt import torch2trt
+from torch2trt import TRTModule
 
 # create some regular pytorch model...
 
-model = torch.load('./yolov5.pth').cuda()
+model = torch.load('yolov5_with_model.pth').eval().cuda()
 # create example data
-x = torch.ones((1, 3, 224, 224)).cuda()
+x = torch.ones((1, 3, 640, 640)).cuda()
 
 y = model(x)
 

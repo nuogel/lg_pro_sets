@@ -148,6 +148,12 @@ class OBD_Loader(DataLoader):
         self.is_training = is_training
 
     def _load_labels2memery(self, dataset_txt, one_name, pre_load_labels):
+        ftxt = 'train_' if self.is_training else 'test_'
+        cachepath = os.path.join(self.cfg.PATH.INPUT_PATH, ftxt+''.join(self.cfg.TRAIN.TRAIN_DATA_FROM_FILE[0])+'.datacache')
+        if os.path.isfile(cachepath) and not self.one_test:
+            print('loading %s ...' % cachepath)
+            data_infos=torch.load(cachepath)
+            return data_infos
         if self.one_test:
             dataset_txt = one_name
         data_infos = []
@@ -169,6 +175,9 @@ class OBD_Loader(DataLoader):
             this_data_info['label'] = label_i
             this_data_info['wh_original'] = wh
             data_infos.append(this_data_info)
+        if not self.one_test:
+            print('saving %s ...' % cachepath)
+            torch.save(data_infos, cachepath)
         return data_infos
 
     def _read_datas(self, data_info):
