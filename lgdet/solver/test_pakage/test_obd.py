@@ -9,13 +9,16 @@ from lgdet.postprocess.parse_factory import ParsePredict
 from lgdet.util.util_show_img import _show_img
 from lgdet.util.util_time_stamp import Time
 from lgdet.solver.test_pakage._test_base import TestBase
-
+from torch2trt import TRTModule
+import torch
 
 class Test_OBD(TestBase):
     def __init__(self, cfg, args, train):
         super(Test_OBD, self).__init__(cfg, args, train)
         self.parsepredict = ParsePredict(cfg)
         self.apolloclass2num = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
+        self.model_trt_2 = TRTModule()
+        self.model_trt_2.load_state_dict(torch.load('others/model_compression/torch2tensorrt/yolov5_with_model.pth.onnx.statedict_trt'))
 
     def test_backbone(self, DataSet):
         """Test."""
@@ -26,7 +29,9 @@ class Test_OBD(TestBase):
             timer.time_start()
             test_data = self.DataFun.to_devce(test_data)
             inputs, targets, data_infos = test_data
-            predicts = self.model.forward(input_x=inputs, is_training=False)
+            # predicts = self.model.forward(input_x=inputs, is_training=False)
+            predicts = self.model_trt_2(inputs)
+
             labels_pres = self.parsepredict.parse_predict(predicts)
             labels_pres = self.parsepredict.predict2labels(labels_pres, data_infos)
             batches = 1

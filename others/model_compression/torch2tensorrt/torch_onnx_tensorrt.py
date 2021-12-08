@@ -12,7 +12,7 @@ print(tensorrt.__version__)
 
 
 def get_img_np_nchw():
-    filename = '/media/dell/data/voc/VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg'
+    filename = '/media/dell/data/voc/VOCdevkit/VOC2007/JPEGImages/000005.jpg'
     image = cv2.imread(filename)
     image_cv = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image_cv = cv2.resize(image_cv, (640, 640))
@@ -35,6 +35,7 @@ def pytorchmodel(imgdata, cuda=False, times=1):
         t0 = time.time()
         for i in range(times):
             print(i)
+            # imgdata = torch.rand((1, 3, 640, 640)).cuda()
             y = model.cuda()(imgdata.cuda())
     else:
         t0 = time.time()
@@ -61,11 +62,12 @@ def _onnx_runtime(onnx_model_path, imgdata, times=1):
 
 def torch2onnx():
     imgdata = get_img_np_nchw()
-    model, y, model_path = pytorchmodel(torch.from_numpy(imgdata), cuda=False, times=test_times)
+    x = torch.from_numpy(imgdata)
+    model, y, model_path = pytorchmodel(x, cuda=True, times=test_times)
     onnx_model_path = model_path + '.onnx'
-    torch2onnx = 0
+    torch2onnx = 1
     if torch2onnx:
-        torch.onnx.export(model, args=imgdata, f=onnx_model_path,
+        torch.onnx.export(model, args=x.cuda(), f=onnx_model_path,
                           export_params=True,
                           verbose=True,
                           input_names=['img'],
@@ -83,7 +85,7 @@ def torch2onnx():
     onnx_pred = _onnx_runtime(onnx_model_path, imgdata, times=test_times)
     dis = []
     for i, yi in enumerate(y):
-        dis.append((onnx_pred[i] - y[i].cpu().detach().numpy()).sum())
+        dis.append((onnx_pred[i] - y[i].cpu().detach().numpy()).max())
     print(dis)
 
 
@@ -101,6 +103,7 @@ def torch2trt_lg():
     imgdata = get_img_np_nchw()
     x = torch.from_numpy(imgdata).cuda()
     model, y, model_path = pytorchmodel(x, cuda=True, times=test_times)
+
     model_trt = torch2trt(model, [x])
 
     torch.save(model_trt.state_dict(), onnx_model_path + '.statedict_trt')
@@ -110,6 +113,7 @@ def torch2trt_lg():
     t0 = time.time()
     for i in range(test_times):
         print(i)
+        # x = torch.rand((1, 3, 640, 640)).cuda()
         y_trt = model_trt_2(x)
     timetorch = time.time() - t0
     print(str(test_times) + ' times of tensorRt:', timetorch / test_times * 1000)
@@ -125,7 +129,8 @@ def trt_forward():
     use the state dict of trt directly ,as below:
     '''
     imgdata = get_img_np_nchw()
-    x = torch.from_numpy(imgdata).cuda()
+    # x = torch.from_numpy(imgdata).cuda()
+    x = torch.rand((4, 3, 640, 640)).cuda()
     model_trt_2 = TRTModule()
     model_trt_2.load_state_dict(torch.load(onnx_model_path + '.trt'))
     y_trt = model_trt_2(x)
@@ -134,10 +139,10 @@ def trt_forward():
 if __name__ == '__main__':
     test_times = 1
     onnx_model_path = 'yolov5_with_model.pth.onnx'
-    trt_forward()
-    # torch2onnx()
+    # trt_forward()
+    torch2onnx()
     # onnx2trt_with_code(onnx_model_path)
-    # torch2trt_lg()
+    torch2trt_lg()
 '''
 test report:
 100 times of pytorch-cpu: 128.8730549812317 ms/img

@@ -185,7 +185,7 @@ class YoloLoss:
 
         bs = tobj.shape[0]  # batch size
         lbox *= 1  # 0.05
-        lcls *= 1  # 0.125
+        lcls *= 5 * self.cls_num / 80  # 0.5 * nc / 80 * 3 / nl
         lobj *= 10  # 1
         total_loss = (lbox + lobj + lcls) / bs
         metrics = {'box_loss': lbox.item(),

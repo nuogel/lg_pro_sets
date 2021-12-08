@@ -25,7 +25,7 @@ def _parse_arguments():
     parser.add_argument('--ema', default=0, type=int, help='ema')
     parser.add_argument('--number_works', '--nw', default=0, type=int, help='number works of dataloader')
     parser.add_argument('--debug', '--d', action='store_true', default=False, help='Enable verbose info')
-    parser.add_argument('--score_thresh', '--st', default=0.5, type=float, help='score_thresh')
+    parser.add_argument('--score_thresh', '--st', default=0.1, type=float, help='score_thresh')
 
     return parser.parse_args()
 
@@ -34,7 +34,7 @@ def main():
     """Run the script."""
     exit_code = 0
     files = 'one_name'
-    files = 'test_set'
+    # files = 'test_set'
     # files = 'datasets/OBD/VOC/VOC_test.txt'
     # files = 'datasets/OBD_idx_stores/COCO/COCO_test.txt'  #
     # files = 'datasets/OBD_idx_stores/KITTI/KITTI_test.txt'

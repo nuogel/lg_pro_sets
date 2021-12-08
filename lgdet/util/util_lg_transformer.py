@@ -190,14 +190,18 @@ class LgTransformer:
             if len(pre_labels[i]) == 0:
                 pre_labels_out.append([])
             else:
-                pre_label = torch.Tensor(pre_labels[i])
+                if pre_labels[i].is_cuda==True:
+                    pre_label = pre_labels[i].cpu()
+                else:
+                    pre_label = pre_labels[i]
+                pre_label = pre_label.detach().numpy()
                 ratio = data_info['ratio(w,h)']  # new/old
                 pad_w, pad_h = data_info['padding(w,h)']
                 if self.cfg.TRAIN.RELATIVE_LABELS:
                     shapeh, shapew = data_info['size_now(h,w)']
                 else:
                     shapeh, shapew = 1, 1
-                labels = pre_label.clone()
+                labels = pre_label.copy()
                 labels[:, 2] = (pre_label[:, 2] * shapew - pad_w) / ratio[0]  # absolute labels.
                 labels[:, 3] = (pre_label[:, 3] * shapeh - pad_h) / ratio[1]
                 labels[:, 4] = (pre_label[:, 4] * shapew - pad_w) / ratio[0]
