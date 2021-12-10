@@ -2,43 +2,12 @@ import pycuda.autoinit
 import numpy as np
 import pycuda.driver as cuda
 import tensorrt as trt
-import torch
+from torch_onnx_tensorrt import pytorchmodel, get_img_np_nchw
 import os
+import torch
 import time
-from PIL import Image
-import cv2
-import torchvision
-import pdb
 
-filename = '/media/dell/data/voc/VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg'
-max_batch_size = 1
-onnx_model_path = 'yolov5.onnx'
 TRT_LOGGER = trt.Logger()  # This logger is required to build an engine
-
-
-def softmax(x):
-    x_exp = np.exp(x)
-    # 如果是列向量，则axis=0
-    x_sum = np.sum(x_exp, axis=1, keepdims=True)
-    s = x_exp / x_sum
-    return s
-
-
-def get_img_np_nchw(filename):
-    image = cv2.imread(filename)
-    image_cv = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    image_cv = cv2.resize(image_cv, (640, 640))
-    # miu = np.array([0.485, 0.456, 0.406])
-    # std = np.array
-    miu = np.array([0, 0, 0])
-    std = np.array([1, 1, 1])
-    img_np = np.array(image_cv, dtype=float) / 255.
-    r = (img_np[:, :, 0] - miu[0]) / std[0]
-    g = (img_np[:, :, 1] - miu[1]) / std[1]
-    b = (img_np[:, :, 2] - miu[2]) / std[2]
-    img_np_t = np.array([r, g, b])
-    img_np_nchw = np.expand_dims(img_np_t, axis=0)
-    return img_np_nchw
 
 
 class HostDeviceMem(object):
@@ -83,8 +52,9 @@ def get_engine(max_batch_size=1, onnx_file_path="", engine_file_path="", fp16_mo
 
     def build_engine(max_batch_size, save_engine):
         """Takes an ONNX file and creates a TensorRT engine to run inference with"""
+        EXPLICIT_BATCH = 1 << (int)(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
         with trt.Builder(TRT_LOGGER) as builder, \
-                builder.create_network() as network, \
+                builder.create_network(EXPLICIT_BATCH) as network, \
                 trt.OnnxParser(network, TRT_LOGGER) as parser:
 
             builder.max_workspace_size = 1 << 30  # Your workspace size
@@ -92,14 +62,18 @@ def get_engine(max_batch_size=1, onnx_file_path="", engine_file_path="", fp16_mo
             if int8_mode:
                 assert (builder.platform_has_fast_int8 == True), "not support int8"
                 builder.int8_mode = True
-                builder.int8_calibrator = None # LG
+                builder.int8_calibrator = None  # LG
             elif fp16_mode:
                 assert (builder.platform_has_fast_fp16 == True), "not support fp16"
                 builder.fp16_mode = True
 
             print('Loading ONNX file from path {}...'.format(onnx_file_path))
             with open(onnx_file_path, 'rb') as model:
-                parser.parse(model.read()) # TODO:FALSE
+                if not parser.parse(model.read()):
+                    print('ERROR: Failed to parse the ONNX file.')
+                    for error in range(parser.num_errors):
+                        print(parser.get_error(error))
+                    return None
             # last_layer = network.get_layer(network.num_layers - 1)
             # network.mark_output(last_layer.get_output(0))
             last_layer = network.get_layer(network.num_layers - 1)
@@ -145,34 +119,48 @@ def postprocess_the_outputs(h_outputs, shape_of_output):
     return h_outputs
 
 
-# These two modes are dependent on hardwares
-fp16_mode = False
-int8_mode = False
-trt_engine_path = 'yolov5.trt'
-# Build an engine
-engine = get_engine(max_batch_size, onnx_model_path, trt_engine_path, fp16_mode, int8_mode)
+def main():
+    filename = '/media/dell/data/voc/VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg'
+    max_batch_size = 1
+    onnx_model_path = 'yolov5_with_model.pth.onnx'
+    # These two modes are dependent on hardwares
+    fp16_mode = False
+    int8_mode = False
+    trt_engine_path = 'oldway_yolov5_with_model.pth.onnx.trt'
+    # Build an engine
+    engine = get_engine(max_batch_size, onnx_model_path, trt_engine_path, fp16_mode, int8_mode)
 
-# Create the context for this engine
-context = engine.create_execution_context()
-# Allocate buffers for input and output
-inputs, outputs, bindings, stream = allocate_buffers(engine)  # input, output: host # bindings
-start = time.time()
+    # Create the context for this engine
+    context = engine.create_execution_context()
+    # Allocate buffers for input and output
+    inputs, outputs, bindings, stream = allocate_buffers(engine)  # input, output: host # bindings
+    start = time.time()
 
-# Do inference
-img_np_nchw = get_img_np_nchw(filename)
-img_np_nchw = img_np_nchw.astype(dtype=np.float32)
+    # Do inference
+    img_np_nchw = get_img_np_nchw(filename)
+    img_np_nchw = img_np_nchw.astype(dtype=np.float32)
 
-# img_np_nchw = np.random.rand(1, 3, 640, 640)
+    # img_np_nchw = np.random.rand(1, 3, 640, 640)
 
-shape_of_output = (max_batch_size, 2)
-# Load data to the buffer
-inputs[0].host = img_np_nchw.reshape(-1)
+    shape_of_outputs = [(max_batch_size, 75, 80, 80), (max_batch_size, 75, 40, 40), (max_batch_size, 75, 20, 20), ]
+    # Load data to the buffer
+    inputs[0].host = img_np_nchw.reshape(-1)
 
-# inputs[1].host = ... for multiple input
-t1 = time.time()
-trt_outputs = do_inference(context, bindings=bindings, inputs=inputs, outputs=outputs, stream=stream)  # numpy data
-t2 = time.time()
-feat = postprocess_the_outputs(trt_outputs[0], shape_of_output)
-result = softmax(feat)
-score, index = np.max(result, axis=1), np.argmax(result, axis=1)
-print(score[0], index[0])
+    # inputs[1].host = ... for multiple input
+    t1 = time.time()
+    trt_outputs = do_inference(context, bindings=bindings, inputs=inputs, outputs=outputs, stream=stream)  # numpy data
+    t2 = time.time()
+    print('1 time of trt:', t2 - t1)
+    trt_pred = []
+    for trt_output, shape_of_output in zip(trt_outputs, shape_of_outputs):
+        trt_pred.append(postprocess_the_outputs(trt_output, shape_of_output))
+
+    model, y, model_path = pytorchmodel(imgdata=torch.from_numpy(get_img_np_nchw(filename)).cuda(), cuda=True)
+    dis = []
+    for i, yi in enumerate(y):
+        dis.append((trt_pred[i] - y[i].cpu().detach().numpy()).max())
+    print(dis)
+    a = 0
+
+if __name__ == '__main__':
+    main()

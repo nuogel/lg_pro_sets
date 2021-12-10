@@ -11,8 +11,9 @@ import time
 print(tensorrt.__version__)
 
 
-def get_img_np_nchw():
-    filename = '/media/dell/data/voc/VOCdevkit/VOC2007/JPEGImages/000005.jpg'
+def get_img_np_nchw(filename=None):
+    if filename == None:
+        filename = '/media/dell/data/voc/VOCdevkit/VOC2007/JPEGImages/000005.jpg'
     image = cv2.imread(filename)
     image_cv = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image_cv = cv2.resize(image_cv, (640, 640))
@@ -52,6 +53,7 @@ def _onnx_runtime(onnx_model_path, imgdata, times=1):
     input_name = sess.get_inputs()[0].name
     output_name = [sess.get_outputs()[0].name, sess.get_outputs()[1].name, sess.get_outputs()[2].name]
     imgdata = np.asarray(imgdata)
+    # imgdata = np.random.rand(1,3,640,640).astype(np.float32)
     t0 = time.time()
     for i in range(times):
         pred_onnx = sess.run(output_name, {input_name: imgdata})
@@ -73,13 +75,14 @@ def torch2onnx():
                           input_names=['img'],
                           output_names=["f1", 'f2', 'f3'],
                           enable_onnx_checker=True,
-                          opset_version=11,
+                          opset_version=11,  # default is 9, not support upsample_biliner2d...
                           do_constant_folding=False,
                           training=False)
-        # model = onnx.load(onnx_model_path)
-        # # Check that the IR is well formed
-        # onnx.checker.check_model(model)
-        # # Print a human readable representation of the graph
+        model = onnx.load(onnx_model_path)
+        # Check that the IR is well formed
+        onnx.checker.check_model(model)
+        print('onnx:passed')
+        # Print a human readable representation of the graph
         # onnx.helper.printable_graph(model.graph)
 
     onnx_pred = _onnx_runtime(onnx_model_path, imgdata, times=test_times)
@@ -87,6 +90,7 @@ def torch2onnx():
     for i, yi in enumerate(y):
         dis.append((onnx_pred[i] - y[i].cpu().detach().numpy()).max())
     print(dis)
+    a = 0
 
 
 def onnx2trt_with_code(onnx_model_path):  # failed
@@ -103,10 +107,11 @@ def torch2trt_lg():
     imgdata = get_img_np_nchw()
     x = torch.from_numpy(imgdata).cuda()
     model, y, model_path = pytorchmodel(x, cuda=True, times=test_times)
+    convert = 0
+    if convert:
+        model_trt = torch2trt(model, [x])
+        torch.save(model_trt.state_dict(), onnx_model_path + '.statedict_trt')
 
-    model_trt = torch2trt(model, [x])
-
-    torch.save(model_trt.state_dict(), onnx_model_path + '.statedict_trt')
     model_trt_2 = TRTModule()
     model_trt_2.load_state_dict(torch.load(onnx_model_path + '.statedict_trt'))
 
@@ -129,8 +134,8 @@ def trt_forward():
     use the state dict of trt directly ,as below:
     '''
     imgdata = get_img_np_nchw()
-    # x = torch.from_numpy(imgdata).cuda()
-    x = torch.rand((4, 3, 640, 640)).cuda()
+    x = torch.from_numpy(imgdata).cuda()
+    # x = torch.rand((4, 3, 640, 640)).cuda()
     model_trt_2 = TRTModule()
     model_trt_2.load_state_dict(torch.load(onnx_model_path + '.trt'))
     y_trt = model_trt_2(x)
@@ -140,7 +145,7 @@ if __name__ == '__main__':
     test_times = 1
     onnx_model_path = 'yolov5_with_model.pth.onnx'
     # trt_forward()
-    torch2onnx()
+    # torch2onnx()
     # onnx2trt_with_code(onnx_model_path)
     torch2trt_lg()
 '''

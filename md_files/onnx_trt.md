@@ -15,3 +15,8 @@ times-type | result(ms/img) |-
 100 times of pytorch-gpu |  26.613991260528564  |-
 100 times of tensorRt-gpu |  0.25597095489501953  |-
 
+# Q:
+- tensorRt 不支持nn.Hardswish() 改为 nn.ReLU()
+
+- tensorRt 不支持 nn.Upsample() :重写upsample function.
+

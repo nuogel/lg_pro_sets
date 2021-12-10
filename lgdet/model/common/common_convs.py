@@ -34,6 +34,22 @@ class Conv(nn.Module):
     def forward_fuse(self, x):
         return self.act(self.conv(x))
 
+class DeConv(nn.Module):
+    def __init__(self, c1, c2, k=2, s=2, act=False):  # ch_in, ch_out, kernel, stride, padding, groups
+        super(DeConv, self).__init__()
+        self.deconv = nn.ConvTranspose2d(in_channels=c1, out_channels=c2,
+                                         kernel_size=k, stride=s, groups=c2, padding=0,
+                                         output_padding=0, bias=act)
+        self.init_params()
+
+    def init_params(self):
+        shape = self.deconv.weight.data.shape
+        self.deconv.weight.data = torch.ones(shape)
+        self.deconv.requires_grad = False
+
+    def forward(self, x):
+        return self.deconv(x)
+
 
 class CBL(nn.Module):
     # Standard convolution
