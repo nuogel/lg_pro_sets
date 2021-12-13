@@ -49,8 +49,8 @@ TRAIN:
   LR_START: 0.01
   WARMUP_BIAS_LR: 0.1
   LR_FINAL_RATIO: 0.01
-  LR_SCHEDULE: 'cos' #'reduce'# 'lr''reduce'  #
-  STEP_LR: 50
+  LR_SCHEDULE: 'cos' #['reduce', 'step', 'cos']
+  STEP_LR: 100 # if step
 
   WEIGHT_DECAY: 0.0005
   MOMENTUM: 0.937
@@ -65,7 +65,7 @@ TRAIN:
   IOU_AWARE: 0
 
   # CUDA:
-  GPU_NUM: [0] #[] # if is [] means use CPU.
+  GPU_NUM: [ 0 ] #[] # if is [] means use CPU.
   DEVICE: 'gpu'
 
   # debug:
@@ -102,7 +102,7 @@ TEST:
 
   TEST_ONLY: 0
 
-  ONE_TEST: 1
+  ONE_TEST: 0
   ONE_TEST_TRAIN_STEP: 100
   ONE_TEST_TEST_STEP: 1
   ONE_NAME: [

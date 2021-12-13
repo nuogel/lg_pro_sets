@@ -133,7 +133,7 @@ class LgTransformer:
 
         return img, targets
 
-    def letter_box(self, img, label, data_info, new_shape=(416, 416), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
+    def letter_box(self, img, label, data_info={}, new_shape=(416, 416), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
         # Resize image to a 32-pixel-multiple rectangle https://github.com/ultralytics/yolov3/issues/232
         shape = img.shape[:2]  # current shape [height, width]
         if isinstance(new_shape, int):
@@ -163,12 +163,12 @@ class LgTransformer:
         top, bottom = int(round(pad_h - 0.1)), int(round(pad_h + 0.1))
         left, right = int(round(pad_w - 0.1)), int(round(pad_w + 0.1))
         img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
-
         labels = label.copy()
-        labels[:, 1] = ratio[0] * label[:, 1] + pad_w
-        labels[:, 2] = ratio[1] * label[:, 2] + pad_h
-        labels[:, 3] = ratio[0] * label[:, 3] + pad_w
-        labels[:, 4] = ratio[1] * label[:, 4] + pad_h
+        if labels:
+            labels[:, 1] = ratio[0] * label[:, 1] + pad_w
+            labels[:, 2] = ratio[1] * label[:, 2] + pad_h
+            labels[:, 3] = ratio[0] * label[:, 3] + pad_w
+            labels[:, 4] = ratio[1] * label[:, 4] + pad_h
 
         data_info['img_raw_size(h,w)'] = shape
         data_info['ratio(w,h)'] = np.asarray(ratio)  # new/old
@@ -190,7 +190,7 @@ class LgTransformer:
             if len(pre_labels[i]) == 0:
                 pre_labels_out.append([])
             else:
-                if pre_labels[i].is_cuda==True:
+                if pre_labels[i].is_cuda == True:
                     pre_label = pre_labels[i].cpu()
                 else:
                     pre_label = pre_labels[i]

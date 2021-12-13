@@ -188,7 +188,8 @@ def prepare_cfg(cfg, args, is_training=True):
 
         try:
             from lgdet.util.util_get_cls_names import _get_class_names
-            class_dict = _get_class_names(cfg.PATH.CLASSES_PATH)
+            classpath = os.path.join('../',os.getcwd())
+            class_dict = _get_class_names(classpath)
             class_names = []
             for k, v in class_dict.items():
                 if v not in class_names:
@@ -196,7 +197,7 @@ def prepare_cfg(cfg, args, is_training=True):
             cfg.TRAIN.CLASSES_NUM = len(class_names)
             cfg.TRAIN.CLASSES = class_names
         except EnvironmentError:
-            print('cfg.py trying get class number and classes faild.')
+            AttributeError('cfg.py trying get class number and classes faild.')
 
         ## config for FCOS:
         # backbone
