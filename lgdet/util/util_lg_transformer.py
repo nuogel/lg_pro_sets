@@ -163,13 +163,13 @@ class LgTransformer:
         top, bottom = int(round(pad_h - 0.1)), int(round(pad_h + 0.1))
         left, right = int(round(pad_w - 0.1)), int(round(pad_w + 0.1))
         img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
-        labels = label.copy()
-        if labels:
+        if label!=[]:
+            labels = label.copy()
             labels[:, 1] = ratio[0] * label[:, 1] + pad_w
             labels[:, 2] = ratio[1] * label[:, 2] + pad_h
             labels[:, 3] = ratio[0] * label[:, 3] + pad_w
             labels[:, 4] = ratio[1] * label[:, 4] + pad_h
-
+        else:labels=label
         data_info['img_raw_size(h,w)'] = shape
         data_info['ratio(w,h)'] = np.asarray(ratio)  # new/old
         data_info['padding(w,h)'] = np.asarray([pad_w, pad_h])

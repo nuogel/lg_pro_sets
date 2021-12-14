@@ -25,7 +25,7 @@ def _parse_arguments():
     parser.add_argument('--ema', default=0, type=int, help='ema')
     parser.add_argument('--number_works', '--nw', default=0, type=int, help='number works of dataloader')
     parser.add_argument('--debug', '--d', action='store_true', default=False, help='Enable verbose info')
-    parser.add_argument('--score_thresh', '--st', default=0.1, type=float, help='score_thresh')
+    parser.add_argument('--score_thresh', '--st', default=0.2, type=float, help='score_thresh')
 
     return parser.parse_args()
 
@@ -42,7 +42,6 @@ def main():
     score = False
     args = _parse_arguments()
     cfg = parse_yaml(args)
-
     Test = {'OBD': Test_OBD, 'ASR': Test_ASR, 'SRDN': Test_SRDN, 'VID': Test_VID, 'TTS': Test_TTS, }
     test = Test[cfg.BELONGS](cfg, args, train=None)
     test.test_run(files)

@@ -7,7 +7,7 @@ from lgdet.dataloader.Loader_ASR import ASR_Loader
 class RnnLoss:
     def __init__(self, cfg):
         self.cfg = cfg
-        self.loss_ctc = CTCLoss(reduction='sum', blank=0)
+        self.loss_ctc = CTCLoss(reduction='sum', blank=len('CHARS')-1)
         self.loss_mse = torch.nn.MSELoss(reduction='sum')
         self.data = ASR_Loader(cfg)
 

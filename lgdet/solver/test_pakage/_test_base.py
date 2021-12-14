@@ -24,6 +24,7 @@ class TestBase(BaseSolver):
         :param file_s:
         :return:
         """
+        if file_s == 'one_name': self.cfg.TEST.ONE_TEST = 1
         dataset = self.prase_file(file_s)
         DataSet = self.DataFun.make_dataset(train_dataset=None, test_dataset=dataset)[1]
         self.test_backbone(DataSet)

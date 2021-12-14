@@ -20,6 +20,8 @@ def prepare_cfg(cfg, args, is_training=True):
     try:
         if args.model:
             cfg.TRAIN.MODEL = args.model
+        if args.data_path:
+            cfg.PATH.INPUT_PATH = args.data_path
         if args.gpu:
             cfg.TRAIN.GPU_NUM = args.gpu
         if args.score_thresh:
@@ -188,7 +190,7 @@ def prepare_cfg(cfg, args, is_training=True):
 
         try:
             from lgdet.util.util_get_cls_names import _get_class_names
-            classpath = os.path.join('../',os.getcwd())
+            classpath = os.path.join(os.path.dirname(__file__),'../..',cfg.PATH.CLASSES_PATH)
             class_dict = _get_class_names(classpath)
             class_names = []
             for k, v in class_dict.items():

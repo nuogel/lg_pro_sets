@@ -9,10 +9,12 @@ class RotateImg:
     def __init__(self, AngleModelPb, AngleModelPbtxt):
         self.angle_net = cv2.dnn.readNetFromTensorflow(AngleModelPb, AngleModelPbtxt)  ##dnn 文字方向检测
 
-    def flip_img(self, img):
+    def flip_img(self, imgraw):
+        img = imgraw.copy()
+        img = cv2.resize(img, (1920, 1080))
         h, w = img.shape[:2]
         ROTATE = [0, 90, 180, 270]
-        adjust = False
+        adjust = True
         if adjust:
             thesh = 0.05
             xMin, yMin, xMax, yMax = int(thesh * w), int(thesh * h), w - int(thesh * w), h - int(thesh * h)
@@ -72,14 +74,17 @@ class RotateImg:
 
 if __name__ == '__main__':
     # imgdirs = '/media/dell/data/ocr/计费清单识别/仿真数据'
-    imgdirs = '/media/dell/data/ocr/计费清单识别/仿真数据正向/images'
+    imgdirs = '/media/dell/data/ocr/计费清单识别/集团-计费清单/images'  # '/media/dell/data/ocr/计费清单识别/仿真数据正向/images'
     AngleModelPb = '/home/dell/lg/code/lg_pro_sets/saved/checkpoint/Angle-model.pb'
     AngleModelPbtxt = '/home/dell/lg/code/lg_pro_sets/saved/checkpoint/Angle-model.pbtxt'
+    savepath = os.path.join(imgdirs, '..','rotate_ladon')
     rotate = RotateImg(AngleModelPb, AngleModelPbtxt)
     for imgp in os.listdir(imgdirs):
+        print('deeling', imgp)
+        # img = cv2.imread(os.path.join(imgdirs, '202470044499051718.jpg'))
         img = cv2.imread(os.path.join(imgdirs, imgp))
-        # angle_detect(img, angle_net, adjust=False)
         flip_img = rotate.flip_img(img)
         rotate_img = rotate.rotate_img(flip_img)
         cv2.imshow('img', rotate_img)
         cv2.waitKey()
+        cv2.imwrite(os.path.join(savepath, imgp), rotate_img)

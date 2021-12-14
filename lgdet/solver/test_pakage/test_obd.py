@@ -30,9 +30,9 @@ class Test_OBD(TestBase):
             timer.time_start()
             test_data = self.DataFun.to_devce(test_data)
             inputs, targets, data_infos = test_data
-            # predicts = self.model.forward(input_x=inputs, is_training=False)
-            predicts = self.model_trt_2(inputs)
-
+            predicts = self.model.forward(input_x=inputs, is_training=False)
+            predictsb = self.model_trt_2(inputs)
+            # dis = predictsb[0]-predicts[0]
             labels_pres = self.parsepredict.parse_predict(predicts)
             labels_pres = self.parsepredict.predict2labels(labels_pres, data_infos)
             batches = 1

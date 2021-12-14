@@ -1,5 +1,5 @@
 import torch.nn as nn
-
+import torch
 
 class BidirectionalLSTM(nn.Module):
 
@@ -84,3 +84,14 @@ class CRNN(nn.Module):
         output = self.rnn(conv)
 
         return output
+
+
+if __name__ == '__main__':
+    class cfg:
+        nc = 3
+        nclass = 10
+        nh = 256
+
+    crnn = CRNN(cfg)
+    x = torch.randn((4, 3, 32, 128))
+    out = crnn(x)
