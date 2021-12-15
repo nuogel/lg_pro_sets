@@ -1,6 +1,6 @@
 onnx 初探：https://mp.weixin.qq.com/s/H1tDcmrg0vTcSw9PgpgIIQ
-![img.png](img.png)
-![img_2.png](img_2.png)
+![img.png](util_imgs/img.png)
+![img_2.png](util_imgs/img_2.png)
 
 # onnx to trt
 cmd: onnx2trt resnet50.onnx -o resnet50.trt

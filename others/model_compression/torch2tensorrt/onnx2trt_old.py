@@ -122,11 +122,11 @@ def postprocess_the_outputs(h_outputs, shape_of_output):
 def main():
     filename = '/media/dell/data/voc/VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg'
     max_batch_size = 1
-    onnx_model_path = 'yolov5_with_model.pth.onnx'
+    onnx_model_path = 'tmp/yolov5_with_model.pth.onnx'
     # These two modes are dependent on hardwares
     fp16_mode = False
     int8_mode = False
-    trt_engine_path = 'oldway_yolov5_with_model.pth.onnx.trt'
+    trt_engine_path = 'tmp/oldway_yolov5_with_model.pth.onnx.trt'
     # Build an engine
     engine = get_engine(max_batch_size, onnx_model_path, trt_engine_path, fp16_mode, int8_mode)
 

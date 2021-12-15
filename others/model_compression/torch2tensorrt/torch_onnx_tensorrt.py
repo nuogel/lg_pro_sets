@@ -29,7 +29,7 @@ def get_img_np_nchw(filename=None):
 
 
 def pytorchmodel(imgdata, cuda=False, times=1):
-    model_path = 'yolov5_with_model.pth'
+    model_path = 'tmp/yolov5_with_model.pth'
     model = torch.load(model_path)
     model.eval()
     if cuda:
@@ -107,7 +107,7 @@ def torch2trt_lg():
     imgdata = get_img_np_nchw()
     x = torch.from_numpy(imgdata).cuda()
     model, y, model_path = pytorchmodel(x, cuda=True, times=test_times)
-    convert = 0
+    convert = 1
     if convert:
         model_trt = torch2trt(model, [x])
         torch.save(model_trt.state_dict(), onnx_model_path + '.statedict_trt')
@@ -143,9 +143,9 @@ def trt_forward():
 
 if __name__ == '__main__':
     test_times = 1
-    onnx_model_path = 'yolov5_with_model.pth.onnx'
+    onnx_model_path = 'tmp/yolov5_with_model.pth.onnx'
     # trt_forward()
-    # torch2onnx()
+    torch2onnx()
     # onnx2trt_with_code(onnx_model_path)
     torch2trt_lg()
 '''

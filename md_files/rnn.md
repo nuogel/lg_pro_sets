@@ -15,7 +15,7 @@ examples::
  output, (hn, cn) = rnn(input, (h0, c0))
 ```
 
-![img_1.png](img_1.png)
+![img_1.png](util_imgs/img_1.png)
 
 ## Linear
 ```python
