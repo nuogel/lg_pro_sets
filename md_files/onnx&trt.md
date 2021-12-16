@@ -20,3 +20,15 @@ times-type | result(ms/img) |-
 
 - tensorRt 不支持 nn.Upsample() :重写upsample function.
 
+#  TRT
+trt download: https://developer.nvidia.com/nvidia-tensorrt-download
+
+trt7.0 下载：https://developer.nvidia.com/nvidia-tensorrt-7x-download
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<TensorRT-${version}/lib>
+
+python install:
+
+cd TensorRT-${version}/python #有python.whl安装包。
+
+

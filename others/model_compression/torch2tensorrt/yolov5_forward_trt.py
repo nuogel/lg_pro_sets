@@ -3,6 +3,7 @@ import tensorrt
 import torch
 from torch2trt import torch2trt, TRTModule
 import onnx
+import threading
 import onnxruntime
 import cv2
 import numpy as np
@@ -50,9 +51,9 @@ class YOLOV5:
         self.parsepredict = ParsePredict(cfg)
         self.lgtransformer = LgTransformer(cfg)
         self.apolloclass2num = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
-        if trtpath:
-            self.model_trt_2 = TRTModule()
-            self.model_trt_2.load_state_dict(torch.load(trtpath))
+        # if trtpath:
+        #     self.model_trt_2 = TRTModule()
+        #     self.model_trt_2.load_state_dict(torch.load(trtpath))
         if onnxpath:
             self.sess = onnxruntime.InferenceSession(onnxpath)
             self.input_name = self.sess.get_inputs()[0].name
@@ -61,7 +62,7 @@ class YOLOV5:
     def preprocess(self, img):
         img, label, data_info = self.lgtransformer.letter_box(img, label=[], new_shape=self.inputshape, auto=False, scaleup=True)
         img, label = self.lgtransformer.transpose(img, None)
-        img = torch.unsqueeze(img, 0).cuda()
+        img = torch.unsqueeze(img, 0)
         return img, label, data_info
 
     def postprocess(self, predicts, img_input, data_info):
@@ -72,13 +73,20 @@ class YOLOV5:
 
     def forward_trt(self, img):
         img_input, labels, data_info = self.preprocess(img)
-        predicts = self.model_trt_2.forward(img_input)
+        self.img_input = img_input.cuda()
+
+        self.model_trt_2 = TRTModule()
+        self.model_trt_2.load_state_dict(torch.load(trtpath))
+        predicts = self.model_trt_2.forward(self.img_input)
         self.postprocess(predicts, img_input, data_info)
 
-    def forward_onnx(self, imgdata):
+    def forward_onnx(self, img):
         img_input, labels, data_info = self.preprocess(img)
-        predicts = self.sess.run(self.output_name, {self.input_name: imgdata})
-        self.postprocess(predicts, img_input, data_info)
+        predicts = self.sess.run(self.output_name, {self.input_name: np.asarray(img_input)})
+        predicts_torch = []
+        for predict in predicts:
+            predicts_torch.append(torch.from_numpy(predict).cuda())
+        self.postprocess(predicts_torch, img_input.cuda(), data_info)
 
 
 if __name__ == '__main__':
@@ -89,9 +97,14 @@ if __name__ == '__main__':
     cfg = parse_yaml(args)
     cfg, args = prepare_cfg(cfg, args, is_training=False)
     load_device(cfg)
-    yolov5 = YOLOV5(cfg, trtpath=trtpath, onnxpath=onnxpath)
 
     imgp = '/media/dell/data/voc/VOCdevkit/VOC2007/JPEGImages/000005.jpg'
     img = cv2.imread(imgp)
-    yolov5.forward_trt(img)
-    yolov5.forward_onnx(img)
+
+    trt1onnx0 = 1
+    if trt1onnx0:
+        yolov5 = YOLOV5(cfg, trtpath=trtpath)
+        yolov5.forward_trt(img)
+    else:
+        yolov5 = YOLOV5(cfg, onnxpath=onnxpath)
+        yolov5.forward_onnx(img)

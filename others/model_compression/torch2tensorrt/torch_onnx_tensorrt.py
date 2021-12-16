@@ -2,12 +2,14 @@ import tensorrt
 import torch
 from torch2trt import torch2trt, TRTModule
 import onnx
+from onnxsim import simplify
 import onnxruntime
 import cv2
 import numpy as np
 import onnx_tensorrt.backend as backend
 import time
-
+import sys
+sys.path.append('/home/dell/lg/code/lg_pro_sets')
 print(tensorrt.__version__)
 
 
@@ -80,12 +82,14 @@ def torch2onnx():
                           training=False)
         model = onnx.load(onnx_model_path)
         # Check that the IR is well formed
-        onnx.checker.check_model(model)
+        model_simp, check = simplify(model)
+        assert check, "Simplified ONNX model could not be validated"
+        onnx.save(model_simp, onnx_model_path+'_sim')
         print('onnx:passed')
         # Print a human readable representation of the graph
         # onnx.helper.printable_graph(model.graph)
 
-    onnx_pred = _onnx_runtime(onnx_model_path, imgdata, times=test_times)
+    onnx_pred = _onnx_runtime(onnx_model_path+'_sim', imgdata, times=test_times)
     dis = []
     for i, yi in enumerate(y):
         dis.append((onnx_pred[i] - y[i].cpu().detach().numpy()).max())
@@ -107,14 +111,16 @@ def torch2trt_lg():
     imgdata = get_img_np_nchw()
     x = torch.from_numpy(imgdata).cuda()
     model, y, model_path = pytorchmodel(x, cuda=True, times=test_times)
+    model.eval()
     convert = 1
     if convert:
-        model_trt = torch2trt(model, [x])
+        x_trt = torch.ones((1, 3, 640, 640)).cuda()
+        model_trt = torch2trt(model, [x_trt])
         torch.save(model_trt.state_dict(), onnx_model_path + '.statedict_trt')
 
     model_trt_2 = TRTModule()
     model_trt_2.load_state_dict(torch.load(onnx_model_path + '.statedict_trt'))
-
+    model_trt_2.eval()
     t0 = time.time()
     for i in range(test_times):
         print(i)
@@ -145,7 +151,7 @@ if __name__ == '__main__':
     test_times = 1
     onnx_model_path = 'tmp/yolov5_with_model.pth.onnx'
     # trt_forward()
-    torch2onnx()
+    # torch2onnx()
     # onnx2trt_with_code(onnx_model_path)
     torch2trt_lg()
 '''

@@ -21,14 +21,16 @@ def make_img_str():
 
 def test_function():
     host = '127.0.0.1:8000'
+    imgpath = os.path.join(os.path.dirname(__file__), '../../', 'datasets/e.g/000005.jpg')
+    imgfile = open(imgpath, 'rb')
     image_str = make_img_str()
-    data = {'img': image_str}
+    data = {'img': imgfile}
     url_get = [f"http://{host}/api_route/",
                f"http://{host}/path/int/{2}/",
                f"http://{host}/function/log/{10}/",
                f"http://{host}/function/sum/?a=2&b=3",
                ]
-    url_post = [f"http://{host}/image/shape_file",
+    url_post = [f"http://{host}/image/shape_byte",
                 ]
 
     test_get_response = requests.get(url_get[-1])
