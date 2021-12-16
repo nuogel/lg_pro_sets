@@ -1,4 +1,3 @@
-import pycuda.autoinit
 import numpy as np
 import pycuda.driver as cuda
 import tensorrt as trt
@@ -57,8 +56,8 @@ def get_engine(max_batch_size=1, onnx_file_path="", engine_file_path="", fp16_mo
                 builder.create_network(EXPLICIT_BATCH) as network, \
                 trt.OnnxParser(network, TRT_LOGGER) as parser:
 
-            builder.max_workspace_size = 1 << 30  # Your workspace size
-            builder.max_batch_size = max_batch_size
+            config = builder.create_builder_config()
+            config.max_workspace_size = 1<<30
             if int8_mode:
                 assert (builder.platform_has_fast_int8 == True), "not support int8"
                 builder.int8_mode = True
@@ -122,11 +121,11 @@ def postprocess_the_outputs(h_outputs, shape_of_output):
 def main():
     filename = '/media/dell/data/voc/VOCdevkit/VOC2007/trainval/JPEGImages/000005.jpg'
     max_batch_size = 1
-    onnx_model_path = 'tmp/yolov5_with_model.pth.onnx_sim'
+    onnx_model_path = 'tmp/yolov5_with_model.pth.onnx'
     # These two modes are dependent on hardwares
     fp16_mode = False
     int8_mode = False
-    trt_engine_path = 'tmp/oldway_yolov5_with_model.pth.onnx.trt'
+    trt_engine_path = 'tmp/yolov5_with_model.pth.onnx.trt_fp32'
     # Build an engine
     engine = get_engine(max_batch_size, onnx_model_path, trt_engine_path, fp16_mode, int8_mode)
 

@@ -1,6 +1,6 @@
 import tensorrt
 import torch
-from torch2trt import torch2trt, TRTModule
+# from torch2trt import torch2trt, TRTModule
 import onnx
 from onnxsim import simplify
 import onnxruntime
@@ -151,7 +151,7 @@ if __name__ == '__main__':
     test_times = 1
     onnx_model_path = 'tmp/yolov5_with_model.pth.onnx'
     # trt_forward()
-    # torch2onnx()
+    torch2onnx()
     # onnx2trt_with_code(onnx_model_path)
     torch2trt_lg()
 '''
