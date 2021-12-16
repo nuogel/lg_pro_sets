@@ -27,7 +27,6 @@ def allocate_buffers(engine):
     inputs = []
     outputs = []
     bindings = []
-    stream = cuda.Stream()
     for binding in engine:
         size = trt.volume(engine.get_binding_shape(binding)) * engine.max_batch_size
         dtype = trt.nptype(engine.get_binding_dtype(binding))
@@ -41,7 +40,7 @@ def allocate_buffers(engine):
             inputs.append(HostDeviceMem(host_mem, device_mem))
         else:
             outputs.append(HostDeviceMem(host_mem, device_mem))
-    return inputs, outputs, bindings, stream
+    return inputs, outputs, bindings
 
 
 def get_engine(max_batch_size=1, onnx_file_path="", engine_file_path="", fp16_mode=False, int8_mode=False,
@@ -57,7 +56,7 @@ def get_engine(max_batch_size=1, onnx_file_path="", engine_file_path="", fp16_mo
                 trt.OnnxParser(network, TRT_LOGGER) as parser:
 
             config = builder.create_builder_config()
-            config.max_workspace_size = 1<<30
+            config.max_workspace_size = 1 << 30
             if int8_mode:
                 assert (builder.platform_has_fast_int8 == True), "not support int8"
                 builder.int8_mode = True
@@ -102,9 +101,13 @@ def get_engine(max_batch_size=1, onnx_file_path="", engine_file_path="", fp16_mo
 
 def do_inference(context, bindings, inputs, outputs, stream, batch_size=1):
     # Transfer data from CPU to the GPU.
+    stream.synchronize()
+
     [cuda.memcpy_htod_async(inp.device, inp.host, stream) for inp in inputs]
+    stream.synchronize()
     # Run inference.
     context.execute_async(batch_size=batch_size, bindings=bindings, stream_handle=stream.handle)
+    stream.synchronize()
     # Transfer predictions back from the GPU.
     [cuda.memcpy_dtoh_async(out.host, out.device, stream) for out in outputs]
     # Synchronize the stream
@@ -128,11 +131,12 @@ def main():
     trt_engine_path = 'tmp/yolov5_with_model.pth.onnx.trt_fp32'
     # Build an engine
     engine = get_engine(max_batch_size, onnx_model_path, trt_engine_path, fp16_mode, int8_mode)
+    stream = cuda.Stream()
 
     # Create the context for this engine
     context = engine.create_execution_context()
     # Allocate buffers for input and output
-    inputs, outputs, bindings, stream = allocate_buffers(engine)  # input, output: host # bindings
+    inputs, outputs, bindings = allocate_buffers(engine)  # input, output: host # bindings
     start = time.time()
 
     # Do inference
@@ -160,6 +164,7 @@ def main():
         dis.append((trt_pred[i] - y[i].cpu().detach().numpy()).max())
     print(dis)
     a = 0
+
 
 if __name__ == '__main__':
     main()

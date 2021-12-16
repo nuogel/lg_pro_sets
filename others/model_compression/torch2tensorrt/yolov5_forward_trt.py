@@ -6,6 +6,7 @@ import onnx
 import threading
 import onnxruntime
 import cv2
+import pycuda.driver as cuda
 import numpy as np
 import onnx_tensorrt.backend as backend
 import time
@@ -20,7 +21,7 @@ from lgdet.util.util_lg_transformer import LgTransformer
 import sys
 from lgdet.config.cfg import prepare_cfg
 from lgdet.util.util_prepare_device import load_device
-from onnx2trt import get_engine, allocate_buffers, do_inference, postprocess_the_outputs
+from onnx2trt import get_engine, allocate_buffers, postprocess_the_outputs, do_inference
 
 sys.path.append('/home/dell/lg/code/lg_pro_sets')
 
@@ -61,9 +62,9 @@ class YOLOV5:
             self.output_name = [self.sess.get_outputs()[0].name, self.sess.get_outputs()[1].name, self.sess.get_outputs()[2].name]
         elif self.mode in ['trt_fp16', 'trt_fp32']:
             max_batch_size = 1
-            engine = get_engine(engine_file_path=path)
-            self.context = engine.create_execution_context()
-            self.inputs, self.outputs, self.bindings, self.stream = allocate_buffers(engine)  # input, output: host # bindings
+            self.engine = get_engine(engine_file_path=path)
+            self.context = self.engine.create_execution_context()
+            self.inputs, self.outputs, self.bindings = allocate_buffers(self.engine)  # input, output: host # bindings
             self.shape_of_outputs = [(max_batch_size, 75, 80, 80), (max_batch_size, 75, 40, 40), (max_batch_size, 75, 20, 20), ]
 
     def preprocess(self, img):
@@ -101,6 +102,8 @@ class YOLOV5:
 
     def forward_onnx2trt(self, img):
         img = np.asarray(img, dtype=np.float32)
+        self.inputs, self.outputs, self.bindings = allocate_buffers(self.engine)  # input, output: host # bindings
+        self.stream = cuda.Stream()
         self.inputs[0].host = img.reshape(-1)
         trt_outputs = do_inference(self.context, bindings=self.bindings, inputs=self.inputs, outputs=self.outputs, stream=self.stream)  # numpy data
         predicts = []
@@ -131,10 +134,10 @@ if __name__ == '__main__':
     cfg, args = prepare_cfg(cfg, args, is_training=False)
     load_device(cfg)
 
-    yolov5 = YOLOV5(cfg, onnx2trt16path)
+    yolov5 = YOLOV5(cfg, onnx2trt32path)
+    time0 = time.time()
     for imgp_i in os.listdir(imgp):
         img = cv2.imread(os.path.join(imgp, imgp_i))
-        time0 = time.time()
         yolov5.forward(img)
-        timeall = time.time() - time0
-        print('time cost:', timeall)
+    timeall = time.time() - time0
+    print('time cost:', timeall)
