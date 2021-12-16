@@ -1,7 +1,7 @@
 import os.path
-import tensorrt
+import tensorrt as trt
 import torch
-from torch2trt import torch2trt, TRTModule
+# from torch2trt import torch2trt, TRTModule
 import onnx
 import threading
 import onnxruntime
@@ -13,7 +13,6 @@ import cv2
 from lgdet.postprocess.parse_factory import ParsePredict
 from lgdet.util.util_show_img import _show_img
 from lgdet.util.util_time_stamp import Time
-from torch2trt import TRTModule
 import torch
 from lgdet.util.util_yml_parse import parse_yaml
 from argparse import ArgumentParser
@@ -21,6 +20,7 @@ from lgdet.util.util_lg_transformer import LgTransformer
 import sys
 from lgdet.config.cfg import prepare_cfg
 from lgdet.util.util_prepare_device import load_device
+from onnx2trt import get_engine, allocate_buffers, do_inference, postprocess_the_outputs
 
 sys.path.append('/home/dell/lg/code/lg_pro_sets')
 
@@ -45,19 +45,26 @@ def _parse_arguments():
 
 
 class YOLOV5:
-    def __init__(self, cfg, trtpath=None, onnxpath=None):
+    def __init__(self, cfg, path=None):
+        self.mode = path.split('.')[-1]
         self.cfg = cfg
         self.inputshape = (640, 640)
         self.parsepredict = ParsePredict(cfg)
         self.lgtransformer = LgTransformer(cfg)
         self.apolloclass2num = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
-        # if trtpath:
-        #     self.model_trt_2 = TRTModule()
-        #     self.model_trt_2.load_state_dict(torch.load(trtpath))
-        if onnxpath:
+
+        if self.mode == 'pth':
+            self.model_torch = torch.load(path)
+        elif self.mode == 'onnx':
             self.sess = onnxruntime.InferenceSession(onnxpath)
             self.input_name = self.sess.get_inputs()[0].name
             self.output_name = [self.sess.get_outputs()[0].name, self.sess.get_outputs()[1].name, self.sess.get_outputs()[2].name]
+        elif self.mode in ['trt_fp16', 'trt_fp32']:
+            max_batch_size = 1
+            engine = get_engine(engine_file_path=path)
+            self.context = engine.create_execution_context()
+            self.inputs, self.outputs, self.bindings, self.stream = allocate_buffers(engine)  # input, output: host # bindings
+            self.shape_of_outputs = [(max_batch_size, 75, 80, 80), (max_batch_size, 75, 40, 40), (max_batch_size, 75, 20, 20), ]
 
     def preprocess(self, img):
         img, label, data_info = self.lgtransformer.letter_box(img, label=[], new_shape=self.inputshape, auto=False, scaleup=True)
@@ -71,14 +78,36 @@ class YOLOV5:
         img_raw = [img]
         _show_img(img_raw, labelsp, img_in=img_input, cfg=self.cfg, is_training=False, relative_labels=False)
 
-    def forward_trt(self, img):
+    def forward(self, img):
         img_input, labels, data_info = self.preprocess(img)
-        self.img_input = img_input.cuda()
-
-        self.model_trt_2 = TRTModule()
-        self.model_trt_2.load_state_dict(torch.load(trtpath))
-        predicts = self.model_trt_2.forward(self.img_input)
+        if self.mode == 'pth':
+            predicts = self.forward_torch(img_input)
+        elif self.mode == 'onnx':
+            predicts = self.forward_onnx(img_input)
+        elif self.mode in ['trt_fp16', 'trt_fp32']:
+            predicts = self.forward_onnx2trt(img_input)
+        else:
+            print('error mode path...')
         self.postprocess(predicts, img_input, data_info)
+
+    def forward_torch(self, img):
+        predicts = self.model_torch.forward(img.cuda())
+        return predicts
+
+    def forward_torch2trt(self, img_input):
+        img_input = img_input.cuda()
+        predicts = self.model_trt_2.forward(img_input)
+        return predicts
+
+    def forward_onnx2trt(self, img):
+        img = np.asarray(img, dtype=np.float32)
+        self.inputs[0].host = img.reshape(-1)
+        trt_outputs = do_inference(self.context, bindings=self.bindings, inputs=self.inputs, outputs=self.outputs, stream=self.stream)  # numpy data
+        predicts = []
+        for trt_output, shape_of_output in zip(trt_outputs, self.shape_of_outputs):
+            trt_out = postprocess_the_outputs(trt_output, shape_of_output)
+            predicts.append(torch.from_numpy(trt_out).cuda())
+        return predicts
 
     def forward_onnx(self, img):
         img_input, labels, data_info = self.preprocess(img)
@@ -91,20 +120,21 @@ class YOLOV5:
 
 if __name__ == '__main__':
     score = False
-    trtpath = '/home/dell/lg/code/lg_pro_sets/others/model_compression/torch2tensorrt/tmp/yolov5_with_model.pth.onnx.statedict_trt'
+    torchpath = '/home/dell/lg/code/lg_pro_sets/others/model_compression/torch2tensorrt/tmp/yolov5_with_model.pth'
     onnxpath = '/home/dell/lg/code/lg_pro_sets/others/model_compression/torch2tensorrt/tmp/yolov5_with_model.pth.onnx'
+    torch2trtpath = '/home/dell/lg/code/lg_pro_sets/others/model_compression/torch2tensorrt/tmp/yolov5_with_model.pth.onnx.statedict_trt'
+    onnx2trt32path = '/home/dell/lg/code/lg_pro_sets/others/model_compression/torch2tensorrt/tmp/yolov5_with_model.pth.onnx.trt_fp32'
+    onnx2trt16path = '/home/dell/lg/code/lg_pro_sets/others/model_compression/torch2tensorrt/tmp/yolov5_with_model.pth.onnx.trt_fp16'
+    imgp = '/media/dell/data/voc/VOCdevkit/VOC2007/JPEGImages/'
     args = _parse_arguments()
     cfg = parse_yaml(args)
     cfg, args = prepare_cfg(cfg, args, is_training=False)
     load_device(cfg)
 
-    imgp = '/media/dell/data/voc/VOCdevkit/VOC2007/JPEGImages/000005.jpg'
-    img = cv2.imread(imgp)
-
-    trt1onnx0 = 1
-    if trt1onnx0:
-        yolov5 = YOLOV5(cfg, trtpath=trtpath)
-        yolov5.forward_trt(img)
-    else:
-        yolov5 = YOLOV5(cfg, onnxpath=onnxpath)
-        yolov5.forward_onnx(img)
+    yolov5 = YOLOV5(cfg, onnx2trt16path)
+    for imgp_i in os.listdir(imgp):
+        img = cv2.imread(os.path.join(imgp, imgp_i))
+        time0 = time.time()
+        yolov5.forward(img)
+        timeall = time.time() - time0
+        print('time cost:', timeall)
