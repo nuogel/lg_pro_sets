@@ -27,6 +27,7 @@ def allocate_buffers(engine):
     inputs = []
     outputs = []
     bindings = []
+    stream = cuda.Stream()
     for binding in engine:
         size = trt.volume(engine.get_binding_shape(binding)) * engine.max_batch_size
         dtype = trt.nptype(engine.get_binding_dtype(binding))
@@ -40,7 +41,7 @@ def allocate_buffers(engine):
             inputs.append(HostDeviceMem(host_mem, device_mem))
         else:
             outputs.append(HostDeviceMem(host_mem, device_mem))
-    return inputs, outputs, bindings
+    return inputs, outputs, bindings, stream
 
 
 def get_engine(max_batch_size=1, onnx_file_path="", engine_file_path="", fp16_mode=False, int8_mode=False,
@@ -101,13 +102,9 @@ def get_engine(max_batch_size=1, onnx_file_path="", engine_file_path="", fp16_mo
 
 def do_inference(context, bindings, inputs, outputs, stream, batch_size=1):
     # Transfer data from CPU to the GPU.
-    stream.synchronize()
-
     [cuda.memcpy_htod_async(inp.device, inp.host, stream) for inp in inputs]
-    stream.synchronize()
     # Run inference.
     context.execute_async(batch_size=batch_size, bindings=bindings, stream_handle=stream.handle)
-    stream.synchronize()
     # Transfer predictions back from the GPU.
     [cuda.memcpy_dtoh_async(out.host, out.device, stream) for out in outputs]
     # Synchronize the stream
