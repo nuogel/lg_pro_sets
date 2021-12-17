@@ -21,7 +21,7 @@ from lgdet.util.util_lg_transformer import LgTransformer
 import sys
 from lgdet.config.cfg import prepare_cfg
 from lgdet.util.util_prepare_device import load_device
-from onnx2trt import get_engine, allocate_buffers, postprocess_the_outputs, do_inference
+from common import get_engine, allocate_buffers, postprocess_the_outputs, do_inference
 
 sys.path.append('/home/dell/lg/code/lg_pro_sets')
 

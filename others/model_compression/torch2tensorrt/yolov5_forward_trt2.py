@@ -21,7 +21,7 @@ from lgdet.util.util_lg_transformer import LgTransformer
 import sys
 from lgdet.config.cfg import prepare_cfg
 from lgdet.util.util_prepare_device import load_device
-from onnx2trt import get_engine, allocate_buffers, postprocess_the_outputs, do_inference
+from common import get_engine, allocate_buffers, postprocess_the_outputs, do_inference
 
 sys.path.append('/home/dell/lg/code/lg_pro_sets')
 
@@ -84,9 +84,8 @@ if __name__ == '__main__':
     # engine = get_engine(engine_file_path=onnx2trt32path)
     # context = engine.create_execution_context()
     with get_engine(engine_file_path=onnx2trt32path) as engine, engine.create_execution_context() as context:
-        time0 = time.time()
+        inputs, outputs, bindings, stream = allocate_buffers(engine)  # input, output: host # bindings
         for imgp_i in os.listdir(imgp):
-            inputs, outputs, bindings, stream = allocate_buffers(engine)  # input, output: host # bindings
             img = cv2.imread(os.path.join(imgp, imgp_i))
             img_raw = img.copy()
             img_input, labels, data_info = prcess.preprocess(img)
@@ -98,6 +97,3 @@ if __name__ == '__main__':
                 trt_out = postprocess_the_outputs(trt_output, shape_of_output)
                 predicts.append(torch.from_numpy(trt_out).cuda())
             prcess.postprocess(predicts, img_input, img_raw, data_info)
-
-        timeall = time.time() - time0
-        print('time cost:', timeall)
