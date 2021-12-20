@@ -26,21 +26,24 @@ def func(a: float, b: float):
     return sum
 
 
-@app.post("/image/shape_byte")
-async def funcshape(img: bytes = File(...)):
-    nparr = np.fromstring(img, np.uint8)
-    img_decode = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    shape = img_decode.shape
-    return {'shape': shape}
+# @app.post("/image/shape_byte")
+# async def funcshape(img: bytes = File(...)):
+#     nparr = np.fromstring(img, np.uint8)
+#     img_decode = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+#     shape = img_decode.shape
+#     return {'shape': shape}
 
 
 @app.post("/image/shape_file")
 async def funcshape(img: UploadFile = File(...)):
-    img_bin = await img.read()
-    nparr = np.fromstring(img_bin, np.uint8)
-    img_decode = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    shape = img_decode.shape
-    return {'shape': shape}
+    try:
+        img_bin = await img.read()
+        nparr = np.fromstring(img_bin, np.uint8)
+        img_decode = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        shape = img_decode.shape
+        return {'code': 200, 'shape': shape}
+    except:
+        return {'code': 'err'}
 
 
 @app.api_route("/api_route")
