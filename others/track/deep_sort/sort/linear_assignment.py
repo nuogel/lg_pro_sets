@@ -5,7 +5,6 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment as linear_assignment
 from . import kalman_filter
 
-
 INFTY_COST = 1e+5
 
 
@@ -146,7 +145,9 @@ def matching_cascade(
 def gate_cost_matrix(
         kf, cost_matrix, tracks, detections, track_indices, detection_indices,
         gated_cost=INFTY_COST, only_position=False):
-    """Invalidate infeasible entries in cost matrix based on the state
+    """
+    参考：https://blog.csdn.net/weixin_38145317/article/details/104607062
+    Invalidate infeasible entries in cost matrix based on the state
     distributions obtained by Kalman filtering.
 
     Parameters
@@ -186,7 +187,14 @@ def gate_cost_matrix(
         [detections[i].to_xyah() for i in detection_indices])
     for row, track_idx in enumerate(track_indices):
         track = tracks[track_idx]
-        gating_distance = kf.gating_distance(
-            track.mean, track.covariance, measurements, only_position)
+
+        # 这里基于卡尔曼滤波器，预测了track的均值和方差，然后计算出了当前track与所有的检测目标detections之间的门距离
+        # 维度为1×len(detections),比若若有8个检测目标，[ 322 10292    4.88628601 3413 365 3709  1487  1102 ]
+        gating_distance = kf.gating_distance(track.mean, track.covariance, measurements, only_position)
+
+        # 原来的成本矩阵cost_matrix是根据余弦距离计算的，
+        # 现在对其值进行修订，修订的规则如下gating_distance > gating_threshold返回的是一个元素值为bool值的向量
+        # 即为[true,false,true...]这样的，然后将cost_matrix的相应行cost_matrix[row,:]在对应位置若为true,就把值替换为 gated_cost=100000
+        # 成本矩阵 cost_matrix每一行的元素代表某个target与所有检测目标detections的相似度，在这里根据gating_distance再来校正一下成本矩阵
         cost_matrix[row, gating_distance > gating_threshold] = gated_cost
     return cost_matrix

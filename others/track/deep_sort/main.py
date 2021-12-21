@@ -8,6 +8,41 @@ import random
 from lgdet.util.util_make_VisDrone2019_VID_dataset import make_VisDrone2019_VID_dataset
 
 
+def run_deep_sort_imglabels():
+    img_path = '../KCF/example3/demo_result/images'
+    lab_path = '../KCF/example3/demo_result/labels'
+    for img_p in range(1, len(os.listdir(img_path))):
+        id = '%05d' % img_p
+        # id = os.path.basename(img_p).split('.')[0]
+        imgpath_i = os.path.join(img_path, id + '.jpg')
+        frame = cv2.imread(imgpath_i)
+        lab_p = os.path.join(lab_path, id + '.txt')
+        lab_id = []
+        conf = []
+        cls = []
+        for line in open(lab_p).readlines():
+            tmps = line.strip().split(',')
+            l = float(tmps[0])
+            t = float(tmps[1])
+            w = float(tmps[2])
+            h = float(tmps[3])
+
+            x = l + w / 2
+            y = t + h / 2
+            # w = (x2 - x1)
+            # h = (y2 - y1)
+
+            lab_id.append([x, y, w, h])
+            conf.append(1)
+            cls.append(1)
+        if lab_id == []: continue
+        lab_id = np.asarray(lab_id)
+
+        tracked_detections = deep_sort.update(lab_id, conf, frame)
+        if tracked_detections == []: continue
+        _show_track(tracked_detections, frame)
+
+
 def run_deep_sort_AUTOAIR():
     img_path = 'F:\Projects\\auto_Airplane\TS02\\20191217_153659'
     lab_path = 'F:\Projects\\auto_Airplane\TS02\\20191217_153659_predicted_labels'
@@ -78,16 +113,16 @@ def _show_track(tracked_detections, frame):
         y2 = int(y2)
 
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 1)
-        cv2.putText(frame, '{}-{}'.format(class_dict[2], int(obj_id)), (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
+        cv2.putText(frame, '{}-{}'.format(class_dict[1], int(obj_id)), (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
     cv2.imshow('img', frame)
-    cv2.waitKey(1)
+    cv2.waitKey()
 
 
 if __name__ == '__main__':
     cmap = plt.get_cmap('tab20b')
-    bbox_palette = [cmap(i)[:3] for i in np.linspace(0, 1, 1000)]
+    bbox_palette = [cmap(i)[:3] for i in np.linspace(0, 1, 100)]
     random.shuffle(bbox_palette)
 
-    model_path = 'F:\LG\GitHub\lg_pro_sets\\tmp\checkpoint\sort\ckpt.t7'
+    model_path = '/home/dell/lg/code/lg_pro_sets/saved/checkpoint/ckpt.t7'
     deep_sort = DeepSort(model_path=model_path, )
-    run_deep_sort_VISDRONE()
+    run_deep_sort_imglabels()

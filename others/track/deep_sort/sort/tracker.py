@@ -93,9 +93,23 @@ class Tracker:
     def _match(self, detections):
 
         def gated_metric(tracks, dets, track_indices, detection_indices):
+            '''
+            基于外观信息和马氏距离，计算卡尔曼滤波预测的tracks和当前检测到的detections的成本矩阵
+            '''
+
             features = np.array([dets[i].feature for i in detection_indices])
             targets = np.array([tracks[i].track_id for i in track_indices])
             cost_matrix = self.metric.distance(features, targets)
+            '''
+            在track与新检测目标detection基于外观进行匹配时会得到一个成本矩阵cost_matrixr后，
+            利用马氏距离（Mahalanobis distance，实现在gating_distance),对外观相似度矩阵costing_matix进行修订;
+            
+            仅凭外观特征计算的相似度来判定两个物体为同一物体，可能误差还比较大，比如两个穿同款衣服的高度基本相同的人，
+            所以还需要结合这两个人的位置来进一步判断（依据就是：相邻两帧之间时间间隔很短，人不能会在两帧之间的物理位置差异特别大），
+            所以我们凭接着对某个track在当前帧的预测位置mean，让其与当前帧的目标detection的检测位置进行比较，
+            来判断其为同一个人的可能性,具体操作体现在gate_cost_matrix():
+
+            '''
             cost_matrix = linear_assignment.gate_cost_matrix(
                 self.kf, cost_matrix, tracks, dets, track_indices,
                 detection_indices)
