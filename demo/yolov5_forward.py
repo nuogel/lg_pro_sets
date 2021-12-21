@@ -21,7 +21,7 @@ from lgdet.util.util_lg_transformer import LgTransformer
 import sys
 from lgdet.config.cfg import prepare_cfg
 from lgdet.util.util_prepare_device import load_device
-from common import get_engine, allocate_buffers, postprocess_the_outputs, do_inference
+from others.compression.torch2tensorrt.common import get_engine, allocate_buffers, postprocess_the_outputs, do_inference
 
 sys.path.append('/home/dell/lg/code/lg_pro_sets')
 
@@ -121,7 +121,7 @@ class YOLOV5:
         self.postprocess(predicts_torch, img_input.cuda(), data_info)
 
 
-if __name__ == '__main__':
+def main():
     score = False
     torchpath = '/home/dell/lg/code/lg_pro_sets/others/model_compression/torch2tensorrt/tmp/yolov5_with_model.pth'
     onnxpath = '/home/dell/lg/code/lg_pro_sets/others/model_compression/torch2tensorrt/tmp/yolov5_with_model.pth.onnx'
@@ -134,10 +134,14 @@ if __name__ == '__main__':
     cfg, args = prepare_cfg(cfg, args, is_training=False)
     load_device(cfg)
 
-    yolov5 = YOLOV5(cfg, onnx2trt32path)
+    yolov5 = YOLOV5(cfg, torchpath)
     time0 = time.time()
     for imgp_i in os.listdir(imgp):
         img = cv2.imread(os.path.join(imgp, imgp_i))
         yolov5.forward(img)
     timeall = time.time() - time0
     print('time cost:', timeall)
+
+
+if __name__ == '__main__':
+    main()
