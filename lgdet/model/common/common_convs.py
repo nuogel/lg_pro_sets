@@ -34,20 +34,20 @@ class Conv(nn.Module):
     def forward_fuse(self, x):
         return self.act(self.conv(x))
 
+
 class DeConv(nn.Module):
-    def __init__(self, c1, c2, k=2, s=2, act=False):  # ch_in, ch_out, kernel, stride, padding, groups
+    def __init__(self, c1, c2, k=2, s=2, bias=False):  # ch_in, ch_out, kernel, stride, padding, groups
         super(DeConv, self).__init__()
-        self.deconv = nn.ConvTranspose2d(in_channels=c1, out_channels=c2,
-                                         kernel_size=k, stride=s, groups=c2, padding=0,
-                                         output_padding=0, bias=act)
+        self.deconv = nn.ConvTranspose2d(in_channels=c1, out_channels=c2, kernel_size=k, stride=s, groups=c2, padding=0, output_padding=0, bias=bias)
         self.init_params()
 
     def init_params(self):
         shape = self.deconv.weight.data.shape
         self.deconv.weight.data = torch.ones(shape)
-        self.deconv.requires_grad = False
+        self.deconv.weight.requires_grad = False
 
     def forward(self, x):
+        # assert self.deconv.weight.requires_grad == False
         return self.deconv(x)
 
 
@@ -58,7 +58,7 @@ class CBL(nn.Module):
         self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g, bias=False)
         self.bn = nn.BatchNorm2d(c2)
         # self.act = nn.Hardswish() if act else nn.Identity()
-        self.act = nn.ReLU() if act else nn.Identity()
+        self.act = nn.LeakyReLU(0.1, inplace=True) if act else nn.Identity()
 
     def forward(self, x):
         return self.act(self.bn(self.conv(x)))
@@ -85,26 +85,30 @@ class FocusConvLG(nn.Module):
         self.sliceconv1 = nn.Conv2d(in_channels=c1, out_channels=c1, kernel_size=2, stride=2, groups=c1, bias=False)
         self.sliceconv1.weight.data.fill_(0)
         self.sliceconv1.weight.data[:, :, 0, 0] = 1
-        self.sliceconv1.requires_grad = False
+        self.sliceconv1.weight.requires_grad = False
 
         self.sliceconv2 = nn.Conv2d(in_channels=c1, out_channels=c1, kernel_size=2, stride=2, groups=c1, bias=False)
         self.sliceconv2.weight.data.fill_(0)
         self.sliceconv2.weight.data[:, :, 1, 0] = 1
-        self.sliceconv2.requires_grad = False
+        self.sliceconv2.weight.requires_grad = False
 
         self.sliceconv3 = nn.Conv2d(in_channels=c1, out_channels=c1, kernel_size=2, stride=2, groups=c1, bias=False)
         self.sliceconv3.weight.data.fill_(0)
         self.sliceconv3.weight.data[:, :, 0, 1] = 1
-        self.sliceconv3.requires_grad = False
+        self.sliceconv3.weight.requires_grad = False
 
         self.sliceconv4 = nn.Conv2d(in_channels=c1, out_channels=c1, kernel_size=2, stride=2, groups=c1, bias=False)
         self.sliceconv4.weight.data.fill_(0)
         self.sliceconv4.weight.data[:, :, 1, 1] = 1
-        self.sliceconv4.requires_grad = False
+        self.sliceconv4.weight.requires_grad = False
 
     def forward(self, x):  # x(b,c,w,h) -> y(b,4c,w/2,h/2)
-        slice = torch.cat([x[..., ::2, ::2], x[..., 1::2, ::2], x[..., ::2, 1::2], x[..., 1::2, 1::2]], 1)
-
+        # slice = torch.cat([x[..., ::2, ::2], x[..., 1::2, ::2], x[..., ::2, 1::2], x[..., 1::2, 1::2]], 1)
+        # print('self.sliceconv1.requires_grad: ', self.sliceconv1.weight.requires_grad)
+        # print('self.sliceconv2.requires_grad: ', self.sliceconv2.weight.requires_grad)
+        # print('self.sliceconv3.requires_grad: ', self.sliceconv3.weight.requires_grad)
+        # print('self.sliceconv4.requires_grad: ', self.sliceconv4.weight.requires_grad)
+        # print('self.sliceconv4.weight.data', self.sliceconv4.weight.data)
         y1 = self.sliceconv1(x)
         y2 = self.sliceconv2(x)
         y3 = self.sliceconv3(x)
@@ -112,7 +116,7 @@ class FocusConvLG(nn.Module):
 
         out = torch.cat([y1, y2, y3, y4], dim=1)
 
-        assert slice.equal(out), 'slice.equal(out)->FALSE'
+        # assert slice.equal(out), 'slice.equal(out)->FALSE'
         return self.conv(out)
 
 

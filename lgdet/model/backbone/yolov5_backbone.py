@@ -1,5 +1,5 @@
 import torch.nn as nn
-from lgdet.model.common.common_convs import Focus, CBL, BottleneckCSP, SPP, Conv
+from lgdet.model.common.common_convs import FocusConvLG as Focus, CBL, BottleneckCSP, SPP, Conv
 
 
 class YOLOV5BACKBONE(nn.Module):
@@ -17,7 +17,6 @@ class YOLOV5BACKBONE(nn.Module):
             SPP(chs[7], chs[8], k=[5, 9, 13]),
             BottleneckCSP(chs[8], chs[9], n=csp[3], shortcut=False),
             CBL(chs[9], chs[10], k=1, s=1)  # concat
-
         )
 
     def forward(self, x):
