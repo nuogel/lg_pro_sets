@@ -34,6 +34,7 @@ python install:
 
 cd TensorRT-${version}/python #有python.whl安装包。
 
+---
 ### onnx2trt
 注：
 注意各个模型工具的版本匹配关系，曾花费2天时间找yolov5转出来的模型精度与torch的精度不匹配问题。way：卸载tensorrt7.2按照tensorrt8.0;卸载cudnn7.6安装cudnn8.2

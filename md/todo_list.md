@@ -1,0 +1,3 @@
+- [ ]  CTC loss 深入理解
+- [ ]  Transformer 深入理解
+- [ ] 
