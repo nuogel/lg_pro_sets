@@ -8,3 +8,7 @@ int main()
    cout << "Hello World"<<endl; // 输出 Hello World
    return 0;
 }
+
+// $ g++ hello.cpp
+// $ ./a.out
+//Hello World
