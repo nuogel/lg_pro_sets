@@ -16,7 +16,7 @@ def _get_train_test_dataset(cfg):
     label_files_list = []
     x_extend_name = os.path.basename(x_files[0]).split('.')[-1]
     y_extend_name = os.path.basename(label_files[0]).split('.')[-1]
-    if cfg.BELONGS == 'OBD':
+    if cfg.BELONGS == 'obd':
         class_map = _get_class_names(cfg.PATH.CLASSES_PATH)
         for label_file in label_files:
             file_name = os.path.basename(label_file).split('.')[0]

@@ -28,7 +28,7 @@ sys.path.append('/home/dell/lg/code/lg_pro_sets')
 
 def _parse_arguments():
     parser = ArgumentParser()
-    parser.add_argument('--type', default='OBD'  # SR_DN
+    parser.add_argument('--type', default='obd'  # SR_DN
                         , type=str, help='yml_path')
     parser.add_argument('--model', type=str, help='yml_path')
     parser.add_argument('--checkpoint', '--cp', default=1

@@ -15,9 +15,9 @@ class DataLoaderFactory:
         trainLoader, testLoader = None, None
         train_data, test_data = None, None
         if train_dataset:
-            train_data = build_from_cfg(DATALOADERS, self.cfg.BELONGS + '_Loader')(self.cfg, train_dataset, is_training=True)
+            train_data = build_from_cfg(DATALOADERS, self.cfg.BELONGS.upper() + '_Loader')(self.cfg, train_dataset, is_training=True)
             # sampler = GroupSampler(train_data, self.cfg.TRAIN.BATCH_SIZE) if shuffle is False else None
-            if self.cfg.BELONGS == 'VID': shuffle = False
+            if self.cfg.BELONGS == 'vid': shuffle = False
             trainLoader = DataLoader(dataset=train_data,
                                      batch_size=self.cfg.TRAIN.BATCH_SIZE,
                                      sampler=None,
@@ -29,7 +29,7 @@ class DataLoaderFactory:
 
         if test_dataset:
             # test_data = get_loader_class(self.cfg.BELONGS)(self.cfg)
-            test_data = build_from_cfg(DATALOADERS, self.cfg.BELONGS + '_Loader')(self.cfg, test_dataset, is_training=False)
+            test_data = build_from_cfg(DATALOADERS, self.cfg.BELONGS.upper() + '_Loader')(self.cfg, test_dataset, is_training=False)
             testLoader = DataLoader(dataset=test_data,
                                     batch_size=self.cfg.TRAIN.BATCH_SIZE,
                                     num_workers=self.args.number_works,

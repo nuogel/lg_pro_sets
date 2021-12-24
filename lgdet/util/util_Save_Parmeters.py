@@ -87,7 +87,7 @@ class TxbLogger:
             self.tbX_writer.add_text('class_dict', lines, epoch)
         except:
             pass
-        config_path = 'cfg/' + self.cfg.BELONGS + '.yml'
+        config_path = 'cfg/' + self.cfg.BELONGS.lower() + '.yml'
         config_lines = open(config_path, 'r').read().replace('\n', '\n\n')
         self.tbX_writer.add_text('config', config_lines, epoch)
 
@@ -197,7 +197,7 @@ if __name__ == "__main__":
 
     def _parse_arguments():
         parser = ArgumentParser()
-        parser.add_argument('--type', default='OBD', type=str, help='yml_path')
+        parser.add_argument('--type', default='obd', type=str, help='yml_path')
         return parser.parse_args()
 
 

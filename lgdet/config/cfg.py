@@ -87,7 +87,7 @@ def prepare_cfg(cfg, args, is_training=True):
             print('cfg.py trying get class number and classes faild.')
 
 
-    elif cfg.BELONGS in ['OBD', ]:
+    elif cfg.BELONGS in ['obd', ]:
         if cfg.TEST.MAP_FSCORE == 0:
             cfg.TEST.SCORE_THRESH = 0.05
         # single level anchor box config for VOC and COCO

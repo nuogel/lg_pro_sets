@@ -1,5 +1,5 @@
 def get_score_class(belongs):
-    if belongs == 'VID': belongs = 'OBD'
+    if belongs == 'VID': belongs = 'obd'
     class_name = 'Score_' + str(belongs).upper()
     model_file = __import__('lgdet.score.' + class_name, fromlist=[class_name])
     model_class = _get_sub_model(model_file, 'Score')
@@ -28,7 +28,7 @@ def get_loss_class(belongs, modelname):
     elif belongs == 'IMC':
         from lgdet.loss.loss_imc import IMCLoss
         return IMCLoss
-    elif belongs == 'OBD':
+    elif belongs == 'obd':
         if modelname == 'yolov3':
             from lgdet.loss.loss_yolo_v3 import YoloLoss
             return YoloLoss
