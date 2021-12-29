@@ -21,9 +21,49 @@
   ![img.png](util_imgs/img_16.png)
 ### Transformer
 ![img.png](util_imgs/img_15.png)
-- word embedding & positional encoding
+- word embedding
+  文字->字向量的转换Word2Vec
+- positional encoding
+  eg:吃饭没、没吃饭、没饭吃、饭吃没、饭没吃，同样三个字，顺序颠倒，所表达的含义就不同了。
+  记录词的位置信息：Tranformer 采用的是 sin-cos 规则，使用了 sin 和 cos 函数的线性变换来提供给模型位置信息.
+  ![img.png](util_imgs/img_19.png)
+    ```python
+    # 导入依赖库
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import math
+    
+    def get_positional_encoding(max_seq_len, embed_dim):
+        # 初始化一个positional encoding
+        # embed_dim: 字嵌入的维度
+        # max_seq_len: 最大的序列长度
+        positional_encoding = np.array([
+            [pos / np.power(10000, 2 * i / embed_dim) for i in range(embed_dim)]
+            if pos != 0 else np.zeros(embed_dim) for pos in range(max_seq_len)])
+        positional_encoding[1:, 0::2] = np.sin(positional_encoding[1:, 0::2])  # dim 2i 偶数
+        positional_encoding[1:, 1::2] = np.cos(positional_encoding[1:, 1::2])  # dim 2i+1 奇数
+        # 归一化, 用位置嵌入的每一行除以它的模长
+        # denominator = np.sqrt(np.sum(position_enc**2, axis=1, keepdims=True))
+        # position_enc = position_enc / (denominator + 1e-8)
+        return positional_encoding
+        
+    positional_encoding = get_positional_encoding(max_seq_len=100, embed_dim=16)
+    plt.figure(figsize=(10,10))
+    sns.heatmap(positional_encoding)
+    plt.title("Sinusoidal Function")
+    plt.xlabel("hidden dimension")
+    plt.ylabel("sequence length")
+    
+    ```
+  最后，[x_embedding] = [word embedding]+[positional encoding]
+- 做self-attention（略）
 - Add与Layer Normalization\
- layer normalization 可以避免batch不同的影响（batch normalization），计算时与其他句子无关
+  layer normalization 可以避免batch不同的影响（batch normalization），计算时与其他句子无关
+- forward\
+  其实就是两层线性映射并用激活函数激活，比如说ReLU.
+  
+
   
 
 
