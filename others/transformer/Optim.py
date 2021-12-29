@@ -1,5 +1,7 @@
 import torch
 import numpy as np
+
+
 # code from AllenNLP
 
 class CosineWithRestarts(torch.optim.lr_scheduler._LRScheduler):
@@ -52,14 +54,14 @@ class CosineWithRestarts(torch.optim.lr_scheduler._LRScheduler):
 
         lrs = [
             (
-                self.eta_min + ((lr - self.eta_min) / 2) *
-                (
-                    np.cos(
-                        np.pi *
-                        ((self._cycle_counter) % self._updated_cycle_len) /
-                        self._updated_cycle_len
-                    ) + 1
-                )
+                    self.eta_min + ((lr - self.eta_min) / 2) *
+                    (
+                            np.cos(
+                                np.pi *
+                                ((self._cycle_counter) % self._updated_cycle_len) /
+                                self._updated_cycle_len
+                            ) + 1
+                    )
             ) for lr in self.base_lrs
         ]
 

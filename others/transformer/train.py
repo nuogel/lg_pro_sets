@@ -48,7 +48,7 @@ def train_model(model, opt):
                 avg_loss = total_loss / opt.printevery
                 if opt.floyd is False:
                     print("   %dm: epoch %d/%d [%s%s]  %d%%  loss = %.3f" % \
-                          ((time.time() - start) // 60, i,epoch + 1, "".join('#' * (p // 5)), "".join(' ' * (20 - (p // 5))), p, avg_loss), end='\r')
+                          ((time.time() - start) // 60, i, epoch + 1, "".join('#' * (p // 5)), "".join(' ' * (20 - (p // 5))), p, avg_loss), end='\r')
                 else:
                     print("   %dm: epoch %d [%s%s]  %d%%  loss = %.3f" % \
                           ((time.time() - start) // 60, epoch + 1, "".join('#' * (p // 5)), "".join(' ' * (20 - (p // 5))), p, avg_loss))
