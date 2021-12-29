@@ -191,10 +191,12 @@ result：the backward waste a lot of time.
 
 
 ### pre-trained or not 
-model | data set| epochs| lr schedule| MAP |F-score
----|---|---|---|---|---
-lrf300|VOC2017|230|reduce| 32.5%| 0.457
-lrf300|VOC2017|80|reduce |58%|0.69
+model | data set| epochs| lr schedule|pre-trained| MAP50 | MAP50:90 |F-score
+---|---|---|---|---|---|---|---
+lrf300|VOC2017|230|reduce|-|-| 32.5%| 0.457
+lrf300|VOC2017|80|reduce| -|-| 58%|0.69
+yolov5s-lg|VOC2017|100|cos |coco| 0.773|0.492|-
+
 
 result: the model with pre-trained weight is much better than with weight initiation schedule.
 ### Problems

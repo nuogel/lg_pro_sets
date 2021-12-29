@@ -40,7 +40,6 @@ def test_function():
     else:
         print(test_get_response)
 
-
     otherhost = 'http://172.31.3.213:8080/api/test'
     dummy_traceID = str(uuid.uuid4())
     test_post_response = requests.post(url=otherhost, files=data, headers={"X-B3-Traceid": dummy_traceID})
@@ -50,5 +49,24 @@ def test_function():
         print(test_post_response)
 
 
+def request_main():
+    host_port = '172.31.3.213:8080'
+    func = 'analyze'
+    url = f"http://{host_port}/{func}"
+
+    imgpath = os.path.join(os.path.dirname(__file__), '../../', 'datasets/e.g/000005.jpg')
+    imgfile = open(imgpath, 'rb')
+    data = {'file': imgfile}
+    headers = {
+        "token": "c0b8f5af62c92138"
+    }
+    test_get_response = requests.post(url=url, files=data, headers=headers)
+    if test_get_response.status_code == 200:
+        print(json.loads(test_get_response.content.decode('utf-8')))
+    else:
+        print(test_get_response)
+
+
 if __name__ == '__main__':
-    test_function()
+    # test_function()
+    request_main()
