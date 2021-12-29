@@ -101,7 +101,7 @@ python test.py --yml_path xxx --checkpoint xxx
 OBD:
 The result of F1-score of Car in KITTI DATA SET.
 
-networks |dataset| input size |  F1-SCORE |mAP| weight size| PS
+networks |dataset| input size |  F1-SCORE |mAP0.5| weight size| PS
  --- | --- |--- | --- |  --- |---|---
 yolov2|KITTI|512x768|0.86|X|58.5 M|used 16 Anchors.
 yolov3|KITTI|384x960|0.9|X|136 M|收敛快，效果好
@@ -113,7 +113,9 @@ yolonano|KITTI|X|X|...|11M
 refinedet |KITTI| 512x768 | 0.91|X|129 M|收敛快，效果好
 efficientdet_b0|KITTI|512x768|0.9|X|42.7M|收敛快，效果好
 ssd|KITTI|512x768|0.8904|X|94.7 M|收敛慢，效果好
-yolov5|voc+|640x640|...|0.489(resize onley)->0.52(masic only)|20|debug中
+yolov5s-lg|voc+|640x640|...|0.489(resize onley)->0.52(masic only)|20|debug中
+yolov5s-lg|VOC+|640x640|- | 0.773(0.492:0.5-0.90)|20|pretrained by coco
+
 
 
 
@@ -203,6 +205,5 @@ result: the model with pre-trained weight is much better than with weight initia
 1、when I train YOLOV3 with  voc2007 with focal loss, the obj loss is not going down, it seems that the gradient vanished.
  
  
-### TODO
-add networks:
-yolo nano
+### TODOLIST
+-[x] add yolo nano
