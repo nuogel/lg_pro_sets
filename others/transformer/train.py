@@ -28,9 +28,9 @@ def train_model(model, opt):
 
         for i, batch in enumerate(opt.train):
 
-            src = batch.src.transpose(0, 1)
-            trg = batch.trg.transpose(0, 1)
-            trg_input = trg[:, :-1]
+            src = batch.src.transpose(0, 1).cuda()
+            trg = batch.trg.transpose(0, 1).cuda()
+            trg_input = trg[:, :-1].cuda()
             src_mask, trg_mask = create_masks(src, trg_input, opt)
             preds = model(src, trg_input, src_mask, trg_mask)
             ys = trg[:, 1:].contiguous().view(-1)
@@ -47,8 +47,8 @@ def train_model(model, opt):
                 p = int(100 * (i + 1) / opt.train_len)
                 avg_loss = total_loss / opt.printevery
                 if opt.floyd is False:
-                    print("   %dm: epoch %d [%s%s]  %d%%  loss = %.3f" % \
-                          ((time.time() - start) // 60, epoch + 1, "".join('#' * (p // 5)), "".join(' ' * (20 - (p // 5))), p, avg_loss), end='\r')
+                    print("   %dm: epoch %d/%d [%s%s]  %d%%  loss = %.3f" % \
+                          ((time.time() - start) // 60, i,epoch + 1, "".join('#' * (p // 5)), "".join(' ' * (20 - (p // 5))), p, avg_loss), end='\r')
                 else:
                     print("   %dm: epoch %d [%s%s]  %d%%  loss = %.3f" % \
                           ((time.time() - start) // 60, epoch + 1, "".join('#' * (p // 5)), "".join(' ' * (20 - (p // 5))), p, avg_loss))
@@ -66,9 +66,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-src_data', default='data/english.txt')
     parser.add_argument('-trg_data', default='data/french.txt')
-    parser.add_argument('-src_lang', default='en')
-    parser.add_argument('-trg_lang', default='fr')
-    parser.add_argument('-no_cuda', action='store_true')
+    parser.add_argument('-src_lang', default="en_core_web_sm")
+    parser.add_argument('-trg_lang', default='fr_core_news_sm')
+    parser.add_argument('-no_cuda', default=False)
     parser.add_argument('-SGDR', action='store_true')
     parser.add_argument('-epochs', type=int, default=20)
     parser.add_argument('-d_model', type=int, default=512)
@@ -76,8 +76,8 @@ def main():
     parser.add_argument('-heads', type=int, default=8)
     parser.add_argument('-dropout', type=int, default=0.1)
     parser.add_argument('-batchsize', type=int, default=64)
-    parser.add_argument('-printevery', type=int, default=100)
-    parser.add_argument('-lr', type=int, default=0.0001)
+    parser.add_argument('-printevery', type=int, default=10)
+    parser.add_argument('-lr', type=int, default=0.001)
     parser.add_argument('-load_weights')
     parser.add_argument('-create_valset', action='store_true')
     parser.add_argument('-max_strlen', type=int, default=80, help=' sentenced with more words will not be included in dataset (default=80)')
