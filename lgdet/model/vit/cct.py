@@ -89,6 +89,7 @@ class TransformerEncoderLayer(nn.Module):
     Inspired by torch.nn.TransformerEncoderLayer and
     rwightman's timm package.
     """
+
     def __init__(self, d_model, nhead, dim_feedforward=2048, dropout=0.1,
                  attention_dropout=0.1, drop_path_rate=0.1):
         super(TransformerEncoderLayer, self).__init__()
@@ -96,10 +97,10 @@ class TransformerEncoderLayer(nn.Module):
         self.self_attn = Attention(dim=d_model, num_heads=nhead,
                                    attention_dropout=attention_dropout, projection_dropout=dropout)
 
-        self.linear1  = nn.Linear(d_model, dim_feedforward)
+        self.linear1 = nn.Linear(d_model, dim_feedforward)
         self.dropout1 = nn.Dropout(dropout)
-        self.norm1    = nn.LayerNorm(d_model)
-        self.linear2  = nn.Linear(dim_feedforward, d_model)
+        self.norm1 = nn.LayerNorm(d_model)
+        self.linear2 = nn.Linear(dim_feedforward, d_model)
         self.dropout2 = nn.Dropout(dropout)
 
         self.drop_path = DropPath(drop_path_rate) if drop_path_rate > 0 else nn.Identity()
@@ -139,6 +140,7 @@ class DropPath(nn.Module):
     Obtained from: github.com:rwightman/pytorch-image-models
     Drop paths (Stochastic Depth) per sample  (when applied in main path of residual blocks).
     """
+
     def __init__(self, drop_prob=None):
         super(DropPath, self).__init__()
         self.drop_prob = drop_prob
@@ -336,4 +338,3 @@ class CCT(nn.Module):
     def forward(self, x):
         x = self.tokenizer(x)
         return self.classifier(x)
-

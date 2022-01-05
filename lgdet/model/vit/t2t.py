@@ -7,24 +7,29 @@ from vit_pytorch.vit import Transformer
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
+
 # helpers
 
 def exists(val):
     return val is not None
 
+
 def conv_output_size(image_size, kernel_size, stride, padding):
     return int(((image_size - kernel_size + (2 * padding)) / stride) + 1)
+
 
 # classes
 
 class RearrangeImage(nn.Module):
     def forward(self, x):
-        return rearrange(x, 'b (h w) c -> b c h w', h = int(math.sqrt(x.shape[1])))
+        return rearrange(x, 'b (h w) c -> b c h w', h=int(math.sqrt(x.shape[1])))
+
 
 # main class
 
 class T2TViT(nn.Module):
-    def __init__(self, *, image_size, num_classes, dim, depth = None, heads = None, mlp_dim = None, pool = 'cls', channels = 3, dim_head = 64, dropout = 0., emb_dropout = 0., transformer = None, t2t_layers = ((7, 4), (3, 2), (3, 2))):
+    def __init__(self, *, image_size, num_classes, dim, depth=None, heads=None, mlp_dim=None, pool='cls', channels=3, dim_head=64, dropout=0., emb_dropout=0.,
+                 transformer=None, t2t_layers=((7, 4), (3, 2), (3, 2))):
         super().__init__()
         assert pool in {'cls', 'mean'}, 'pool type must be either cls (cls token) or mean (mean pooling)'
 
@@ -39,9 +44,9 @@ class T2TViT(nn.Module):
 
             layers.extend([
                 RearrangeImage() if not is_first else nn.Identity(),
-                nn.Unfold(kernel_size = kernel_size, stride = stride, padding = stride // 2),
+                nn.Unfold(kernel_size=kernel_size, stride=stride, padding=stride // 2),
                 Rearrange('b c n -> b n c'),
-                Transformer(dim = layer_dim, heads = 1, depth = 1, dim_head = layer_dim, mlp_dim = layer_dim, dropout = dropout),
+                Transformer(dim=layer_dim, heads=1, depth=1, dim_head=layer_dim, mlp_dim=layer_dim, dropout=dropout),
             ])
 
         layers.append(nn.Linear(layer_dim, dim))
@@ -69,14 +74,14 @@ class T2TViT(nn.Module):
         x = self.to_patch_embedding(img)
         b, n, _ = x.shape
 
-        cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
+        cls_tokens = repeat(self.cls_token, '() n d -> b n d', b=b)
         x = torch.cat((cls_tokens, x), dim=1)
         x += self.pos_embedding
         x = self.dropout(x)
 
         x = self.transformer(x)
 
-        x = x.mean(dim = 1) if self.pool == 'mean' else x[:, 0]
+        x = x.mean(dim=1) if self.pool == 'mean' else x[:, 0]
 
         x = self.to_latent(x)
         return self.mlp_head(x)

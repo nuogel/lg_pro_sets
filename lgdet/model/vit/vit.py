@@ -97,7 +97,7 @@ class VIT(nn.Module):
             self.cfg = cfg
             image_size = cfg.TRAIN.IMG_SIZE
         else:
-            image_size = (640, 640)
+            image_size = (320, 320)
         patch_size = 32
         num_classes = 10
         dim = 16
@@ -162,7 +162,7 @@ class VIT(nn.Module):
 
 
 if __name__ == '__main__':
-    x = torch.randn(4, 3, 640, 640)
+    x = torch.randn(4, 3, 320, 320)
     vit = VIT()
     y = vit(x)
     print(y.shape)

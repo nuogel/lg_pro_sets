@@ -6,14 +6,17 @@ import torch.nn.functional as F
 
 from einops import rearrange, repeat, reduce
 
+
 # helpers
 
 def exists(val):
     return val is not None
 
+
 def prob_mask_like(t, prob):
     batch, seq_length, _ = t.shape
     return torch.zeros((batch, seq_length)).float().uniform_(0, 1) < prob
+
 
 def get_mask_subset_with_prob(patched_input, prob):
     batch, seq_len, _, device = *patched_input.shape, patched_input.device
@@ -32,13 +35,13 @@ def get_mask_subset_with_prob(patched_input, prob):
 
 class MPPLoss(nn.Module):
     def __init__(
-        self,
-        patch_size,
-        channels,
-        output_channel_bits,
-        max_pixel_val,
-        mean,
-        std
+            self,
+            patch_size,
+            channels,
+            output_channel_bits,
+            max_pixel_val,
+            mean,
+            std
     ):
         super().__init__()
         self.patch_size = patch_size
@@ -58,16 +61,16 @@ class MPPLoss(nn.Module):
             target = target * self.std + self.mean
 
         # reshape target to patches
-        target = target.clamp(max = mpv) # clamp just in case
-        avg_target = reduce(target, 'b c (h p1) (w p2) -> b (h w) c', 'mean', p1 = p, p2 = p).contiguous()
+        target = target.clamp(max=mpv)  # clamp just in case
+        avg_target = reduce(target, 'b c (h p1) (w p2) -> b (h w) c', 'mean', p1=p, p2=p).contiguous()
 
-        channel_bins = torch.arange(bin_size, mpv, bin_size, device = device)
+        channel_bins = torch.arange(bin_size, mpv, bin_size, device=device)
         discretized_target = torch.bucketize(avg_target, channel_bins)
 
-        bin_mask = (2 ** bits) ** torch.arange(0, c, device = device).long()
+        bin_mask = (2 ** bits) ** torch.arange(0, c, device=device).long()
         bin_mask = rearrange(bin_mask, 'c -> () () c')
 
-        target_label = torch.sum(bin_mask * discretized_target, dim = -1)
+        target_label = torch.sum(bin_mask * discretized_target, dim=-1)
 
         loss = F.cross_entropy(predicted_patches[mask], target_label[mask])
         return loss
@@ -78,18 +81,18 @@ class MPPLoss(nn.Module):
 
 class MPP(nn.Module):
     def __init__(
-        self,
-        transformer,
-        patch_size,
-        dim,
-        output_channel_bits=3,
-        channels=3,
-        max_pixel_val=1.0,
-        mask_prob=0.15,
-        replace_prob=0.5,
-        random_patch_prob=0.5,
-        mean=None,
-        std=None
+            self,
+            transformer,
+            patch_size,
+            dim,
+            output_channel_bits=3,
+            channels=3,
+            max_pixel_val=1.0,
+            mask_prob=0.15,
+            replace_prob=0.5,
+            random_patch_prob=0.5,
+            mean=None,
+            std=None
     ):
         super().__init__()
         self.transformer = transformer
@@ -97,7 +100,7 @@ class MPP(nn.Module):
                             max_pixel_val, mean, std)
 
         # output transformation
-        self.to_bits = nn.Linear(dim, 2**(output_channel_bits * channels))
+        self.to_bits = nn.Linear(dim, 2 ** (output_channel_bits * channels))
 
         # vit related dimensions
         self.patch_size = patch_size
@@ -130,7 +133,7 @@ class MPP(nn.Module):
         # if random token probability > 0 for mpp
         if self.random_patch_prob > 0:
             random_patch_sampling_prob = self.random_patch_prob / (
-                1 - self.replace_prob)
+                    1 - self.replace_prob)
             random_patch_prob = prob_mask_like(input,
                                                random_patch_sampling_prob).to(mask.device)
 

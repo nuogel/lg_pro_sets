@@ -32,7 +32,8 @@
 - 训练完成teacher；
 - 建立student模型；
 - teacher&student推理image得到结果,做改进softmax运算
-- teacher&student求损失loss_soft+student单独的损失loss_hard
+- 求distill_loss = teacher&student求损失[loss_soft] or teacher取argmax&student求损失[loss_hard]
+- total loss = student单独的损失[loss]+[distill_loss]
 - 反向传播
 
 注：
