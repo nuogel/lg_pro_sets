@@ -1,22 +1,27 @@
+typora-copy-images-to: util_imgs
 
 - 参考博客：[科技猛兽](https://zhuanlan.zhihu.com/p/342261872)
 - 参考论文:[综述git](https://github.com/DirtyHarryLYL/Transformer-in-Vision)
 ### 名词解释
-#### inductive bias
+### inductive bias
 归纳偏置在机器学习中是一种很微妙的概念：在机器学习中，很多学习算法经常会对学习的问题做一些假设，这些假设就称为归纳偏置(Inductive Bias)\
 CNN的inductive bias应该是locality和spatial invariance，即空间相近的grid elements有联系而远的没有，和空间不变性（kernel权重共享）
 
 
 ## paper works
-#### DETR
-#### VIT
+### DETR
+#### motivation
+#### methods
+#### experiments
+
+### VIT
 image->patch:\
 Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1=patch_height, p2=patch_width)
 [1,3,32x10,32x10]->[1, 10x10, 32x32x3], 然后再做liner变化
 
 
-#### DeiT
-#### VT 
+### DeiT
+### VT 
 ![img.png](util_imgs/img_20.png)
 
 - CNN和Vision Transformer的不同点 ?
@@ -36,40 +41,77 @@ Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1=patch_height, p2=patch_wi
 2) 将语义概念编码在视觉符号 (visual tokens)中，而不是对所有图像中的所有概念进行建模。
 3) 使用Transformer来建模tokens之间的关系。
 
-#### BotNet
+### BotNet
 ![img.png](util_imgs/img_21.png)\
 谷歌出品，BotNet即将ResNet中的第4个block中的bottleneck替换为MHSA（Multi-Head Self-Attention）模块，形成新的模块，取名叫做Bottleneck Transformer (BoT) 。最终由BoT这样的block组合成的网络结构就叫做BotNet。
 在分类任务中，在 ImageNet上取得了84.7%的top-1准确性。并且比 EfficientNet快2.33倍。BotNet，一个新的基于attention思想的网络结构，效果优于 SENets， EfficientNets。
-#### ConVit
-##### motivation
+### ConVit
+#### motivation
 在视觉任务上非常成功的 CNN 依赖于架构本身内置的两个归纳偏置特性。局部相关性：邻近的像素是相关的；权重共享：图像的不同部分应该以相同的方式处理，无论它们的绝对位置如何。
 相比之下，基于自注意力机制的视觉模型（如 DeiT 和 DETR）最小化了归纳偏置。当在大数据集上进行训练时，这些模型的性能已经可以媲美甚至超过 CNN 。但在小数据集上训练时，它们往往很难学习有意义的表征。
 这就存在一种取舍权衡：CNN 强大的归纳偏置使得即使使用非常少的数据也能实现高性能，但当存在大量数据时，这些归纳偏置就可能会限制模型。相比之下，Transformer 具有最小的归纳偏置，这说明在小数据设置下是存在限制的，但同时这种灵活性让 Transformer 在大数据上性能优于 CNN。
 为此，Facebook 提出的 ConViT 模型使用 soft 卷积归纳偏置进行初始化，模型可以在必要时学会忽略这些偏置。
-##### methods
+#### methods
 ConViT 在 vision Transformer 的基础上进行了调整，以利用 soft 卷积归纳偏置，从而激励网络进行卷积操作。同时最重要的是，ConViT 允许模型自行决定是否要保持卷积。为了利用这种 soft 归纳偏置，研究者引入了一种称为「门控位置自注意力（gated positional self-attention，GPSA）」的位置自注意力形式，其模型学习门控参数 lambda，该参数用于平衡基于内容的自注意力和卷积初始化位置自注意力。
 ![img.png](util_imgs/img_22.png)
 如上图所示，ConViT（左）在 ViT 的基础上，将一些自注意力（SA）层用门控位置自注意力层（GPSA，右）替代。因为 GPSA 层涉及位置信息，因此在最后一个 GPSA 层之后，类 token 会与隐藏表征联系到一起。\
 除了 ConViT 的性能优势外，门控参数提供了一种简单的方法来理解模型训练后每一层的卷积程度。查看所有层，研究者发现 ConViT 在训练过程中对卷积位置注意力的关注逐渐减少。对于靠后的层，门控参数最终会收敛到接近 0，这表明卷积归纳偏置实际上被忽略了。然而，对于起始层来说，许多注意力头保持较高的门控值，这表明该网络利用早期层的卷积归纳偏置来辅助训练。
 
-#### CeiT
+### CeiT
 ![img.png](util_imgs/img_23.png)
-##### motivation
+#### motivation
 纯Transformer架构通常需要大量的训练数据或额外的监督才能获得与卷积神经网络（CNN）相当的性能。
-##### methods
+#### methods
 - Image-to-Tokens with Low-level Features:\
 I2T(x)=MaxPool(BN(Conv(x)))
 - Locally-Enhanced Feed-Forward Network\
 ![img.png](util_imgs/img_24.png)
 - LCA(Layer-wise Class-Token Attention)
-##### experiments
+#### experiments
 ![img.png](util_imgs/img_25.png)
 
 
-    
-  
-#### PvT
-#### PvT
-#### PvT
+### LocalVit:Bringing Locality to Vision Transformers
+#### motivation
+transformer 模型具有很好的全局关联性，但是图像同时需要局部关联性机制，因此在transformer中引入conv.
+#### methods
+很简单在FFN网络中添加一个DWConv\
+![img.png](util_imgs/img_26.png)
+#### experiments
+![img_1.png](util_imgs/img_27.png)
 
-####
+### CPVT:Conditional Positional Encodings for Vision Transformers
+![img_2.png](img.png)
+#### motivation
+在 ViT 和 CPVT 的实验中，我们可以发现没有位置编码的 Transformer 性能会出现明显下降。除此之外，在 Table 1 中，可学习（learnable）的位置编码和正余弦（sin-cos）编码效果接近，2D 的相对编码（2D RPE）性能较差，但仍然优于去掉位置编码的情形。\
+显式的位置编码限制了输入尺寸，因此美团这项研究考虑使用隐式的根据输入而变化的变长编码方法。该研究提出了条件编码生成器 PEG（Positional Encoding Generator），来生成隐式的位置编码
+#### methods
+在 PEG 中，将上一层 Encoder 的 1D 输出变形成 2D，再使用变换模块学习其位置信息，最后重新变形到 1D 空间，与之前的 1D 输出相加之后作为下一个 Encoder 的输入，如Figure所示。这里的变换单元（Transoformation unit）可以是 Depthwise 卷积、Depthwise Separable 卷积或其他更为复杂的模块
+![img.png](img_1.png)
+
+#### experiments
+![img.png](img_2.png)
+
+### ResT:An Efficient Transformer for Visual Recognition
+![img_4.png](img_4.png)
+#### motivation
+传统的transformer采用标准的Transformer架构,固定的像素来处理图片。作者想变变。
+#### methods
+不同于现有采用固定分辨率+标准Transformer模块的Transformer模型，它有这样几个优势：
+
+(1) 提出了一种内容高效的多头自注意力模块，它采用简单的深度卷积进行内存压缩，并跨注意力头维度进行投影交互，同时保持多头的灵活性；
+
+(2) 将位置编码构建为空域注意力，它可以更灵活的处理任意分辨率输入，且无需插值或者微调；
+
+(3) 并未在每个阶段的开始部分进行序列化，我们把块嵌入设计成重叠卷积堆叠方式。
+
+![img_3.png](img_3.png)
+- EMSA
+
+![img_5.png](img_5.png)
+
+可以作为通用的backbone使用。
+#### experiments
+![img_6.png](img_6.png)
+
+###

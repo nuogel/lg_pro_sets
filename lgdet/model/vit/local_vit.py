@@ -162,3 +162,9 @@ class LocalViT(nn.Module):
         x = self.transformer(x)
 
         return self.mlp_head(x[:, 0])
+
+if __name__ == '__main__':
+    x = torch.randn(4, 3, 320, 320)
+    vit = LocalViT()
+    y = vit(x)
+    print(y.shape)
