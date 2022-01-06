@@ -13,7 +13,7 @@ from lgdet.solver.test_pakage.test_vid import Test_VID
 
 def _parse_arguments():
     parser = ArgumentParser()
-    parser.add_argument('--type', default='OBD'  # SR_DN
+    parser.add_argument('--type', default='obd'  # SR_DN
                         , type=str, help='yml_path')
     parser.add_argument('--model', type=str, help='yml_path')
     parser.add_argument('--checkpoint', '--cp', default=1
@@ -33,8 +33,8 @@ def _parse_arguments():
 def main():
     """Run the script."""
     exit_code = 0
-    # files = 'one_name'
-    files = 'test_set'
+    files = 'one_name'
+    # files = 'test_set'
     # files = 'datasets/OBD/VOC/VOC_test.txt'
     # files = 'datasets/OBD_idx_stores/COCO/COCO_test.txt'  #
     # files = 'datasets/OBD_idx_stores/KITTI/KITTI_test.txt'
@@ -42,7 +42,7 @@ def main():
     score = False
     args = _parse_arguments()
     cfg = parse_yaml(args)
-    Test = {'OBD': Test_OBD, 'ASR': Test_ASR, 'SRDN': Test_SRDN, 'VID': Test_VID, 'TTS': Test_TTS, }
+    Test = {'obd': Test_OBD, 'asr': Test_ASR, 'srdn': Test_SRDN, 'vid': Test_VID, 'tts': Test_TTS, }
     test = Test[cfg.BELONGS](cfg, args, train=None)
     test.test_run(files)
     if score:

@@ -205,9 +205,9 @@ def prepare_cfg(cfg, args, is_training=True):
         # backbone
         if cfg.TRAIN.MODEL == 'fcos':
             cfg.TRAIN.RELATIVE_LABELS = 0
-            cfg.pretrained = False
-            cfg.freeze_stage_1 = True
-            cfg.freeze_bn = True
+            cfg.pretrained = True
+            cfg.freeze_stage_1 = False
+            cfg.freeze_bn = False
 
             # fpn
             cfg.fpn_out_channels = 256

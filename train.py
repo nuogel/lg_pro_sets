@@ -18,8 +18,8 @@ def _parse_arguments():
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--data_path', '--dp', help='batch size')
     parser.add_argument('--epoch_size', '--ep', type=int, help='batch size')
-    parser.add_argument('--batch_size', '--bz', default=4, type=int, help='batch size')
-    parser.add_argument('--lr', default=1e-2, type=float, help='learning rate')
+    parser.add_argument('--batch_size', '--bz', default=1, type=int, help='batch size')
+    parser.add_argument('--lr', default=1e-3, type=float, help='learning rate')
     parser.add_argument('--lr_continue', '--lr_c', default=0, type=float, help='learning rate')
     parser.add_argument('--number_works', '--nw', default=0, type=int, help='number works of dataloader')
     parser.add_argument('--score_thresh', '--st', default=0.25, type=float, help='score_thresh')
@@ -27,7 +27,7 @@ def _parse_arguments():
     parser.add_argument('--autoamp', default=0, type=int, help='autoamp')
 
     parser.add_argument('--gpu', help='number works of dataloader')
-    parser.add_argument('--pre_trained', '--pt', default=0
+    parser.add_argument('--pre_trained', '--pt', default=2
                         ,help='1:loading pre_trained from path, 2:loading pre_trained from model.weight_inits() itself')
     parser.add_argument('--map_fscore', '--mf', default=0, type=int, help='map-0; fcore-1')
 

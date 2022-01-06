@@ -9,7 +9,6 @@ from lgdet.postprocess.parse_factory import ParsePredict
 from lgdet.util.util_show_img import _show_img
 from lgdet.util.util_time_stamp import Time
 from lgdet.solver.test_pakage._test_base import TestBase
-from torch2trt import TRTModule
 import torch
 
 
@@ -18,8 +17,9 @@ class Test_OBD(TestBase):
         super(Test_OBD, self).__init__(cfg, args, train)
         self.parsepredict = ParsePredict(cfg)
         self.apolloclass2num = dict(zip(self.cfg.TRAIN.CLASSES, range(len(self.cfg.TRAIN.CLASSES))))
-        self.ustrt = 1
+        self.ustrt = 0
         if self.ustrt:
+            from torch2trt import TRTModule
             self.model_trt_2 = TRTModule()
             self.model_trt_2.load_state_dict(torch.load('others/model_compression/torch2tensorrt/tmp/yolov5_with_model.pth.onnx.statedict_trt'))
 

@@ -37,16 +37,12 @@ class FCOS(nn.Module):
             self.backbone.freeze_stages(1)
             print("success frozen backbone stage1")
 
-    def forward(self, input_x,**args):
+    def weights_init(self):
+        pass
+
+    def forward(self, input_x, **args):
         x = input_x
         C3, C4, C5 = self.backbone(x)
         all_P = self.fpn([C3, C4, C5])
         cls_logits, cnt_logits, reg_preds = self.head(all_P)
         return [cls_logits, cnt_logits, reg_preds]
-
-
-
-
-
-
-

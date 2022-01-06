@@ -113,5 +113,40 @@ transformer 模型具有很好的全局关联性，但是图像同时需要局�
 可以作为通用的backbone使用。
 #### experiments
 ![img_6.png](img_6.png)
+![img_7.png](img_7.png)
 
-###
+### Early Conv.:Early Convolutions Help Transformers See Better
+![img_8.png](img_8.png)
+#### motivation
+they are sensitive to the choice of optimizer (AdamW vs. SGD), optimizer hyperparameters, and training schedule length. In comparison, modern convolutional neural
+networks are easier to optimize.Why is this the case? VIT直接训练不稳定，模型的结果对优化器，超参选择，训练计划等很敏感，作者要找原因。
+#### methods
+- 等价vit的16x16的patches（patchify stem）
+  
+  ViT_P原始的ViT将输入图片划分成无重叠的pxp个patch，然后对每个patch进行patch projection转化成d为的feature vector。假设输入的图片尺寸为224x224，每个patch的尺寸为p=16，那么patch的数量为14x14，patch projection等价于一个16x16大小，步长为16的大卷积核
+- Convolutional stem design 设计对比卷积模型
+
+    为了跟patchify stem的输出维度对齐，convolutional stem通过3x3卷积快速下采样到14x14。
+- 结论
+    本文通过3个稳定性实验，一个最佳性能实验完美展现了convolutional stem相较于patchify stem的优越性。4个结论：
+    1.   收敛更快
+    2.   可以使用SGD优化
+    3.   对learning rate和weight decay更稳定
+    4.   在ImageNet上提升了1-2个点
+    
+
+
+#### experiments
+图略）结论：本文证明了ViT模型的优化不稳定是由于ViT的patchify stem的非常规大步长、大卷积核引起的。仅仅通过将ViT的patchify stem修改成convolutional stem，就能够提高ViT的稳定性和鲁棒性，非常的简单实用。但是为什么convolutional stem比patchify stem更好，还需要进一步的理论研究。最后作者还提到72GF的模型虽然精度有所改善，但是仍然会出现一种新的不稳定现象，无论使用什么stem，都会导致训练误差曲线图出现随机尖峰。
+
+### CoAtNet：Marrying Convolution and Attention for All Data Sizes
+![img_9.png](img_9.png)
+#### motivation
+Transformers have attracted increasing interests in computer vision, but they still fall behind state-of-the-art convolutional networks. In this work, we show that
+while Transformers tend to have larger model capacity, their generalization can be worse than convolutional networks due to the lack of the right inductive bias.\
+作者认为transformer 缺少正确的归纳偏置，从而比传统conv差点儿。作者要结合两个一起搞事。
+#### methods
+
+#### experiments
+![img_10.png](img_10.png)
+![img_11.png](img_11.png)

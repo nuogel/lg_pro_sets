@@ -77,7 +77,7 @@ class GenTargets(nn.Module):
         m = gt_boxes.shape[1]
 
         cls_logits = cls_logits.permute(0, 2, 3, 1)  # [batch_size,h,w,class_num]
-        coords = coords_fmap2orig(cls_logits, stride).to(device=gt_boxes.device)  # [h*w,2]
+        coords = coords_fmap2orig(cls_logits, stride).to(device=gt_boxes.device)  # (s/2+xs, s/2+ys)
 
         cls_logits = cls_logits.reshape((batch_size, -1, class_num))  # [batch_size,h*w,class_num]
         cnt_logits = cnt_logits.permute(0, 2, 3, 1)
