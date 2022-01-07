@@ -1,4 +1,4 @@
-"""Yolo v3 net."""
+"""Yolo v5 net."""
 import torch
 import torch.nn as nn
 from lgdet.model.backbone.yolov5_backbone import YOLOV5BACKBONE

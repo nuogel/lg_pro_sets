@@ -150,3 +150,31 @@ while Transformers tend to have larger model capacity, their generalization can 
 #### experiments
 ![img_10.png](img_10.png)
 ![img_11.png](img_11.png)
+
+### TNT
+#### motivation
+...
+#### methods
+put transformer in transformer.
+![img_12.png](img_12.png)
+#### experiments
+...
+
+### Swin-T
+#### motivation
+图像的大尺度变化和大像素，使得这和文字的计算量完全不一样。作者要整点高效的，计算量小的，不一样的。
+#### methods
+![img_13.png](img_13.png)
+- patch partition 先降采样 
+- 再用w/sw-MSA的小窗口来降低计算量。
+
+![img_14.png](img_14.png)
+  
+- 用masked msa来屏蔽无相关且别拼接在一起的window
+  ![img_15.png](img_15.png)
+#### experiments
+跟换这个backbone后，涨点惊人：
+
+![img_16.png](img_16.png)
+![img_17.png](img_17.png)
+

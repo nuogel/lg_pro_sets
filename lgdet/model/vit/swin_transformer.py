@@ -1,16 +1,7 @@
-"""
-Author: Yawei Li
-Email: yawei.li@vision.ee.ethz.ch
-
-Implementation of "Swin Transformer: Hierarchical Vision Transformer using Shifted Windows".
-Code borrowed from https://github.com/microsoft/Swin-Transformer
-"""
-
 import torch
 import torch.nn as nn
 import torch.utils.checkpoint as checkpoint
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
-from timm.models.registry import register_model
 
 
 class Mlp(nn.Module):
@@ -37,6 +28,7 @@ def window_partition(x, window_size):
     Args:
         x: (B, H, W, C)
         window_size (int): window size
+
     Returns:
         windows: (num_windows*B, window_size, window_size, C)
     """
@@ -53,6 +45,7 @@ def window_reverse(windows, window_size, H, W):
         window_size (int): Window size
         H (int): Height of image
         W (int): Width of image
+
     Returns:
         x: (B, H, W, C)
     """
@@ -65,6 +58,7 @@ def window_reverse(windows, window_size, H, W):
 class WindowAttention(nn.Module):
     r""" Window based multi-head self attention (W-MSA) module with relative position bias.
     It supports both of shifted and non-shifted window.
+
     Args:
         dim (int): Number of input channels.
         window_size (tuple[int]): The height and width of the window.
@@ -161,6 +155,7 @@ class WindowAttention(nn.Module):
 
 class SwinTransformerBlock(nn.Module):
     r""" Swin Transformer Block.
+
     Args:
         dim (int): Number of input channels.
         input_resolution (tuple[int]): Input resulotion.
@@ -288,6 +283,7 @@ class SwinTransformerBlock(nn.Module):
 
 class PatchMerging(nn.Module):
     r""" Patch Merging Layer.
+
     Args:
         input_resolution (tuple[int]): Resolution of input feature.
         dim (int): Number of input channels.
@@ -336,6 +332,7 @@ class PatchMerging(nn.Module):
 
 class BasicLayer(nn.Module):
     """ A basic Swin Transformer layer for one stage.
+
     Args:
         dim (int): Number of input channels.
         input_resolution (tuple[int]): Input resolution.
@@ -405,6 +402,7 @@ class BasicLayer(nn.Module):
 
 class PatchEmbed(nn.Module):
     r""" Image to Patch Embedding
+
     Args:
         img_size (int): Image size.  Default: 224.
         patch_size (int): Patch token size. Default: 4.
@@ -454,6 +452,7 @@ class SwinTransformer(nn.Module):
     r""" Swin Transformer
         A PyTorch impl of : `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows`  -
           https://arxiv.org/pdf/2103.14030
+
     Args:
         img_size (int | tuple(int)): Input image size. Default 224
         patch_size (int | tuple(int)): Patch size. Default: 4
@@ -579,7 +578,8 @@ class SwinTransformer(nn.Module):
         return flops
 
 
-@register_model
-def swin_tiny_patch4_window7_224(pretrain=False, **kwargs):
-    model = SwinTransformer(embed_dim=96, depths=[2, 2, 6, 2], num_heads=[3, 6, 12, 24], window_size=7, use_checkpoint=False)
-    return model
+if __name__ == '__main__':
+    x = torch.randn(4, 3, 224, 224)
+    swt = SwinTransformer()
+    y = swt(x)
+    print(y)
