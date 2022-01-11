@@ -11,9 +11,9 @@ import numpy as np
 from timm.models.helpers import load_pretrained
 from timm.models.registry import register_model
 from timm.models.layers import trunc_normal_
-from models.token_transformer import Token_transformer
-from models.token_performer import Token_performer
-from models.t2t_vit_block import Block, get_sinusoid_encoding
+from .token_transformer import Token_transformer
+from .token_performer import Token_performer
+from .t2t_vit_block import Block, get_sinusoid_encoding
 
 def _cfg(url='', **kwargs):
     return {

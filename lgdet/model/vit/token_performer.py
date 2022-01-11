@@ -11,7 +11,7 @@ Take Performer as T2T Transformer
 import math
 import torch
 import torch.nn as nn
-from models.localvit import LocalityFeedForward
+from .localvit import LocalityFeedForward
 
 class Token_performer(nn.Module):
     def __init__(self, dim, in_dim, head_cnt=1, kernel_ratio=0.5, dp1=0.1, dp2 = 0.1):

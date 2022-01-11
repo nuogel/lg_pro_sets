@@ -1,3 +1,6 @@
+[toc]
+
+
 typora-copy-images-to: util_imgs
 
 - 参考博客：[科技猛兽](https://zhuanlan.zhihu.com/p/342261872)
@@ -178,3 +181,55 @@ put transformer in transformer.
 ![img_16.png](img_16.png)
 ![img_17.png](img_17.png)
 
+### Cait
+#### motivation
+#### methods
+- LayerScale：使Deep Vision Transformer易于收敛，并能提高精度。
+![img_18.png](img_18.png)
+  
+(d)中的操作就是本文提出的LayerScale操作了。具体做法是保持Layer Normalization，并对Self-attention或者FFN的输出乘以一个对角矩阵,都是可学习的参数.
+  
+- class-attention layers：高效的处理class token的方式。
+![img_19.png](img_19.png)\
+ViT在优化参数时，其实是要class token及其后续层的对应的class embedding同时做到2件事情，即：
+1. 引导attention过程，帮助得到attention map。
+2. 这些token还要输入到classifier中，完成分类任务。
+
+作者认为class embedding要同时做到这2件事其实有点矛盾，参数会朝着矛盾的方向优化。
+所以作者想能不能把class token往后放，为啥要往后放呢？
+主要是想让class token不参与前面的Self-attention，
+使得参数的优化方向尽量不产生矛盾。
+#### experiments
+![img_20.png](img_20.png)
+
+### lv-vit
+#### motivation
+#### methods
+#### experiments
+
+### T2T-VIT
+#### motivation
+作者认为，使用中等大小的数据集 (如 ImageNet) 训练时，目前视觉 Transformer 的性能相比于很普通的 CNN 模型 (比如 ResNet) 更低的原因有2点：
+
+ViT 处理图片的方式不够好，无法建模一张图片的局部信息。
+
+ViT 的自注意力机制的 Backbone 不如 CNN 设计的好。
+ 
+ViT 的做法，分块操作的核心就是这句话：
+self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
+
+这是一个的卷积操作，输入 channel 数是3，输出 channel 数是embed_dim=768/384/192，我们称之为 patchify stem。
+#### methods
+- Restructurization 和 Soft Split (SS)
+
+![img_21.png](img_21.png)
+- T2T-ViT Backbone
+![img_22.png](img_22.png)
+T2T-ViT Backbone 所解决的问题是 ViT 模型的许多 channels 都是冗余的，为了设计一种更高效的 Backbone，同时增加 feature map 的丰富性，作者借鉴了一些 CNN 的 Backbone 架构设计方案，每个 Transformer Block 都有残差链接，这一点和 ResNet 比较相像，所以作者借鉴了5种 CNN 的 Backbone：
+  
+借鉴 DenseNet：使用 Dense 连接。借鉴 Wide-ResNets：Deep-narrow vs. shallow-wide 结构对比。借鉴 SE 模块：使用 Channel attention 结构。借鉴 ResNeXt：在注意力机制中使用更多的 heads。借鉴 GhostNet：使用 Ghost 模块。
+
+经过比较作者得出了2个结论：
+    使用 Deep-narrow 架构，并减少 embedding dimension 更适合视觉 Transformer，可以增加特征的丰富程度。同时减少 embedding dimension 也可以降低计算量。SE 模块的 Channel attention 结构也可以提升 ViT 的性能，但是效果不如前者。
+#### experiments
+![img_23.png](img_23.png)
