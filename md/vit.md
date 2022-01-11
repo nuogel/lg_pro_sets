@@ -233,3 +233,25 @@ T2T-ViT Backbone 所解决的问题是 ViT 模型的许多 channels 都是冗余
     使用 Deep-narrow 架构，并减少 embedding dimension 更适合视觉 Transformer，可以增加特征的丰富程度。同时减少 embedding dimension 也可以降低计算量。SE 模块的 Channel attention 结构也可以提升 ViT 的性能，但是效果不如前者。
 #### experiments
 ![img_23.png](img_23.png)
+
+### PVT
+![img_24.png](img_24.png)
+#### motivation
+作者要做一个通用的backbone ，the first one of transformer
+#### methods
+![img_25.png](img_25.png)
+#### experiments
+略
+
+### DETR
+#### motivation
+目标检测的任务是要去预测一系列的Bounding Box的坐标以及Label， 现代大多数检测器通过定义一些proposal，anchor或者windows，把问题构建成为一个分类和回归问题来间接地完成这个任务。文章所做的工作，就是将transformers运用到了object detection领域，取代了现在的模型需要手工设计的工作，并且取得了不错的结果。
+
+#### methods
+![img_26.png](img_26.png)
+![img_27.png](img_27.png)
+![img_28.png](img_28.png)
+用对应的gt & giou & l1 作为代价矩阵，找到例如（100,8（目标个数））的代价矩阵。
+从而计算出index ,从logits（非index部分赋值背景0） & bboxes中取出对应的正样本计算损失。
+#### experiments
+略
