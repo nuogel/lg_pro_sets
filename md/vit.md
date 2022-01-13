@@ -202,10 +202,7 @@ ViT在优化参数时，其实是要class token及其后续层的对应的class 
 #### experiments
 ![img_20.png](img_20.png)
 
-### lv-vit
-#### motivation
-#### methods
-#### experiments
+
 
 ### T2T-VIT
 #### motivation
@@ -253,5 +250,38 @@ T2T-ViT Backbone 所解决的问题是 ViT 模型的许多 channels 都是冗余
 ![img_28.png](img_28.png)
 用对应的gt & giou & l1 作为代价矩阵，找到例如（100,8（目标个数））的代价矩阵。
 从而计算出index ,从logits（非index部分赋值背景0） & bboxes中取出对应的正样本计算损失。
+
 #### experiments
 略
+
+
+### Deformable DETR
+#### motivation
+DETR缺点：
+训练时间极长：相比于已有的检测器，DETR需要更久的训练才能达到收敛(500 epochs)，比Faster R-CNN慢了10-20倍。
+计算复杂度高：发现DETR对小目标的性能很差，现代许多种检测器通常利用多尺度特征，从高分辨率(High Resolution)的特征图中检测小物体。但是高分辨率的特征图会大大提高DETR复杂度。
+
+产生上面2个问题的原因是：
+
+在初始化阶段， attention map 对于特征图中的所有pixel的权重是Uniform的，导致要学习的注意力权重集中在稀疏的有意义的位置这一过程需要很长时间，意思是 attention map 从Uniform到Sparse and meaningful需要很久。
+attention map 是 NQXNK 的，在图像领域我们一般认为 NQ=NK=N=H*W 所以里面的weights的计算是像素点数目的平方。 因此，处理高分辨率特征图需要非常高的计算量，存储也很复杂。
+Deformable DETR的提出就是为了解决上面的2个问题，
+即：收敛速度慢和计算复杂度高的问题。
+它主要利用了可变形卷积(Deformable Convolution)的稀疏空间采样的本领，以及Transformer的对于相关性建模的能力。
+针对此提出了一种 deformable attention module ，这个东西只关注一个feature map中的一小部分关键的位置，
+起着一种pre-filter的作用。这个deformable attention module可以自然地结合上FPN，我们就可以聚集多尺度特征。
+所以，作者就使用它来替换Transformer的attention module 。
+#### methods
+-  deformable attention module
+![img_29.png](img_29.png)
+   ![img_30.png](img_30.png)
+   ![img_31.png](img_31.png)
+   参考：https://zhuanlan.zhihu.com/p/342261872
+#### experiments
+![img_32.png](img_32.png)
+
+### lv-vit
+#### motivation
+#### methods
+#### experiments
+
