@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import copy
 
 
 def bubble_sort(arr):
@@ -39,6 +40,79 @@ def merge_sort(alist):
         return result
 
     return merge(left, right)
+
+
+# 快速排序
+def quick_sort(arr, l, r):
+    def partition(arr, l, r):
+        x = arr[r]
+        i = l - 1
+        for j in range(l, r):
+            if arr[j] <= x:
+                i += 1
+                arr[i], arr[j] = arr[j], arr[i]
+        arr[i + 1], arr[r] = arr[r], arr[i + 1]
+        return i + 1
+
+    if l < r:
+        q = partition(arr, l, r)
+        quick_sort(arr, l, q - 1)
+        quick_sort(arr, q + 1, r)
+    return arr
+
+
+def quick_lg_1(arr, l, r):
+    def partion_lg(arr, l, r):
+        x = arr[l]
+        out = [x]
+        index = l
+        for arri in arr[l + 1:r + 1]:
+            if arri <= x:
+                out.insert(0, arri)
+                index += 1
+            else:
+                out.append(arri)
+        arr[l:r + 1] = out
+        return index, arr
+
+    if l < r and l >= 0 and r <= len(arr):
+        index, arr = partion_lg(arr, l, r)
+        quick_lg_1(arr, l, index - 1)
+        quick_lg_1(arr, index + 1, r)
+    return arr
+
+
+def quick_lg_2(arr):
+    def partion_lg(arr):
+        x = arr[0]
+        left = []
+        right = []
+        for arri in arr[1:]:
+            if arri <= x:
+                left.insert(0, arri)
+            else:
+                right.append(arri)
+        return left, right, [x]
+
+    if len(arr) > 1:
+        left, right, x = partion_lg(arr)
+        left = quick_lg_2(left)
+        right = quick_lg_2(right)
+        arr = left + x + right
+    return arr
+
+
+# def b_search(arr, left, right, target):
+#     if left <= right:
+#         mid = int(left + (right - left) / 2)
+#         if arr[mid] == target:
+#             return mid, target
+#         elif arr[mid] < target:
+#             return b_search(arr, mid + 1, right, target)
+#         else:
+#             return b_search(arr, left, mid - 1, target)
+#     else:
+#         return None
 
 
 # 希尔排序
@@ -94,13 +168,19 @@ def count_sort(arr):  # arr为待排序列表，max_count为最大元素
 if __name__ == '__main__':
     arr = list(np.random.randint(0, 20, 10))
     print(arr)
-    y = bubble_sort(arr)
+    y = bubble_sort(copy.copy(arr))
     print(y)
-    y = merge_sort(arr)
+    y = merge_sort(copy.copy(arr))
     print(y)
-    y = shellsort(arr)
+    y = shellsort(copy.copy(arr))
     print(y)
-    y = countingSort(arr)
+    y = countingSort(copy.copy(arr))
     print(y)
-    y = count_sort(arr)
+    y = count_sort(copy.copy(arr))
+    print(y)
+    y = quick_sort(copy.copy(arr), 0, len(copy.copy(arr)) - 1)
+    print(y)
+    y = quick_lg_1(copy.copy(arr), 0, len(copy.copy(arr)) - 1)
+    print(y)
+    y = quick_lg_2(copy.copy(arr))
     print(y)
