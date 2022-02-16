@@ -28,6 +28,9 @@ class OBD_Loader(DataLoader):
         self.write_images = self.cfg.TRAIN.WRITE_IMAGES
         self.lgtransformer = LgTransformer(self.cfg)
         self.keep_difficult = self.cfg.TRAIN.KEEP_DIFFICAULT
+        self.passedlabels = []
+        self.wronglabel = []
+
         if self.cfg.TRAIN.MULTI_SCALE:
             self._prepare_multiszie()
         if self.cfg.TRAIN.USE_LMDB:
@@ -45,6 +48,7 @@ class OBD_Loader(DataLoader):
             pre_load_labels = 1
             print('pre-loading labels to disc...')
         self.dataset_infos = self._load_labels2memery(dataset, self.one_name, pre_load_labels)
+        # self.dataset_infos=self.dataset_infos[:10000]  # 当数量过大时，训练速度变慢, 最后发现是数据增强部分对该部分也有影响。
 
     def __len__(self):
         if self.one_test:
@@ -129,18 +133,17 @@ class OBD_Loader(DataLoader):
         '''
         img = None
         _label = None
-
         while img is None or _label is None:  # if there is no data in img or label
             if self.one_test: index = 0
             data_info = self.dataset_infos[index]
-            img, _label = self._read_datas(data_info)  # labels: (x1, y1, x2, y2) & must be absolutely labels.
-            if self.dataset_infos[index]['label'] == 'not_load':
-                self.dataset_infos[index]['label'] = _label
+            img, _label= self._read_datas(data_info)  # labels: (x1, y1, x2, y2) & must be absolutely labels.
             index = random.randint(0, len(self.dataset_infos) - 1)
             if not self.is_training and not _label:  # for test
                 break
 
-        label = np.asarray(_label, np.float32).copy()
+        label = np.asarray(_label[:], np.float32)
+        if  len(label.shape)!=2:
+            a=0
         return img, label, data_info
 
     def _add_dataset(self, dataset, is_training):
@@ -149,23 +152,24 @@ class OBD_Loader(DataLoader):
 
     def _load_labels2memery(self, dataset_txt, one_name, pre_load_labels):
         ftxt = 'train_' if self.is_training else 'test_'
-        cachepath = os.path.join(self.cfg.PATH.INPUT_PATH, ftxt+''.join(self.cfg.TRAIN.TRAIN_DATA_FROM_FILE[0])+'.datacache')
+        cachepath = os.path.join(self.cfg.PATH.INPUT_PATH, ftxt + ''.join(self.cfg.TRAIN.TRAIN_DATA_FROM_FILE[0]) + '.datacache')
         if os.path.isfile(cachepath) and not self.one_test:
             print('loading %s ...' % cachepath)
-            data_infos=torch.load(cachepath)
+            data_infos = torch.load(cachepath)
             return data_infos
         if self.one_test:
             dataset_txt = one_name
         data_infos = []
         tqd = tqdm.tqdm(dataset_txt)
-        for data_line in tqd:
+
+        def load_data_fun(data_line):
             x_path = os.path.join(self.cfg.PATH.INPUT_PATH, data_line[1])
             y_path = os.path.join(self.cfg.PATH.INPUT_PATH, data_line[2])
             this_data_info = {'img_name': data_line[0],
                               'img_path': x_path,
                               'lab_path': y_path,
-                              'ratio(w,h)': np.asarray([1, 1]),
-                              'padding(w,h)': np.asarray([0, 0])
+                              'ratio(w,h)': [1, 1],
+                              'padding(w,h)': [0, 0]
                               }
             if pre_load_labels:
                 label_i, wh = self._load_labels(data_info=this_data_info)
@@ -174,7 +178,24 @@ class OBD_Loader(DataLoader):
                 wh = None
             this_data_info['label'] = label_i
             this_data_info['wh_original'] = wh
-            data_infos.append(this_data_info)
+            return this_data_info
+
+        multiprocess = 1
+        if multiprocess:
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor(16) as executor:
+                for dadai in tqdm.tqdm(executor.map(load_data_fun, tqd)):
+                    if dadai['label']==[]:
+                        continue
+                    data_infos.append(dadai)
+
+        else:
+            for data_line in tqd:
+                data_infoi = load_data_fun(data_line)
+                if data_infoi['label']==[]:
+                    continue
+                data_infos.append(data_infoi)
+
         if not self.one_test:
             print('saving %s ...' % cachepath)
             torch.save(data_infos, cachepath)
@@ -198,21 +219,18 @@ class OBD_Loader(DataLoader):
             image_buf = np.frombuffer(image_bin, dtype=np.uint8)
             img = cv2.imdecode(image_buf, cv2.IMREAD_COLOR)
         else:
-            if not (os.path.isfile(x_path) and os.path.isfile(y_path)):
-                print('ERROR, NO SUCH A FILE.', x_path, '<--->', y_path)
-                exit()
+            # if not (os.path.isfile(x_path) and os.path.isfile(y_path)):
+            #     print('ERROR, NO SUCH A FILE.', x_path, '<--->', y_path)
+            #     exit()
             img = cv2.imread(x_path, cv2.IMREAD_COLOR)
 
         # load labels
-        try:
-            label = data_info['label']
-            if label == 'not_load':
-                label = self._load_labels(data_info=data_info)
-        except:
-            label = self._load_labels(data_info=data_info)
-
-        if label == [[]] or label == []:
-            print('loader obd :none label at:', data_info)
+        label, wh = data_info['label'],data_info['wh_original']
+        if label == 'not_load':
+            label,wh = self._load_labels(data_info=data_info)
+            data_info['label'], data_info['wh_original']=label, wh
+        if label == [] or label == [[]]:
+            # print('loader obd :none label at:', data_info)
             label = None
         return img, label
 
@@ -263,7 +281,8 @@ class OBD_Loader(DataLoader):
             bbs = self._load_lmdb_label_from_name(data_info)
 
         elif os.path.basename(path).split('.')[-1] == 'xml' and not predicted_line:
-            tree = ET.parse(path)
+            utf8_parser = ET.XMLParser(encoding='utf-8')
+            tree = ET.parse(path,parser=utf8_parser)
             root = tree.getroot()
             width = int(root.find('size').find('width').text)
             height = int(root.find('size').find('height').text)
@@ -276,9 +295,11 @@ class OBD_Loader(DataLoader):
                 if not self.keep_difficult and difficult:
                     continue
 
-                cls_name = obj.find('name').text.strip()
+                cls_name = obj.find('name').text.strip().strip('\ufeff')
                 if cls_name not in self.class_name:
-                    print(cls_name, 'is passed')
+                    if cls_name not in self.passedlabels:
+                        self.passedlabels.append(cls_name)
+                        print(cls_name, 'is passed')
                     continue
                 if self.class_name[cls_name] in pass_obj:
                     continue
@@ -354,7 +375,6 @@ class OBD_Loader(DataLoader):
                     box_y2 = float(tmps[7])
                     if not self._is_finedata([box_x1, box_y1, box_x2, box_y2]): continue
                     bbs.append([self.cls2idx[self.class_name[tmps[0]]], box_x1, box_y1, box_x2, box_y2])
-
 
         elif 'COCO' in self.cfg.TRAIN.TRAIN_DATA_FROM_FILE:
             img_name = data_info[0].strip()

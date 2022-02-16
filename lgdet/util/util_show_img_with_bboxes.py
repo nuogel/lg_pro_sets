@@ -17,14 +17,15 @@ def get_ALL_File(dir_path, seq=['.png']):
     file_list = []
     for root, dirs, files in os.walk(dir_path):
         for file in files:
-            if file.endswith(seq[0]) or file.endswith(seq[1]):
+            filehead,ext=os.path.splitext(file)
+            if ext in seq:
                 filename = os.path.join(root, file)
                 file_list.append(filename)
 
     return file_list
 
 
-def _read_line(path):
+def _read_line(path, labelnames):
     objs = []
     if os.path.basename(path).split('.')[-1] == 'txt':
         file_open = open(path, 'r', encoding='utf-8')
@@ -103,7 +104,6 @@ def _read_line(path):
             # if name in CLASS:
             objs.append([name, score, str(box_x1), str(box_y1), str(box_x2), str(box_y2)])  # + ': ' + '%.3f' % score
     elif os.path.basename(path).split('.')[-1] == 'xml':
-
         tree = ET.parse(path)
         # 　label_path = fpath.replace("images", "labels")
         # im_file = in_file[:-4].replace("labels", "images") + ".jpg"
@@ -118,9 +118,10 @@ def _read_line(path):
             ymin = float(bndbox.find('ymin').text)
             ymax = float(bndbox.find('ymax').text)
             # if name in CLASS:
-            objs.append([name, str(xmin), str(ymin), str(xmax), str(ymax)])
-
-    return objs
+            objs.append([name, xmin, ymin, xmax, ymax])
+            if name not in labelnames:
+                labelnames.append(name)
+    return objs, labelnames
 
 
 def _write_line(before_file, new_target, after_file):
@@ -176,20 +177,19 @@ def _write_line(before_file, new_target, after_file):
         tree.write(after_file)
 
 
-def _read_datas(im_file, lab_file):
-    img = cv2.imread(im_file)
-    if img is not None:
-        image_size = img.shape[:-1]  # the last pic as the shape of a batch.
-    # images.append(img)
-    else:
-        print('imread img is NONE.')
-
-    label = _read_line(lab_file)
-
+def _read_datas(im_file, lab_file, checklabelsonly=0, labelnames=[]):
+    img=None
+    if checklabelsonly:
+        img = cv2.imread(im_file)
+        if img is not None:
+            image_size = img.shape[:-1]  # the last pic as the shape of a batch.
+        # images.append(img)
+        else:
+            print('imread img is NONE.')
+    label, labelnames = _read_line(lab_file, labelnames)
     if label is None:
         print("label error")
-
-    return img, label
+    return img, label, labelnames
 
 
 def _show_img(images, labels, show_img=True, show_time=None, save_img=False, save_video=0, save_path=None,
@@ -213,16 +213,16 @@ def _show_img(images, labels, show_img=True, show_time=None, save_img=False, sav
             ymax = int(float(box[3]))
             # text = class_out+"||"+ " ".join([str(i) for i in box])
             class_out_dict = {'person': '站立', 'fall': '跌倒'}
-            color = {'person': (0, 255, 0), 'fall': (0, 0, 255)}
-
-            text = class_out_dict[class_out] #+ str('--%.3f' % score)
+            color = {'default':(0, 255, 0),'person': (0, 255, 0), 'fall': (0, 0, 255)}
+            text=class_out
+            # text = class_out_dict[class_out] #+ str('--%.3f' % score)
             # text = class_out_dict[class_out] + str('--%.3f' % score)
             # text = '占道经营' + str('--%.3f' % (0.8+0.1*random.random()))
             # class_out='占道经营'
             # color = {'占道经营': (0, 0, 255)}
 
-            cv2.rectangle(images, (xmin, ymin), (xmax, ymax), color[class_out], thickness=3)
-            tryPIL = 1
+            cv2.rectangle(images, (xmin, ymin), (xmax, ymax), color['default'], thickness=3)
+            tryPIL = 0
             if tryPIL:
                 # PIL图片上打印汉字
                 pilImg = Image.fromarray(cv2.cvtColor(images, cv2.COLOR_BGR2RGB))
@@ -235,7 +235,7 @@ def _show_img(images, labels, show_img=True, show_time=None, save_img=False, sav
                 # PIL图片转cv2 图片
                 images = cv2.cvtColor(np.array(pilImg), cv2.COLOR_RGB2BGR)
             else:
-                cv2.putText(images, 'shop_out', (xmin, ymin), 3, 3, (0, 255, 255))
+                cv2.putText(images, class_out, (xmin, ymin), 3, 3, (0, 255, 255))
 
     # cv2.putText(images, 'The Number of Cars is : %d' % len(labels), (600, 220), 1, 2, (0, 0, 255), thickness=2)
     # cv2.putText(images, 'Made by AI Team of Chengdu Fourier Electronic', (600, 250), 1, 2, (0, 0, 255), thickness=2)
@@ -243,6 +243,9 @@ def _show_img(images, labels, show_img=True, show_time=None, save_img=False, sav
     if show_img:
         cv2.imshow('img', images)
         cv2.waitKey(show_time)
+    else:
+        cv2.imshow('img', images)
+        cv2.waitKey()
     if save_img:
         cv2.imwrite(save_path, images)
     if save_video:
@@ -266,49 +269,63 @@ def main():
     # im_file = os.path.join(path, "images", "1478019971185917857.jpg")
     # label_file = os.path.join(path, "labels", "1478019971185917857.xml")
     # img, label = _read_datas(im_file, label_file)
-    img_folds = '/home/dell/ai_share/wuzhe/西南油气田/测试视频/人员倒地/港356-4_20210810150000-20210810180000_500_00_00-00_08_25_person_pred/images'
-    label_folds = '/home/dell/ai_share/wuzhe/西南油气田/测试视频/人员倒地/港356-4_20210810150000-20210810180000_500_00_00-00_08_25_person_pred/labels'
+    img_folds = '/media/dell/data/person'
+    label_folds = '/media/dell/data/person'
     # img_folds = '/media/dell/data/shopout/城管二期-出店经营-第一批回传标注-lg/images'
     # label_folds = '/media/dell/data/shopout/城管二期-出店经营-第一批回传标注-lg/labels'
     # label_folds = 'F:\LG\GitHub\lg_pro_sets\\tmp\predicted_labels'
 
     # _show_img(img, label)
-    local_label_files = get_ALL_File(label_folds, [".txt", ".xml"])
+    # local_label_files2 = get_ALL_File(label_folds, [".json"])
     local_img_files = get_ALL_File(img_folds, [".jpg", '.png'])
+    local_label_files = get_ALL_File(label_folds, [".txt", ".xml"])
 
     local_img_files.sort()
     local_label_files.sort()
     lab_num = len(local_label_files)
     img_num = len(local_img_files)
     print(lab_num, img_num)
-    base_path = os.path.join(img_folds, '../saved')
-    os.makedirs(base_path, exist_ok=True)
-    video_dir = os.path.join(base_path, 'video.avi')
-    fps = 12
-    img_size = (1920, 1080)
-    fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
-    video_writer = cv2.VideoWriter(video_dir, fourcc, fps, img_size)
-    save_video = 1
-    save_image = True
+
+    save_video = 0
+    save_image_with_boxes = 0
+    checklabelsonly=1
+
+    if save_video:
+        base_path = os.path.join(img_folds, '../saved')
+        os.makedirs(base_path, exist_ok=True)
+        video_dir = os.path.join(base_path, 'video.avi')
+        fps = 12
+        img_size = (1920, 1080)
+        fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
+        video_writer = cv2.VideoWriter(video_dir, fourcc, fps, img_size)
+    else:
+        video_writer=None
+    labelnames = []
+    pairfiles=0
     for index in range(min(img_num, lab_num)):
-        if index <= 7800 // 5 or index > 8300 // 5: continue
+        # if index <= 7800 // 5 or index > 8300 // 5: continue
         im_file = local_img_files[index]
-        label_file = im_file.replace('images', 'labels').replace('.jpg', '.txt')  # local_label_files[index]
+        label_file = im_file.replace('images', 'labels').replace('.jpg', '.xml')  # local_label_files[index]
         if not check_is_file(im_file) or not check_is_file(label_file):
             continue
         if print_path:
             print(im_file, '==>>>', label_file)
-        img, label = _read_datas(im_file, label_file)
-        if save_image:
+        img, label, labelnames = _read_datas(im_file, label_file, checklabelsonly, labelnames)
+        pairfiles+=1
+        if save_image_with_boxes:
             save_path = os.path.join(base_path, str(index) + '.jpg')
-
-        try:
-            _show_img(img, label, show_img=True, show_time=1, save_img=save_image, save_video=save_video,
+            save_image=True
+        else:
+            save_path=None
+            save_image=False
+        if not checklabelsonly:
+            _show_img(img, label, show_img=True, show_time=0, save_img=save_image, save_video=save_video,
                       save_path=save_path, video_writer=video_writer)
-        except:
-            if save_video: video_writer.release()
+        if save_video:
+            video_writer.release()
         # if index >= 9750 - 500: break
     if save_video: video_writer.release()
+    print('labelnames',labelnames)
     print('finish')
 
 

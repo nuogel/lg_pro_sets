@@ -15,7 +15,7 @@ def _make_list_by_hand(path):
     return list
 
 
-def make_list(base_path, x_file, y_file):
+def make_list(base_path, x_file, y_file, addfolder=0):
     dir_list = []
     path_list = os.listdir(os.path.join(base_path, x_file))
 
@@ -25,7 +25,10 @@ def make_list(base_path, x_file, y_file):
         y_path = os.path.join(base_path, y_file, y_base)
         if _is_file(x_path) and _is_file(y_path):
             # dir_list.append([path_i, x_path, y_path])
-            dir_list.append([path_i, os.path.join(x_file, path_i), os.path.join(y_file, y_base)])
+            if addfolder:
+                dir_list.append([path_i, os.path.join(base_path, x_file, path_i), os.path.join(base_path, y_file, y_base)])
+            else:
+                dir_list.append([path_i, os.path.join(x_file, path_i), os.path.join(y_file, y_base)])
             print('adding:', dir_list[-1])
 
     return dir_list
@@ -88,9 +91,8 @@ def _wrte_dataset_json(dataset, save_path):
         data_set_dict[str(da[0]).strip()] = {}
         data_set_dict[str(da[0])]['img_path'] = str(da[1]).strip()
         data_set_dict[str(da[0])]['lab_path'] = str(da[2]).strip()
-    json_info = json.dumps(data_set_dict)
     f = open(save_path, 'w', encoding='utf-8')
-    json.dump(json_info, f)
+    json.dump(data_set_dict, f)
 
 
 def cope_with_VOC():
@@ -112,30 +114,34 @@ def cope_with_VOC():
 
 
 if __name__ == '__main__':
-    # pathes = ['D:/datasets/CCPD2019/ccpd_challenge/']
-    # pathes = ['F:/datasets/SR/REDS4/train_sharp_part/']
-    # pathes = ['F:/LG/OCR/PAN.pytorch-master/dadaset/wxf_ocr_data/']
-    # pathes = ['E:/datasets/youku/youku_00200_00249_h_GT/']
-    # pathes = ['E:/datasets/VisDrone2019/VisDrone2019-DET-train/']
-    # img_path = ['E:/datasets/VisDrone2019/VisDrone2019-DET-train/images']
-    # lab_path = 'E:/datasets/VisDrone2019/VisDrone2019-DET-train/annotations'
-    # img_path = ['F:\Projects\\auto_Airplane\TS02\\20191220_1526019_20/']
-    # lab_path = 'F:\Projects\\auto_Airplane\TS02\\20191220_1526019_20_refined/'
 
-    # img_path = ['E:/datasets/VisDrone2019/VisDrone2019-VID-train/sequences/uav0000013_00000_v']
-    # lab_path = 'E:\datasets\VisDrone2019\VisDrone2019-VID-train\\annotations/uav0000013_00000_v.txt'
-    format = 'JSON'  # JSON / TXT
+    format = 'TXT'  # JSON / TXT
+    use_folder=0
 
-    img_path = 'JPEGImages'
-    lab_path = 'Annotations'
-    base_path = '/media/dell/data/voc/VOCdevkit/VOC2012'
-    # path = 'E:\datasets\FlyingChairs\data'
+    folder='/media/dell/data/person'
+    base_path='/media/dell/data/person/ai-auto-test-行人检测_清洗'
+    img_file = 'images'
+    lab_file = 'labels'
+
+    # voc
+    # img_path = 'JPEGImages'
+    # lab_path = 'Annotations'
+    # base_path = '/media/dell/data/voc/VOCdevkit/VOC2012'
 
     # 1st、get datalist.
     # datalist =_make_list_by_hand(path)
+    passfolder=['ai-auto-test-行人检测_清洗']
+    if use_folder:
+        datalist = []
+        for folderi in os.listdir(folder):
+            base_path = os.path.join(folder,folderi)
+            if os.path.isdir(base_path) and folderi not in passfolder:
+                datalist += make_list(base_path, img_file, lab_file, addfolder=1)
+    else:
+        datalist = make_list(base_path, img_file, lab_file,addfolder=0)
+    # datalist = cope_with_VOC()
 
-    # datalist = make_list(base_path, img_path, lab_path)
-    datalist = cope_with_VOC()
+    print('all files nums:', len(datalist))
 
     # 2ed、list to file.
     if format == 'JSON':
@@ -145,3 +151,5 @@ if __name__ == '__main__':
     else:
         save_path = 'util_tmp/make_list.txt'
         _wrte_dataset_txt(datalist, save_path)
+
+

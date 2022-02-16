@@ -48,10 +48,13 @@ class LgTransformer:
             # Labels
             labels = lab.copy()
             if lab.size > 0:  # Normalized xywh to pixel xyxy format
-                labels[:, 1] = r * lab[:, 1] + pad_w
-                labels[:, 2] = r * lab[:, 2] + pad_h
-                labels[:, 3] = r * lab[:, 3] + pad_w
-                labels[:, 4] = r * lab[:, 4] + pad_h
+                try:
+                    labels[:, 1] = r * lab[:, 1] + pad_w
+                    labels[:, 2] = r * lab[:, 2] + pad_h
+                    labels[:, 3] = r * lab[:, 3] + pad_w
+                    labels[:, 4] = r * lab[:, 4] + pad_h
+                except:
+                    a=0
             labels4.append(labels)
 
         # Concat/clip labels

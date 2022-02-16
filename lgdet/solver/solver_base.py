@@ -17,6 +17,7 @@ import math
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 
+
 class BaseSolver(object):
     def __init__(self, cfg, args, train):
         self.is_training = train
@@ -165,7 +166,6 @@ class BaseSolver(object):
         #  load the last data set
         if is_training != None:
             train_set, test_set = _read_train_test_dataset(self.cfg)
-
             print('train set:', train_set[0], '\ntest  set:', test_set[0])
             txt = 'train set:{};test  set:{}'.format(len(train_set), len(test_set))
             print(txt)
