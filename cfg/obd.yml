@@ -22,12 +22,12 @@ TRAIN:
 
   # data aug:
   KEEP_DIFFICAULT: 0
-  MOSAIC: 0
-  DO_AUG: 0 # 0.5
-  HSV: 0 #0.5
+  MOSAIC: 1
+  DO_AUG: 0.5
+  HSV: 0.5
   RESIZE: 0
   GRAY_BINARY: 0
-  LETTERBOX: 1
+  LETTERBOX: 0
   MAXMINSIZE: 0
   RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0.05 #0.05 #

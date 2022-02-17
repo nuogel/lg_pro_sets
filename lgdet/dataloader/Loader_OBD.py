@@ -1,3 +1,6 @@
+#!/usr/bin/env Python
+# coding=utf-8
+
 import os
 import torch
 import random
@@ -136,14 +139,14 @@ class OBD_Loader(DataLoader):
         while img is None or _label is None:  # if there is no data in img or label
             if self.one_test: index = 0
             data_info = self.dataset_infos[index]
-            img, _label= self._read_datas(data_info)  # labels: (x1, y1, x2, y2) & must be absolutely labels.
+            img, _label = self._read_datas(data_info)  # labels: (x1, y1, x2, y2) & must be absolutely labels.
             index = random.randint(0, len(self.dataset_infos) - 1)
             if not self.is_training and not _label:  # for test
                 break
 
         label = np.asarray(_label[:], np.float32)
-        if  len(label.shape)!=2:
-            a=0
+        if len(label.shape) != 2:
+            a = 0
         return img, label, data_info
 
     def _add_dataset(self, dataset, is_training):
@@ -178,23 +181,20 @@ class OBD_Loader(DataLoader):
                 wh = None
             this_data_info['label'] = label_i
             this_data_info['wh_original'] = wh
-            return this_data_info
+            if label_i != []:
+                data_infos.append(this_data_info)
 
         multiprocess = 1
         if multiprocess:
-            from concurrent.futures import ThreadPoolExecutor
-            with ThreadPoolExecutor(16) as executor:
-                for dadai in tqdm.tqdm(executor.map(load_data_fun, tqd)):
-                    if dadai['label']==[]:
-                        continue
-                    data_infos.append(dadai)
-
+            all_task = []
+            from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+            executor = ThreadPoolExecutor(max_workers=32)
+            for data_line in tqd:
+                all_task.append(executor.submit(load_data_fun, data_line))
+            # out = [future.result() for future in tqdm.tqdm(all_task)]
         else:
             for data_line in tqd:
-                data_infoi = load_data_fun(data_line)
-                if data_infoi['label']==[]:
-                    continue
-                data_infos.append(data_infoi)
+                load_data_fun(data_line)
 
         if not self.one_test:
             print('saving %s ...' % cachepath)
@@ -225,10 +225,10 @@ class OBD_Loader(DataLoader):
             img = cv2.imread(x_path, cv2.IMREAD_COLOR)
 
         # load labels
-        label, wh = data_info['label'],data_info['wh_original']
+        label, wh = data_info['label'], data_info['wh_original']
         if label == 'not_load':
-            label,wh = self._load_labels(data_info=data_info)
-            data_info['label'], data_info['wh_original']=label, wh
+            label, wh = self._load_labels(data_info=data_info)
+            data_info['label'], data_info['wh_original'] = label, wh
         if label == [] or label == [[]]:
             # print('loader obd :none label at:', data_info)
             label = None
@@ -282,7 +282,7 @@ class OBD_Loader(DataLoader):
 
         elif os.path.basename(path).split('.')[-1] == 'xml' and not predicted_line:
             utf8_parser = ET.XMLParser(encoding='utf-8')
-            tree = ET.parse(path,parser=utf8_parser)
+            tree = ET.parse(path, parser=utf8_parser)
             root = tree.getroot()
             width = int(root.find('size').find('width').text)
             height = int(root.find('size').find('height').text)
