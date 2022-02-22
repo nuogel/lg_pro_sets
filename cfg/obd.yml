@@ -23,18 +23,18 @@ TRAIN:
   # data aug:
   KEEP_DIFFICAULT: 0
   MOSAIC: 1
-  DO_AUG: 0.5
-  HSV: 0.5
+  DO_AUG: 0.1
+  HSV: 0.1
   RESIZE: 0
   GRAY_BINARY: 0
   LETTERBOX: 0
   MAXMINSIZE: 0
   RELATIVE_LABELS: 1  #FALSE # generate a relative labels to 0-1
-  AREAR_RATIO: 0.05 #0.05 #
+  AREAR_RATIO: 0.005 #0.05 #
   MIN_AREA: 10 #100 #400 #4 #
   #[H,W]
   #[384, 960] [640, 640]#[1280, 1280] [416, 416] #[512, 768] # [1024,1920] #[800,1333]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
-  IMG_SIZE: [ 512, 512 ]
+  IMG_SIZE: [ 640, 640 ]
   MULTI_SCALE: 0
   MULTI_SCALE_SIZE: [ 320, 640 ] #(320-640)//32
 
@@ -49,8 +49,8 @@ TRAIN:
   LR_START: 0.01
   WARMUP_BIAS_LR: 0.1
   LR_FINAL_RATIO: 0.01
-  LR_SCHEDULE: 'cos' #['reduce', 'step', 'cos']
-  STEP_LR: 30 # if step
+  LR_SCHEDULE: 'step' #['reduce', 'step', 'cos']
+  STEP_LR: 5 # if step
 
   WEIGHT_DECAY: 0.0005
   MOMENTUM: 0.937

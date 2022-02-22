@@ -17,7 +17,7 @@ def get_ALL_File(dir_path, seq=['.png']):
     file_list = []
     for root, dirs, files in os.walk(dir_path):
         for file in files:
-            filehead,ext=os.path.splitext(file)
+            filehead, ext = os.path.splitext(file)
             if ext in seq:
                 filename = os.path.join(root, file)
                 file_list.append(filename)
@@ -178,7 +178,7 @@ def _write_line(before_file, new_target, after_file):
 
 
 def _read_datas(im_file, lab_file, checklabelsonly=0, labelnames=[]):
-    img=None
+    img = None
     if not checklabelsonly:
         img = cv2.imread(im_file)
         if img is not None:
@@ -213,17 +213,18 @@ def _show_img(images, labels, show_img=True, show_time=None, save_img=False, sav
             ymax = int(float(box[3]))
             # text = class_out+"||"+ " ".join([str(i) for i in box])
             class_out_dict = {'person': '站立', 'fall': '跌倒'}
-            color = {'default':(0, 255, 0),'person': (0, 255, 0), 'fall': (0, 0, 255)}
-            text=class_out
+            color = {'default': (0, 255, 0), 'person': (0, 255, 0), 'fall': (0, 0, 255)}
+            text = class_out
             # text = class_out_dict[class_out] #+ str('--%.3f' % score)
             # text = class_out_dict[class_out] + str('--%.3f' % score)
             # text = '占道经营' + str('--%.3f' % (0.8+0.1*random.random()))
             # class_out='占道经营'
             # color = {'占道经营': (0, 0, 255)}
 
-
             cv2.rectangle(images, (xmin, ymin), (xmax, ymax), color['default'], thickness=3)
-            tryPIL = 0
+            tryPIL = 1
+            if label[0] in ['人脸关键点']:
+                continue
             if tryPIL:
                 # PIL图片上打印汉字
                 pilImg = Image.fromarray(cv2.cvtColor(images, cv2.COLOR_BGR2RGB))
@@ -231,7 +232,7 @@ def _show_img(images, labels, show_img=True, show_time=None, save_img=False, sav
                 size_font = 40
                 font = ImageFont.truetype(font=f'font/simhei.ttf', size=size_font,
                                           encoding="utf-8")  # 参数1：字体文件路径，参数2：字体大小
-                draw.text((xmin, ymin - size_font), text, color[class_out][::-1],
+                draw.text((xmin, ymin - size_font), text, color['default'],
                           font=font)  # 参数1：打印坐标，参数2：文本，参数3：字体颜色，参数4：字体
                 # PIL图片转cv2 图片
                 images = cv2.cvtColor(np.array(pilImg), cv2.COLOR_RGB2BGR)
@@ -275,7 +276,7 @@ def main(img_fold, label_fold):
 
     save_video = 0
     save_image_with_boxes = 0
-    checklabelsonly=0
+    checklabelsonly = 0
 
     if save_video:
         base_path = os.path.join(img_folds, '../saved')
@@ -286,9 +287,9 @@ def main(img_fold, label_fold):
         fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
         video_writer = cv2.VideoWriter(video_dir, fourcc, fps, img_size)
     else:
-        video_writer=None
+        video_writer = None
     labelnames = []
-    pairfiles=0
+    pairfiles = 0
     for index in range(min(img_num, lab_num)):
         # if index <= 7800 // 5 or index > 8300 // 5: continue
         im_file = local_img_files[index]
@@ -302,13 +303,13 @@ def main(img_fold, label_fold):
         #     return True
         # else:
         #     return  False
-        pairfiles+=1
+        pairfiles += 1
         if save_image_with_boxes:
             save_path = os.path.join(base_path, str(index) + '.jpg')
-            save_image=True
+            save_image = True
         else:
-            save_path=None
-            save_image=False
+            save_path = None
+            save_image = False
         if not checklabelsonly:
             _show_img(img, label, show_img=True, show_time=0, save_img=save_image, save_video=save_video,
                       save_path=save_path, video_writer=video_writer)
@@ -316,29 +317,13 @@ def main(img_fold, label_fold):
             video_writer.release()
         # if index >= 9750 - 500: break
     if save_video: video_writer.release()
-    print('labelnames',labelnames)
+    print('labelnames', labelnames)
     print('finish')
 
 
 if __name__ == '__main__':
     print_path = 1
-    # path = 'E:/datasets/Car/COCO_Car'
-    # path = 'E:/datasets/BDD100k/'
-    # path ='E:/datasets/OpenImage_Car'
-    # path = 'E:/datasets/VisDrone2019/VisDrone2019-VID-train/'
-    # im_file = os.path.join(path, "images", "1478019971185917857.jpg")
-    # label_file = os.path.join(path, "labels", "1478019971185917857.xml")
-    # img, label = _read_datas(im_file, label_file)
-    img_folds = '/media/dell/data/person'
-    label_folds = '/media/dell/data/person'
-    # img_folds = '/media/dell/data/shopout/城管二期-出店经营-第一批回传标注-lg/images'
-    # label_folds = '/media/dell/data/shopout/城管二期-出店经营-第一批回传标注-lg/labels'
-    # label_folds = 'F:\LG\GitHub\lg_pro_sets\\tmp\predicted_labels'
-    folds = os.listdir(img_folds)
-    OUTPUT=[]
-    for img_fold in folds:
-        pathfold=os.path.join(img_folds, img_fold)
-        if os.path.isdir(pathfold):
-           if  main(pathfold, pathfold):
-               OUTPUT.append(img_fold)
-    print(OUTPUT)
+
+    img_folds = '/media/dell/data/personabout/person_face/人脸检测训练集/images'
+    label_folds = '/media/dell/data/personabout/person_face/人脸检测训练集/labels'
+    main(img_folds, label_folds)
