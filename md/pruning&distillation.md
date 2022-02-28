@@ -26,7 +26,7 @@
 
 ### Distilling the Knowledge in a Neural Network
 
-![img.png](util_imgs/img_6.png)
+![img.png](util_imgs1/img_6.png)
 流程：
 
 - 训练完成teacher；
@@ -37,5 +37,5 @@
 - 反向传播
 
 注：
-![img.png](util_imgs/img_5.png)
+![img.png](util_imgs1/img_5.png)
 T就是一个调节参数，通常为1；T的数值越大则所有类的分布越‘软’（平缓）

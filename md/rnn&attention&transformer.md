@@ -4,29 +4,29 @@
 
 ### Self-Attention
 - 如下图所示，b1、b2、b3、b4、用Self-Attention可以同时计算，而在RNN中不能够同时被计算，即解决RNN无法并行化的问题。
-![img.png](util_imgs/img_7.png)
+![img.png](util_imgs1/img_7.png)
 - 在把各个词送入Self-Attention之前先将其乘以一个特征矩阵，以特征化的表示各个单词，然后将其送入Self-Attention中（词嵌入的方法，Word embedding），即ai=Wxi，然后把不同的a乘上不同的矩阵W变为向量q（去匹配其他向量）、k（被匹配）、v（要被抽取出的information），如下图所示：
-![img_1.png](util_imgs/img_8.png)
+![img_1.png](util_imgs1/img_8.png)
 - 然后用每个向量q去对每个k做attention，这里公式除以根号d是为了平衡q和k乘的时候方差太大。如下图：
-![img_2.png](util_imgs/img_9.png)
+![img_2.png](util_imgs1/img_9.png)
 - 然后做Soft-max，如下图：
-![img_3.png](util_imgs/img_10.png)
+![img_3.png](util_imgs1/img_10.png)
 - 从下图可以看出输出的向量b1可以考虑整个句子的信息。
-![img_4.png](util_imgs/img_11.png)
-  ![img.png](util_imgs/img_14.png)
-![img_5.png](util_imgs/img_12.png)
+![img_4.png](util_imgs1/img_11.png)
+  ![img.png](util_imgs1/img_14.png)
+![img_5.png](util_imgs1/img_12.png)
 - 综上四步，其实整个框架就是下图这个样子（所有向量可以被平行化计算）
-![img_6.png](util_imgs/img_13.png)
+![img_6.png](util_imgs1/img_13.png)
 - multi-head Self-Attention
-  ![img.png](util_imgs/img_16.png)
+  ![img.png](util_imgs1/img_16.png)
 ### Transformer
-![img.png](util_imgs/img_15.png)
+![img.png](util_imgs1/img_15.png)
 - word embedding
   文字->字向量的转换Word2Vec
 - positional encoding
   eg:吃饭没、没吃饭、没饭吃、饭吃没、饭没吃，同样三个字，顺序颠倒，所表达的含义就不同了。
   记录词的位置信息：Tranformer 采用的是 sin-cos 规则，使用了 sin 和 cos 函数的线性变换来提供给模型位置信息.
-  ![img.png](util_imgs/img_19.png)
+  ![img.png](util_imgs1/img_19.png)
     ```python
     # 导入依赖库
     import numpy as np

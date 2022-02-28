@@ -25,7 +25,7 @@ Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1=patch_height, p2=patch_wi
 
 ### DeiT
 ### VT 
-![img.png](util_imgs/img_20.png)
+![img.png](util_imgs1/img_20.png)
 
 - CNN和Vision Transformer的不同点 ?
 1) 传统CNN公平地对待图片的每个像素。\
@@ -45,7 +45,7 @@ Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1=patch_height, p2=patch_wi
 3) 使用Transformer来建模tokens之间的关系。
 
 ### BotNet
-![img.png](util_imgs/img_21.png)\
+![img.png](util_imgs1/img_21.png)\
 谷歌出品，BotNet即将ResNet中的第4个block中的bottleneck替换为MHSA（Multi-Head Self-Attention）模块，形成新的模块，取名叫做Bottleneck Transformer (BoT) 。最终由BoT这样的block组合成的网络结构就叫做BotNet。
 在分类任务中，在 ImageNet上取得了84.7%的top-1准确性。并且比 EfficientNet快2.33倍。BotNet，一个新的基于attention思想的网络结构，效果优于 SENets， EfficientNets。
 ### ConVit
@@ -56,22 +56,22 @@ Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1=patch_height, p2=patch_wi
 为此，Facebook 提出的 ConViT 模型使用 soft 卷积归纳偏置进行初始化，模型可以在必要时学会忽略这些偏置。
 #### methods
 ConViT 在 vision Transformer 的基础上进行了调整，以利用 soft 卷积归纳偏置，从而激励网络进行卷积操作。同时最重要的是，ConViT 允许模型自行决定是否要保持卷积。为了利用这种 soft 归纳偏置，研究者引入了一种称为「门控位置自注意力（gated positional self-attention，GPSA）」的位置自注意力形式，其模型学习门控参数 lambda，该参数用于平衡基于内容的自注意力和卷积初始化位置自注意力。
-![img.png](util_imgs/img_22.png)
+![img.png](util_imgs1/img_22.png)
 如上图所示，ConViT（左）在 ViT 的基础上，将一些自注意力（SA）层用门控位置自注意力层（GPSA，右）替代。因为 GPSA 层涉及位置信息，因此在最后一个 GPSA 层之后，类 token 会与隐藏表征联系到一起。\
 除了 ConViT 的性能优势外，门控参数提供了一种简单的方法来理解模型训练后每一层的卷积程度。查看所有层，研究者发现 ConViT 在训练过程中对卷积位置注意力的关注逐渐减少。对于靠后的层，门控参数最终会收敛到接近 0，这表明卷积归纳偏置实际上被忽略了。然而，对于起始层来说，许多注意力头保持较高的门控值，这表明该网络利用早期层的卷积归纳偏置来辅助训练。
 
 ### CeiT
-![img.png](util_imgs/img_23.png)
+![img.png](util_imgs1/img_23.png)
 #### motivation
 纯Transformer架构通常需要大量的训练数据或额外的监督才能获得与卷积神经网络（CNN）相当的性能。
 #### methods
 - Image-to-Tokens with Low-level Features:\
 I2T(x)=MaxPool(BN(Conv(x)))
 - Locally-Enhanced Feed-Forward Network\
-![img.png](util_imgs/img_24.png)
+![img.png](util_imgs1/img_24.png)
 - LCA(Layer-wise Class-Token Attention)
 #### experiments
-![img.png](util_imgs/img_25.png)
+![img.png](util_imgs1/img_25.png)
 
 
 ### LocalVit:Bringing Locality to Vision Transformers
@@ -79,24 +79,24 @@ I2T(x)=MaxPool(BN(Conv(x)))
 transformer 模型具有很好的全局关联性，但是图像同时需要局部关联性机制，因此在transformer中引入conv.
 #### methods
 很简单在FFN网络中添加一个DWConv\
-![img.png](util_imgs/img_26.png)
+![img.png](util_imgs1/img_26.png)
 #### experiments
-![img_1.png](util_imgs/img_27.png)
+![img_1.png](util_imgs1/img_27.png)
 
 ### CPVT:Conditional Positional Encodings for Vision Transformers
-![img_2.png](img.png)
+![img_2.png](util_imgs2/img.png)
 #### motivation
 在 ViT 和 CPVT 的实验中，我们可以发现没有位置编码的 Transformer 性能会出现明显下降。除此之外，在 Table 1 中，可学习（learnable）的位置编码和正余弦（sin-cos）编码效果接近，2D 的相对编码（2D RPE）性能较差，但仍然优于去掉位置编码的情形。\
 显式的位置编码限制了输入尺寸，因此美团这项研究考虑使用隐式的根据输入而变化的变长编码方法。该研究提出了条件编码生成器 PEG（Positional Encoding Generator），来生成隐式的位置编码
 #### methods
 在 PEG 中，将上一层 Encoder 的 1D 输出变形成 2D，再使用变换模块学习其位置信息，最后重新变形到 1D 空间，与之前的 1D 输出相加之后作为下一个 Encoder 的输入，如Figure所示。这里的变换单元（Transoformation unit）可以是 Depthwise 卷积、Depthwise Separable 卷积或其他更为复杂的模块
-![img.png](img_1.png)
+![img.png](util_imgs2/img_1.png)
 
 #### experiments
-![img.png](img_2.png)
+![img.png](util_imgs2/img_2.png)
 
 ### ResT:An Efficient Transformer for Visual Recognition
-![img_4.png](img_4.png)
+![img_4.png](util_imgs2/img_4.png)
 #### motivation
 传统的transformer采用标准的Transformer架构,固定的像素来处理图片。作者想变变。
 #### methods
@@ -108,18 +108,18 @@ transformer 模型具有很好的全局关联性，但是图像同时需要局�
 
 (3) 并未在每个阶段的开始部分进行序列化，我们把块嵌入设计成重叠卷积堆叠方式。
 
-![img_3.png](img_3.png)
+![img_3.png](util_imgs2/img_3.png)
 - EMSA
 
-![img_5.png](img_5.png)
+![img_5.png](util_imgs2/img_5.png)
 
 可以作为通用的backbone使用。
 #### experiments
-![img_6.png](img_6.png)
-![img_7.png](img_7.png)
+![img_6.png](util_imgs2/img_6.png)
+![img_7.png](util_imgs2/img_7.png)
 
 ### Early Conv.:Early Convolutions Help Transformers See Better
-![img_8.png](img_8.png)
+![img_8.png](util_imgs2/img_8.png)
 #### motivation
 they are sensitive to the choice of optimizer (AdamW vs. SGD), optimizer hyperparameters, and training schedule length. In comparison, modern convolutional neural
 networks are easier to optimize.Why is this the case? VIT直接训练不稳定，模型的结果对优化器，超参选择，训练计划等很敏感，作者要找原因。
@@ -143,7 +143,7 @@ networks are easier to optimize.Why is this the case? VIT直接训练不稳定�
 图略）结论：本文证明了ViT模型的优化不稳定是由于ViT的patchify stem的非常规大步长、大卷积核引起的。仅仅通过将ViT的patchify stem修改成convolutional stem，就能够提高ViT的稳定性和鲁棒性，非常的简单实用。但是为什么convolutional stem比patchify stem更好，还需要进一步的理论研究。最后作者还提到72GF的模型虽然精度有所改善，但是仍然会出现一种新的不稳定现象，无论使用什么stem，都会导致训练误差曲线图出现随机尖峰。
 
 ### CoAtNet：Marrying Convolution and Attention for All Data Sizes
-![img_9.png](img_9.png)
+![img_9.png](util_imgs2/img_9.png)
 #### motivation
 Transformers have attracted increasing interests in computer vision, but they still fall behind state-of-the-art convolutional networks. In this work, we show that
 while Transformers tend to have larger model capacity, their generalization can be worse than convolutional networks due to the lack of the right inductive bias.\
@@ -151,15 +151,15 @@ while Transformers tend to have larger model capacity, their generalization can 
 #### methods
 
 #### experiments
-![img_10.png](img_10.png)
-![img_11.png](img_11.png)
+![img_10.png](util_imgs2/img_10.png)
+![img_11.png](util_imgs2/img_11.png)
 
 ### TNT
 #### motivation
 ...
 #### methods
 put transformer in transformer.
-![img_12.png](img_12.png)
+![img_12.png](util_imgs2/img_12.png)
 #### experiments
 ...
 
@@ -167,30 +167,30 @@ put transformer in transformer.
 #### motivation
 图像的大尺度变化和大像素，使得这和文字的计算量完全不一样。作者要整点高效的，计算量小的，不一样的。
 #### methods
-![img_13.png](img_13.png)
+![img_13.png](util_imgs2/img_13.png)
 - patch partition 先降采样 
 - 再用w/sw-MSA的小窗口来降低计算量。
 
-![img_14.png](img_14.png)
+![img_14.png](util_imgs2/img_14.png)
   
 - 用masked msa来屏蔽无相关且别拼接在一起的window
-  ![img_15.png](img_15.png)
+  ![img_15.png](util_imgs2/img_15.png)
 #### experiments
 跟换这个backbone后，涨点惊人：
 
-![img_16.png](img_16.png)
-![img_17.png](img_17.png)
+![img_16.png](util_imgs2/img_16.png)
+![img_17.png](util_imgs2/img_17.png)
 
 ### Cait
 #### motivation
 #### methods
 - LayerScale：使Deep Vision Transformer易于收敛，并能提高精度。
-![img_18.png](img_18.png)
+![img_18.png](util_imgs2/img_18.png)
   
 (d)中的操作就是本文提出的LayerScale操作了。具体做法是保持Layer Normalization，并对Self-attention或者FFN的输出乘以一个对角矩阵,都是可学习的参数.
   
 - class-attention layers：高效的处理class token的方式。
-![img_19.png](img_19.png)\
+![img_19.png](util_imgs2/img_19.png)\
 ViT在优化参数时，其实是要class token及其后续层的对应的class embedding同时做到2件事情，即：
 1. 引导attention过程，帮助得到attention map。
 2. 这些token还要输入到classifier中，完成分类任务。
@@ -200,7 +200,7 @@ ViT在优化参数时，其实是要class token及其后续层的对应的class 
 主要是想让class token不参与前面的Self-attention，
 使得参数的优化方向尽量不产生矛盾。
 #### experiments
-![img_20.png](img_20.png)
+![img_20.png](util_imgs2/img_20.png)
 
 
 
@@ -219,9 +219,9 @@ self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_
 #### methods
 - Restructurization 和 Soft Split (SS)
 
-![img_21.png](img_21.png)
+![img_21.png](util_imgs2/img_21.png)
 - T2T-ViT Backbone
-![img_22.png](img_22.png)
+![img_22.png](util_imgs2/img_22.png)
 T2T-ViT Backbone 所解决的问题是 ViT 模型的许多 channels 都是冗余的，为了设计一种更高效的 Backbone，同时增加 feature map 的丰富性，作者借鉴了一些 CNN 的 Backbone 架构设计方案，每个 Transformer Block 都有残差链接，这一点和 ResNet 比较相像，所以作者借鉴了5种 CNN 的 Backbone：
   
 借鉴 DenseNet：使用 Dense 连接。借鉴 Wide-ResNets：Deep-narrow vs. shallow-wide 结构对比。借鉴 SE 模块：使用 Channel attention 结构。借鉴 ResNeXt：在注意力机制中使用更多的 heads。借鉴 GhostNet：使用 Ghost 模块。
@@ -229,14 +229,14 @@ T2T-ViT Backbone 所解决的问题是 ViT 模型的许多 channels 都是冗余
 经过比较作者得出了2个结论：
     使用 Deep-narrow 架构，并减少 embedding dimension 更适合视觉 Transformer，可以增加特征的丰富程度。同时减少 embedding dimension 也可以降低计算量。SE 模块的 Channel attention 结构也可以提升 ViT 的性能，但是效果不如前者。
 #### experiments
-![img_23.png](img_23.png)
+![img_23.png](util_imgs2/img_23.png)
 
 ### PVT
-![img_24.png](img_24.png)
+![img_24.png](util_imgs2/img_24.png)
 #### motivation
 作者要做一个通用的backbone ，the first one of transformer
 #### methods
-![img_25.png](img_25.png)
+![img_25.png](util_imgs2/img_25.png)
 #### experiments
 略
 
@@ -245,9 +245,9 @@ T2T-ViT Backbone 所解决的问题是 ViT 模型的许多 channels 都是冗余
 目标检测的任务是要去预测一系列的Bounding Box的坐标以及Label， 现代大多数检测器通过定义一些proposal，anchor或者windows，把问题构建成为一个分类和回归问题来间接地完成这个任务。文章所做的工作，就是将transformers运用到了object detection领域，取代了现在的模型需要手工设计的工作，并且取得了不错的结果。
 
 #### methods
-![img_26.png](img_26.png)
-![img_27.png](img_27.png)
-![img_28.png](img_28.png)
+![img_26.png](util_imgs2/img_26.png)
+![img_27.png](util_imgs2/img_27.png)
+![img_28.png](util_imgs2/img_28.png)
 用对应的gt & giou & l1 作为代价矩阵，找到例如（100,8（目标个数））的代价矩阵。
 从而计算出index ,从logits（非index部分赋值背景0） & bboxes中取出对应的正样本计算损失。
 
@@ -273,12 +273,12 @@ Deformable DETR的提出就是为了解决上面的2个问题，
 所以，作者就使用它来替换Transformer的attention module 。
 #### methods
 -  deformable attention module
-![img_29.png](img_29.png)
-   ![img_30.png](img_30.png)
-   ![img_31.png](img_31.png)
+![img_29.png](util_imgs2/img_29.png)
+   ![img_30.png](util_imgs2/img_30.png)
+   ![img_31.png](util_imgs2/img_31.png)
    参考：https://zhuanlan.zhihu.com/p/342261872
 #### experiments
-![img_32.png](img_32.png)
+![img_32.png](util_imgs2/img_32.png)
 
 ### lv-vit
 #### motivation

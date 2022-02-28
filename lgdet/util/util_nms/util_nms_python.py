@@ -115,7 +115,7 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         #     labels_out.append([pre_score_out, class_out, boxx1, boxy1, boxx2, boxy2])
 
         pre_loc = xywh2xyxy(pre_loc)
-        labels_out = torch.cat((pre_score.unsqueeze(-1), pre_class.unsqueeze(-1), pre_loc),-1)
+        labels_out = torch.cat((pre_score.unsqueeze(-1), pre_class.unsqueeze(-1), pre_loc), -1)
         labels_out = labels_out[keep]
         return labels_out
 
@@ -130,7 +130,7 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         keep = keep[:self.max_detection_boxes_num]
         if xywh2xyxy:
             pre_loc = _xywh2xyxy(pre_loc)
-        labels_out = torch.cat((pre_score.unsqueeze(-1), pre_class.unsqueeze(-1), pre_loc),-1)
+        labels_out = torch.cat((pre_score.unsqueeze(-1), pre_class.unsqueeze(-1), pre_loc), -1)
         labels_out = labels_out[keep]
 
         # labels_out = self.nms2labels(keep, pre_score, pre_class, pre_loc, xywh2xyxy)
@@ -204,7 +204,7 @@ class NMS:  # TODO: dubug the for ...in each NMS.
         # ###########  NMS UP  ####################
         return keep
 
-    def NMS_torchvision(self, pre_score, pre_class, pre_loc):
+    def NMS_torchvision(self, pre_score, pre_class, pre_loc):  # use offset and very fast
         if pre_loc.numel() == 0:
             return []
         pre_loc = _xywh2xyxy(pre_loc)
