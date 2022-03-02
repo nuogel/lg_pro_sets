@@ -263,3 +263,10 @@ class pvt_large(PyramidVisionTransformer):
             patch_size=4, embed_dims=[64, 128, 320, 512], num_heads=[1, 2, 5, 8], mlp_ratios=[8, 8, 4, 4],
             qkv_bias=True, norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 8, 27, 3],
             sr_ratios=[8, 4, 2, 1], pretrained=kwargs['pretrained'])
+
+
+if __name__ == '__main__':
+    x = torch.rand(4, 3, 640, 640)
+    m = pvt_tiny(pretrained=None)
+    y = m(x)
+    print(y)

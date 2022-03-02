@@ -145,8 +145,7 @@ class OBD_Loader(DataLoader):
                 break
 
         label = np.asarray(_label[:], np.float32)
-        if len(label.shape) != 2:
-            a = 0
+        # assert len(label.shape) == 2
         return img, label, data_info
 
     def _add_dataset(self, dataset, is_training):

@@ -40,14 +40,14 @@ class MAP:
             tcls = labels[:, 0].tolist() if nl else []  # target class
             if len(pre_label) == 0:
                 if nl:
-                    self.stats.append((torch.zeros(0, 1, dtype=torch.bool), torch.Tensor(), torch.Tensor(), tcls))
-
-            if nl:
-                correct = self._process_batch(pre_label, labels, self.iouv)
+                    self.stats.append((torch.zeros(0, 10, dtype=torch.bool), torch.Tensor(), torch.Tensor(), tcls))
             else:
-                correct = torch.zeros(pre_label.shape[0], self.niou, dtype=torch.bool)
+                if nl:
+                    correct = self._process_batch(pre_label, labels, self.iouv)
+                else:
+                    correct = torch.zeros(pre_label.shape[0], self.niou, dtype=torch.bool)
 
-            self.stats.append((correct.cpu(), pre_label[:, 0].cpu(), pre_label[:, 1].cpu(), tcls))  # (correct, conf, pcls, tcls)
+                self.stats.append((correct.cpu(), pre_label[:, 0].cpu(), pre_label[:, 1].cpu(), tcls))  # (correct, conf, pcls, tcls)
 
     def score_out(self):
         stats = [np.concatenate(x, 0) for x in zip(*self.stats)]  # to numpy

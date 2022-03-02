@@ -32,7 +32,7 @@ def get_loss_class(belongs, modelname):
         if modelname == 'yolov3':
             from lgdet.loss.loss_yolo_v3 import YoloLoss
             return YoloLoss
-        elif modelname == 'yolov5':
+        elif 'yolov5' in modelname:
             from lgdet.loss.loss_yolo_v5 import YoloLoss
             return YoloLoss
         elif modelname[:4] == 'yolo':
@@ -54,6 +54,7 @@ def get_loss_class(belongs, modelname):
                 'fcos': FCOSLOSS,
                 'refinedet': REFINEDETLOSS,
                 'retinanet': RETINANETLOSS,
+                'pvt_retinanet': RETINANETLOSS,
                 'efficientdet': RETINANETLOSS,
                 # ASR
                 'rnn': RnnLoss,

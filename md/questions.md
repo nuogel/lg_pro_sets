@@ -1,7 +1,8 @@
 # 每日一推
 - SVM 推导
 - kalman 推导
-- sort & deepsort 原理
+- sort & deepsort 推导
+- self-attention & transformer 推导
 
   
 

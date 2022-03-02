@@ -10,8 +10,19 @@ typora-copy-images-to: util_imgs
 归纳偏置在机器学习中是一种很微妙的概念：在机器学习中，很多学习算法经常会对学习的问题做一些假设，这些假设就称为归纳偏置(Inductive Bias)\
 CNN的inductive bias应该是locality和spatial invariance，即空间相近的grid elements有联系而远的没有，和空间不变性（kernel权重共享）
 
+## important papers
+- ViT
+- DeiT
+- PVT
+- Swin
+- CVT
+- CaiT/Deep-vit
+- Lv-vit
+- CoAtNet
+- VOLO
 
 ## paper works
+
 ### DETR
 #### motivation
 #### methods
@@ -21,9 +32,13 @@ CNN的inductive bias应该是locality和spatial invariance，即空间相近的g
 image->patch:\
 Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1=patch_height, p2=patch_width)
 [1,3,32x10,32x10]->[1, 10x10, 32x32x3], 然后再做liner变化
-
+ViT需要现在JFT-300M大型数据集上预训练，然后在ImageNet-1K上训练才能得到出色的结果，但这借助了额外的数据。
 
 ### DeiT
+![img.png](util_imgs2/img_33.png)
+- 仅使用Transformer，不引入Conv的情况下也能达到SOTA效果。
+- 提出了基于token蒸馏的策略，这种针对transformer的蒸馏方法可以超越原始的蒸馏方法。
+- Deit发现使用Convnet作为教师网络能够比使用Transformer架构取得更好的效果。
 ### VT 
 ![img.png](util_imgs1/img_20.png)
 

@@ -10,7 +10,7 @@ class RETINANETLOSS():
         self.device = cfg.TRAIN.DEVICE
         self.num_cls = self.cfg.TRAIN.CLASSES_NUM
         # self.focalloss = FocalLoss_lg()
-        self.focalloss = FocalLoss()
+        self.focalloss = FocalLoss(bceonly=False, add_logist=True, reduction='sum')
 
     def Loss_Call(self, predictions, targets, kwargs):  # predictions with sigmoid()
         pre_cls, pre_loc, anc_xywh = predictions
@@ -35,22 +35,24 @@ class RETINANETLOSS():
             [gt_loc, gt_cls, pos_mask, neg_mask] = [torch.stack(xx, dim=0) for xx in [gt_loc, gt_cls, pos_mask, neg_mask]]
             pos_neg_mask = pos_mask | neg_mask
             gt_loc = gt_loc[pos_mask, :].reshape(-1, 4)
-            pos_num = pos_mask.sum().float()
+            pos_num = pos_mask.sum()
 
         # cls_loss, pos_loss, neg_loss = self.focalloss(pre_cls, gt_cls, pos_mask, neg_mask, reduction='sum')  # FOCALLOSS_LG
-        cls_loss = self.focalloss(pre_cls[pos_neg_mask], gt_cls[pos_neg_mask], logist=False, reduction='sum')
+        cls_loss, pos_loss, neg_loss = self.focalloss(pre_cls[pos_neg_mask], gt_cls[pos_neg_mask])
         pre_loc = pre_loc[pos_mask, :].reshape(-1, 4)
-        loc_loss = F.smooth_l1_loss(pre_loc, gt_loc)*50  #
+        loc_loss = F.smooth_l1_loss(pre_loc, gt_loc)*2  #
         # loc_loss = loc_loss.mean(-1).sum()
 
         # pos_loss /= pos_num/self.num_cls
         # neg_loss /= (pos_num)
-        cls_loss /= pos_num
+        cls_loss = cls_loss/pos_num
         total_loss = cls_loss + loc_loss
         # total_loss = pos_loss + neg_loss + loc_loss
-
+        # total_loss*=5
         # metrics:
+
         with torch.no_grad():
+            pre_cls=pre_cls.sigmoid()
             cls_p = (pre_cls[pos_mask].argmax(-1) == gt_cls[pos_mask].argmax(-1)).float().mean().item()
             pos_sc = pre_cls[pos_mask].max(-1)[0].mean().item()
             pos_t = (pre_cls[pos_mask].max(-1)[0] > self.cfg.TEST.SCORE_THRESH).float().mean().item()

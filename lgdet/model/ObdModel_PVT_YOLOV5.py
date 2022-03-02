@@ -1,21 +1,25 @@
 """Yolo v5 net.
-Model Summary: 288 layers, 7307921 parameters, 7306337 gradients, 17.0 GFLOPs
+Model Summary: 285 layers, 11639649 parameters, 11638113 gradients, 57.4 GFLOPs
 
 """
 import torch
 import torch.nn as nn
-from lgdet.model.backbone.yolov5_backbone import YOLOV5BACKBONE
+from lgdet.model.backbone.pvt import PyramidVisionTransformer
+from lgdet.model.backbone.pvt_v2 import PyramidVisionTransformerV2
 from lgdet.model.neck.yolov5_neck import YOLOV5NECK
 from ..registry import MODELS
+from functools import partial
+
 import math
 
+
 @MODELS.registry()
-class YOLOV5(nn.Module):
+class PVT_YOLOV5(nn.Module):
     """Constructs a darknet-21 model.
     """
 
     def __init__(self, cfg):
-        super(YOLOV5, self).__init__()
+        super(PVT_YOLOV5, self).__init__()
         self.anc_num = cfg.TRAIN.FMAP_ANCHOR_NUM
         self.cls_num = cfg.TRAIN.CLASSES_NUM
         self.final_out = self.anc_num * (1 + 4 + self.cls_num)
@@ -41,14 +45,27 @@ class YOLOV5(nn.Module):
             deteck = [256, 512, 1024]
         elif self.yolov5_type == 'x':
             ...
+        pvt = 'PyramidVisionTransformer'  # PyramidVisionTransformerV2
+        self.backbone = eval(pvt)(num_stages=4,
+                                  patch_size=4, embed_dims=[128, 128, 256, 256], num_heads=[1, 2, 4, 8], mlp_ratios=[8, 8, 4, 4],
+                                  qkv_bias=True, norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[2, 2, 2, 2],
+                                  sr_ratios=[8, 4, 2, 1], drop_rate=0.1, drop_path_rate=0.1)
+        # self.backbone = PyramidVisionTransformer(num_stages=4,
+        #                                          patch_size=4, embed_dims=[128, 128, 256, 256], num_heads=[1, 2, 5, 8], mlp_ratios=[8, 8, 4, 4],
+        #                                          qkv_bias=True, norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[2, 2, 2, 2],
+        #                                          sr_ratios=[8, 4, 2, 1], drop_rate=0.0, drop_path_rate=0.1)
+        #
+        # self.backbone = PyramidVisionTransformerV2(num_stages=4,
+        #                                            patch_size=4, embed_dims=[128, 128, 256, 256], num_heads=[1, 2, 4, 8], mlp_ratios=[8, 8, 4, 4],
+        #                                            qkv_bias=True, norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[2, 2, 2, 2],
+        #                                            sr_ratios=[8, 4, 2, 1], drop_rate=0.0, drop_path_rate=0.1)
 
-        self.backbone = YOLOV5BACKBONE(chs=backbone_chs, csp=backbone_csp)
         self.neck = YOLOV5NECK(chs=neck_chs, csp=neck_csp)
         self.head = nn.ModuleList(nn.Conv2d(x, self.final_out, 1) for x in deteck)
 
     def forward(self, input_x, **args):
         x = input_x
-        backbone = self.backbone(x)
+        backbone = self.backbone(x)[1:]
         neck = self.neck(backbone)
         featuremaps = []
         for neck_i, h_i in zip(neck, self.head):
@@ -58,7 +75,7 @@ class YOLOV5(nn.Module):
 
     def weights_init(self):
         # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
-        cf=None
+        cf = None
         for mi, s in zip(self.head, [8, 16, 32]):  # from
             # mi.weight.data.fill_(0)
             # tricks form yolov5:

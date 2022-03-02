@@ -17,7 +17,6 @@ import math
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 
-
 class BaseSolver(object):
     def __init__(self, cfg, args, train):
         self.is_training = train
@@ -93,28 +92,38 @@ class BaseSolver(object):
     def _get_optimizer(self):
         opt_type = self.cfg.TRAIN.OPTIMIZER.lower()
         self.init_lr = self.args.lr
+        self.optimizer_group_parameters = False
+        if self.optimizer_group_parameters:
+            g0, g1, g2 = [], [], []  # optimizer parameter groups
+            for v in self.model.modules():
+                if hasattr(v, 'bias') and isinstance(v.bias, nn.Parameter):  # bias
+                    g2.append(v.bias)
+                if isinstance(v, nn.BatchNorm2d):  # weight (no decay)
+                    g0.append(v.weight)
+                elif hasattr(v, 'weight') and isinstance(v.weight, nn.Parameter):  # weight (with decay)
+                    g1.append(v.weight)
 
-        g0, g1, g2 = [], [], []  # optimizer parameter groups
-        for v in self.model.modules():
-            if hasattr(v, 'bias') and isinstance(v.bias, nn.Parameter):  # bias
-                g2.append(v.bias)
-            if isinstance(v, nn.BatchNorm2d):  # weight (no decay)
-                g0.append(v.weight)
-            elif hasattr(v, 'weight') and isinstance(v.weight, nn.Parameter):  # weight (with decay)
-                g1.append(v.weight)
-
-        if opt_type == 'adam':
-            self.optimizer = torch.optim.Adam(g0, lr=self.init_lr, betas=(float(self.cfg.TRAIN.MOMENTUM), 0.999))
-        elif opt_type == 'adamw':
-            self.optimizer = torch.optim.Adam(g0, lr=self.init_lr, weight_decay=1e-2)  # weight_decay=1e-2
-        elif opt_type == 'sgd':
-            self.optimizer = torch.optim.SGD(g0, lr=self.init_lr, momentum=float(self.cfg.TRAIN.MOMENTUM), nesterov=True)
+            if opt_type == 'adam':
+                self.optimizer = torch.optim.Adam(g0, lr=self.init_lr, betas=(float(self.cfg.TRAIN.MOMENTUM), 0.999))
+            elif opt_type == 'adamw':
+                self.optimizer = torch.optim.Adam(g0, lr=self.init_lr, weight_decay=1e-2)  # weight_decay=1e-2
+            elif opt_type == 'sgd':
+                self.optimizer = torch.optim.SGD(g0, lr=self.init_lr, momentum=float(self.cfg.TRAIN.MOMENTUM), nesterov=True)
+            else:
+                self.cfg.logger.error('NO such a optimizer: ' + str(opt_type))
+            self.optimizer.add_param_group({'params': g1, 'weight_decay': float(self.cfg.TRAIN.WEIGHT_DECAY)})  # add g1 with weight_decay
+            self.optimizer.add_param_group({'params': g2})  # add g2 (biases)
+            print('using: ', opt_type)
+            del g0, g1, g2
         else:
-            self.cfg.logger.error('NO such a optimizer: ' + str(opt_type))
-        self.optimizer.add_param_group({'params': g1, 'weight_decay': float(self.cfg.TRAIN.WEIGHT_DECAY)})  # add g1 with weight_decay
-        self.optimizer.add_param_group({'params': g2})  # add g2 (biases)
-        print('using: ', opt_type)
-        del g0, g1, g2
+            if opt_type == 'adam':
+                self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.init_lr, betas=(float(self.cfg.TRAIN.MOMENTUM), 0.999))
+            elif opt_type == 'adamw':
+                self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.init_lr, weight_decay=1e-2)  # weight_decay=1e-2
+            elif opt_type == 'sgd':
+                self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.init_lr, momentum=float(self.cfg.TRAIN.MOMENTUM), nesterov=True)
+            else:
+                self.cfg.logger.error('NO such a optimizer: ' + str(opt_type))
 
         if self.cfg.TRAIN.LR_SCHEDULE == 'cos':
             print('using cos LambdaLR lr_scheduler')
@@ -154,8 +163,9 @@ class BaseSolver(object):
 
     def _set_warmup_lr(self):
         self.optimizer.param_groups[0]['lr'] = np.interp(self.global_step, [0, self.cfg.TRAIN.WARM_UP_STEP], [0, self.init_lr])
-        self.optimizer.param_groups[1]['lr'] = np.interp(self.global_step, [0, self.cfg.TRAIN.WARM_UP_STEP], [0, self.init_lr])
-        self.optimizer.param_groups[2]['lr'] = np.interp(self.global_step, [0, self.cfg.TRAIN.WARM_UP_STEP], [self.cfg.TRAIN.WARMUP_BIAS_LR, self.init_lr])
+        if self.optimizer_group_parameters:
+            self.optimizer.param_groups[1]['lr'] = np.interp(self.global_step, [0, self.cfg.TRAIN.WARM_UP_STEP], [0, self.init_lr])
+            self.optimizer.param_groups[2]['lr'] = np.interp(self.global_step, [0, self.cfg.TRAIN.WARM_UP_STEP], [self.cfg.TRAIN.WARMUP_BIAS_LR, self.init_lr])
 
     def _get_dataloader(self, is_training, cfg):
         """

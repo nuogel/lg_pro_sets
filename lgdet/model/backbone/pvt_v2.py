@@ -387,7 +387,7 @@ class pvt_v2_b5(PyramidVisionTransformerV2):
 
 
 if __name__ == '__main__':
-    x = torch.rand(4,3,320,320)
-    m = pvt_v2_b0(pretrained=None)
+    x = torch.rand(4, 3, 640, 640)
+    m = pvt_v2_b1(pretrained=None)
     y = m(x)
     print(y)

@@ -97,9 +97,10 @@ class FocalLoss_lg(nn.Module):
 
 class FocalLoss(nn.Module):
     # Wraps focal loss around existing loss_fcn(), i.e. criteria = FocalLoss(nn.BCEWithLogitsLoss(), gamma=1.5)
-    def __init__(self, gamma=1.5, alpha=0.25, add_logist=False, reduction='mean'):
+    def __init__(self, gamma=1.5, alpha=0.25, add_logist=False, bceonly=False, reduction='mean'):
         super(FocalLoss, self).__init__()
         self.add_logist = add_logist
+        self.bceonly=bceonly
         if add_logist:
             self.loss_fcn = nn.BCEWithLogitsLoss(reduction=reduction)
         else:
@@ -114,6 +115,8 @@ class FocalLoss(nn.Module):
     def forward(self, pred, true, **kwargs):
         device = pred.device
         loss = self.loss_fcn(pred, true).to(device)
+        if self.bceonly is True:
+            return loss.mean(), None, None
         # p_t = torch.exp(-loss)
         # loss *= self.alpha * (1.000001 - p_t) ** self.gamma  # non-zero power for gradient stability
 

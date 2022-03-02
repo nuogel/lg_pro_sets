@@ -322,7 +322,7 @@ class LgTransformer:
             label = np.asarray(label, np.float32)
 
         label = np.insert(label, 0, 0, 1)
-        label = torch.from_numpy(label)
+        label = torch.from_numpy(label).to(torch.float32)
         return img, label
 
     def relative_label(self, img, label):
