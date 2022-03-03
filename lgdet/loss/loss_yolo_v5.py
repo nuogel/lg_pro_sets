@@ -188,7 +188,7 @@ class YoloLoss:
         targets[..., 2:4] = (labels[..., 2:4] + labels[..., 4:6]) / 2
         targets[..., 4:6] = (labels[..., 4:6] - labels[..., 2:4])
 
-        lcls, lbox, lobj = torch.zeros(1, device=self.device), torch.zeros(1, device=self.device), torch.zeros(1, device=self.device)
+        lcls, lbox, lobj,noobj_t = torch.zeros(1, device=self.device), torch.zeros(1, device=self.device), torch.zeros(1, device=self.device),torch.zeros(1, device=self.device)
         meanious = []
         pos_score = []
         cls_score = []
@@ -235,6 +235,7 @@ class YoloLoss:
                 # with open('targets.txt', 'a') as file:
                 #     [file.write('%11.5g ' * 4 % tuple(x) + '\n') for x in torch.cat((txy[i], twh[i]), 1)]
             obji = self.BCEobj(pi[..., 0], tobj)
+            noobj_t += (((pi[..., 0][tobj == 0]).sigmoid()) > 0.4).sum()
             lobj += obji * self.balance[i]  # obj loss
             pos_score.append((pi[..., 0][b, a, gj, gi]).sigmoid())
 
@@ -252,5 +253,6 @@ class YoloLoss:
                    'cls_loss': lcls.item(),
                    'mean_iou': meaniou.item(),
                    'cls_p': cls_score.item(),
-                   'pos_score': pos_score.item()}
+                   'pos_score': pos_score.item(),
+                   'noobj_t':noobj_t.item()}
         return {'total_loss': total_loss, 'metrics': metrics}

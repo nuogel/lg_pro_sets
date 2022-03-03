@@ -5,8 +5,8 @@ from torch.nn import functional as F
 import math
 import torch.utils.model_zoo as model_zoo
 from lgdet.util.util_anchor_maker import Anchors
-from lgdet.model.backbone.ResNet import build_resnet
-
+from lgdet.model.backbone.resnet import resnet50
+from lgdet.model.neck.fpn_neck import FPN_1
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
     'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
@@ -157,46 +157,6 @@ class ClipBoxes(nn.Module):
         return boxes
 
 
-class fpn(nn.Module):
-    def __init__(self, channels_of_fetures, channel_out=256):
-        """
-        fpn,特征金字塔
-        :param channels_of_fetures: list,输入层的通道数,必须与输入特征图相对应
-        :param channel_out:
-        """
-        super(fpn, self).__init__()
-        self.channels_of_fetures = channels_of_fetures
-
-        self.lateral_conv1 = nn.Conv2d(channels_of_fetures[2], channel_out, kernel_size=1, stride=1, padding=0)
-        self.lateral_conv2 = nn.Conv2d(channels_of_fetures[1], channel_out, kernel_size=1, stride=1, padding=0)
-        self.lateral_conv3 = nn.Conv2d(channels_of_fetures[0], channel_out, kernel_size=1, stride=1, padding=0)
-
-        self.top_down_conv1 = nn.Conv2d(channel_out, channel_out, kernel_size=3, stride=1, padding=1)
-        self.top_down_conv2 = nn.Conv2d(channel_out, channel_out, kernel_size=3, stride=1, padding=1)
-        self.top_down_conv3 = nn.Conv2d(channel_out, channel_out, kernel_size=3, stride=1, padding=1)
-
-    def forward(self, features):
-        """
-
-        :param features:
-        :return:
-        """
-        c3, c4, c5 = features
-
-        p5 = self.lateral_conv1(c5)  # 19
-        p4 = self.lateral_conv2(c4)  # 38
-        p3 = self.lateral_conv3(c3)  # 75
-
-        p4 = F.interpolate(input=p5, size=(p4.size(2), p4.size(3)), mode="nearest") + p4
-        p3 = F.interpolate(input=p4, size=(p3.size(2), p3.size(3)), mode="nearest") + p3
-
-        p5 = self.top_down_conv1(p5)
-        p4 = self.top_down_conv1(p4)
-        p3 = self.top_down_conv1(p3)
-
-        return p3, p4, p5
-
-
 class regressor(nn.Module):
     def __init__(self, num_features_in, num_anchors=9, feature_size=256):
         super(regressor, self).__init__()
@@ -300,10 +260,10 @@ class RETINANET(nn.Module):
         }
         assert resnet in expansion_list
 
-        self.backbone = build_resnet(resnet, pretrained=True)
+        self.backbone = eval(resnet)(pretrained=True)
         self.freeze_bn()
         expansion = expansion_list[resnet]
-        self.fpn = fpn(channels_of_fetures=[128 * expansion, 256 * expansion, 512 * expansion])
+        self.fpn = FPN_1(channels_of_fetures=[128 * expansion, 256 * expansion, 512 * expansion])
         self.regressor = regressor(256)
         self.classifier = classifier(256, num_classes=num_classes)
         self.anchors = Anchors()

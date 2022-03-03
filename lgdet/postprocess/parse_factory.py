@@ -12,17 +12,18 @@ class ParsePredict:
     def __init__(self, cfg):
         self.cfg = cfg
         self.parse_dict = {
-            'yolov2': ParsePredict_yolo,
-            'yolov3': ParsePredict_yolo,
-            'yolov3_tiny': ParsePredict_yolo,
-            'yolov3_tiny_o': ParsePredict_yolo,
-            'yolov3_tiny_mobilenet': ParsePredict_yolo,
-            'yolov3_tiny_squeezenet': ParsePredict_yolo,
-            'yolov3_tiny_shufflenet': ParsePredict_yolo,
-            'yolov2_fgfa': ParsePredict_yolo,
-            'yolov5': ParsePredict_yolo,
-            'pvt_yolov5': ParsePredict_yolo,
-            'yolonano': ParsePredict_yolo,
+            'yolo': ParsePredict_yolo,
+            # 'yolov2': ParsePredict_yolo,
+            # 'yolov3': ParsePredict_yolo,
+            # 'yolov3_tiny': ParsePredict_yolo,
+            # 'yolov3_tiny_o': ParsePredict_yolo,
+            # 'yolov3_tiny_mobilenet': ParsePredict_yolo,
+            # 'yolov3_tiny_squeezenet': ParsePredict_yolo,
+            # 'yolov3_tiny_shufflenet': ParsePredict_yolo,
+            # 'yolov2_fgfa': ParsePredict_yolo,
+            # 'yolov5': ParsePredict_yolo,
+            # 'pvt_yolov5': ParsePredict_yolo,
+            # 'yolonano': ParsePredict_yolo,
             'fcos': ParsePredict_fcos,
             'refinedet': ParsePredict_refinedet,
             'efficientdet': ParsePredict_multibox,
@@ -32,9 +33,14 @@ class ParsePredict:
             'lrf300': ParsePredict_multibox,
             'lrf512': ParsePredict_multibox,
         }
-        self.transformer = LgTransformer(self.cfg)
 
-        self.parser = self.parse_dict[self.cfg.TRAIN.MODEL](self.cfg)
+        self.transformer = LgTransformer(self.cfg)
+        modelname = self.cfg.TRAIN.MODEL
+        for name in ['yolo']:
+            if name in modelname:
+                modelname = name
+                break
+        self.parser = self.parse_dict[modelname](self.cfg)
 
     def parse_predict(self, f_maps):
         labels_predict = self.parser.parse_predict(f_maps)

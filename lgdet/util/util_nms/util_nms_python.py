@@ -27,7 +27,7 @@ class NMS:  # TODO: dubug the for ...in each NMS.
             print('use nms-lg')
         self.max_detection_boxes_num = 300
         if self.cfg.TEST.MAP_FSCORE in [0, '0']:  # 1-fscore
-            self.score_thresh = 0.001  # count map score thresh is <0.05
+            self.score_thresh = 0.05  # count map score thresh is <0.05
             self.max_detection_boxes_num = 300
 
     def forward(self, pre_score, pre_loc, xywh2xyxy=True):

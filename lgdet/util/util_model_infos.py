@@ -16,9 +16,9 @@ def model_info(model, verbose=False, img_size=640):
     try:  # FLOPs
         from thop import profile
         img = torch.zeros((1, 3, img_size[0], img_size[1]), device=next(model.parameters()).device)  # input
-        flops = profile(deepcopy(model), inputs=(img,), verbose=False)[0] / 1E9 * 2  # stride GFLOPs
-        fs = ', %.1f GFLOPs' % (flops)  # GFLOPs
+        flops = profile(deepcopy(model), inputs=(img,), verbose=False)[0]
+        fs = ', %.1f GFLOPs' % (flops / 1E9 * 2 )  # GFLOPs # stride GFLOPs
     except (ImportError, Exception):
         fs = ''
-
-    print(f"Model Summary: {len(list(model.modules()))} layers, {n_p} parameters, {n_g} gradients{fs}")
+    M=1e6
+    print(f"Model Summary: {len(list(model.modules()))} layers, {n_p/M} (M)parameters, {n_g/M} (M)gradients{fs}")

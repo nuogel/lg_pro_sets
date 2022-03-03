@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from lgdet.util.util_anchor_maker import Anchors
-from lgdet.model.backbone.resnet import resnet50
+from lgdet.model.backbone.resnet import *
 from lgdet.model.head.retina_head import RetinaHead
 from lgdet.model.neck.fpn_neck import FPN
 from ..registry import MODELS
@@ -19,9 +19,20 @@ class RETINANET(nn.Module):
         self.config.use_GN_head = True
         self.config.freeze_bn = False
         self.config.freeze_stage_1 = False
+        resnet = 'resnet50'
+        expansion_list = {
+            'resnet18': 1,
+            'resnet34': 1,
+            'resnet50': 4,
+            'resnet101': 4,
+            'resnet152': 4,
+        }
+        assert resnet in expansion_list
 
-        self.backbone = resnet50(pretrained=True, if_include_top=False)
-        self.fpn = FPN(features=fpn_out_channels, use_p5=use_p5)
+        self.backbone = eval(resnet)(pretrained=True)
+        # self.freeze_bn()
+        expansion = expansion_list[resnet]
+        self.fpn = FPN(channels_of_fetures=[128 * expansion, 256 * expansion, 512 * expansion],features=fpn_out_channels, use_p5=use_p5)
         self.head = RetinaHead(config=self.config)
         self.anchors = Anchors()
 

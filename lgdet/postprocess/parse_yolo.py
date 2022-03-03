@@ -14,7 +14,7 @@ class ParsePredict_yolo:
         self.NMS = NMS(cfg)
         self.device = self.cfg.TRAIN.DEVICE
         self.boxlosstype, self.objlosstype = self.cfg.TRAIN.LOSSTYPE
-        if self.cfg.TRAIN.MODEL == 'yolov5':
+        if 'yolov5' in self.cfg.TRAIN.MODEL:
             self.grid_sensitive = 2  # pp-yolo set 1.05    # Grid Sensitive [-1 or >1]
             self.scale_wh = True
         else:

@@ -1,6 +1,5 @@
 from .model.vit.vit import VIT
 
-
 from .model.ObdModel_YOLOV2 import YOLOV2
 from .model.ObdModel_YOLOV3 import YOLOV3
 from .model.ObdModel_YOLOV3_TINY import YOLOV3_TINY
@@ -10,6 +9,7 @@ from .model.ObdModel_YOLOV3_TINY_SHUFFLENET import YOLOV3_TINY_SHUFFLENET
 from .model.ObdModel_YOLOV3_TINY_SQUEEZENET import YOLOV3_TINY_SQUEEZENET
 from .model.ObdModel_YOLOV5 import YOLOV5
 from .model.ObdModel_PVT_YOLOV5 import PVT_YOLOV5
+from .model.ObdModel_SWIN_YOLOV5 import SWIN_YOLOV5
 
 from .model.ObdModel_LRF300 import LRF300
 from .model.ObdModel_LRF512 import LRF512

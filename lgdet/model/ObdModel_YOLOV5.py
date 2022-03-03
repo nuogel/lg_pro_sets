@@ -1,6 +1,5 @@
 """Yolo v5 net.
-Model Summary: 288 layers, 7307921 parameters, 7306337 gradients, 17.0 GFLOPs
-
+Model Summary: 288 layers, 7.307921 (M)parameters, 7.306337 (M)gradients, 2.1 GFLOPs
 """
 import torch
 import torch.nn as nn
