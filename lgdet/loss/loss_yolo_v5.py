@@ -254,5 +254,5 @@ class YoloLoss:
                    'mean_iou': meaniou.item(),
                    'cls_p': cls_score.item(),
                    'pos_score': pos_score.item(),
-0                   'noobj_t':noobj_t.item()/B}
+                   'noobj_t':noobj_t.item()/B}
         return {'total_loss': total_loss, 'metrics': metrics}
