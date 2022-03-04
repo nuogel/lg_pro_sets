@@ -571,6 +571,6 @@ class SwinTransformer(nn.Module):
 
 if __name__ == '__main__':
     x = torch.randn(4, 3, 448, 448)
-    swt = SwinTransformer(img_size=448)
+    swt = SwinTransformer()
     y = swt(x)
     print(y)

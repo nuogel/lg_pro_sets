@@ -34,7 +34,7 @@ TRAIN:
   MIN_AREA: 10 #100 #400 #4 #
   #[H,W]
   #[384, 960] [640, 640]#[1280, 1280] [416, 416] #[512, 768] # [1024,1920] #[800,1333]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
-  IMG_SIZE: [ 224, 224 ]
+  IMG_SIZE: [ 448, 448 ]
   MULTI_SCALE: 0
   MULTI_SCALE_SIZE: [ 320, 640 ] #(320-640)//32
 
