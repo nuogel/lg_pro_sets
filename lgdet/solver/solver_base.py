@@ -29,7 +29,7 @@ class BaseSolver(object):
 
     def _get_configs(self, cfg, args):
         self.cfg, self.args = prepare_cfg(cfg, args, self.is_training)
-        self.cfg.TRAIN.DEVICE, self.device_ids = load_device(self.cfg)
+        self.cfg.TRAIN.DEVICE, self.device_ids, self.multi_gpu = load_device(self.cfg)
 
     def _get_model(self):
         self.model = build_from_cfg(MODELS, str(self.cfg.TRAIN.MODEL).upper())(self.cfg)
@@ -64,11 +64,14 @@ class BaseSolver(object):
             if self.is_training:
                 self.cfg.writer.clean_history_and_init_log()
 
-        if len(self.device_ids) > 1:
+        if self.multi_gpu:
             print('using device id:', self.device_ids)
-            self.model = DDP(self.model, device_ids=self.device_ids, output_device=self.device_ids)
+            self.model = torch.nn.DataParallel(self.model, device_ids=self.device_ids, output_device=self.device_ids)
             self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model).to(self.cfg.TRAIN.DEVICE)
             self.cfg.logger.info('Using SyncBatchNorm()')
+            import torch.distributed as dist
+            dist.init_process_group('nccl', init_method='file:///tmp/somefile', rank=0, world_size=1)
+            
         if self.cfg.TRAIN.EMA:
             self.ema = ModelEMA(self.model, device=self.cfg.TRAIN.DEVICE)
 
@@ -160,8 +163,15 @@ class BaseSolver(object):
                 y.append(self.optimizer.param_groups[0]['lr'])
             print(y)
         self.optimizer.zero_grad()
+        if self.multi_gpu:
+            self.optimizer = nn.DataParallel(self.optimizer, device_ids=self.device_ids)
+            self.scheduler = nn.DataParallel(self.scheduler, device_ids=self.device_ids)
+            self.optimizer = self.optimizer.module
+            self.scheduler = self.scheduler.module
+
 
     def _set_warmup_lr(self):
+
         self.optimizer.param_groups[0]['lr'] = np.interp(self.global_step, [0, self.cfg.TRAIN.WARM_UP_STEP], [0, self.init_lr])
         if self.optimizer_group_parameters:
             self.optimizer.param_groups[1]['lr'] = np.interp(self.global_step, [0, self.cfg.TRAIN.WARM_UP_STEP], [0, self.init_lr])

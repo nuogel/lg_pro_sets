@@ -15,10 +15,10 @@ CNN的inductive bias应该是locality和spatial invariance，即空间相近的g
 - DeiT
 - PVT
 - Swin
-- CoAtNet
 - CVT
 - CaiT/Deep-vit
 - Lv-vit
+- CoAtNet
 - VOLO
 
 ## paper works

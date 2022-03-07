@@ -1,13 +1,16 @@
 def coinChange(coins, amount: int) -> int:
-    coins.insert(0,0)
-    matrix =[[0 for i in range(amount+1)] for i in range(len(coins))]
+    dp = [0]
+    for amounti in range(1, amount + 1):
+        mincoins = 10000
+        for coini in coins:
+            if amounti - coini >= 0 and dp[amounti - coini] != -1:
+                mincoins = min(mincoins, dp[amounti - coini] + 1)
+        if mincoins != 10000:
+            dp.append(mincoins)
+        else:
+            dp.append(-1)
 
-    for i in range(len(coins)):
-        for j in range(amount+1):
-            if coins[j]>j:
-                matrix[i][j]=matrix[i-1][j]
-            else:
-                matrix[i][j] = max(matrix[i - 1][j], matrix[i][j-coins[j]]+1)
-    return matrix[-1][-1]
+    return dp[-1]
 
-coinChange([1,2,5], 11)
+
+coinChange([2, 5, 10, 1], 27)

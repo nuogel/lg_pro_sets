@@ -190,7 +190,7 @@ class OBD_Loader(DataLoader):
             executor = ThreadPoolExecutor(max_workers=32)
             for data_line in tqd:
                 all_task.append(executor.submit(load_data_fun, data_line))
-            # out = [future.result() for future in tqdm.tqdm(all_task)]
+            out = [future.result() for future in tqdm.tqdm(all_task)]
         else:
             for data_line in tqd:
                 load_data_fun(data_line)
