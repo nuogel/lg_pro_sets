@@ -68,11 +68,10 @@ def distribution_focal_loss(pred, label):
     weight_left = dis_right.float() - label
     weight_right = label - dis_left.float()
     loss = F.cross_entropy(pred, dis_left, reduction='none') * weight_left \
-        + F.cross_entropy(pred, dis_right, reduction='none') * weight_right
+           + F.cross_entropy(pred, dis_right, reduction='none') * weight_right
     return loss
 
 
-@LOSSES.register_module()
 class QualityFocalLoss(nn.Module):
     r"""Quality Focal Loss (QFL) is a variant of `Generalized Focal Loss:
     Learning Qualified and Distributed Bounding Boxes for Dense Object
@@ -137,7 +136,6 @@ class QualityFocalLoss(nn.Module):
         return loss_cls
 
 
-@LOSSES.register_module()
 class DistributionFocalLoss(nn.Module):
     r"""Distribution Focal Loss (DFL) is a variant of `Generalized Focal Loss:
     Learning Qualified and Distributed Bounding Boxes for Dense Object

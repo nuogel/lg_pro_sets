@@ -8,6 +8,7 @@ from lgdet.model.neck.yolov5_neck import YOLOV5NECK
 from ..registry import MODELS
 import math
 
+
 @MODELS.registry()
 class YOLOV5(nn.Module):
     """Constructs a darknet-21 model.
@@ -57,7 +58,7 @@ class YOLOV5(nn.Module):
 
     def weights_init(self):
         # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
-        cf=None
+        cf = None
         for mi, s in zip(self.head, [8, 16, 32]):  # from
             # mi.weight.data.fill_(0)
             # tricks form yolov5:
