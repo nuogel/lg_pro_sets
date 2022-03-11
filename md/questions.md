@@ -10,8 +10,9 @@
 ## 传统图像
 - 放射变换公式
 
-## others
+## c++ 概念
 
+## others
 - torch,onnx,trt 的运行速度对比？
 - c++的CV2图片怎么转为python格式的v2图片？
 - ctc 原理与用法是？
