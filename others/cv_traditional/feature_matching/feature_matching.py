@@ -1,4 +1,6 @@
-from others.CV_Traditional.feature_matching.sift import *
+from others.cv_traditional.feature_matching.sift import *
+from others.cv_traditional.feature_matching.surf import *
+from others.cv_traditional.feature_matching.orb import *
 
 
 def compare(filename):
