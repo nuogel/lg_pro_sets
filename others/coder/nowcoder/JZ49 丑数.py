@@ -69,6 +69,7 @@ def official(idx):
             k += 1
     return lst[idx - 1]  # 返回答案,如果idx==1，now没有定义，依旧会CE，所以此处不能写now
 
+
 if __name__ == '__main__':
     print(official(1500))
     print(uglydataindex_2(1500))

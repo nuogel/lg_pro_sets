@@ -54,7 +54,7 @@ class LgTransformer:
                     labels[:, 3] = r * lab[:, 3] + pad_w
                     labels[:, 4] = r * lab[:, 4] + pad_h
                 except:
-                    a=0
+                    a = 0
             labels4.append(labels)
 
         # Concat/clip labels
@@ -166,13 +166,14 @@ class LgTransformer:
         top, bottom = int(round(pad_h - 0.1)), int(round(pad_h + 0.1))
         left, right = int(round(pad_w - 0.1)), int(round(pad_w + 0.1))
         img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
-        if label!=[]:
+        if label != []:
             labels = label.copy()
             labels[:, 1] = ratio[0] * label[:, 1] + pad_w
             labels[:, 2] = ratio[1] * label[:, 2] + pad_h
             labels[:, 3] = ratio[0] * label[:, 3] + pad_w
             labels[:, 4] = ratio[1] * label[:, 4] + pad_h
-        else:labels=label
+        else:
+            labels = label
         data_info['img_raw_size(h,w)'] = shape
         data_info['ratio(w,h)'] = np.asarray(ratio)  # new/old
         data_info['padding(w,h)'] = np.asarray([pad_w, pad_h])
@@ -231,17 +232,15 @@ class LgTransformer:
     def data_aug(self, img, label, data_info):
         labels = []
         try_tims = 0
-        while len(labels) == 0 or [] in labels:
+        while [] in labels or len(labels) == 0:
             imgs, labels = self.dataaug._augmenting(aug_way_ids=([5, 6, 10, 11, 12, 13, 14, 15, 16, 20, 22], [20, 25]),
                                                     datas=([img], [label]))  # [11,20, 21, 22]
             try_tims += 1
-
+            if try_tims > 100:
+                imgs = [img]
+                labels = [label]
         img_after = imgs[0]
         label_after = labels[0]
-        try:
-            len(label) == 0
-        except:
-            ...
         label_after = np.asarray(label_after)
         return img_after, label_after, data_info
 

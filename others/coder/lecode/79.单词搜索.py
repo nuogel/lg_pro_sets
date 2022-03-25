@@ -19,4 +19,5 @@ def exist(board, word: str) -> bool:
                 if solve(1, i, j, [word[0]], [(i,j)]):
                     return True
     return False
+
 exist([["a","a"]],"aaa")

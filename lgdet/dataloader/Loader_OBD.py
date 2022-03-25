@@ -66,7 +66,7 @@ class OBD_Loader(DataLoader):
 
     def __getitem__(self, index):
         img, label, data_info = self._load_gt(index)
-
+        # TODO: discard the small target.
         # GRAY_BINARY
         if (self.cfg.TRAIN.GRAY_BINARY and self.is_training) or (self.cfg.TEST.GRAY_BINARY and not self.is_training):
             img, label, data_info = self.lgtransformer.img_binary(img, label, data_info)

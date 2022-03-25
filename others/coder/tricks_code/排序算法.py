@@ -1,27 +1,34 @@
+import collections
+
 import numpy as np
 import math
 import copy
 
 
-def bubble_sort(arr):
-    for i in range(len(arr)):
-        for j in range(1, len(arr) - i):
-            if arr[j - 1] > arr[j]:
-                max = arr[j - 1]
-                arr[j - 1] = arr[j]
-                arr[j] = max
-    return arr
+# 冒泡排序
+def bubble_sort(nums):
+    ll = len(nums)
+    for i in range(ll):
+        for j in range(i + 1, ll):
+            if nums[i] > nums[j]:
+                nums[i], nums[j] = nums[j], nums[i]
+    return nums
+
+
+# 插入排序
+
+def insert_sort(nums):
+    for i in range(len(nums)):
+        for j in range(i):
+            if nums[i] < nums[j]:
+                numi = nums[i]
+                nums = nums[:i] + nums[i + 1:]
+                nums.insert(j, numi)
+    return nums
 
 
 # 归并排序
 def merge_sort(alist):
-    if len(alist) <= 1:
-        return alist
-    # 二分分解
-    num = len(alist) // 2
-    left = merge_sort(alist[:num])
-    right = merge_sort(alist[num:])
-
     # 合并
     def merge(left, right):
         '''合并操作，将两个有序数组left[]和right[]合并成一个大的有序数组'''
@@ -38,6 +45,13 @@ def merge_sort(alist):
         result += left[l:]
         result += right[r:]
         return result
+
+    if len(alist) <= 1:
+        return alist
+    # 二分分解
+    num = len(alist) // 2
+    left = merge_sort(alist[:num])
+    right = merge_sort(alist[num:])
 
     return merge(left, right)
 
@@ -164,11 +178,29 @@ def count_sort(arr):  # arr为待排序列表，max_count为最大元素
             arr.append(index + _min)  # 把index添加到arr，次数为val
     return arr
 
+def count_sort2(nums):
+    ids = list(set(nums))
+    ids.sort()
+    dictnum = {}
+    for idsi in ids:
+        dictnum[idsi]=0
+    for ni in nums:
+        dictnum[ni]+=1
+    output = []
+    for k,v in dictnum.items():
+        output+=[k]*v
+    return output
+
 
 if __name__ == '__main__':
     arr = list(np.random.randint(0, 20, 10))
-    print(arr)
+    print('raw_arr:', arr)
+    arrc = copy.copy(arr)
+    arrc.sort()
+    print('arr.sort():', arrc)
     y = bubble_sort(copy.copy(arr))
+    print(y)
+    y = insert_sort(copy.copy(arr))
     print(y)
     y = merge_sort(copy.copy(arr))
     print(y)
@@ -177,6 +209,8 @@ if __name__ == '__main__':
     y = countingSort(copy.copy(arr))
     print(y)
     y = count_sort(copy.copy(arr))
+    print(y)
+    y = count_sort2(copy.copy(arr))
     print(y)
     y = quick_sort(copy.copy(arr), 0, len(copy.copy(arr)) - 1)
     print(y)

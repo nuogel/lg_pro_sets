@@ -2,9 +2,6 @@ import random
 import xml.etree.ElementTree as ET
 import numpy as np
 
-keep_difficult = False
-name_dict = {"烟雾": 'smoke', "火": 'fire', 'person': 'person'}
-
 
 class GetXmlGtBoxes:
     def __init__(self, keep_difficult=False, name_dict={'﻿火': '火'}):
@@ -20,7 +17,7 @@ class GetXmlGtBoxes:
         gt = []
         for obj in target.iter("object"):
             difficult = int(obj.find("difficult").text) == 1
-            if not keep_difficult and difficult:
+            if not self.keep_difficult and difficult:
                 continue
             name = obj.find("name").text.strip()
             if name in self.name_dict:

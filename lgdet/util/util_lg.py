@@ -4,7 +4,7 @@ import cv2
 import torch
 import numpy as np
 from PIL import Image
-
+import random
 
 # import y4m
 
@@ -131,4 +131,7 @@ if __name__ == '__main__':
     # a = torch.version.cuda
     # _y4m()
     # other()
-    resize()
+    # resize()
+    random.randint(0,1)
+    a= torch.full(size=(16,), fill_value=26, dtype=torch.long)
+    a=0

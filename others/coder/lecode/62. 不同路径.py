@@ -28,6 +28,22 @@ def uniquePaths2(m: int, n: int) -> int:
     out = uinq(m - 1, n - 1)
     return out
 
+def uniquePaths3(m: int, n: int) -> int:
+    martix = [[-1 for i in range(n)] for j in range(m)]
+
+    for i in range(m):
+        martix[i][0]=1
+    for j in range(n):
+        martix[0][j]=1
+
+    for i in range(1, m):
+        for j in range(1, n):
+            martix[i][j] = martix[i-1][j]+martix[i][j-1]
+
+    return  martix[-1][-1]
+
+
 
 uniquePaths(3, 7)
 print(uniquePaths2(3, 7))
+print(uniquePaths3(3, 7))
