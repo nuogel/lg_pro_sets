@@ -10,5 +10,18 @@ def maxProduct(nums) -> int:
 
     return max(maxv)
 
-maxProduct([2,3,-2,4])
+maxProduct([-4,-3,-2])
 
+
+def tyrit(nums):
+    minv = [nums[0]]
+    maxv = [nums[0]]
+
+    for i in range(1, len(nums)):
+        maxi = max(max(maxv[-1] * nums[i], nums[i]), max(minv[-1] * nums[i], nums[i]))
+        mini = min(min(maxv[-1] * nums[i], nums[i]), min(minv[-1] * nums[i], nums[i]))
+        maxv.append(maxi)
+        minv.append(mini)
+    return max(maxv)
+
+tyrit([-4,-3,-2])

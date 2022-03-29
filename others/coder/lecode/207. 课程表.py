@@ -44,6 +44,12 @@ def canFinish2(numCourses: int, prerequisites) -> bool:
             if not indegrees[cur]: queue.append(cur)
     return not numCourses
 
+def tryit(num, courses):
+    indegree = [0 for i in range(num)]
+
+
+
+
 canFinish2(2,[[1,0]])
 canfinish(2,[[1,0]])
 
