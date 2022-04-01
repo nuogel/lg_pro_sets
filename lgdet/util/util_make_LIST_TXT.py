@@ -29,6 +29,17 @@ def make_list(base_path, x_file, y_file):
 
     return dir_list
 
+def make_list_classfication(base_path, lab):
+    dir_list = []
+    for labi in lab:
+        path_list = os.listdir(os.path.join(base_path, labi))
+        for path_i in path_list:
+            x_path = os.path.join(base_path,labi, path_i)
+            if _is_file(x_path):
+                dir_list.append([path_i, x_path,labi])
+                print('adding:', dir_list[-1])
+
+    return dir_list
 
 def _is_file(path):
     if not os.path.isfile(path):
@@ -114,16 +125,22 @@ if __name__ == '__main__':
     # img_path = 'VOC2012/JPEGImages'
     # lab_path = 'VOC2012/Annotations'
     # base_path = '/media/lg/DataSet_E/datasets/PASCAL_VOC/VOCdevkit'
+
+
     img_path = 'images'
     lab_path = 'labels'
     base_path = '/media/dell/data/ocr/电表识别/电表图片'
-    # path = 'E:\datasets\FlyingChairs\data'
 
     save_path = 'util_tmp/make_list.txt'
 
+    # datalist = make_list(base_path, img_path, lab_path)
     # datalist =_make_list_by_hand(path)
 
-    datalist = make_list(base_path, img_path, lab_path)
+
+    img_path = '/media/dell/data/sleep/睡岗-分类-01_from_长寿-室内-分类-train'
+    lab = ['是', '否']
+
+    datalist = make_list_classfication(img_path, lab)
     # datalist = cope_with_VOC()
 
     _wrte_dataset_txt(datalist, save_path)

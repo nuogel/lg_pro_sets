@@ -1,4 +1,6 @@
 from .model.vit.vit import VIT
+from .model.imc.resnet import RESNET
+
 
 from .model.ObdModel_YOLOV2 import YOLOV2
 from .model.ObdModel_YOLOV3 import YOLOV3

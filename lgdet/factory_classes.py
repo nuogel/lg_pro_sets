@@ -25,7 +25,7 @@ def get_loss_class(belongs, modelname):
     if belongs == 'SRDN':
         from lgdet.loss.loss_srdn import SRDNLOSS
         return SRDNLOSS
-    elif belongs == 'IMC':
+    elif belongs == 'imc':
         from lgdet.loss.loss_imc import IMCLoss
         return IMCLoss
     elif belongs == 'obd':

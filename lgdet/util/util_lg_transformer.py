@@ -244,6 +244,13 @@ class LgTransformer:
         label_after = np.asarray(label_after)
         return img_after, label_after, data_info
 
+    def data_aug_classification(self, img, data_info):
+        imgs, labels = self.dataaug._augmenting(aug_way_ids=([5, 6, 10, 11, 12, 13, 14, 15, 16, 20, 22], [20, 25]),
+                                                datas=([img], None))  # [11,20, 21, 22]
+
+        img_after = imgs[0]
+        return img_after, data_info
+
     def resize(self, img, label, size, data_info):
         '''
 

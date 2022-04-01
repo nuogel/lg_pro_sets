@@ -46,11 +46,11 @@ class TxbLogger:
             if isinstance(v, dict):
                 for k1, v1 in v.items():
                     if isinstance(v1, dict):
-                        self.tbX_writer.add_scalars(k + '/' + k1, v1, epoch)
+                        self.tbX_writer.add_scalars(str(k) + '/' + str(k1), v1, epoch)
                     else:
-                        self.tbX_writer.add_scalar(k + '/' + k1, v1, epoch)
+                        self.tbX_writer.add_scalar(str(k) + '/' + str(k1), v1, epoch)
             else:
-                self.tbX_writer.add_scalar(k, v, epoch)
+                self.tbX_writer.add_scalar(str(k), v, epoch)
 
     def tbX_addImage(self, names, image):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)

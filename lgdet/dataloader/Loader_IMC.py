@@ -65,22 +65,30 @@ class IMC_Loader(DataLoader):
 
         # GRAY_BINARY
         if (self.cfg.TRAIN.GRAY_BINARY and self.is_training) or (self.cfg.TEST.GRAY_BINARY and not self.is_training):
-            img, label, data_info = self.lgtransformer.img_binary(img, label, data_info)
+            img, _, data_info = self.lgtransformer.img_binary(img, None, data_info)
 
-        # PAD TO SIZE:
-        if (self.cfg.TRAIN.LETTERBOX and self.is_training) or (self.cfg.TEST.LETTERBOX and not self.is_training):
-            img, label, data_info = self.lgtransformer.letter_box(img, label, data_info, new_shape=self.cfg.TRAIN.IMG_SIZE, auto=False, scaleup=True)
+        # DOAUG:
+        if (random.random() < self.cfg.TRAIN.DO_AUG) and self.is_training:  # data aug is wasting time.
+            img, data_info = self.lgtransformer.data_aug_classification(img, data_info)
+
+        # augment_hsv
+        if (random.random() < self.cfg.TRAIN.HSV) and self.is_training:  # data aug is wasting time.
+            img, _, data_info = self.lgtransformer.augment_hsv(img, None, data_info)
 
         # resize with max and min size ([800, 1333])
         if (self.cfg.TRAIN.MAXMINSIZE and self.is_training) or (self.cfg.TEST.MAXMINSIZE and not self.is_training):
-            img, label, data_info = self.lgtransformer.resize_max_min_size(img, label, data_info, input_ksize=self.cfg.TRAIN.IMG_SIZE)
+            img, _, data_info = self.lgtransformer.resize_max_min_size(img, None, data_info, input_ksize=self.cfg.TRAIN.IMG_SIZE)
 
         # resize
         if (self.cfg.TRAIN.RESIZE and self.is_training) or (self.cfg.TEST.RESIZE and not self.is_training):
             img = cv2.resize(img, (self.cfg.TRAIN.IMG_SIZE[1], self.cfg.TRAIN.IMG_SIZE[0]), interpolation=cv2.INTER_CUBIC)
 
+        # PAD TO SIZE:
+        if (self.cfg.TRAIN.LETTERBOX and self.is_training) or (self.cfg.TEST.LETTERBOX and not self.is_training):
+            img, _, data_info = self.lgtransformer.letter_box(img, [], data_info, new_shape=self.cfg.TRAIN.IMG_SIZE, auto=False, scaleup=True)
+
         if self.cfg.TRAIN.SHOW_INPUT > 0:
-            _show_img(img.copy(), label.copy(), cfg=self.cfg, show_time=self.cfg.TRAIN.SHOW_INPUT, pic_path=data_info['lab_path'])
+            _show_img(img.copy(),[], cfg=self.cfg, show_time=self.cfg.TRAIN.SHOW_INPUT)
 
         if self.write_images > 0 and self.is_training and not self.cfg.checkpoint:
             # img_write = _show_img(img.copy(), label.copy(), cfg=self.cfg, show_time=-1)[0]
@@ -89,7 +97,7 @@ class IMC_Loader(DataLoader):
 
         img, _ = self.lgtransformer.transpose(img)
         assert len(img) > 0, 'img length is error'
-
+        label = self.cls2idx[label]
         return [img, label, data_info]  # only need the labels  label_after[x1y1x2y2]
 
     def _set_group_flag(self):  # LG: this is important
@@ -116,14 +124,11 @@ class IMC_Loader(DataLoader):
         while img is None or label is None:  # if there is no data in img or label
             if self.one_test:
                 _data_info = self.dataset_infos[0]
-                img = cv2.imread(_data_info[1])
-                label = _data_info[2]
             else:
                 _data_info = self.dataset_infos[index]
-                img = _data_info[0]
-                img = np.asarray(img)
-                label = _data_info[1] # labels: (x1, y1, x2, y2) & must be absolutely labels.
-            data_info = {'img':_data_info[0], 'label':_data_info[1]}
+            img = cv2.imread(_data_info[1])
+            label = _data_info[2]
+            data_info = {'img':_data_info[1], 'label':_data_info[2]}
         return img, label, data_info
 
     def _add_dataset(self, dataset, is_training):

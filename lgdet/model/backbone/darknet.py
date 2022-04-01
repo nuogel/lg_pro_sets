@@ -6,6 +6,15 @@ import cv2
 import os
 import sys
 
+''' 
+在yolov2 中 作者使用了ReorgLayer（在第3个conv后）
+   conv1s = self.conv1s(im_data)
+    conv2 = self.conv2(conv1s)
+    conv3 = self.conv3(conv2)
+    conv1s_reorg = self.reorg(conv1s)
+    cat_1_3 = torch.cat([conv1s_reorg, conv3], 1)
+'''
+
 __all__ = ['darknet19', 'darknet53']
 
 

@@ -144,15 +144,13 @@ class SSDVGG(nn.Module):
         conf_layers = []
         vgg_source = [24, -2]
         for k, v in enumerate(vgg_source):
-            loc_layers += [nn.Conv2d(vgg[v].out_channels,
-                                     cfg[k] * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(vgg[v].out_channels,
-                                      cfg[k] * num_classes, kernel_size=3, padding=1)]
+            loc_layers += [nn.Conv2d(vgg[v].out_channels, cfg[k] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(vgg[v].out_channels, cfg[k] * num_classes, kernel_size=3, padding=1)]
+
         for k, v in enumerate(extra_layers[1::2], 2):
-            loc_layers += [nn.Conv2d(v.out_channels, cfg[k]
-                                     * 4, kernel_size=3, padding=1)]
-            conf_layers += [nn.Conv2d(v.out_channels, cfg[k]
-                                      * num_classes, kernel_size=3, padding=1)]
+            loc_layers += [nn.Conv2d(v.out_channels, cfg[k] * 4, kernel_size=3, padding=1)]
+            conf_layers += [nn.Conv2d(v.out_channels, cfg[k] * num_classes, kernel_size=3, padding=1)]
+
         return vgg, extra_layers, (loc_layers, conf_layers)
 
 
@@ -182,8 +180,7 @@ def vgg(cfg, i, batch_norm=False):
     pool5 = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
     conv6 = nn.Conv2d(512, 1024, kernel_size=3, padding=6, dilation=6)
     conv7 = nn.Conv2d(1024, 1024, kernel_size=1)
-    layers += [pool5, conv6,
-               nn.ReLU(inplace=True), conv7, nn.ReLU(inplace=True)]
+    layers += [pool5, conv6, nn.ReLU(inplace=True), conv7, nn.ReLU(inplace=True)]
     return layers
 
 

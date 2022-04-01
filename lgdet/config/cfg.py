@@ -69,7 +69,7 @@ def prepare_cfg(cfg, args, is_training=True):
     except:
         pass
 
-    if cfg.BELONGS in ['IMC', ]:
+    if cfg.BELONGS in ['imc', ]:
         try:
             cfg.PATH.CLASSES_PATH = cfg.PATH.CLASSES_PATH.format(cfg.TRAIN.TRAIN_DATA_FROM_FILE[0].lower())
         except:

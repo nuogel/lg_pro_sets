@@ -1,3 +1,7 @@
+'''
+首先pytorch输入的大小固定为224*224，超过这个大小就会报错，比如输入大小256*256
+'''
+
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
 import math
@@ -190,7 +194,15 @@ class ResNet(nn.Module):
             if not os.path.exists(weight_path):
                 os.makedirs(weight_path)
             model_zoo.load_url(url, model_dir='saved/checkpoint')
-        self.load_state_dict(torch.load(weight_file), strict=False)
+        '''
+        strict=False可以保证模型中的键与文件中的键不匹配时暂且跳过不管，但是一旦模型中的键和文件中的键匹配上了，PyTorch就会尝试帮我们加载参数，就必须要求参数的尺寸相同，所以会有上述报错。'''
+        statedict = torch.load(weight_file)
+        try:
+            self.load_state_dict(statedict, strict=False)
+        except:
+            statedict.pop('fc.weight')
+            statedict.pop('fc.bias')
+            self.load_state_dict(statedict, strict=False)
 
 
 def resnet18(pretrained=False, **kwargs):
