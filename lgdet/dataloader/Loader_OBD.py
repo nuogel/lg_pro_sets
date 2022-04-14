@@ -89,7 +89,7 @@ class OBD_Loader(DataLoader):
 
         # PAD TO SIZE:
         if (self.cfg.TRAIN.LETTERBOX and self.is_training) or (self.cfg.TEST.LETTERBOX and not self.is_training):
-            img, _, data_info = self.lgtransformer.letter_box(img, None, data_info, new_shape=self.cfg.TRAIN.IMG_SIZE, auto=False, scaleup=True)
+            img, label, data_info = self.lgtransformer.letter_box(img, label, data_info, new_shape=self.cfg.TRAIN.IMG_SIZE, auto=False, scaleup=True)
 
         # resize with max and min size ([800, 1333])
         if (self.cfg.TRAIN.MAXMINSIZE and self.is_training) or (self.cfg.TEST.MAXMINSIZE and not self.is_training):

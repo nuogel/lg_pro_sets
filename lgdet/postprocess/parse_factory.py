@@ -2,6 +2,7 @@
 from lgdet.util.util_lg_transformer import LgTransformer
 
 from lgdet.postprocess.parse_yolo import ParsePredict_yolo
+from lgdet.postprocess.parse_yolox import ParsePredict_yolox
 from lgdet.postprocess.parse_multibox import ParsePredict_multibox
 from lgdet.postprocess.parse_refinedet import ParsePredict_refinedet
 from lgdet.postprocess.parse_fcos import ParsePredict_fcos
@@ -13,6 +14,7 @@ class ParsePredict:
         self.cfg = cfg
         self.parse_dict = {
             'yolo': ParsePredict_yolo,
+            'yolox': ParsePredict_yolox,
             # 'yolov2': ParsePredict_yolo,
             # 'yolov3': ParsePredict_yolo,
             # 'yolov3_tiny': ParsePredict_yolo,
@@ -36,7 +38,7 @@ class ParsePredict:
 
         self.transformer = LgTransformer(self.cfg)
         modelname = self.cfg.TRAIN.MODEL
-        for name in ['yolo']:
+        for name in ['yolox', 'yolo']:
             if name in modelname:
                 modelname = name
                 break

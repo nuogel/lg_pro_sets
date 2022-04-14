@@ -51,8 +51,11 @@ class BaseSolver(object):
                 print('loading pre_trained:', self.args.pre_trained)
                 self.model = _load_pretrained(self.model, self.args.pre_trained, self.cfg.TRAIN.DEVICE)
             elif self.args.pre_trained in [2, '2']:
-                print('loading pre_trained from model itself')
-                self.model.weights_init()
+                try:
+                    self.model.weights_init()
+                except:
+                    print('loading pre_trained from model itself')
+
             else:
                 print('loading pre_trained:', self.args.pre_trained)
                 self.model = _load_pretrained(self.model, self.args.pre_trained, self.cfg.TRAIN.DEVICE)
@@ -71,7 +74,7 @@ class BaseSolver(object):
             self.cfg.logger.info('Using SyncBatchNorm()')
             import torch.distributed as dist
             dist.init_process_group('nccl', init_method='file:///tmp/somefile', rank=0, world_size=1)
-            
+
         if self.cfg.TRAIN.EMA:
             self.ema = ModelEMA(self.model, device=self.cfg.TRAIN.DEVICE)
 
@@ -168,7 +171,6 @@ class BaseSolver(object):
             self.scheduler = nn.DataParallel(self.scheduler, device_ids=self.device_ids)
             self.optimizer = self.optimizer.module
             self.scheduler = self.scheduler.module
-
 
     def _set_warmup_lr(self):
 

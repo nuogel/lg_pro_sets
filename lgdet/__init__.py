@@ -12,6 +12,7 @@ from .model.ObdModel_YOLOV3_TINY_SQUEEZENET import YOLOV3_TINY_SQUEEZENET
 from .model.ObdModel_YOLOV5 import YOLOV5
 from .model.ObdModel_PVT_YOLOV5 import PVT_YOLOV5
 from .model.ObdModel_SWIN_YOLOV5 import SWIN_YOLOV5
+from .model.ObdModel_yolox import YOLOX
 
 from .model.ObdModel_LRF300 import LRF300
 from .model.ObdModel_LRF512 import LRF512

@@ -123,7 +123,7 @@ class MAP:
         """
         Return correct predictions matrix. Both sets of boxes are in (x1, y1, x2, y2) format.
         Arguments:
-            detections (Array[N, 6]), x1, y1, x2, y2, conf, class
+            detections (Array[N, 6])  conf, class, x1, y1, x2, y2
             labels (Array[M, 5]), class, x1, y1, x2, y2
         Returns:
             correct (Array[N, 10]), for 10 IoU levels

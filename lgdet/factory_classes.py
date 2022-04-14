@@ -35,6 +35,10 @@ def get_loss_class(belongs, modelname):
         elif 'yolov5' in modelname:
             from lgdet.loss.loss_yolo_v5 import YoloLoss
             return YoloLoss
+        elif 'yolox' in modelname:
+            from lgdet.loss.loss_yolox import YoloxLoss
+            return YoloxLoss
+
         elif modelname[:4] == 'yolo':
             from lgdet.loss.loss_yolo import YoloLoss
             return YoloLoss
