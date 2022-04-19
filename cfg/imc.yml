@@ -14,7 +14,7 @@ TRAIN:
   MODEL: resnet
   TYPE: 50
   EMA: 0
-  EPOCH_SIZE: 100
+  EPOCH_SIZE: 200
   BATCH_BACKWARD_SIZE: 1  # BATCH_BACKWARD_SIZE: add the last 2 batch's loss, then backward once.
   # CIFAR10
   TRAIN_DATA_FROM_FILE: [ 'sleep' ]

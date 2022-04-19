@@ -36,7 +36,6 @@ class YOLOX(nn.Module):
         self.neck = YOLOPAFPN(depth=depth, width=width, in_channels=in_channels)
         self.head = YOLOXHead(self.cls_num, width, in_channels=in_channels)
 
-
     def forward(self, input_x, **args):
         x = input_x
         backbone = self.backbone(x)

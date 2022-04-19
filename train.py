@@ -13,7 +13,7 @@ from lgdet.util.util_yml_parse import parse_yaml
 
 def _parse_arguments():
     parser = ArgumentParser()
-    parser.add_argument('--type', default='obd', type=str, help='yml_path')
+    parser.add_argument('--type', default='imc', type=str, help='yml_path')
     parser.add_argument('--model', type=str, help='yml_path')
     parser.add_argument('--checkpoint', '--cp', default=1
                         , help='Path to the checkpoint to be loaded to the model')

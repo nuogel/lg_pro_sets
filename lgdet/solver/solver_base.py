@@ -234,7 +234,7 @@ class BaseSolver(object):
 
         if torch.isnan(total_loss) or total_loss.item() == float("inf") or total_loss.item() == -float("inf"):
             self.cfg.logger.error("received an nan/inf loss:", dataset[-1])
-
+            total_loss = None
         return total_loss, train_info
 
     def _save_checkpoint(self):

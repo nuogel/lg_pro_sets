@@ -59,6 +59,7 @@ class Solver(BaseSolver):
                                                               len_batch=len(self.trainDataloader),
                                                               step=step,
                                                               epoch=epoch)
+                if total_loss is None: continue
             # backward process
             if self.cfg.TRAIN.AMP:
                 self.scaler.scale(total_loss).backward()
