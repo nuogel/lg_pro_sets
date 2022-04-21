@@ -51,7 +51,7 @@ def main(mingraythreh=20, minarea=30):
 
 
         cv2.putText(img, localtime, (30, 30), cv2.FONT_HERSHEY_COMPLEX, 0.7, (0, 0, 255), 2)
-        cv2.imshow("x", close)
+        # cv2.imshow("x", close)
         cv2.imshow("Result", img)
         img_num += 1
 
