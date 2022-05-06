@@ -21,12 +21,8 @@ class IOUloss(nn.Module):
 
         pred = pred.view(-1, 4)
         target = target.view(-1, 4)
-        tl = torch.max(
-            (pred[:, :2] - pred[:, 2:] / 2), (target[:, :2] - target[:, 2:] / 2)
-        )
-        br = torch.min(
-            (pred[:, :2] + pred[:, 2:] / 2), (target[:, :2] + target[:, 2:] / 2)
-        )
+        tl = torch.max((pred[:, :2] - pred[:, 2:] / 2), (target[:, :2] - target[:, 2:] / 2))
+        br = torch.min((pred[:, :2] + pred[:, 2:] / 2), (target[:, :2] + target[:, 2:] / 2))
 
         area_p = torch.prod(pred[:, 2:], 1)
         area_g = torch.prod(target[:, 2:], 1)
@@ -38,12 +34,8 @@ class IOUloss(nn.Module):
         if self.loss_type == "iou":
             loss = 1 - iou ** 2
         elif self.loss_type == "giou":
-            c_tl = torch.min(
-                (pred[:, :2] - pred[:, 2:] / 2), (target[:, :2] - target[:, 2:] / 2)
-            )
-            c_br = torch.max(
-                (pred[:, :2] + pred[:, 2:] / 2), (target[:, :2] + target[:, 2:] / 2)
-            )
+            c_tl = torch.min((pred[:, :2] - pred[:, 2:] / 2), (target[:, :2] - target[:, 2:] / 2))
+            c_br = torch.max((pred[:, :2] + pred[:, 2:] / 2), (target[:, :2] + target[:, 2:] / 2))
             area_c = torch.prod(c_br - c_tl, 1)
             giou = iou - (area_c - area_i) / area_c.clamp(1e-16)
             loss = 1 - giou.clamp(min=-1.0, max=1.0)
@@ -120,13 +112,14 @@ class YoloxLoss:
             self.grids[k] = grid
 
         output = output.view(batch_size, self.anc_num, n_ch, hsize, wsize)
-        output = (
-            output.permute(0, 1, 3, 4, 2)
-                .reshape(batch_size, self.anc_num * hsize * wsize, -1)
-        )
+        output = (output.permute(0, 1, 3, 4, 2).reshape(batch_size, self.anc_num * hsize * wsize, -1))
         grid = grid.view(1, -1, 2)
+
         output[..., :2] = (output[..., :2] + grid) * stride
         output[..., 2:4] = torch.exp(output[..., 2:4]) * stride
+        if output.type() == 'torch.cuda.HalfTensor':
+            output = output.clamp(max=40000)
+
         return output, grid
 
     def get_losses(self, imgs, x_shifts, y_shifts, expanded_strides, labels, outputs, origin_preds, dtype, ):
@@ -273,9 +266,12 @@ class YoloxLoss:
 
         cls_preds_ = (cls_preds_.float().unsqueeze(0).repeat(num_gt, 1, 1).sigmoid_()
                       * obj_preds_.float().unsqueeze(0).repeat(num_gt, 1, 1).sigmoid_())
-
-        with autocast(enabled=False): # torch.nn.functional.binary_cross_entropy和torch.nn.BCELoss不能进行安全的自动转换（16位浮点与32浮点之间的互转）
+        if cls_preds_.type() == 'torch.cuda.HalfTensor':
+            with autocast(enabled=False):  # torch.nn.functional.binary_cross_entropy和torch.nn.BCELoss不能进行安全的自动转换（16位浮点与32浮点之间的互转）
+                pair_wise_cls_loss = F.binary_cross_entropy(cls_preds_.sqrt_(), gt_cls_per_image, reduction="none").sum(-1)
+        else:
             pair_wise_cls_loss = F.binary_cross_entropy(cls_preds_.sqrt_(), gt_cls_per_image, reduction="none").sum(-1)
+
         del cls_preds_
 
         cost = (pair_wise_cls_loss

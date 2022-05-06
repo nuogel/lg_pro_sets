@@ -31,7 +31,7 @@ TRAIN:
   MAXMINSIZE: 0
   RELATIVE_LABELS: 0  #FALSE # generate a relative labels to 0-1
   AREAR_RATIO: 0 #0.05 #
-  MIN_AREA: 0 #100 #400 #4 #
+  MIN_AREA: 4 #100 #400 #4 #
   #[H,W]
   #[384, 960] [640, 640]#[1280, 1280] [416, 416] #[512, 768] # [1024,1920] #[800,1333]  #[256, 256] # # [H, W] the size inputted to net.KITTI[370, 1224],GOLDENRIDGE[1080,1920] the size of input images(VGA[376,672]) better to be 2^n---[last_feature_size*2^5
   IMG_SIZE: [ 640, 640 ]

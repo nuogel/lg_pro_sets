@@ -3,7 +3,7 @@
 # Copyright (c) 2014-2021 Megvii Inc. All rights reserved.
 
 import torch.nn as nn
-
+import torch
 from .head.yolox_head import YOLOXHead
 from .backbone.cspdarknet import CSPDarknet
 from .neck.yolo_pafpn import YOLOPAFPN
@@ -41,5 +41,7 @@ class YOLOX(nn.Module):
         backbone = self.backbone(x)
         neck = self.neck(backbone)
         out = self.head(neck)
-
+        for outi in out:
+            if torch.isnan(outi.sum()) or outi.sum().sum() == float("inf") or outi.sum().item() == -float("inf"):
+                a = 0
         return out

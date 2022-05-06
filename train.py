@@ -13,19 +13,19 @@ from lgdet.util.util_yml_parse import parse_yaml
 
 def _parse_arguments():
     parser = ArgumentParser()
-    parser.add_argument('--type', default='imc', type=str, help='yml_path')
+    parser.add_argument('--type', default='obd', type=str, help='yml_path')
     parser.add_argument('--model', type=str, help='yml_path')
     parser.add_argument('--checkpoint', '--cp', default=1
                         , help='Path to the checkpoint to be loaded to the model')
     parser.add_argument('--data_path', '--dp', help='batch size')
     parser.add_argument('--epoch_size', '--ep', type=int, help='batch size')
-    parser.add_argument('--batch_size', '--bz', default=2, type=int, help='batch size')
+    parser.add_argument('--batch_size', '--bz', default=4, type=int, help='batch size')
     parser.add_argument('--lr', default=1e-3, type=float, help='learning rate')
     parser.add_argument('--lr_continue', '--lr_c', default=0, type=float, help='learning rate')
     parser.add_argument('--number_works', '--nw', default=0, type=int, help='number works of dataloader')
     parser.add_argument('--score_thresh', '--st', default=0.25, type=float, help='score_thresh')
-    parser.add_argument('--ema', default=0, type=int, help='ema')
-    parser.add_argument('--autoamp', default=1, type=int, help='autoamp')
+    parser.add_argument('--ema', default=1, type=int, help='ema')
+    parser.add_argument('--autoamp', default=0, type=int, help='autoamp')
 
     parser.add_argument('--gpu', help='number works of dataloader')
     parser.add_argument('--pre_trained', '--pt', default=2

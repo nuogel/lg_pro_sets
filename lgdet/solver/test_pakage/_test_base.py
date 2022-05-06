@@ -17,6 +17,9 @@ class TestBase(BaseSolver):
     def test_backbone(self, DataSet):
         pass
 
+    def test_camera(self, DataSet):
+        pass
+
     def test_run(self, file_s):
         """
         Test images in the file_s.
@@ -24,10 +27,14 @@ class TestBase(BaseSolver):
         :param file_s:
         :return:
         """
-        if file_s == 'one_name': self.cfg.TEST.ONE_TEST = 1
-        dataset = self.prase_file(file_s)
-        DataSet = self.DataFun.make_dataset(train_dataset=None, test_dataset=dataset)[1]
-        self.test_backbone(DataSet)
+        if file_s == 'one_name':
+            self.cfg.TEST.ONE_TEST = 1
+        elif file_s.strip().split('.')[-1] in ['mp4', 'avi']:
+            self.test_camera(file_s)
+        else:
+            dataset = self.prase_file(file_s)
+            DataSet = self.DataFun.make_dataset(train_dataset=None, test_dataset=dataset)[1]
+            self.test_backbone(DataSet)
 
     def prase_file(self, file_s):
         dataset = []

@@ -8,6 +8,7 @@ def crop_like(input, target):
     else:
         return input[:, :, 1:target.size(2) + 1, 1:target.size(3) + 1]
 
+
 from ..registry import MODELS
 
 
@@ -47,7 +48,7 @@ class FLOW_FGFA(nn.Module):
 
         self.avgpool = nn.AvgPool2d(2, stride=2, ceil_mode=True)
 
-    def forward(self, input_x,**args):
+    def forward(self, input_x, **args):
         x = input_x
         x = self.avgpool(x)
         conv1 = self.flow_conv1(x)
@@ -110,7 +111,7 @@ class FLOW_FGFA(nn.Module):
 
 
 if __name__ == '__main__':
-    x = torch.rand((3, 6, 512, 512))
+    x = torch.rand((4, 6, 512, 512))
     f_model = FLOW_FGFA()
     y = f_model(x)
     a = 0
