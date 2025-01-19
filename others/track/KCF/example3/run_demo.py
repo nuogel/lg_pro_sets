@@ -4,8 +4,9 @@ from kcf import Tracker
 
 
 def main():
-    save_reslut = 1
-    vid_path = 'car.avi'
+    save_reslut = 0
+    # vid_path = 'car.avi'
+    vid_path = '/media/luogeng/ssd_datasets/code/uav_code/datasets/track_video.mp4'
     cap = cv2.VideoCapture(vid_path)
     tracker = Tracker()
     ok, frame = cap.read()
@@ -13,7 +14,7 @@ def main():
         print("error reading video")
         exit(-1)
     roi = cv2.selectROI("tracking", frame, False, False)
-    # roi = (218, 302, 148, 108)
+    # roi = (218, 302, 148, 108) (967, 409, 128, 70) (1047, 497, 120, 85)(886, 491, 118, 71)(1043, 495, 133, 92)
     tracker.init(frame, roi)
     i = 0
     while cap.isOpened():

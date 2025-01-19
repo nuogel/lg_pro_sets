@@ -12,7 +12,9 @@ def video2images(file_path, output_path):
         # cv2.imshow('img', img)
         # cv2.waitKey(0)
         if rec:
-            if i % 1 == 0:
+            if i % 6 == 0:
+                cv2.imshow('img',img)
+                cv2.waitKey(1)
                 save_path = os.path.join(output_path, '%06d.png' % i)
                 cv2.imwrite(save_path, img)
                 print('saving: ', save_path)
@@ -20,6 +22,6 @@ def video2images(file_path, output_path):
 
 
 if __name__ == '__main__':
-    file_path = 'E:/for_test/fly3.mp4'
-    output_path = 'E:/for_test/fly3'
+    file_path = '/media/luogeng/软件/datasets/跟踪转移.mp4'
+    output_path = '/media/luogeng/软件/datasets/track_demo/'
     video2images(file_path, output_path)

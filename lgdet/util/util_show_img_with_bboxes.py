@@ -17,7 +17,7 @@ def get_ALL_File(dir_path, seq=['.png']):
     file_list = []
     for root, dirs, files in os.walk(dir_path):
         for file in files:
-            filehead,ext=os.path.splitext(file)
+            filehead, ext = os.path.splitext(file)
             if ext in seq:
                 filename = os.path.join(root, file)
                 file_list.append(filename)
@@ -178,7 +178,7 @@ def _write_line(before_file, new_target, after_file):
 
 
 def _read_datas(im_file, lab_file, checklabelsonly=0, labelnames=[]):
-    img=None
+    img = None
     if not checklabelsonly:
         img = cv2.imread(im_file)
         if img is not None:
@@ -213,16 +213,15 @@ def _show_img(images, labels, show_img=True, show_time=None, save_img=False, sav
             ymax = int(float(box[3]))
             # text = class_out+"||"+ " ".join([str(i) for i in box])
             class_out_dict = {'person': '站立', 'fall': '跌倒'}
-            color = {'default':(0, 255, 0),'person': (0, 255, 0), 'fall': (0, 0, 255)}
-            text=class_out
+            color = {'default': (0, 255, 0), 'person': (0, 255, 0), 'fall': (0, 0, 255)}
+            text = class_out
             # text = class_out_dict[class_out] #+ str('--%.3f' % score)
             # text = class_out_dict[class_out] + str('--%.3f' % score)
             # text = '占道经营' + str('--%.3f' % (0.8+0.1*random.random()))
             # class_out='占道经营'
             # color = {'占道经营': (0, 0, 255)}
 
-
-            cv2.rectangle(images, (xmin, ymin), (xmax, ymax), color['default'], thickness=3)
+            cv2.rectangle(images, (xmin, ymin), (xmax, ymax), color['default'], thickness=1)
             tryPIL = 0
             if tryPIL:
                 # PIL图片上打印汉字
@@ -236,11 +235,13 @@ def _show_img(images, labels, show_img=True, show_time=None, save_img=False, sav
                 # PIL图片转cv2 图片
                 images = cv2.cvtColor(np.array(pilImg), cv2.COLOR_RGB2BGR)
             else:
-                cv2.putText(images, class_out, (xmin, ymin), 3, 3, (0, 255, 255))
+                cv2.putText(images, class_out, (xmin, ymin), 1, 1, (0, 255, 255))
 
     # cv2.putText(images, 'The Number of Cars is : %d' % len(labels), (600, 220), 1, 2, (0, 0, 255), thickness=2)
     # cv2.putText(images, 'Made by AI Team of Chengdu Fourier Electronic', (600, 250), 1, 2, (0, 0, 255), thickness=2)
-
+    if images.shape[0] > 1000:
+        r = 800 / images.shape[0]
+        images = cv2.resize(images, None, fx=r, fy=r)
     if show_img:
         cv2.imshow('img', images)
         cv2.waitKey(show_time)
@@ -275,7 +276,7 @@ def main(img_fold, label_fold):
 
     save_video = 0
     save_image_with_boxes = 0
-    checklabelsonly=0
+    checklabelsonly = 0
 
     if save_video:
         base_path = os.path.join(img_folds, '../saved')
@@ -286,13 +287,20 @@ def main(img_fold, label_fold):
         fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
         video_writer = cv2.VideoWriter(video_dir, fourcc, fps, img_size)
     else:
-        video_writer=None
+        video_writer = None
     labelnames = []
-    pairfiles=0
+    pairfiles = 0
     for index in range(min(img_num, lab_num)):
         # if index <= 7800 // 5 or index > 8300 // 5: continue
         im_file = local_img_files[index]
-        label_file = im_file.replace('images', 'labels').replace('.jpg', '.xml')  # local_label_files[index]
+        imtype = '.'+im_file.split('.')[-1]
+        # label_file = im_file.replace('images', 'labels').replace('.jpg', '.xml')  # local_label_files[index]
+        label_file_1 = im_file.replace('images', 'annotations').replace(imtype, '.xml')  # local_label_files[index]
+        label_file_2 = im_file.replace('images', 'labels').replace(imtype, '.xml')  # local_label_files[index]
+
+        if not check_is_file(label_file_1):
+            label_file = label_file_2
+
         if not check_is_file(im_file) or not check_is_file(label_file):
             continue
         if print_path:
@@ -302,13 +310,13 @@ def main(img_fold, label_fold):
         #     return True
         # else:
         #     return  False
-        pairfiles+=1
+        pairfiles += 1
         if save_image_with_boxes:
             save_path = os.path.join(base_path, str(index) + '.jpg')
-            save_image=True
+            save_image = True
         else:
-            save_path=None
-            save_image=False
+            save_path = None
+            save_image = False
         if not checklabelsonly:
             _show_img(img, label, show_img=True, show_time=0, save_img=save_image, save_video=save_video,
                       save_path=save_path, video_writer=video_writer)
@@ -316,7 +324,7 @@ def main(img_fold, label_fold):
             video_writer.release()
         # if index >= 9750 - 500: break
     if save_video: video_writer.release()
-    print('labelnames',labelnames)
+    print('labelnames', labelnames)
     print('finish')
 
 
@@ -329,16 +337,22 @@ if __name__ == '__main__':
     # im_file = os.path.join(path, "images", "1478019971185917857.jpg")
     # label_file = os.path.join(path, "labels", "1478019971185917857.xml")
     # img, label = _read_datas(im_file, label_file)
-    img_folds = '/media/dell/data/person'
-    label_folds = '/media/dell/data/person'
+
+    img_folds = '/home/luogeng/ssd_datasets/datasets/uav/坦克数据/1'
+    # img_folds = '/home/luogeng/ssd_datasets/datasets/uav/内部标注素材/img_1'
+    # img_folds = '/home/luogeng/ssd_datasets/datasets/uav/内部标注素材/img_2'
+    # img_folds = '/home/luogeng/ssd_datasets/datasets/uav/内部标注素材/img_3'
+    # img_folds = '/home/luogeng/ssd_datasets/datasets/uav/内部标注素材/img_4'
+
+    # label_folds = '/home/luogeng/ssd_datasets/datasets/uav/坦克数据/4/'
     # img_folds = '/media/dell/data/shopout/城管二期-出店经营-第一批回传标注-lg/images'
     # label_folds = '/media/dell/data/shopout/城管二期-出店经营-第一批回传标注-lg/labels'
     # label_folds = 'F:\LG\GitHub\lg_pro_sets\\tmp\predicted_labels'
     folds = os.listdir(img_folds)
-    OUTPUT=[]
+    OUTPUT = []
     for img_fold in folds:
-        pathfold=os.path.join(img_folds, img_fold)
+        pathfold = os.path.join(img_folds, img_fold)
         if os.path.isdir(pathfold):
-           if  main(pathfold, pathfold):
-               OUTPUT.append(img_fold)
+            if main(pathfold, pathfold):
+                OUTPUT.append(img_fold)
     print(OUTPUT)

@@ -7,13 +7,14 @@ def images2video(images_dir, video_save_path, fps=10):
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     videoWriter = cv2.VideoWriter(video_save_path, fourcc, fps, (1920, 1080))
     files = os.listdir(images_dir)
+    files.sort()
     count = 0
     for file in files:
         count += 1
-        print(count)
         img_path = os.path.join(images_dir, file)
         image = cv2.imread(img_path)
-        image = cv2.resize(image, (1920, 1080))
+        print(img_path)
+        # image = cv2.resize(image, (1920, 1080))
         videoWriter.write(image)
     videoWriter.release()
 
@@ -23,9 +24,9 @@ def images2video(images_dir, video_save_path, fps=10):
 if __name__ == '__main__':
     # img_path='/media/dell/data/garbage/video_demo/images'
     # save_path = '/media/dell/data/garbage/video_demo/garbage_seg_demo.mp4'
-    img_path = '/media/dell/data/shopout/video_demo/images'
-    save_path = '/media/dell/data/shopout/video_demo/出店经营-demo.mp4'
-    images2video(img_path, save_path, fps=0.8)
+    img_path = '/media/luogeng/软件/datasets/track_demo'
+    save_path = '/media/luogeng/软件/datasets/track_demo.mp4'
+    images2video(img_path, save_path, fps=8)
 #
 #
 #
