@@ -153,20 +153,12 @@ class OBD_Loader(DataLoader):
         self.is_training = is_training
 
     def _load_labels2memery(self, dataset_txt, one_name, pre_load_labels):
-        ftxt = 'train_' if self.is_training else 'test_'
-        cachepath = os.path.join(self.cfg.PATH.INPUT_PATH, ftxt + ''.join(self.cfg.TRAIN.TRAIN_DATA_FROM_FILE[0]) + '.datacache')
-        if os.path.isfile(cachepath) and not self.one_test:
-            print('loading %s ...' % cachepath)
-            data_infos = torch.load(cachepath)
-            return data_infos
-        if self.one_test:
-            dataset_txt = one_name
-        data_infos = []
-        tqd = tqdm.tqdm(dataset_txt)
-
         def load_data_fun(data_line):
             x_path = os.path.join(self.cfg.PATH.INPUT_PATH, data_line[1])
             y_path = os.path.join(self.cfg.PATH.INPUT_PATH, data_line[2])
+            if not os.path.isfile(x_path) or not os.path.isfile(y_path) :
+                print('file error:', x_path, 'or', y_path)
+                return
             this_data_info = {'img_name': data_line[0],
                               'img_path': x_path,
                               'lab_path': y_path,
@@ -182,6 +174,19 @@ class OBD_Loader(DataLoader):
             this_data_info['wh_original'] = wh
             if label_i != []:
                 data_infos.append(this_data_info)
+            else:
+                print('label is empty:',y_path)
+
+        ftxt = 'train_' if self.is_training else 'test_'
+        cachepath = os.path.join(self.cfg.PATH.INPUT_PATH, ftxt + ''.join(self.cfg.TRAIN.TRAIN_DATA_FROM_FILE[0]) + '.datacache')
+        if os.path.isfile(cachepath) and not self.one_test:
+            print('loading %s ...' % cachepath)
+            data_infos = torch.load(cachepath)
+            return data_infos
+        if self.one_test:
+            dataset_txt = one_name
+        data_infos = []
+        tqd = tqdm.tqdm(dataset_txt)
 
         multiprocess = 1
         if multiprocess:

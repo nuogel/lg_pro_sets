@@ -1,5 +1,5 @@
 # coding=utf-8
-#!/usr/bin/env Python3
+# !/usr/bin/env Python3
 """Script to train the apollo yolo model."""
 
 import sys
