@@ -272,7 +272,7 @@ class MFTrackerORT(SiameseTracker):
         """使用设置的参数初始化tracker网络
         """
         self.rknn = RKNN(verbose=True)
-        onnx_path = "/home/luogeng/code/lg_pro_sets/saved/checkpoint/siamrpn_onnx_ized.onnx"
+        onnx_path = "/home/luogeng/code/wxf_project/pysot/tools/onnx-ized-0203.onnx"
 
         print('--> Config model')
         self.rknn.config(mean_values=[[0, 0, 0], [0, 0, 0]], std_values=[[1, 1, 1], [1, 1, 1]],
@@ -305,7 +305,7 @@ class MFTrackerORT(SiameseTracker):
         print('done')
 
         print('--> Export rknn model')
-        ret = self.rknn.export_rknn("mixformer.rknn")
+        ret = self.rknn.export_rknn("/home/luogeng/code/lg_pro_sets/others/track/siamRPN/mixformer0203.rknn")
         if ret != 0:
             print('Export rknn model failed!')
             exit(ret)
@@ -364,14 +364,14 @@ class MFTrackerORT(SiameseTracker):
     def _convert_score(self, score):
         score = torch.Tensor(score)
 
-        score = score.permute(1, 2, 3, 0).contiguous().view(2, -1).permute(1, 0)
+        # score = score.permute(1, 2, 3, 0).contiguous().view(2, -1).permute(1, 0)
         score = F.softmax(score, dim=1).data[:, 1].cpu().numpy()
         return score
 
     def _convert_bbox(self, delta, anchor):
-        delta = torch.Tensor(delta)
-        delta = delta.permute(1, 2, 3, 0).contiguous().view(4, -1)
-        delta = delta.data.cpu().numpy()
+        # delta = torch.Tensor(delta)
+        # delta = delta.permute(1, 2, 3, 0).contiguous().view(4, -1)
+        # delta = delta.data.cpu().numpy()
 
         delta[0, :] = delta[0, :] * anchor[:, 2] + anchor[:, 0]
         delta[1, :] = delta[1, :] * anchor[:, 3] + anchor[:, 1]
@@ -460,7 +460,7 @@ class MFTrackerORT(SiameseTracker):
         best_score = score[best_idx]
         if self.debug:
             x1, y1, w, h = bbox
-            cv2.rectangle(image, (int(x1), int(y1)), (int(x1 + w), int(y1 + h)), color=(0, 0, 255), thickness=2)
+            cv2.rectangle(image, (int(x1), int(y1)), (int(x1 + w), int(y1 + h)), color=(0, 255, 255), thickness=2)
         return {
             'bbox': bbox,
             'best_score': best_score
@@ -563,6 +563,7 @@ if __name__ == '__main__':
     Tracker = MFTrackerORT()
     first_frame = True
     Tracker.video_name = "/media/luogeng/ssd_datasets/code/uav_code/datasets/track_video.mp4"
+    out = cv2.VideoWriter('output_2.mp4', cv2.VideoWriter_fourcc(*'XVID'), 25, (1920,1080))
 
     if Tracker.video_name:
         video_name = Tracker.video_name
@@ -575,29 +576,33 @@ if __name__ == '__main__':
     for frame in get_frames(Tracker.video_name):
         # print(f"frame shape {frame.shape}")
         # frame = cv2.imread('/media/luogeng/ssd_datasets/code/uav_code/0.jpg')
-
+        print(frame.shape)
         tic = cv2.getTickCount()
+        # if frame_id>30:
+        #     break
         if first_frame:
-            # x, y, w, h = cv2.selectROI(video_name, frame, fromCenter=False)
-            x, y, w, h = 1028, 623, 125, 87
+            x, y, w, h = cv2.selectROI(video_name, frame, fromCenter=False)
+            # x, y, w, h = 1028, 623, 125, 87
             target_pos = [x, y]
             target_sz = [w, h]
             print('====================type=================', target_pos, type(target_pos), type(target_sz))
             Tracker.track_init(frame, target_pos, target_sz)
             first_frame = False
+            out.write(frame)
         else:
             state = Tracker.track(frame)
             frame_id += 1
             print(frame_id, ':update finished')
-            print(state)
+            # print(state)
             # cv2.imwrite(f'/data1/wxf/datas/track/{frame_id}_rpn.jpg', frame)
+            out.write(frame)
             cv2.imshow('Tracking', frame)
             cv2.waitKey(1)
-
+        # out.write(frame)
         toc = cv2.getTickCount() - tic
         toc = int(1 / (toc / cv2.getTickFrequency()))
         total_time += toc
         print('Video: {:12s} {:3.1f}fps'.format('tracking', toc))
-
+    out.release()
     # print('video: average {:12s} {:3.1f} fps'.format('finale average tracking fps', total_time / (frame_id - 1)))
     # cv2.destroyAllWindows()

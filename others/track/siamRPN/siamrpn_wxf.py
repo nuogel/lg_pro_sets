@@ -258,7 +258,6 @@ class MFTrackerORT(SiameseTracker):
         print(window.shape)
         self.window = np.tile(window.flatten(), self.anchor_num)
         print(self.window.shape)
-
     def generate_anchor(self, score_size):
         anchors = Anchors(8,
                           [0.33, 0.5, 1, 2, 3],
@@ -550,8 +549,8 @@ if __name__ == '__main__':
 
         tic = cv2.getTickCount()
         if first_frame:
-            # x, y, w, h = cv2.selectROI(video_name, frame, fromCenter=False)
-            x,y,w,h = 1028, 623, 125, 87
+            x, y, w, h = cv2.selectROI(video_name, frame, fromCenter=False)
+            # x,y,w,h = 1028, 623, 125, 87
 
             target_pos = [x, y]
             target_sz = [w, h]

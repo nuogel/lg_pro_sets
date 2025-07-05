@@ -1,4 +1,6 @@
 import argparse
+import time
+
 import cv2
 from kcf import Tracker
 
@@ -22,8 +24,12 @@ def main():
         if not ok:
             break
         i += 1
+        t1 = time.time()
         (x, y, w, h), response = tracker.update(frame)
+        t2 = time.time() - t1
+        print('time:', t2, "frame:",1/t2)
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 255), 1)
+        cv2.putText(frame, '%.5f' % response, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
         cv2.imshow('tracking', frame)
         c = cv2.waitKey(1) & 0xFF
         if c == 27 or c == ord('q'):
